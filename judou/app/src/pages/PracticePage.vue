@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { useTextsStore } from '@/stores/textsStore'
 import { usePracticeLibraryStore } from '@/stores/practiceLibraryStore'
@@ -67,7 +67,6 @@ const hasBeansLeft = computed(() => remainingBeans.value > 0)
 // 素材選擇器狀態
 const isPickerExpanded = ref(false)
 const selectedGradeId = ref<string | null>(null)
-const selectedModuleId = ref<string | null>(null)
 const searchQuery = ref('')
 
 const visitorUsername = ref(localStorage.getItem('judou_username') || 'guest')
@@ -128,13 +127,6 @@ const gradeOptions = computed(() =>
     .sort((a, b) => a.order_index - b.order_index)
 )
 
-const moduleOptions = computed(() => {
-  if (!selectedGradeId.value) return []
-  return libraryStore.state.categories
-    .filter((c) => c.level === 2 && c.parent_id === selectedGradeId.value)
-    .sort((a, b) => a.order_index - b.order_index)
-})
-
 // 判斷文章是否可見
 function isTextVisible(t: PracticeText): boolean {
   // 系統文章：所有人可見
@@ -146,12 +138,13 @@ function isTextVisible(t: PracticeText): boolean {
   return false
 }
 
-const textsInModule = computed(() => {
-  if (!selectedModuleId.value) return []
+// 當前年級的文章列表
+const textsInGrade = computed(() => {
+  if (!selectedGradeId.value) return []
   return textsStore.texts
     .filter((t) => {
-      // 必須屬於當前分類
-      if (t.category_id !== selectedModuleId.value) return false
+      // 必須屬於當前年級
+      if (t.category_id !== selectedGradeId.value) return false
       // 過濾可見文章
       return isTextVisible(t)
     })
@@ -177,16 +170,11 @@ const searchResults = computed(() => {
 })
 
 // 麵包屑
+// 麵包屑：年級 › 文章標題
 const breadcrumbText = computed(() => {
   if (!currentText.value) return '尚未選擇練習素材'
   const parts = []
   if (currentText.value.category?.name) {
-    // 找到模組的父級（年級）
-    const module = libraryStore.state.categories.find((c) => c.id === currentText.value?.category_id)
-    if (module?.parent_id) {
-      const grade = libraryStore.state.categories.find((c) => c.id === module.parent_id)
-      if (grade) parts.push(grade.name)
-    }
     parts.push(currentText.value.category.name)
   }
   parts.push(currentText.value.title)
@@ -194,10 +182,6 @@ const breadcrumbText = computed(() => {
 })
 
 // 監聽年級變化，重置模組選擇
-watch(selectedGradeId, () => {
-  selectedModuleId.value = null
-})
-
 // 加載學生所屬班級的老師 ID
 async function loadMyTeacherIds() {
   if (!authStore.isStudent || !authStore.isAuthenticated) return
@@ -271,19 +255,17 @@ function selectText(text: PracticeText) {
   isPickerExpanded.value = false
   searchQuery.value = ''
   
-  // 同步選擇器狀態
+  // 同步選擇器狀態（文章直接關聯到年級）
   if (text.category_id) {
-    const module = libraryStore.state.categories.find((c) => c.id === text.category_id)
-    if (module) {
-      selectedModuleId.value = module.id
-      selectedGradeId.value = module.parent_id ?? null
-    }
+    selectedGradeId.value = text.category_id
   }
 }
 
 function pickRandomText() {
-  // 過濾可見文章
-  const visibleTexts = textsStore.texts.filter(isTextVisible)
+  // 過濾可見的練習文章（排除閱讀文章）
+  const visibleTexts = textsStore.texts.filter(t => 
+    t.text_type === 'practice' && isTextVisible(t)
+  )
   if (!visibleTexts.length) {
     toast.value = '尚未有可練習的文章，請先到管理員頁面新增。'
     return
@@ -650,7 +632,7 @@ onBeforeUnmount(() => {
               {{ currentText.author || '佚名' }}
               <span v-if="currentText.source"> · {{ currentText.source }}</span>
               <router-link 
-                v-if="currentText.source_text" 
+                v-if="currentText.source_text?.id" 
                 :to="{ name: 'reading-detail', params: { id: currentText.source_text.id }}"
                 class="source-link"
                 @click.stop
@@ -697,10 +679,10 @@ onBeforeUnmount(() => {
           </div>
         </div>
 
-        <!-- 級聯選擇器 -->
+        <!-- 年級選擇器 -->
         <div v-else class="picker-cascade">
           <div class="cascade-row">
-            <div class="cascade-select">
+            <div class="cascade-select full-width">
               <label>年級</label>
               <select v-model="selectedGradeId">
                 <option :value="null" disabled>選擇年級</option>
@@ -709,27 +691,18 @@ onBeforeUnmount(() => {
                 </option>
               </select>
             </div>
-            <div class="cascade-select">
-              <label>單元</label>
-              <select v-model="selectedModuleId" :disabled="!selectedGradeId">
-                <option :value="null" disabled>{{ selectedGradeId ? '選擇單元' : '請先選年級' }}</option>
-                <option v-for="module in moduleOptions" :key="module.id" :value="module.id">
-                  {{ module.name }}
-                </option>
-              </select>
-            </div>
           </div>
 
           <!-- 文章列表 -->
           <div class="picker-list">
-            <div v-if="!selectedModuleId" class="picker-empty">
-              請選擇年級和單元以查看文章
+            <div v-if="!selectedGradeId" class="picker-empty">
+              請選擇年級以查看文章
             </div>
-            <div v-else-if="!textsInModule.length" class="picker-empty">
-              此單元尚無文章
+            <div v-else-if="!textsInGrade.length" class="picker-empty">
+              此年級尚無文章
             </div>
             <div
-              v-for="text in textsInModule"
+              v-for="text in textsInGrade"
               :key="text.id"
               class="picker-item"
               :class="{ active: currentText?.id === text.id }"
@@ -1074,6 +1047,10 @@ onBeforeUnmount(() => {
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
+}
+
+.cascade-select.full-width {
+  flex: 1;
 }
 
 .cascade-select label {

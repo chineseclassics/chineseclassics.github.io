@@ -1,5 +1,16 @@
 // 文章類型
-export type TextType = 'practice' | 'reading' | 'both'
+export type TextType = 'practice' | 'reading'
+
+// 閱讀文庫分類（文集）
+export interface ReadingCategory {
+  id: string
+  name: string
+  description?: string | null
+  order_index: number
+  created_by?: string | null
+  created_at?: string
+  updated_at?: string
+}
 
 export interface PracticeText {
   id: string
@@ -23,6 +34,9 @@ export interface PracticeText {
   updated_at?: string
   // 閱讀模式相關欄位
   text_type?: TextType
+  reading_category_id?: string | null  // 閱讀文庫分類 ID（舊，單一）
+  reading_category?: ReadingCategory | null  // 閱讀文庫分類（舊，單一）
+  reading_categories?: ReadingCategory[]  // 閱讀文庫分類（新，多個文集）
   source_text_id?: string | null  // 來源文章 ID（如果是提取的片段）
   source_start_index?: number | null
   source_end_index?: number | null
@@ -99,6 +113,7 @@ export interface ReadingText extends PracticeText {
 // 文章輸入（擴展支持閱讀模式）
 export interface ReadingTextInput extends TextInput {
   text_type?: TextType
+  reading_category_id?: string | null  // 閱讀文庫分類
   source_text_id?: string | null
   source_start_index?: number | null
   source_end_index?: number | null

@@ -19,17 +19,20 @@ const pageSubtitle = computed(() => isAdminMode.value ? '管理系統內建的�
 
 // 當前選中的分類
 const selectedCategoryId = ref<string | null>(null)
-const expandedGrades = ref<Set<string>>(new Set())
 
 // Modal 狀態
 const isTextFormOpen = ref(false)
-const isCategoryFormOpen = ref(false)
 const isConfirmOpen = ref(false)
 const isSubmitting = ref(false)
 
 // 編輯目標
 const editingTextId = ref<string | null>(null)
-const editingCategory = ref<PracticeCategory | null>(null)
+
+// 內聯編輯分類狀態
+const editingCategoryId = ref<string | null>(null)
+const editingCategoryName = ref('')
+const isAddingCategory = ref(false)
+const newCategoryName = ref('')
 const confirmTarget = ref<{ type: 'text' | 'category'; item: PracticeText | PracticeCategory } | null>(null)
 
 // 反饋訊息
@@ -42,14 +45,6 @@ const textForm = reactive({
   source: '',
   summary: '',
   content: '',
-})
-
-// 分類表單
-const categoryForm = reactive({
-  name: '',
-  description: '',
-  parentId: null as string | null,
-  type: 'grade' as 'grade' | 'module',
 })
 
 // 計算屬性 - 根據頁面模式過濾分類
@@ -127,24 +122,6 @@ const previewContent = computed(() => {
     .replace(/\n/g, '<br />')
 })
 
-// 輔助函數 - 獲取年級下的單元（根據頁面模式過濾）
-function getModulesForGrade(gradeId: string) {
-  return libraryStore.state.categories
-    .filter((c) => {
-      // 必須是二級分類且屬於該年級
-      if (c.level !== 2 || c.parent_id !== gradeId) return false
-      
-      if (isAdminMode.value) {
-        // 系統文庫模式：只顯示系統分類
-        return c.is_system === true
-      } else {
-        // 自訂練習模式：只顯示自己創建的私有分類
-        return c.is_system === false && c.created_by === authStore.user?.id
-      }
-    })
-    .sort((a, b) => a.order_index - b.order_index)
-}
-
 function getTextCountForCategory(categoryId: string) {
   // 根據頁面模式過濾統計
   if (isAdminMode.value) {
@@ -162,21 +139,8 @@ function getTextCountForCategory(categoryId: string) {
   }
 }
 
-function toggleGradeExpand(gradeId: string) {
-  if (expandedGrades.value.has(gradeId)) {
-    expandedGrades.value.delete(gradeId)
-  } else {
-    expandedGrades.value.add(gradeId)
-  }
-}
-
 function selectCategory(categoryId: string) {
   selectedCategoryId.value = categoryId
-  // 自動展開父級
-  const category = libraryStore.state.categories.find((c) => c.id === categoryId)
-  if (category?.parent_id) {
-    expandedGrades.value.add(category.parent_id)
-  }
 }
 
 // 文章操作
@@ -244,55 +208,60 @@ async function handleTextSubmit() {
   }
 }
 
-// 分類操作
-function openCreateCategory(parentId: string | null, type: 'grade' | 'module') {
-  editingCategory.value = null
-  categoryForm.name = ''
-  categoryForm.description = ''
-  categoryForm.parentId = parentId
-  categoryForm.type = type
-  feedback.value = null
-  isCategoryFormOpen.value = true
+// 分類操作 - 內聯編輯
+function startEditCategory(category: PracticeCategory) {
+  editingCategoryId.value = category.id
+  editingCategoryName.value = category.name
 }
 
-function openEditCategory(category: PracticeCategory) {
-  editingCategory.value = category
-  categoryForm.name = category.name
-  categoryForm.description = category.description ?? ''
-  categoryForm.parentId = category.parent_id
-  categoryForm.type = category.level === 1 ? 'grade' : 'module'
-  feedback.value = null
-  isCategoryFormOpen.value = true
+function cancelEditCategory() {
+  editingCategoryId.value = null
+  editingCategoryName.value = ''
 }
 
-async function handleCategorySubmit() {
-  if (!categoryForm.name.trim()) {
-    feedback.value = '名稱不可為空'
+async function submitEditCategory() {
+  if (!editingCategoryId.value || !editingCategoryName.value.trim()) {
+    cancelEditCategory()
     return
   }
-
+  
   try {
-    isSubmitting.value = true
-    if (editingCategory.value) {
-      await libraryStore.updateCategory(editingCategory.value.id, {
-        name: categoryForm.name.trim(),
-        description: categoryForm.description.trim() || undefined,
-      })
-    } else {
-      // 根據頁面模式決定創建系統分類還是私有分類
-      await libraryStore.addCategory({
-        name: categoryForm.name.trim(),
-        parent_id: categoryForm.parentId,
-        type: categoryForm.type,
-        description: categoryForm.description.trim() || undefined,
-        is_system: isAdminMode.value, // 系統文庫模式創建系統分類，自訂練習模式創建私有分類
-      }, authStore.user?.id)
-    }
-    isCategoryFormOpen.value = false
+    await libraryStore.updateCategory(editingCategoryId.value, {
+      name: editingCategoryName.value.trim(),
+    })
+    cancelEditCategory()
   } catch (error: any) {
-    feedback.value = error?.message ?? '儲存失敗'
-  } finally {
-    isSubmitting.value = false
+    alert(error?.message ?? '更新失敗')
+  }
+}
+
+// 新增分類
+function startAddCategory() {
+  isAddingCategory.value = true
+  newCategoryName.value = ''
+}
+
+function cancelAddCategory() {
+  isAddingCategory.value = false
+  newCategoryName.value = ''
+}
+
+async function submitAddCategory() {
+  if (!newCategoryName.value.trim()) {
+    cancelAddCategory()
+    return
+  }
+  
+  try {
+    await libraryStore.addCategory({
+      name: newCategoryName.value.trim(),
+      parent_id: null,
+      type: 'grade',
+      is_system: isAdminMode.value,
+    }, authStore.user?.id)
+    cancelAddCategory()
+  } catch (error: any) {
+    alert(error?.message ?? '新增失敗')
   }
 }
 
@@ -345,15 +314,11 @@ onMounted(async () => {
   if (!textsStore.texts.length) {
     await textsStore.fetchTexts()
   }
-  // 預設展開第一個年級並選中第一個單元
-  if (gradeOptions.value.length > 0) {
+  // 預設選中第一個年級
+  if (gradeOptions.value.length > 0 && !selectedCategoryId.value) {
     const firstGrade = gradeOptions.value[0]
     if (firstGrade) {
-      expandedGrades.value.add(firstGrade.id)
-      const firstModule = getModulesForGrade(firstGrade.id)[0]
-      if (firstModule) {
-        selectedCategoryId.value = firstModule.id
-      }
+      selectedCategoryId.value = firstGrade.id
     }
   }
 })
@@ -381,7 +346,7 @@ onMounted(async () => {
         <button
           class="edamame-btn edamame-btn-primary"
           @click="openCreateText"
-          :disabled="!selectedCategory || selectedCategory.level !== 2"
+          :disabled="!selectedCategory"
         >
           新增練習
         </button>
@@ -393,7 +358,7 @@ onMounted(async () => {
       <aside class="category-sidebar edamame-glass">
         <div class="sidebar-header">
           <span class="sidebar-title">分類導航</span>
-          <button class="icon-btn" @click="openCreateCategory(null, 'grade')" title="新增年級">
+          <button class="icon-btn" @click="startAddCategory" title="新增年級">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M12 5v14M5 12h14" />
             </svg>
@@ -401,56 +366,56 @@ onMounted(async () => {
         </div>
 
         <div v-if="libraryStore.isLoading" class="sidebar-loading">載入中⋯</div>
-        <div v-else-if="!gradeOptions.length" class="sidebar-empty">
+        <div v-else-if="!gradeOptions.length && !isAddingCategory" class="sidebar-empty">
           尚無分類
-          <button class="link-btn" @click="openCreateCategory(null, 'grade')">建立第一個年級</button>
+          <button class="link-btn" @click="startAddCategory">建立第一個年級</button>
         </div>
 
         <nav v-else class="category-tree">
           <div v-for="grade in gradeOptions" :key="grade.id" class="tree-node">
+            <!-- 編輯模式 -->
+            <div v-if="editingCategoryId === grade.id" class="tree-item editing">
+              <input
+                v-model="editingCategoryName"
+                type="text"
+                class="edit-input"
+                @keyup.enter="submitEditCategory"
+                @keyup.escape="cancelEditCategory"
+              />
+              <div class="edit-actions">
+                <button class="action-btn" @click="submitEditCategory" title="確認">✓</button>
+                <button class="action-btn" @click="cancelEditCategory" title="取消">×</button>
+              </div>
+            </div>
+            <!-- 顯示模式 -->
             <div
+              v-else
               class="tree-item grade-item"
               :class="{ selected: selectedCategoryId === grade.id }"
               @click="selectCategory(grade.id)"
             >
-              <button class="expand-btn" @click.stop="toggleGradeExpand(grade.id)">
-                <svg
-                  width="12"
-                  height="12"
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                  :class="{ expanded: expandedGrades.has(grade.id) }"
-                >
-                  <path d="M8 5l8 7-8 7V5z" />
-                </svg>
-              </button>
               <span class="tree-label">{{ grade.name }}</span>
-              <span class="tree-count">{{ getModulesForGrade(grade.id).length }}</span>
+              <span class="tree-count">{{ getTextCountForCategory(grade.id) }}</span>
               <div class="tree-actions">
-                <button class="action-btn" @click.stop="openCreateCategory(grade.id, 'module')" title="新增單元">+</button>
-                <button class="action-btn" @click.stop="openEditCategory(grade)" title="編輯">✎</button>
+                <button class="action-btn" @click.stop="startEditCategory(grade)" title="編輯">✎</button>
                 <button class="action-btn danger" @click.stop="openDeleteConfirm('category', grade)" title="刪除">×</button>
               </div>
             </div>
+          </div>
 
-            <div v-if="expandedGrades.has(grade.id)" class="tree-children">
-              <div
-                v-for="module in getModulesForGrade(grade.id)"
-                :key="module.id"
-                class="tree-item module-item"
-                :class="{ selected: selectedCategoryId === module.id }"
-                @click="selectCategory(module.id)"
-              >
-                <span class="tree-label">{{ module.name }}</span>
-                <span class="tree-count">{{ getTextCountForCategory(module.id) }}</span>
-                <div class="tree-actions">
-                  <button class="action-btn" @click.stop="openEditCategory(module)" title="編輯">✎</button>
-                  <button class="action-btn danger" @click.stop="openDeleteConfirm('category', module)" title="刪除">×</button>
-                </div>
-              </div>
-              <button class="add-module-btn" @click="openCreateCategory(grade.id, 'module')">
-                + 新增單元
-              </button>
+          <!-- 新增分類內嵌表單 -->
+          <div v-if="isAddingCategory" class="add-category-inline">
+            <input
+              v-model="newCategoryName"
+              type="text"
+              placeholder="輸入年級名稱..."
+              class="category-input"
+              @keyup.enter="submitAddCategory"
+              @keyup.escape="cancelAddCategory"
+            />
+            <div class="add-category-actions">
+              <button class="action-btn" @click="submitAddCategory" title="確認">✓</button>
+              <button class="action-btn" @click="cancelAddCategory" title="取消">×</button>
             </div>
           </div>
         </nav>
@@ -482,33 +447,14 @@ onMounted(async () => {
             <h2>{{ selectedCategory.name }}</h2>
             <p v-if="selectedCategory.description" class="category-desc">{{ selectedCategory.description }}</p>
             <p class="category-meta">
-              {{ selectedCategory.level === 1 ? '年級' : '單元' }} · 
-              {{ selectedCategory.level === 1 ? `${getModulesForGrade(selectedCategory.id).length} 個單元` : `${textsInCategory.length} 篇文章` }}
+              {{ textsInCategory.length }} 篇文章
             </p>
           </div>
 
-          <!-- 年級視圖：顯示單元列表 -->
-          <div v-if="selectedCategory.level === 1" class="module-grid">
-            <div
-              v-for="module in getModulesForGrade(selectedCategory.id)"
-              :key="module.id"
-              class="module-card"
-              @click="selectCategory(module.id)"
-            >
-              <h3>{{ module.name }}</h3>
-              <p class="module-desc">{{ module.description || '暫無描述' }}</p>
-              <p class="module-count">{{ getTextCountForCategory(module.id) }} 篇文章</p>
-            </div>
-            <button class="module-card add-card" @click="openCreateCategory(selectedCategory.id, 'module')">
-              <span class="add-icon">+</span>
-              <span>新增單元</span>
-            </button>
-          </div>
-
-          <!-- 單元視圖：顯示文章列表 -->
-          <div v-else class="text-list">
+          <!-- 文章列表 -->
+          <div class="text-list">
             <div v-if="!textsInCategory.length" class="text-empty">
-              <p>此單元尚無文章</p>
+              <p>此年級尚無文章</p>
               <button class="edamame-btn edamame-btn-primary" @click="openCreateText">新增第一篇文章</button>
             </div>
 
@@ -602,36 +548,6 @@ onMounted(async () => {
   </Teleport>
 
     <!-- 分類表單 Modal -->
-    <Teleport to="body">
-      <transition name="fade">
-        <div v-if="isCategoryFormOpen" class="modal-backdrop" @click.self="isCategoryFormOpen = false">
-          <div class="modal-card edamame-glass small-modal">
-          <header>
-            <h3>{{ editingCategory ? '編輯分類' : categoryForm.type === 'grade' ? '新增年級' : '新增單元' }}</h3>
-            <button class="close-btn" @click="isCategoryFormOpen = false">×</button>
-          </header>
-          <div class="modal-body">
-            <label>
-              <span>名稱</span>
-              <input v-model="categoryForm.name" type="text" :placeholder="categoryForm.type === 'grade' ? '例如：七年級' : '例如：論語讀本'" />
-            </label>
-            <label>
-              <span>描述（選填）</span>
-              <textarea v-model="categoryForm.description" rows="2" placeholder="簡述此分類的內容範圍"></textarea>
-            </label>
-            <p v-if="feedback" class="feedback">{{ feedback }}</p>
-          </div>
-          <footer>
-            <button class="edamame-btn edamame-btn-secondary" @click="isCategoryFormOpen = false">取消</button>
-            <button class="edamame-btn edamame-btn-primary" :disabled="isSubmitting" @click="handleCategorySubmit">
-              {{ isSubmitting ? '儲存中...' : '儲存' }}
-            </button>
-          </footer>
-        </div>
-      </div>
-    </transition>
-  </Teleport>
-
     <!-- 刪除確認 Modal -->
     <Teleport to="body">
       <transition name="fade">
@@ -967,23 +883,6 @@ onMounted(async () => {
   color: var(--color-primary-800);
 }
 
-.expand-btn {
-  width: 20px;
-  height: 20px;
-  border: none;
-  background: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--color-neutral-400);
-  transition: transform var(--duration-base) ease;
-}
-
-.expand-btn svg.expanded {
-  transform: rotate(90deg);
-}
-
 .tree-label {
   flex: 1;
   font-size: var(--text-sm);
@@ -1037,34 +936,62 @@ onMounted(async () => {
   color: var(--color-error);
 }
 
-.tree-children {
-  padding-left: 1.25rem;
-  margin-left: 0.6rem;
-  border-left: 1px dashed var(--color-neutral-200);
-}
-
-.module-item {
-  padding-left: 0.5rem;
-}
-
-.add-module-btn {
-  display: block;
-  width: 100%;
-  padding: 0.4rem 0.5rem;
-  margin-top: 0.25rem;
-  border: 1px dashed var(--color-neutral-300);
+/* 內聯編輯模式 */
+.tree-item.editing {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.5rem;
+  background: rgba(255, 255, 255, 0.9);
   border-radius: var(--radius-md);
-  background: transparent;
-  color: var(--color-neutral-500);
-  font-size: var(--text-xs);
-  cursor: pointer;
-  transition: all var(--duration-base) ease;
 }
 
-.add-module-btn:hover {
+.edit-input {
+  flex: 1;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--color-primary-300);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  background: white;
+}
+
+.edit-input:focus {
+  outline: none;
+  border-color: var(--color-primary-500);
+  box-shadow: 0 0 0 2px rgba(139, 178, 79, 0.2);
+}
+
+.edit-actions {
+  display: flex;
+  gap: 0.25rem;
+}
+
+/* 新增分類內嵌表單 */
+.add-category-inline {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  margin-top: 0.5rem;
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: var(--radius-md);
+}
+
+.category-input {
+  flex: 1;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+}
+
+.category-input:focus {
+  outline: none;
   border-color: var(--color-primary-400);
-  color: var(--color-primary-600);
-  background: var(--color-primary-50);
+}
+
+.add-category-actions {
+  display: flex;
+  gap: 0.25rem;
 }
 
 /* 右側內容面板 */
@@ -1133,65 +1060,6 @@ onMounted(async () => {
   margin: 0.25rem 0 0;
   color: var(--color-neutral-400);
   font-size: var(--text-xs);
-}
-
-/* 單元網格 */
-.module-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 1rem;
-}
-
-.module-card {
-  padding: 1.25rem;
-  border-radius: var(--radius-lg);
-  background: rgba(255, 255, 255, 0.7);
-  border: 1px solid rgba(0, 0, 0, 0.06);
-  cursor: pointer;
-  transition: all var(--duration-base) ease;
-}
-
-.module-card:hover {
-  border-color: var(--color-primary-300);
-  box-shadow: var(--shadow-md);
-  transform: translateY(-2px);
-}
-
-.module-card h3 {
-  margin: 0;
-  font-size: var(--text-base);
-  font-weight: var(--font-semibold);
-}
-
-.module-desc {
-  margin: 0.5rem 0;
-  font-size: var(--text-sm);
-  color: var(--color-neutral-500);
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.module-count {
-  margin: 0;
-  font-size: var(--text-xs);
-  color: var(--color-neutral-400);
-}
-
-.add-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  border-style: dashed;
-  color: var(--color-neutral-400);
-}
-
-.add-card:hover {
-  color: var(--color-primary-600);
-  border-color: var(--color-primary-400);
 }
 
 .add-icon {

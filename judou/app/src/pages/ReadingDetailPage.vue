@@ -38,72 +38,59 @@ const activeTooltip = ref<{
 const isPlaying = ref(false)
 
 // 解析文章內容
+// 將原文按 || 分段，並記錄每個字符的全局位置和斷句信息
 const parsedContent = computed(() => {
-  if (!readingStore.currentText) return { chars: [], breaks: new Set<number>() }
+  if (!readingStore.currentText) return { paragraphs: [], allChars: [], allBreaks: new Set<number>() }
   
   const content = readingStore.currentText.content
-  const chars: string[] = []
-  const breaks = new Set<number>()
-  let pointer = 0
   
-  for (const char of content) {
-    if (char === '|') {
-      if (pointer > 0) {
-        breaks.add(pointer - 1)
-      }
-    } else if (char !== '\n' && char !== '\r') {
-      chars.push(char)
-      pointer++
-    }
-  }
+  // 先按段落分隔符 || 分割
+  const rawParagraphs = content.split('||')
   
-  return { chars, breaks }
-})
-
-// 將文章分段（以句號、問號、感嘆號為段落結尾）
-const paragraphs = computed(() => {
-  const { chars, breaks } = parsedContent.value
-  if (!chars.length) return []
+  const paragraphs: { chars: string[]; breaks: Set<number>; startIdx: number; endIdx: number }[] = []
+  const allChars: string[] = []
+  const allBreaks = new Set<number>()
+  let globalPointer = 0
   
-  const paragraphList: { startIdx: number; endIdx: number; chars: string[] }[] = []
-  let currentStart = 0
-  
-  // 簡單的分段邏輯：每 100 字左右或遇到大段落結束
-  const PARAGRAPH_SIZE = 80
-  
-  for (let i = 0; i < chars.length; i++) {
-    const isBreak = breaks.has(i)
-    const isMajorBreak = isBreak && (chars[i] === '。' || chars[i] === '？' || chars[i] === '！')
-    const isLongEnough = i - currentStart >= PARAGRAPH_SIZE
+  for (const rawPara of rawParagraphs) {
+    const paraChars: string[] = []
+    const paraBreaks = new Set<number>()
+    const paraStartIdx = globalPointer
     
-    // 在主要斷點且長度足夠時分段
-    if (isMajorBreak && isLongEnough) {
-      paragraphList.push({
-        startIdx: currentStart,
-        endIdx: i,
-        chars: chars.slice(currentStart, i + 1)
+    for (const char of rawPara) {
+      if (char === '|') {
+        // 記錄斷句位置（相對於前一個字符）
+        if (globalPointer > 0) {
+          allBreaks.add(globalPointer - 1)
+          paraBreaks.add(paraChars.length - 1)
+        }
+      } else if (char !== '\n' && char !== '\r') {
+        allChars.push(char)
+        paraChars.push(char)
+        globalPointer++
+      }
+    }
+    
+    if (paraChars.length > 0) {
+      paragraphs.push({
+        chars: paraChars,
+        breaks: paraBreaks,
+        startIdx: paraStartIdx,
+        endIdx: globalPointer - 1
       })
-      currentStart = i + 1
     }
   }
   
-  // 添加最後一段
-  if (currentStart < chars.length) {
-    paragraphList.push({
-      startIdx: currentStart,
-      endIdx: chars.length - 1,
-      chars: chars.slice(currentStart)
-    })
-  }
-  
-  return paragraphList
+  return { paragraphs, allChars, allBreaks }
 })
 
-// 當前段落索引
-const currentParagraphIdx = ref(0)
+// 文章段落（基於 || 分隔符）
+const paragraphs = computed(() => {
+  return parsedContent.value.paragraphs
+})
 
-// 當前段落
-const currentParagraph = computed(() => paragraphs.value[currentParagraphIdx.value] || null)
+// 當前閱讀進度（用於保存）
+const currentParagraphIdx = ref(0)
 
 // 獲取字符的註釋（如果有）
 function getAnnotationForChar(globalIdx: number): TextAnnotation | null {
@@ -113,21 +100,46 @@ function getAnnotationForChar(globalIdx: number): TextAnnotation | null {
   ) || null
 }
 
-// 檢查字符是否是註釋的起始位置
-function isAnnotationStart(globalIdx: number): boolean {
-  if (!readingStore.currentText?.annotations) return false
-  return readingStore.currentText.annotations.some(a => a.start_index === globalIdx)
+// 當前懸停的註釋 ID
+const hoveredAnnotationId = ref<string | null>(null)
+
+// 檢查字符是否屬於當前懸停的註釋
+function isCharInHoveredAnnotation(globalIdx: number): boolean {
+  if (!hoveredAnnotationId.value) return false
+  const ann = getAnnotationForChar(globalIdx)
+  return ann?.id === hoveredAnnotationId.value
 }
 
-// 切換用戶斷句
-function toggleUserBreak(localIdx: number) {
+// 檢查字符是否是註釋的第一個字
+function isAnnotationStart(globalIdx: number): boolean {
+  const ann = getAnnotationForChar(globalIdx)
+  return ann?.start_index === globalIdx
+}
+
+// 檢查字符是否是註釋的最後一個字
+function isAnnotationEnd(globalIdx: number): boolean {
+  const ann = getAnnotationForChar(globalIdx)
+  return ann ? (ann.end_index - 1 === globalIdx) : false
+}
+
+// 處理滑鼠進入字符
+function handleCharMouseEnter(globalIdx: number, event: MouseEvent) {
+  const ann = getAnnotationForChar(globalIdx)
+  if (ann) {
+    hoveredAnnotationId.value = ann.id
+    showTooltip(ann, event)
+  }
+}
+
+// 處理滑鼠離開字符
+function handleCharMouseLeave() {
+  hoveredAnnotationId.value = null
+  hideTooltip()
+}
+
+// 切換用戶斷句（使用全局索引）
+function toggleUserBreak(globalIdx: number) {
   if (showPunctuation.value) return // 顯示模式下不允許操作
-  
-  const paragraph = currentParagraph.value
-  if (!paragraph) return
-  
-  // 轉換為全局索引
-  const globalIdx = paragraph.startIdx + localIdx
   
   const newSet = new Set(userBreaks.value)
   if (newSet.has(globalIdx)) {
@@ -141,19 +153,17 @@ function toggleUserBreak(localIdx: number) {
   verificationResult.value = null
 }
 
-// 驗證當前段落的斷句
-function verifyParagraph() {
-  const paragraph = currentParagraph.value
-  if (!paragraph) return
-  
-  const { breaks: correctBreaks } = parsedContent.value
+// 驗證全文斷句
+function verifyAllBreaks() {
+  const { allBreaks: correctBreaks, allChars } = parsedContent.value
+  if (!allChars.length) return
   
   const correct: number[] = []
   const missed: number[] = []
   const extra: number[] = []
   
-  // 檢查當前段落範圍內的斷句
-  for (let i = paragraph.startIdx; i <= paragraph.endIdx; i++) {
+  // 檢查所有字符位置的斷句
+  for (let i = 0; i < allChars.length; i++) {
     const isCorrect = correctBreaks.has(i)
     const isUserMarked = userBreaks.value.has(i)
     
@@ -166,13 +176,8 @@ function verifyParagraph() {
     }
   }
   
-  const totalCorrectInParagraph = [...correctBreaks].filter(
-    b => b >= paragraph.startIdx && b <= paragraph.endIdx
-  ).length
-  
-  const accuracy = totalCorrectInParagraph > 0 
-    ? correct.length / totalCorrectInParagraph 
-    : 1
+  const totalCorrect = correctBreaks.size
+  const accuracy = totalCorrect > 0 ? correct.length / totalCorrect : 1
   
   verificationResult.value = { correct, missed, extra, accuracy }
 }
@@ -183,29 +188,10 @@ function showAnswer() {
   verificationResult.value = null
 }
 
-// 重置當前段落的斷句
-function resetParagraph() {
-  const paragraph = currentParagraph.value
-  if (!paragraph) return
-  
-  // 移除當前段落範圍內的用戶斷句
-  const newSet = new Set(userBreaks.value)
-  for (let i = paragraph.startIdx; i <= paragraph.endIdx; i++) {
-    newSet.delete(i)
-  }
-  userBreaks.value = newSet
+// 重置所有用戶斷句
+function resetAllBreaks() {
+  userBreaks.value = new Set()
   verificationResult.value = null
-}
-
-// 切換段落
-function goToParagraph(idx: number) {
-  if (idx < 0 || idx >= paragraphs.value.length) return
-  currentParagraphIdx.value = idx
-  verificationResult.value = null
-  
-  // 更新閱讀進度
-  const progress = ((idx + 1) / paragraphs.value.length) * 100
-  readingStore.updateProgress(textId.value, progress, idx)
 }
 
 // 顯示註釋 tooltip
@@ -222,28 +208,80 @@ function hideTooltip() {
   activeTooltip.value = null
 }
 
-// 朗讀當前段落
-async function readCurrentParagraph() {
-  if (!currentParagraph.value || isPlaying.value) return
+// 生成帶停頓標記的朗讀文本
+function getTextWithPauses(): string {
+  const { allChars, allBreaks, paragraphs } = parsedContent.value
+  if (!allChars.length) return ''
+  
+  // 收集每個段落的結尾位置
+  const paragraphEnds = new Set(paragraphs.map(p => p.endIdx))
+  
+  let result = ''
+  let lastBreakPos = -1
+  
+  for (let i = 0; i < allChars.length; i++) {
+    result += allChars[i]
+    
+    const isBreak = allBreaks.has(i)
+    const isParagraphEnd = paragraphEnds.has(i)
+    
+    // 段落結尾必須添加停頓（即使沒有斷句標記）
+    if (isParagraphEnd) {
+      result += '。'
+      lastBreakPos = i
+    } else if (isBreak) {
+      const sentenceLength = i - lastBreakPos
+      lastBreakPos = i
+      
+      // 根據句子長度選擇標點
+      if (sentenceLength >= 8) {
+        result += '。'
+      } else if (sentenceLength >= 4) {
+        result += '，'
+      } else {
+        result += '、'
+      }
+    }
+  }
+  
+  return result
+}
+
+// 停止朗讀
+function stopReading() {
+  if (typeof window !== 'undefined' && (window as any).taixuStopSpeak) {
+    (window as any).taixuStopSpeak()
+  }
+  isPlaying.value = false
+}
+
+// 朗讀全文 / 停止朗讀
+async function toggleReadFullText() {
+  if (!parsedContent.value.allChars.length) return
+  
+  // 如果正在播放，則停止
+  if (isPlaying.value) {
+    stopReading()
+    return
+  }
+  
+  // 檢查 Azure TTS 是否可用
+  if (typeof window === 'undefined' || !(window as any).taixuSpeak) {
+    alert('語音朗讀功能暫時不可用，請稍後再試')
+    return
+  }
   
   isPlaying.value = true
-  const text = currentParagraph.value.chars.join('')
+  const text = getTextWithPauses()
   
   try {
-    // 使用太虛幻境 TTS
-    if (typeof window !== 'undefined' && (window as any).taixuSpeak) {
-      await (window as any).taixuSpeak(text, { voice: 'zh-CN-XiaoxiaoNeural' })
-    } else {
-      // 回退到瀏覽器語音
-      const utterance = new SpeechSynthesisUtterance(text)
-      utterance.lang = 'zh-CN'
-      utterance.rate = 0.8
-      utterance.onend = () => { isPlaying.value = false }
-      speechSynthesis.speak(utterance)
-      return
-    }
+    await (window as any).taixuSpeak(text, { 
+      voice: 'zh-CN-XiaoxiaoNeural',
+      rate: 0.7  // Azure TTS 語速 (-30%)，適合古文朗讀
+    })
   } catch (e) {
     console.error('TTS 播放失敗:', e)
+    alert('語音朗讀失敗，請稍後再試')
   } finally {
     isPlaying.value = false
   }
@@ -266,7 +304,7 @@ function goBack() {
 // 獲取斷句狀態類
 function getBreakClass(globalIdx: number) {
   const classes: string[] = []
-  const { breaks: correctBreaks } = parsedContent.value
+  const { allBreaks: correctBreaks } = parsedContent.value
   
   if (showPunctuation.value) {
     // 顯示模式：顯示正確斷句
@@ -307,7 +345,7 @@ onMounted(async () => {
 
 // 清理
 onUnmounted(() => {
-  speechSynthesis.cancel()
+  stopReading()
 })
 
 // 監聽顯示模式切換
@@ -329,9 +367,17 @@ watch(showPunctuation, (newVal) => {
       
       <div class="header-title">
         <h1>{{ readingStore.currentText?.title || '載入中...' }}</h1>
-        <span v-if="readingStore.currentText?.author" class="author">
-          {{ readingStore.currentText.author }}
-        </span>
+        <div class="title-meta">
+          <span v-if="readingStore.currentText?.author" class="author">
+            {{ readingStore.currentText.author }}
+          </span>
+          <span 
+            v-if="readingStore.currentText?.source_text?.title" 
+            class="source-tag"
+          >
+            · 選自《{{ readingStore.currentText.source_text.title }}》
+          </span>
+        </div>
       </div>
       
       <div class="header-actions">
@@ -348,76 +394,68 @@ watch(showPunctuation, (newVal) => {
     
     <!-- 控制列 -->
     <section class="control-bar edamame-glass">
-      <div class="mode-toggle">
-        <button 
-          class="mode-btn"
-          :class="{ active: showPunctuation }"
-          @click="showPunctuation = true"
-        >
-          🔘 顯示斷句
-        </button>
-        <button 
-          class="mode-btn"
-          :class="{ active: !showPunctuation }"
-          @click="showPunctuation = false"
-        >
-          ○ 隱藏斷句
-        </button>
-      </div>
+      <button 
+        class="punctuation-toggle" 
+        @click="showPunctuation = !showPunctuation"
+        :aria-pressed="showPunctuation"
+        type="button"
+      >
+        <span class="toggle-label">顯示斷句</span>
+        <span class="toggle-switch">
+          <span class="toggle-track" :class="{ active: showPunctuation }">
+            <span class="toggle-thumb"></span>
+          </span>
+        </span>
+      </button>
       
       <button 
         class="tts-btn"
-        :disabled="isPlaying"
-        @click="readCurrentParagraph"
+        :class="{ playing: isPlaying }"
+        @click="toggleReadFullText"
       >
-        🔊 {{ isPlaying ? '播放中...' : '朗讀' }}
+        {{ isPlaying ? '⏹ 停止朗讀' : '🔊 朗讀全文' }}
       </button>
     </section>
     
     <!-- 閱讀區域 -->
-    <section class="reading-content edamame-glass" v-if="readingStore.currentText && currentParagraph">
-      <div class="content-hint" v-if="!showPunctuation">
-        點擊字間空隙添加斷句，完成後點擊「驗證」
-      </div>
-      
-      <div class="reading-line">
-        <span
-          v-for="(char, localIdx) in currentParagraph.chars"
-          :key="localIdx"
-          class="char-unit"
-        >
-          <!-- 字符 -->
-          <span 
-            class="char"
-            :class="{ 
-              'has-annotation': isAnnotationStart(currentParagraph.startIdx + localIdx),
-              'annotation-range': getAnnotationForChar(currentParagraph.startIdx + localIdx)
-            }"
-            @mouseenter="(e) => {
-              const ann = getAnnotationForChar(currentParagraph.startIdx + localIdx)
-              if (ann && isAnnotationStart(currentParagraph.startIdx + localIdx)) showTooltip(ann, e)
-            }"
-            @mouseleave="hideTooltip"
-            @click="(e) => {
-              const ann = getAnnotationForChar(currentParagraph.startIdx + localIdx)
-              if (ann) {
-                e.stopPropagation()
-                showTooltip(ann, e)
-              }
-            }"
-          >{{ char }}</span>
-          
-          <!-- 斷句位置（最後一個字後面不需要） -->
-          <button
-            v-if="localIdx < currentParagraph.chars.length - 1"
-            class="break-slot"
-            :class="getBreakClass(currentParagraph.startIdx + localIdx)"
-            @click="toggleUserBreak(localIdx)"
-            :disabled="showPunctuation"
+    <section class="reading-content edamame-glass" v-if="readingStore.currentText && paragraphs.length > 0">
+      <!-- 全文顯示，每個段落一個區塊 -->
+      <div 
+        v-for="(paragraph, paraIdx) in paragraphs" 
+        :key="paraIdx"
+        class="paragraph-block"
+      >
+        <div class="reading-line">
+          <span
+            v-for="(char, localIdx) in paragraph.chars"
+            :key="localIdx"
+            class="char-unit"
           >
-            <span class="break-marker"></span>
-          </button>
-        </span>
+            <!-- 字符 -->
+            <span 
+              class="char"
+              :class="{ 
+                'has-annotation': getAnnotationForChar(paragraph.startIdx + localIdx),
+                'annotation-hovered': isCharInHoveredAnnotation(paragraph.startIdx + localIdx),
+                'annotation-start': isAnnotationStart(paragraph.startIdx + localIdx),
+                'annotation-end': isAnnotationEnd(paragraph.startIdx + localIdx)
+              }"
+              @mouseenter="(e) => handleCharMouseEnter(paragraph.startIdx + localIdx, e)"
+              @mouseleave="handleCharMouseLeave"
+            >{{ char }}</span>
+            
+            <!-- 斷句位置（最後一個字後面不需要） -->
+            <button
+              v-if="localIdx < paragraph.chars.length - 1"
+              class="break-slot"
+              :class="getBreakClass(paragraph.startIdx + localIdx)"
+              @click="toggleUserBreak(paragraph.startIdx + localIdx)"
+              :disabled="showPunctuation"
+            >
+              <span class="break-marker"></span>
+            </button>
+          </span>
+        </div>
       </div>
       
       <!-- 驗證結果 -->
@@ -438,12 +476,12 @@ watch(showPunctuation, (newVal) => {
       <!-- 操作按鈕 -->
       <div class="content-actions">
         <template v-if="!showPunctuation">
-          <button class="edamame-btn edamame-btn-secondary" @click="resetParagraph">
+          <button class="edamame-btn edamame-btn-secondary" @click="resetAllBreaks">
             重置
           </button>
           <button 
             class="edamame-btn edamame-btn-primary" 
-            @click="verifyParagraph"
+            @click="verifyAllBreaks"
             :disabled="userBreaks.size === 0"
           >
             ✓ 驗證我的斷句
@@ -458,41 +496,6 @@ watch(showPunctuation, (newVal) => {
       載入中...
     </section>
     
-    <!-- 段落導航 -->
-    <section class="paragraph-nav edamame-glass" v-if="paragraphs.length > 1">
-      <button 
-        class="nav-btn prev"
-        :disabled="currentParagraphIdx === 0"
-        @click="goToParagraph(currentParagraphIdx - 1)"
-      >
-        ← 上一段
-      </button>
-      
-      <span class="nav-info">
-        段落 {{ currentParagraphIdx + 1 }} / {{ paragraphs.length }}
-      </span>
-      
-      <button 
-        class="nav-btn next"
-        :disabled="currentParagraphIdx === paragraphs.length - 1"
-        @click="goToParagraph(currentParagraphIdx + 1)"
-      >
-        下一段 →
-      </button>
-    </section>
-    
-    <!-- 來源關聯 -->
-    <section 
-      v-if="readingStore.currentText?.source_text" 
-      class="source-link edamame-glass"
-    >
-      來自《{{ readingStore.currentText.source_text.title }}》
-      <router-link 
-        :to="{ name: 'reading-detail', params: { id: readingStore.currentText.source_text.id }}"
-      >
-        閱讀全文 →
-      </router-link>
-    </section>
     
     <!-- 註釋 Tooltip -->
     <Teleport to="body">
@@ -501,13 +504,10 @@ watch(showPunctuation, (newVal) => {
         class="annotation-tooltip"
         :style="{ 
           left: activeTooltip.x + 'px', 
-          top: (activeTooltip.y + 20) + 'px' 
+          top: (activeTooltip.y + 16) + 'px' 
         }"
-        @click.stop
       >
-        <div class="tooltip-term">{{ activeTooltip.annotation.term }}</div>
-        <div class="tooltip-content">{{ activeTooltip.annotation.annotation }}</div>
-        <button class="tooltip-close" @click="hideTooltip">×</button>
+        {{ activeTooltip.annotation.annotation }}
       </div>
     </Teleport>
   </div>
@@ -556,9 +556,22 @@ watch(showPunctuation, (newVal) => {
   color: var(--color-neutral-800);
 }
 
+.title-meta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+}
+
 .header-title .author {
   font-size: var(--text-sm);
   color: var(--color-neutral-500);
+}
+
+.header-title .source-tag {
+  font-size: var(--text-xs);
+  color: var(--color-neutral-400);
 }
 
 .header-actions {
@@ -593,28 +606,64 @@ watch(showPunctuation, (newVal) => {
   padding: 0.75rem 1rem;
 }
 
-.mode-toggle {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.mode-btn {
-  padding: 0.5rem 1rem;
-  border: none;
-  background: rgba(0, 0, 0, 0.04);
-  border-radius: var(--radius-lg);
-  font-size: var(--text-sm);
+/* 斷句開關 */
+.punctuation-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
   cursor: pointer;
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(139, 178, 79, 0.2);
+  padding: 0.375rem 0.75rem;
+  border-radius: 20px;
   transition: all 0.2s ease;
+  font-family: inherit;
 }
 
-.mode-btn:hover {
-  background: rgba(0, 0, 0, 0.08);
+.punctuation-toggle:hover {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(139, 178, 79, 0.3);
 }
 
-.mode-btn.active {
-  background: var(--color-primary-500);
-  color: white;
+.toggle-label {
+  font-size: var(--text-sm);
+  color: var(--color-neutral-600);
+  font-weight: var(--font-medium);
+}
+
+.toggle-switch {
+  display: inline-flex;
+  align-items: center;
+}
+
+.toggle-track {
+  width: 36px;
+  height: 20px;
+  background: rgba(0, 0, 0, 0.12);
+  border-radius: 10px;
+  position: relative;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.toggle-track.active {
+  background: linear-gradient(135deg, var(--color-primary-400) 0%, var(--color-primary-500) 100%);
+  box-shadow: 0 2px 6px rgba(139, 178, 79, 0.35);
+}
+
+.toggle-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  background: white;
+  border-radius: 50%;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+.toggle-track.active .toggle-thumb {
+  transform: translateX(16px);
 }
 
 .tts-btn {
@@ -627,13 +676,17 @@ watch(showPunctuation, (newVal) => {
   transition: all 0.2s ease;
 }
 
-.tts-btn:hover:not(:disabled) {
+.tts-btn:hover {
   background: rgba(0, 0, 0, 0.08);
 }
 
-.tts-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
+.tts-btn.playing {
+  background: var(--color-primary-100);
+  color: var(--color-primary-700);
+}
+
+.tts-btn.playing:hover {
+  background: var(--color-primary-200);
 }
 
 /* 閱讀區域 */
@@ -641,66 +694,102 @@ watch(showPunctuation, (newVal) => {
   padding: 1.5rem;
 }
 
-.content-hint {
-  text-align: center;
-  font-size: var(--text-sm);
-  color: var(--color-neutral-500);
-  margin-bottom: 1rem;
-  padding: 0.5rem;
-  background: rgba(139, 178, 79, 0.1);
-  border-radius: var(--radius-md);
+/* 段落區塊 */
+.paragraph-block {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px dashed rgba(139, 178, 79, 0.2);
+}
+
+.paragraph-block:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
 }
 
 .reading-line {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  line-height: 2.4;
-  padding: 1rem;
-  background: rgba(255, 255, 255, 0.8);
-  border-radius: var(--radius-lg);
-  border: 1px solid rgba(0, 0, 0, 0.06);
+  line-height: 2.2;
+  padding: 0.5rem 0;
+  padding-left: 2em; /* 首行縮進 */
 }
 
 .char-unit {
   display: inline-flex;
   align-items: center;
-  white-space: nowrap;
+  vertical-align: baseline;
 }
 
 .char {
-  font-size: var(--text-2xl);
+  font-size: var(--text-xl);
   font-family: var(--font-main, 'Noto Serif TC', serif);
   color: var(--color-neutral-800);
   transition: all 0.2s ease;
+  letter-spacing: 0.12em;
 }
 
 /* 帶註釋的字符 */
 .char.has-annotation {
-  border-bottom: 2px dotted var(--color-primary-400);
-  cursor: help;
-}
-
-.char.annotation-range {
   color: var(--color-primary-700);
+  cursor: help;
+  transition: all 0.15s ease;
+  position: relative;
 }
 
-.char.has-annotation:hover {
+/* 使用偽元素創建連續底線 */
+.char.has-annotation::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: -0.12em; /* 延伸到字間距區域 */
+  height: 1.5px;
+  background: repeating-linear-gradient(
+    to right,
+    var(--color-primary-400) 0,
+    var(--color-primary-400) 3px,
+    transparent 3px,
+    transparent 5px
+  );
+}
+
+/* 最後一個字的底線不延伸 */
+.char.has-annotation.annotation-end::after {
+  right: 0;
+}
+
+/* 整個詞組懸停時高亮 */
+.char.has-annotation.annotation-hovered {
+  color: var(--color-primary-800);
   background: rgba(139, 178, 79, 0.15);
+}
+
+/* 詞組首尾字的圓角 */
+.char.has-annotation.annotation-hovered.annotation-start {
+  border-radius: 3px 0 0 3px;
+}
+
+.char.has-annotation.annotation-hovered.annotation-end {
+  border-radius: 0 3px 3px 0;
+}
+
+/* 單字註釋的圓角 */
+.char.has-annotation.annotation-hovered.annotation-start.annotation-end {
+  border-radius: 3px;
 }
 
 /* 斷句位置 */
 .break-slot {
-  width: 20px;
-  height: 40px;
+  width: 10px;
+  height: 1em;
   border: none;
   background: transparent;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  vertical-align: middle;
   padding: 0;
-  margin: 0 -2px;
+  margin: 0 1px;
   position: relative;
 }
 
@@ -709,8 +798,8 @@ watch(showPunctuation, (newVal) => {
 }
 
 .break-marker {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   background: transparent;
   transition: all 0.2s ease;
@@ -832,106 +921,33 @@ watch(showPunctuation, (newVal) => {
   to { transform: rotate(360deg); }
 }
 
-/* 段落導航 */
-.paragraph-nav {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.75rem 1rem;
-}
 
-.nav-btn {
-  padding: 0.5rem 1rem;
-  border: none;
-  background: rgba(0, 0, 0, 0.04);
-  border-radius: var(--radius-md);
-  font-size: var(--text-sm);
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.nav-btn:hover:not(:disabled) {
-  background: rgba(0, 0, 0, 0.08);
-}
-
-.nav-btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.nav-info {
-  font-size: var(--text-sm);
-  color: var(--color-neutral-600);
-}
-
-/* 來源關聯 */
-.source-link {
-  padding: 0.75rem 1rem;
-  font-size: var(--text-sm);
-  color: var(--color-neutral-600);
-  text-align: center;
-}
-
-.source-link a {
-  color: var(--color-primary-600);
-  text-decoration: none;
-  margin-left: 0.5rem;
-}
-
-.source-link a:hover {
-  text-decoration: underline;
-}
 
 /* 註釋 Tooltip */
 .annotation-tooltip {
   position: fixed;
   z-index: 1000;
-  background: white;
-  border-radius: var(--radius-lg);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-  padding: 0.75rem 1rem;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(139, 178, 79, 0.25);
+  border-radius: 4px;
+  box-shadow: 0 3px 12px rgba(85, 139, 47, 0.15), 0 1px 4px rgba(0, 0, 0, 0.05);
+  padding: 0.375rem 0.625rem;
   max-width: 280px;
-  animation: tooltip-in 0.2s ease;
+  animation: tooltip-in 0.12s ease-out;
+  font-size: var(--text-sm);
+  color: var(--color-neutral-700);
+  line-height: 1.5;
 }
 
 @keyframes tooltip-in {
   from {
     opacity: 0;
-    transform: translateY(-8px);
+    transform: translateY(-3px);
   }
   to {
     opacity: 1;
     transform: translateY(0);
   }
-}
-
-.tooltip-term {
-  font-weight: var(--font-semibold);
-  color: var(--color-primary-700);
-  margin-bottom: 0.25rem;
-}
-
-.tooltip-content {
-  font-size: var(--text-sm);
-  color: var(--color-neutral-600);
-  line-height: 1.5;
-}
-
-.tooltip-close {
-  position: absolute;
-  top: 0.25rem;
-  right: 0.5rem;
-  border: none;
-  background: none;
-  font-size: 1.25rem;
-  color: var(--color-neutral-400);
-  cursor: pointer;
-  padding: 0;
-  line-height: 1;
-}
-
-.tooltip-close:hover {
-  color: var(--color-neutral-600);
 }
 
 /* 響應式 */

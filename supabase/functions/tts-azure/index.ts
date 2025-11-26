@@ -49,19 +49,26 @@ function pinyinToIPA(pinyin: string): string | null {
 function buildSSML(
   text: string,
   voice: string = DEFAULT_VOICE,
+  rate?: string | null,
   pinyinIPA?: string | null,
   pinyinText?: string | null
 ) {
-  // 使用 Azure 默認語速與音高（不調整 prosody）。若提供 pinyinIPA，使用 <phoneme> 強制拼音發音。
+  // 若提供 pinyinIPA，使用 <phoneme> 強制拼音發音。
+  // 若提供 rate，使用 <prosody> 控制語速（Azure 支持 0.5-2.0 或百分比如 "-50%"）
   const safeText = (text || '').trim();
   const pText = (pinyinText || '').trim();
-  const hasPinyin = !!(pinyinIPA && pText);
-    let content = safeText;
-    if (pText) {
-      const tail = pinyinIPA
-        ? `<phoneme alphabet="ipa" ph="${pinyinIPA}">${pText}</phoneme>`
-        : pText; // 若無 IPA，直接輸出拼音文字，讓語音引擎以普通話規則讀取
-      content = `${safeText ? safeText + ' ' : ''}${tail}`;
+  
+  let content = safeText;
+  if (pText) {
+    const tail = pinyinIPA
+      ? `<phoneme alphabet="ipa" ph="${pinyinIPA}">${pText}</phoneme>`
+      : pText; // 若無 IPA，直接輸出拼音文字，讓語音引擎以普通話規則讀取
+    content = `${safeText ? safeText + ' ' : ''}${tail}`;
+  }
+  
+  // 如果有語速設定，用 prosody 包裹
+  if (rate) {
+    content = `<prosody rate="${rate}">${content}</prosody>`;
   }
 
   return `<?xml version="1.0" encoding="utf-8"?>
@@ -70,7 +77,7 @@ function buildSSML(
 </speak>`;
 }
 
-async function ttsWithAzure(text: string, voice?: string, pinyin?: string | null) {
+async function ttsWithAzure(text: string, voice?: string, rate?: string | null, pinyin?: string | null) {
   const key = Deno.env.get("AZURE_SPEECH_KEY");
   const region = Deno.env.get("AZURE_SPEECH_REGION");
   if (!key || !region) {
@@ -82,7 +89,7 @@ async function ttsWithAzure(text: string, voice?: string, pinyin?: string | null
 
   const endpoint = `https://${region}.tts.speech.microsoft.com/cognitiveservices/v1`;
   const ipa = pinyin ? pinyinToIPA(pinyin) : null;
-  const ssml = buildSSML(text, voice || DEFAULT_VOICE, ipa, pinyin || null);
+  const ssml = buildSSML(text, voice || DEFAULT_VOICE, rate, ipa, pinyin || null);
 
   const resp = await fetch(endpoint, {
     method: "POST",
@@ -124,11 +131,12 @@ Deno.serve(async (req: Request) => {
     if (req.method === "GET") {
       const text = url.searchParams.get("text")?.trim();
       const voice = url.searchParams.get("voice")?.trim() || undefined;
+      const rate = url.searchParams.get("rate")?.trim() || null;
       const pinyin = url.searchParams.get("pinyin")?.trim() || null;
       if (!text) {
         return new Response(JSON.stringify({ error: "Missing 'text'" }), { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } });
       }
-      return await ttsWithAzure(text, voice, pinyin);
+      return await ttsWithAzure(text, voice, rate, pinyin);
     }
 
     if (req.method === "POST") {
@@ -136,14 +144,15 @@ Deno.serve(async (req: Request) => {
       if (!contentType.includes("application/json")) {
         return new Response(JSON.stringify({ error: "Expected application/json" }), { status: 415, headers: { "Content-Type": "application/json", ...corsHeaders } });
       }
-      const body = (await req.json()) as { text?: string; voice?: string; pinyin?: string };
+      const body = (await req.json()) as { text?: string; voice?: string; rate?: string; pinyin?: string };
       const text = (body.text || "").trim();
       const voice = (body.voice || "").trim() || undefined;
+      const rate = (body.rate || "").trim() || null;
       const pinyin = (body.pinyin || "").trim() || null;
       if (!text) {
         return new Response(JSON.stringify({ error: "Missing 'text'" }), { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } });
       }
-      return await ttsWithAzure(text, voice, pinyin);
+      return await ttsWithAzure(text, voice, rate, pinyin);
     }
 
     return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405, headers: { "Content-Type": "application/json", ...corsHeaders } });

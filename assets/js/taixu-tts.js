@@ -5,7 +5,8 @@
  *      <script src="/assets/js/taixu-config.js"></script>
  *      <script src="/assets/js/taixu-tts.js"></script>
  *   2) 呼叫：
- *      window.taixuSpeak('請找到 bo')
+ *      await window.taixuSpeak('請找到 bo')  // 等待播放完成
+ *      window.taixuStopSpeak()  // 停止播放
  *
  * 說明：
  *   - 優先呼叫 Supabase Edge Function（需在 taixu-config.js 設定 TAIXU_TTS_ENDPOINT 與 SUPABASE_ANON_KEY）
@@ -15,6 +16,9 @@
 (function () {
   // 在線音訊快取：以 text+voice 為鍵，快取 Blob 以減少重複請求
   const ttsCache = new Map(); // key: `${voice}::${text}` -> Blob
+  
+  // 當前正在播放的音頻元素（用於停止播放）
+  let currentAudio = null;
 
   // 挑選普通話語音（優先 zh-CN，再 zh-TW，排除 zh-HK）
   function selectMandarinVoice(voices) {
@@ -30,23 +34,51 @@
     return null;
   }
 
-  // 建立並播放一段音訊 Blob，播放完成後釋放 URL
-  async function playBlob(blob) {
-    const url = URL.createObjectURL(blob);
-    try {
+  // 建立並播放一段音訊 Blob，等待播放完成後返回
+  function playBlob(blob) {
+    return new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(blob);
       const audio = new Audio(url);
-      await audio.play();
-      // 播放結束釋放 URL
-      audio.addEventListener('ended', () => URL.revokeObjectURL(url), { once: true });
-      return true;
-    } catch (e) {
-      URL.revokeObjectURL(url);
-      throw e;
+      currentAudio = audio;
+      
+      audio.addEventListener('ended', () => {
+        URL.revokeObjectURL(url);
+        currentAudio = null;
+        resolve(true);
+      }, { once: true });
+      
+      audio.addEventListener('error', (e) => {
+        URL.revokeObjectURL(url);
+        currentAudio = null;
+        reject(e);
+      }, { once: true });
+      
+      audio.play().catch((e) => {
+        URL.revokeObjectURL(url);
+        currentAudio = null;
+        reject(e);
+      });
+    });
+  }
+  
+  // 停止當前播放
+  function taixuStopSpeak() {
+    if (currentAudio) {
+      currentAudio.pause();
+      currentAudio.currentTime = 0;
+      currentAudio = null;
+    }
+    // 同時停止瀏覽器語音（如果有）
+    if (window.speechSynthesis) {
+      window.speechSynthesis.cancel();
     }
   }
 
   // 對外主函式：優先在線 TTS，失敗回退瀏覽器語音
   async function taixuSpeak(text, opts = {}) {
+    // 先停止之前的播放
+    taixuStopSpeak();
+    
     const endpoint = (window.TAIXU_TTS_ENDPOINT || '').trim();
     const anon = (window.SUPABASE_ANON_KEY || '').trim();
     const voice = (opts.voice || 'zh-CN-XiaoxiaoNeural').trim();
@@ -54,7 +86,16 @@
     // 1) 在線 TTS（若有設定端點）
     if (endpoint) {
       try {
-        const cacheKey = `${voice}::${text}`;
+        // rate 轉換：前端用 0-1 範圍，Azure 用百分比如 "-50%"
+        // 0.5 = 正常, 0.25 = 慢 50% ("-50%"), 1.0 = 快 100% ("+100%")
+        let rateParam = '';
+        if (opts.rate != null && opts.rate !== 1) {
+          // 將 0-2 的 rate 轉換為百分比：rate 0.5 = "-50%", rate 1.5 = "+50%"
+          const percent = Math.round((opts.rate - 1) * 100);
+          rateParam = percent >= 0 ? `+${percent}%` : `${percent}%`;
+        }
+        
+        const cacheKey = `${voice}::${rateParam}::${text}`;
         let blob = ttsCache.get(cacheKey);
         if (!blob) {
           const headers = {};
@@ -62,7 +103,10 @@
             headers['apikey'] = anon;
             headers['Authorization'] = `Bearer ${anon}`;
           }
-          const url = `${endpoint}?text=${encodeURIComponent(text)}&voice=${encodeURIComponent(voice)}`;
+          let url = `${endpoint}?text=${encodeURIComponent(text)}&voice=${encodeURIComponent(voice)}`;
+          if (rateParam) {
+            url += `&rate=${encodeURIComponent(rateParam)}`;
+          }
           const resp = await fetch(url, { method: 'GET', headers });
           if (!resp.ok) throw new Error(`TTS ${resp.status}`);
           blob = await resp.blob();
@@ -89,8 +133,13 @@
       }
       utter.pitch = opts.pitch != null ? opts.pitch : 1.3;
       utter.rate = opts.rate != null ? opts.rate : 0.8;
-      synth.speak(utter);
-      return true;
+      
+      // 等待播放完成
+      return new Promise((resolve) => {
+        utter.onend = () => resolve(true);
+        utter.onerror = () => resolve(false);
+        synth.speak(utter);
+      });
     } catch (e) {
       console.warn('taixuSpeak fallback failed:', e);
       return false;
@@ -100,5 +149,8 @@
   // 對外暴露到全域（不覆蓋既有定義）
   if (!window.taixuSpeak) {
     window.taixuSpeak = taixuSpeak;
+  }
+  if (!window.taixuStopSpeak) {
+    window.taixuStopSpeak = taixuStopSpeak;
   }
 })();

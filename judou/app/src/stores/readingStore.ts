@@ -7,6 +7,7 @@ import type {
   TextAnnotation, 
   ReadingProgress, 
   ReadingText,
+  ReadingCategory,
   AnnotationInput,
   ReadingTextInput
 } from '@/types/text'
@@ -18,6 +19,7 @@ export const useReadingStore = defineStore('reading', () => {
   // 狀態
   const readingTexts = ref<ReadingText[]>([])
   const currentText = ref<ReadingText | null>(null)
+  const readingCategories = ref<ReadingCategory[]>([])
   const isLoading = ref(false)
   const error = ref<string | null>(null)
   
@@ -26,7 +28,7 @@ export const useReadingStore = defineStore('reading', () => {
     readingTexts.value.filter(t => t.progress?.bookmarked)
   )
   
-  // 獲取閱讀文章列表（text_type 為 'reading' 或 'both'）
+  // 獲取閱讀文章列表（text_type 為 'reading'）
   async function fetchReadingTexts() {
     if (!supabase) {
       error.value = 'Supabase 尚未配置'
@@ -41,19 +43,20 @@ export const useReadingStore = defineStore('reading', () => {
         .from('practice_texts')
         .select(`
           *,
-          category:practice_categories (
-            id,
-            name,
-            slug,
-            level,
-            parent_id
+          text_reading_categories (
+            category:reading_categories (
+              id,
+              name,
+              description,
+              order_index
+            )
           ),
           source_text:practice_texts!source_text_id (
             id,
             title
           )
         `)
-        .in('text_type', ['reading', 'both'])
+        .eq('text_type', 'reading')
         .order('created_at', { ascending: false })
       
       if (fetchError) throw fetchError
@@ -73,11 +76,20 @@ export const useReadingStore = defineStore('reading', () => {
         }
       }
       
-      // 合併文章和進度
-      readingTexts.value = (data || []).map((text: PracticeText) => ({
-        ...text,
-        progress: progressMap.get(text.id) || null
-      }))
+      // 合併文章和進度，並轉換文集數據格式
+      readingTexts.value = (data || []).map((text: any) => {
+        // 將 text_reading_categories 轉換為 reading_categories 數組
+        const reading_categories = text.text_reading_categories
+          ?.map((trc: any) => trc.category)
+          .filter(Boolean) || []
+        
+        return {
+          ...text,
+          reading_categories,
+          text_reading_categories: undefined, // 移除原始關聯數據
+          progress: progressMap.get(text.id) || null
+        }
+      })
       
     } catch (err: any) {
       error.value = err.message ?? '無法載入閱讀文章'
@@ -102,12 +114,13 @@ export const useReadingStore = defineStore('reading', () => {
         .from('practice_texts')
         .select(`
           *,
-          category:practice_categories (
-            id,
-            name,
-            slug,
-            level,
-            parent_id
+          text_reading_categories (
+            category:reading_categories (
+              id,
+              name,
+              description,
+              order_index
+            )
           ),
           source_text:practice_texts!source_text_id (
             id,
@@ -134,13 +147,20 @@ export const useReadingStore = defineStore('reading', () => {
           .select('*')
           .eq('text_id', textId)
           .eq('user_id', authStore.user.id)
-          .single()
+          .maybeSingle()
         
         progress = progressData || null
       }
       
+      // 轉換文集數據格式
+      const reading_categories = (textData as any).text_reading_categories
+        ?.map((trc: any) => trc.category)
+        .filter(Boolean) || []
+      
       currentText.value = {
         ...textData,
+        reading_categories,
+        text_reading_categories: undefined,
         annotations: annotationsData || [],
         progress
       }
@@ -306,10 +326,14 @@ export const useReadingStore = defineStore('reading', () => {
   }
   
   // 創建閱讀文章
-  async function createReadingText(input: ReadingTextInput, isSystem: boolean = false) {
+  async function createReadingText(
+    input: ReadingTextInput & { reading_category_ids?: string[] }, 
+    isSystem: boolean = false
+  ) {
     if (!supabase) throw new Error('Supabase 尚未配置')
     if (!authStore.user) throw new Error('請先登入')
     
+    // 創建文章
     const { data, error: insertError } = await supabase
       .from('practice_texts')
       .insert({
@@ -319,29 +343,45 @@ export const useReadingStore = defineStore('reading', () => {
         summary: input.summary ?? null,
         category_id: input.category_id || null,
         content: input.content,
-        text_type: input.text_type || 'reading',
+        text_type: 'reading', // 固定為 reading
         source_text_id: input.source_text_id || null,
         source_start_index: input.source_start_index ?? null,
         source_end_index: input.source_end_index ?? null,
         is_system: isSystem,
         created_by: isSystem ? null : authStore.user.id,
       })
-      .select(`
-        *,
-        category:practice_categories (
-          id,
-          name,
-          slug,
-          level,
-          parent_id
-        )
-      `)
+      .select('*')
       .single()
     
     if (insertError) throw insertError
     
+    // 如果有選擇文集，創建關聯
+    const categoryIds = input.reading_category_ids || []
+    if (data && categoryIds.length > 0) {
+      const { error: linkError } = await supabase
+        .from('text_reading_categories')
+        .insert(categoryIds.map(catId => ({
+          text_id: data.id,
+          category_id: catId
+        })))
+      
+      if (linkError) {
+        console.error('關聯文集失敗:', linkError)
+      }
+    }
+    
+    // 獲取關聯的文集信息
+    const reading_categories = categoryIds.length > 0
+      ? readingCategories.value.filter(c => categoryIds.includes(c.id))
+      : []
+    
     if (data) {
-      readingTexts.value.unshift({ ...data, progress: null, annotations: [] })
+      readingTexts.value.unshift({ 
+        ...data, 
+        reading_categories,
+        progress: null, 
+        annotations: [] 
+      })
     }
     
     return data
@@ -394,10 +434,136 @@ export const useReadingStore = defineStore('reading', () => {
     currentText.value = null
   }
   
+  // 更新文章的文集關聯
+  async function updateTextCategories(textId: string, categoryIds: string[]) {
+    if (!supabase) throw new Error('Supabase 尚未配置')
+    if (!authStore.isAdmin) throw new Error('只有管理員可以更新文集')
+    
+    // 先刪除現有關聯
+    const { error: deleteError } = await supabase
+      .from('text_reading_categories')
+      .delete()
+      .eq('text_id', textId)
+    
+    if (deleteError) throw deleteError
+    
+    // 添加新關聯
+    if (categoryIds.length > 0) {
+      const { error: insertError } = await supabase
+        .from('text_reading_categories')
+        .insert(categoryIds.map(catId => ({
+          text_id: textId,
+          category_id: catId
+        })))
+      
+      if (insertError) throw insertError
+    }
+    
+    // 更新本地狀態
+    const reading_categories = readingCategories.value.filter(c => categoryIds.includes(c.id))
+    
+    if (currentText.value?.id === textId) {
+      currentText.value.reading_categories = reading_categories
+    }
+    
+    const idx = readingTexts.value.findIndex(t => t.id === textId)
+    if (idx !== -1) {
+      readingTexts.value[idx].reading_categories = reading_categories
+    }
+  }
+  
+  // ===== 閱讀分類（文集）管理 =====
+  
+  // 獲取閱讀分類列表
+  async function fetchReadingCategories() {
+    if (!supabase) return
+    
+    try {
+      const { data, error: fetchError } = await supabase
+        .from('reading_categories')
+        .select('*')
+        .order('order_index', { ascending: true })
+      
+      if (fetchError) throw fetchError
+      
+      readingCategories.value = data || []
+    } catch (err: any) {
+      console.error('獲取閱讀分類失敗:', err)
+    }
+  }
+  
+  // 創建閱讀分類
+  async function createReadingCategory(name: string, description?: string) {
+    if (!supabase) throw new Error('Supabase 尚未配置')
+    if (!authStore.isAdmin) throw new Error('只有管理員可以創建分類')
+    
+    // 獲取當前最大的 order_index
+    const maxOrder = readingCategories.value.reduce((max, c) => Math.max(max, c.order_index), 0)
+    
+    const { data, error: insertError } = await supabase
+      .from('reading_categories')
+      .insert({
+        name,
+        description: description || null,
+        order_index: maxOrder + 1,
+        created_by: authStore.user?.id
+      })
+      .select()
+      .single()
+    
+    if (insertError) throw insertError
+    
+    if (data) {
+      readingCategories.value.push(data)
+    }
+    
+    return data
+  }
+  
+  // 更新閱讀分類
+  async function updateReadingCategory(id: string, updates: { name?: string; description?: string }) {
+    if (!supabase) throw new Error('Supabase 尚未配置')
+    if (!authStore.isAdmin) throw new Error('只有管理員可以更新分類')
+    
+    const { data, error: updateError } = await supabase
+      .from('reading_categories')
+      .update({ ...updates, updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .select()
+      .single()
+    
+    if (updateError) throw updateError
+    
+    // 更新本地狀態
+    const idx = readingCategories.value.findIndex(c => c.id === id)
+    if (idx !== -1 && data) {
+      readingCategories.value[idx] = data
+    }
+    
+    return data
+  }
+  
+  // 刪除閱讀分類
+  async function deleteReadingCategory(id: string) {
+    if (!supabase) throw new Error('Supabase 尚未配置')
+    if (!authStore.isAdmin) throw new Error('只有管理員可以刪除分類')
+    
+    const { error: deleteError } = await supabase
+      .from('reading_categories')
+      .delete()
+      .eq('id', id)
+    
+    if (deleteError) throw deleteError
+    
+    // 從本地狀態移除
+    readingCategories.value = readingCategories.value.filter(c => c.id !== id)
+  }
+  
   return {
     // 狀態
     readingTexts,
     currentText,
+    readingCategories,
     bookmarkedTexts,
     isLoading,
     error,
@@ -414,6 +580,12 @@ export const useReadingStore = defineStore('reading', () => {
     addAnnotation,
     updateAnnotation,
     deleteAnnotation,
+    // 閱讀分類（文集）
+    fetchReadingCategories,
+    createReadingCategory,
+    updateReadingCategory,
+    deleteReadingCategory,
+    updateTextCategories,
   }
 })
 
