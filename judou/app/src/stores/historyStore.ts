@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useSupabase } from '@/composables/useSupabase'
+import { useAuthStore } from './authStore'
 import type { PracticeHistoryEntry } from '@/types/history'
 
 const LIMIT_OPTIONS = [10, 20, 50] as const
@@ -8,6 +9,7 @@ type LimitOption = (typeof LIMIT_OPTIONS)[number]
 
 export const useHistoryStore = defineStore('history', () => {
   const supabase = useSupabase()
+  const authStore = useAuthStore()
   const entries = ref<PracticeHistoryEntry[]>([])
   const limit = ref<LimitOption>(10)
   const isLoading = ref(false)
@@ -18,12 +20,19 @@ export const useHistoryStore = defineStore('history', () => {
       limit.value = customLimit
     }
 
+    // 必須登入才能查看歷史記錄
+    if (!authStore.isAuthenticated || !authStore.user?.id) {
+      entries.value = []
+      return
+    }
+
     isLoading.value = true
     error.value = null
     try {
       const { data, error: fetchError } = await supabase
         .from('practice_records')
         .select('id, display_name, username, score, accuracy, elapsed_seconds, created_at, practice_texts(title, practice_categories(name))')
+        .eq('user_id', authStore.user.id) // 只獲取當前用戶的記錄
         .order('created_at', { ascending: false })
         .limit(limit.value)
 

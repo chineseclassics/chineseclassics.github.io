@@ -7,6 +7,8 @@ export interface PracticeCategory {
   type: 'grade' | 'module' | 'theme' | 'custom'
   description?: string | null
   order_index: number
+  is_system?: boolean
+  created_by?: string | null
 }
 
 export interface PracticeLibraryText {
@@ -28,6 +30,7 @@ export interface PracticeCategoryInput {
   type: PracticeCategory['type']
   description?: string | null
   order_index?: number
+  is_system?: boolean
 }
 
 export interface PracticeLibraryState {

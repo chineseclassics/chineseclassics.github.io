@@ -23,6 +23,7 @@ export interface UserProfile {
   avatar_url: string | null
   role: 'teacher' | 'student'
   is_admin: boolean
+  is_super_admin: boolean
 }
 
 export const useAuthStore = defineStore('auth', () => {
@@ -48,7 +49,11 @@ export const useAuthStore = defineStore('auth', () => {
   const isStudent = computed(() => userRole.value === 'student')
   
   const isAdmin = computed(() => {
-    return userProfile.value?.is_admin === true
+    return userProfile.value?.is_admin === true || userProfile.value?.is_super_admin === true
+  })
+  
+  const isSuperAdmin = computed(() => {
+    return userProfile.value?.is_super_admin === true
   })
   
   const displayName = computed(() => {
@@ -257,13 +262,13 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  // 獲取用戶資料（包括 is_admin）
+  // 獲取用戶資料（包括 is_admin 和 is_super_admin）
   async function fetchUserProfile(userId: string) {
     if (!supabase) return
 
     const { data, error: fetchError } = await supabase
       .from('users')
-      .select('id, email, display_name, avatar_url, role, is_admin')
+      .select('id, email, display_name, avatar_url, role, is_admin, is_super_admin')
       .eq('id', userId)
       .single()
 
@@ -292,6 +297,7 @@ export const useAuthStore = defineStore('auth', () => {
     isTeacher,
     isStudent,
     isAdmin,
+    isSuperAdmin,
     displayName,
     avatarUrl,
     

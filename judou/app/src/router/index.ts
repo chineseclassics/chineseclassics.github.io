@@ -48,6 +48,14 @@ const routes: RouteRecordRaw[] = [
         },
       },
       {
+        path: 'admin/users',
+        name: 'admin-users',
+        component: () => import('../pages/AdminUsersPage.vue'),
+        meta: {
+          title: '句豆 - 用戶管理',
+        },
+      },
+      {
         path: 'my-classes',
         name: 'my-classes',
         component: () => import('../pages/MyClassesPage.vue'),

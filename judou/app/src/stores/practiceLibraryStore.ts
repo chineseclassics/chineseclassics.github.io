@@ -266,7 +266,7 @@ export const usePracticeLibraryStore = defineStore('practice-library', () => {
     state.value.selectedTextId = id
   }
 
-  async function addCategory(payload: PracticeCategoryInput) {
+  async function addCategory(payload: PracticeCategoryInput, userId?: string) {
     if (!supabase) throw new Error('Supabase 尚未配置')
     const parent = payload.parent_id ? state.value.categories.find((cat) => cat.id === payload.parent_id) : null
 
@@ -280,17 +280,30 @@ export const usePracticeLibraryStore = defineStore('practice-library', () => {
 
     const level = parent ? parent.level + 1 : 1
     const type = payload.type ?? (parent ? (parent.level === 1 ? 'module' : 'theme') : 'grade')
+    
+    // 根據 is_system 參數決定是系統分類還是私有分類
+    const isSystem = payload.is_system ?? true
+    const createdBy = isSystem ? null : userId
+    
+    // 為私有分類的 slug 添加用戶 ID 後綴，避免與系統分類衝突
+    let slug = slugify(payload.name)
+    if (!isSystem && userId) {
+      // 取用戶 ID 的前 8 位作為後綴
+      slug = `${slug}-${userId.slice(0, 8)}`
+    }
 
     const { data, error: insertError } = await supabase
       .from('practice_categories')
       .insert({
         name: payload.name,
-        slug: slugify(payload.name),
+        slug,
         parent_id: payload.parent_id,
         level,
         type,
         description: payload.description ?? null,
         order_index: payload.order_index ?? 0,
+        is_system: isSystem,
+        created_by: createdBy,
       })
       .select('*')
       .single()

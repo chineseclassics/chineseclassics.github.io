@@ -607,6 +607,7 @@ export const useClassStore = defineStore('class', () => {
         .select(`
           class:classes (
             id,
+            teacher_id,
             class_name,
             description,
             created_at,

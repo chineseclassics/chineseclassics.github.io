@@ -39,5 +39,6 @@ export interface PracticeResultPayload {
   profile_id?: string | null
   username?: string | null
   display_name?: string | null
+  user_id?: string | null
 }
 

@@ -52,12 +52,23 @@ const categoryForm = reactive({
   type: 'grade' as 'grade' | 'module',
 })
 
-// 計算屬性
-const gradeOptions = computed(() =>
-  libraryStore.state.categories
-    .filter((c) => c.level === 1)
+// 計算屬性 - 根據頁面模式過濾分類
+const gradeOptions = computed(() => {
+  return libraryStore.state.categories
+    .filter((c) => {
+      // 必須是頂級分類（level 1）
+      if (c.level !== 1) return false
+      
+      if (isAdminMode.value) {
+        // 系統文庫模式：只顯示系統分類
+        return c.is_system === true
+      } else {
+        // 自訂練習模式：只顯示自己創建的私有分類
+        return c.is_system === false && c.created_by === authStore.user?.id
+      }
+    })
     .sort((a, b) => a.order_index - b.order_index)
-)
+})
 
 const selectedCategory = computed(() =>
   libraryStore.state.categories.find((c) => c.id === selectedCategoryId.value) ?? null
@@ -116,15 +127,39 @@ const previewContent = computed(() => {
     .replace(/\n/g, '<br />')
 })
 
-// 輔助函數
+// 輔助函數 - 獲取年級下的單元（根據頁面模式過濾）
 function getModulesForGrade(gradeId: string) {
   return libraryStore.state.categories
-    .filter((c) => c.level === 2 && c.parent_id === gradeId)
+    .filter((c) => {
+      // 必須是二級分類且屬於該年級
+      if (c.level !== 2 || c.parent_id !== gradeId) return false
+      
+      if (isAdminMode.value) {
+        // 系統文庫模式：只顯示系統分類
+        return c.is_system === true
+      } else {
+        // 自訂練習模式：只顯示自己創建的私有分類
+        return c.is_system === false && c.created_by === authStore.user?.id
+      }
+    })
     .sort((a, b) => a.order_index - b.order_index)
 }
 
 function getTextCountForCategory(categoryId: string) {
-  return textsStore.texts.filter((t) => t.category_id === categoryId).length
+  // 根據頁面模式過濾統計
+  if (isAdminMode.value) {
+    // 系統文庫模式：只統計系統文章
+    return textsStore.texts.filter((t) => 
+      t.category_id === categoryId && t.is_system === true
+    ).length
+  } else {
+    // 自訂練習模式：只統計自己創建的私有文章
+    return textsStore.texts.filter((t) => 
+      t.category_id === categoryId && 
+      t.is_system === false && 
+      t.created_by === authStore.user?.id
+    ).length
+  }
 }
 
 function toggleGradeExpand(gradeId: string) {
@@ -244,12 +279,14 @@ async function handleCategorySubmit() {
         description: categoryForm.description.trim() || undefined,
       })
     } else {
+      // 根據頁面模式決定創建系統分類還是私有分類
       await libraryStore.addCategory({
         name: categoryForm.name.trim(),
         parent_id: categoryForm.parentId,
         type: categoryForm.type,
         description: categoryForm.description.trim() || undefined,
-      })
+        is_system: isAdminMode.value, // 系統文庫模式創建系統分類，自訂練習模式創建私有分類
+      }, authStore.user?.id)
     }
     isCategoryFormOpen.value = false
   } catch (error: any) {

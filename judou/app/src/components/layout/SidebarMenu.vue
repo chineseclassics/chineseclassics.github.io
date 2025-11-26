@@ -30,6 +30,11 @@ const adminNav: NavItem[] = [
   { label: '系統文庫', to: { name: 'admin-texts' } },
 ]
 
+// 超級管理員導航
+const superAdminNav: NavItem[] = [
+  { label: '用戶管理', to: { name: 'admin-users' } },
+]
+
 // 過濾常用功能導航（老師專屬項目）
 const visiblePrimaryNav = computed(() => {
   return primaryNav.filter(item => !item.teacherOnly || authStore.isTeacher)
@@ -39,6 +44,12 @@ const visiblePrimaryNav = computed(() => {
 const visibleAdminNav = computed(() => {
   if (!authStore.isAuthenticated || !authStore.isAdmin) return []
   return adminNav
+})
+
+// 過濾超級管理員導航（只有超級管理員可見）
+const visibleSuperAdminNav = computed(() => {
+  if (!authStore.isAuthenticated || !authStore.isSuperAdmin) return []
+  return superAdminNav
 })
 
 const route = useRoute()
@@ -180,7 +191,7 @@ onMounted(() => {
       </ul>
     </nav>
 
-    <!-- 管理區域（僅老師可見） -->
+    <!-- 管理區域（僅管理員可見） -->
     <nav v-if="visibleAdminNav.length > 0" class="sidebar-section">
       <p class="section-label">管理</p>
       <ul>
@@ -188,6 +199,26 @@ onMounted(() => {
           <router-link
             v-if="item.to && !item.disabled"
             class="edamame-sidebar-item"
+            :class="{ active: isActive(item) }"
+            :to="item.to"
+          >
+            <p class="item-title">{{ item.label }}</p>
+          </router-link>
+          <div v-else class="edamame-sidebar-item disabled">
+            <p class="item-title">{{ item.label }}</p>
+          </div>
+        </li>
+      </ul>
+    </nav>
+
+    <!-- 超級管理員區域（僅超級管理員可見） -->
+    <nav v-if="visibleSuperAdminNav.length > 0" class="sidebar-section super-admin-section">
+      <p class="section-label">超級管理</p>
+      <ul>
+        <li v-for="item in visibleSuperAdminNav" :key="item.label">
+          <router-link
+            v-if="item.to && !item.disabled"
+            class="edamame-sidebar-item super-admin-item"
             :class="{ active: isActive(item) }"
             :to="item.to"
           >
@@ -420,6 +451,24 @@ onMounted(() => {
 .edamame-sidebar-item.disabled {
   opacity: 0.6;
   pointer-events: none;
+}
+
+/* 超級管理員區域特殊樣式 */
+.super-admin-section .section-label {
+  color: #d97706;
+}
+
+.super-admin-item {
+  border-left: 2px solid transparent;
+}
+
+.super-admin-item:hover {
+  border-left-color: #fbbf24;
+}
+
+.super-admin-item.active {
+  border-left-color: #d97706;
+  background: linear-gradient(90deg, rgba(251, 191, 36, 0.1), transparent);
 }
 
 .sidebar-footer {

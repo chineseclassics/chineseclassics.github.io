@@ -6,6 +6,7 @@ import { usePracticeLibraryStore } from '@/stores/practiceLibraryStore'
 import { useAssignmentStore } from '@/stores/assignmentStore'
 import { useAuthStore } from '@/stores/authStore'
 import { useUserStatsStore, type ScoreBreakdown } from '@/stores/userStatsStore'
+import { useClassStore } from '@/stores/classStore'
 import type { PracticeText } from '@/types/text'
 
 interface SlotStatus {
@@ -19,6 +20,10 @@ const libraryStore = usePracticeLibraryStore()
 const assignmentStore = useAssignmentStore()
 const authStore = useAuthStore()
 const userStatsStore = useUserStatsStore()
+const classStore = useClassStore()
+
+// 學生所屬班級的老師 ID 列表（用於過濾可見的私有文章）
+const myTeacherIds = ref<Set<string>>(new Set())
 
 // 作業相關
 const assignmentId = computed(() => route.query.assignmentId as string | undefined)
@@ -130,10 +135,26 @@ const moduleOptions = computed(() => {
     .sort((a, b) => a.order_index - b.order_index)
 })
 
+// 判斷文章是否可見
+function isTextVisible(t: PracticeText): boolean {
+  // 系統文章：所有人可見
+  if (t.is_system === true) return true
+  // 自己創建的私有文章
+  if (t.created_by === authStore.user?.id) return true
+  // 學生可以看到所屬班級老師的私有文章
+  if (authStore.isStudent && t.created_by && myTeacherIds.value.has(t.created_by)) return true
+  return false
+}
+
 const textsInModule = computed(() => {
   if (!selectedModuleId.value) return []
   return textsStore.texts
-    .filter((t) => t.category_id === selectedModuleId.value)
+    .filter((t) => {
+      // 必須屬於當前分類
+      if (t.category_id !== selectedModuleId.value) return false
+      // 過濾可見文章
+      return isTextVisible(t)
+    })
     .sort((a, b) => a.title.localeCompare(b.title))
 })
 
@@ -142,12 +163,16 @@ const searchResults = computed(() => {
   if (!searchQuery.value.trim()) return []
   const query = searchQuery.value.toLowerCase()
   return textsStore.texts
-    .filter(
-      (t) =>
+    .filter((t) => {
+      // 過濾可見文章
+      if (!isTextVisible(t)) return false
+      // 搜索匹配
+      return (
         t.title.toLowerCase().includes(query) ||
         (t.author && t.author.toLowerCase().includes(query)) ||
         (t.source && t.source.toLowerCase().includes(query))
     )
+    })
     .slice(0, 10)
 })
 
@@ -172,6 +197,22 @@ const breadcrumbText = computed(() => {
 watch(selectedGradeId, () => {
   selectedModuleId.value = null
 })
+
+// 加載學生所屬班級的老師 ID
+async function loadMyTeacherIds() {
+  if (!authStore.isStudent || !authStore.isAuthenticated) return
+  
+  await classStore.fetchStudentClasses()
+  
+  // 從班級信息中提取老師 ID
+  const teacherIds = new Set<string>()
+  for (const cls of classStore.classes) {
+    if (cls.teacher_id) {
+      teacherIds.add(cls.teacher_id)
+    }
+  }
+  myTeacherIds.value = teacherIds
+}
 
 // 核心函數
 function parseContent(raw: string) {
@@ -241,12 +282,17 @@ function selectText(text: PracticeText) {
 }
 
 function pickRandomText() {
-  const candidate = textsStore.getRandomText()
-  if (!candidate) {
+  // 過濾可見文章
+  const visibleTexts = textsStore.texts.filter(isTextVisible)
+  if (!visibleTexts.length) {
     toast.value = '尚未有可練習的文章，請先到管理員頁面新增。'
     return
   }
-  selectText(candidate)
+  const idx = Math.floor(Math.random() * visibleTexts.length)
+  const selected = visibleTexts[idx]
+  if (selected) {
+    selectText(selected)
+  }
 }
 
 async function ensureDataLoaded() {
@@ -257,6 +303,11 @@ async function ensureDataLoaded() {
   }
   if (!libraryStore.state.categories.length) {
     promises.push(libraryStore.fetchLibrary())
+  }
+  
+  // 如果是學生，獲取所屬班級的老師 ID
+  if (authStore.isStudent && authStore.isAuthenticated) {
+    promises.push(loadMyTeacherIds())
   }
   
   await Promise.all(promises)
@@ -508,6 +559,7 @@ async function submitResult() {
         correct_breaks: correctBreaks.value.size,
         username: recordUsername,
         display_name: recordDisplayName,
+        user_id: authStore.user?.id || null, // 關聯到當前登入用戶
       })
       
       // 如果用戶已登入，記錄到新的積分系統
@@ -728,7 +780,9 @@ onBeforeUnmount(() => {
               class="char"
               :style="{ transform: getCharOffset(index) }"
             >{{ char }}</span>
+            <!-- 最後一個字後面不需要斷句熱區 -->
             <button
+              v-if="index < characters.length - 1"
               class="bean-slot"
               :class="getBeanClass(index)"
               @click="toggleBreak(index)"
