@@ -57,6 +57,10 @@ export const useTextsStore = defineStore('texts', () => {
             slug,
             level,
             parent_id
+          ),
+          source_text:practice_texts!source_text_id (
+            id,
+            title
           )
         `
         )

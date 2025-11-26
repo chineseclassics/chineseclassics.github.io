@@ -1388,8 +1388,23 @@ function disableEditing() {
         input.style.opacity = '0.6';
     });
     
-    // 禁用所有按鈕（除了返回按鈕）
-    const buttons = document.querySelectorAll('#student-dashboard-content button:not(#back-to-list-btn):not(#toggle-description-btn):not(#collapse-description-btn)');
+    // 禁用編輯相關按鈕，但保留：
+    // - 返回按鈕、展開/收起按鈕
+    // - 茗煙伺候工具區按鈕（哈佛引用、詞典、繁簡轉換、導出 Word）
+    // - 導出 Word 按鈕
+    const excludeSelectors = [
+        '#back-to-list-btn',
+        '#toggle-description-btn',
+        '#collapse-description-btn',
+        '#wenfang-tools button',           // 茗煙伺候區域的所有按鈕
+        '#open-harvard-tool-btn',
+        '#open-dictionary-tool-btn',
+        '#open-converter-tool-btn',
+        '#export-docx-btn',                // 導出 Word 按鈕
+        '.export-docx-btn'                 // 導出 Word 按鈕（class 版本）
+    ].join(',');
+    
+    const buttons = document.querySelectorAll(`#student-dashboard-content button:not(${excludeSelectors})`);
     buttons.forEach(btn => {
         btn.disabled = true;
         btn.style.opacity = '0.5';
@@ -1596,14 +1611,6 @@ async function displayTeacherGrading(essayId) {
                         </div>
                     </div>
                 ` : ''}
-                
-                <div class="border-t border-gray-200 p-4 bg-white">
-                    <button id="export-docx-btn" class="export-docx-btn w-full flex items-center justify-center gap-2 rounded-lg bg-blue-600 text-white py-2.5 font-semibold shadow hover:bg-blue-700 transition disabled:opacity-60 disabled:cursor-not-allowed">
-                        <i class="fas fa-file-word"></i>
-                        導出 Word（含批註）
-                    </button>
-                    <p class="text-xs text-gray-500 mt-2">可直接在 Google Docs 或 Microsoft Word 中開啟，保留所有老師批註與總評。</p>
-                </div>
 
                 <!-- 批改時間 -->
                 <div class="border-t border-gray-200 px-4 py-3 bg-gray-50">
@@ -1626,15 +1633,23 @@ async function displayTeacherGrading(essayId) {
                 </div>
             </div>
         `;
-        const exportBtn = sidebar.querySelector('#export-docx-btn');
-        if (exportBtn) {
-            exportBtn.addEventListener('click', () => handleDocxExportClick(exportBtn, essayId, grade));
-        }
         // 安全填充老師總評內容，避免 XSS
         try {
           const oc = document.getElementById('teacher-overall-comment');
           if (oc && grade.overall_comment) oc.textContent = String(grade.overall_comment);
         } catch (_) {}
+        
+        // 顯示並綁定茗煙伺候區域的導出按鈕
+        const exportBtn = document.getElementById('export-docx-btn');
+        if (exportBtn) {
+            exportBtn.classList.remove('hidden');
+            // 移除舊的事件監聽器（避免重複綁定）
+            const newBtn = exportBtn.cloneNode(true);
+            exportBtn.parentNode.replaceChild(newBtn, exportBtn);
+            newBtn.classList.remove('hidden');
+            newBtn.addEventListener('click', () => handleDocxExportClick(newBtn, essayId, grade));
+            console.log('✅ 導出 Word 按鈕已啟用（茗煙伺候區域）');
+        }
         
         console.log('✅ 老師評分已顯示在側邊欄');
         

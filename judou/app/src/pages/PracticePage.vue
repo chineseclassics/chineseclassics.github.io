@@ -649,6 +649,14 @@ onBeforeUnmount(() => {
             <span v-if="currentText" class="picker-meta">
               {{ currentText.author || '佚名' }}
               <span v-if="currentText.source"> · {{ currentText.source }}</span>
+              <router-link 
+                v-if="currentText.source_text" 
+                :to="{ name: 'reading-detail', params: { id: currentText.source_text.id }}"
+                class="source-link"
+                @click.stop
+              >
+                · 來自《{{ currentText.source_text.title }}》
+              </router-link>
             </span>
           </div>
         </div>
@@ -980,6 +988,15 @@ onBeforeUnmount(() => {
 .picker-meta {
   font-size: var(--text-sm);
   color: var(--color-neutral-500);
+}
+
+.source-link {
+  color: var(--color-primary-600);
+  text-decoration: none;
+}
+
+.source-link:hover {
+  text-decoration: underline;
 }
 
 .picker-toggle {

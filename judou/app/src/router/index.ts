@@ -93,6 +93,15 @@ const routes: RouteRecordRaw[] = [
           title: '句豆 - 閱讀',
         },
       },
+      // 閱讀文庫管理（老師/管理員）
+      {
+        path: 'admin/reading',
+        name: 'admin-reading',
+        component: () => import('../pages/AdminReadingPage.vue'),
+        meta: {
+          title: '句豆 - 閱讀文庫管理',
+        },
+      },
     ],
   },
 ]
