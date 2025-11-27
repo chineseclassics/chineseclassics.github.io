@@ -41,14 +41,15 @@ const canAffordFee = computed(() => {
 })
 
 
-// 加載文本列表（系統公開文本）
+// 加載文本列表（系統文本，練習類型）
 async function loadTexts() {
   if (!supabase) return
   
   const { data } = await supabase
     .from('practice_texts')
     .select('id, title, author, content')
-    .eq('is_public', true)
+    .eq('is_system', true)
+    .eq('text_type', 'practice')
     .order('created_at', { ascending: false })
     .limit(50)
 
