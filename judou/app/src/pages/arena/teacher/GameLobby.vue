@@ -84,11 +84,17 @@ async function randomAssign() {
   randomAssigning.value = false
 }
 
+// 標記是否正常導航到大屏幕（開始比賽）
+const isStartingGame = ref(false)
+
 // 開始遊戲
 async function startGame() {
+  isStartingGame.value = true  // 標記正在開始比賽，防止自動取消
   const success = await gameStore.startGame()
   if (success) {
     router.push({ name: 'arena-teacher-board', params: { roomId: roomId.value } })
+  } else {
+    isStartingGame.value = false  // 失敗時重置標記
   }
 }
 
@@ -108,12 +114,35 @@ function copyRoomCode() {
   }
 }
 
+// 離開頁面前的清理
+async function cleanupOnLeave() {
+  // 如果是正常開始比賽，不要取消
+  if (isStartingGame.value) return
+  
+  // 如果房間還在等待中，自動取消
+  if (room.value?.status === 'waiting') {
+    console.log('[GameLobby] 老師離開等待室，自動取消比賽')
+    await gameStore.leaveRoom()
+  }
+}
+
+// 瀏覽器關閉/刷新時的警告和清理
+function handleBeforeUnload(e: BeforeUnloadEvent) {
+  if (room.value?.status === 'waiting' && !isStartingGame.value) {
+    e.preventDefault()
+    e.returnValue = '比賽尚未開始，離開將取消比賽。確定離開嗎？'
+    return e.returnValue
+  }
+}
+
 onMounted(() => {
   loadRoom()
+  window.addEventListener('beforeunload', handleBeforeUnload)
 })
 
-onUnmounted(() => {
-  // 不要在離開時取消訂閱，因為可能要去大屏幕頁面
+onUnmounted(async () => {
+  window.removeEventListener('beforeunload', handleBeforeUnload)
+  await cleanupOnLeave()
 })
 </script>
 

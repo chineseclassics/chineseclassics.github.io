@@ -105,7 +105,7 @@ async function fetchClassGames() {
     
     console.log('[Arena] 開始查詢班級比賽，班級ID:', classIds)
     
-    // 獲取這些班級的進行中比賽
+    // 獲取這些班級的進行中比賽（只顯示 waiting 和 playing 狀態）
     // 注意：game_teams 需要指定外鍵，因為有兩個關係（room_id 和 winner_team_id）
     const { data: games, error } = await supabase
       .from('game_rooms')
