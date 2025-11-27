@@ -8,7 +8,7 @@
  *   - 加入鬥豆場：班級比賽（Realtime）+ 輸入房間碼
  */
 
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/authStore'
 import { useGameStore } from '../../stores/gameStore'
@@ -59,14 +59,26 @@ const isPvpUnlocked = computed(() => level.value >= UNLOCK_LEVEL)
 
 // 獲取學生所屬班級 ID
 async function fetchMyClassIds(): Promise<string[]> {
-  if (!supabase || !authStore.user) return []
+  if (!supabase || !authStore.user) {
+    console.log('[Arena] fetchMyClassIds: supabase 或 user 為空')
+    return []
+  }
   
-  const { data: memberships } = await supabase
+  console.log('[Arena] 獲取學生班級，user.id:', authStore.user.id)
+  
+  const { data: memberships, error } = await supabase
     .from('class_members')
     .select('class_id')
     .eq('student_id', authStore.user.id)
   
-  return memberships?.map(m => m.class_id) || []
+  if (error) {
+    console.error('[Arena] 獲取班級失敗:', error)
+    return []
+  }
+  
+  const classIds = memberships?.map(m => m.class_id) || []
+  console.log('[Arena] 學生所屬班級:', classIds)
+  return classIds
 }
 
 // 獲取學生所屬班級的進行中比賽
@@ -233,13 +245,25 @@ function goToCreate() {
 // 生命週期
 // =====================================================
 
-onMounted(async () => {
-  if (authStore.isAuthenticated && !authStore.isTeacher) {
-    // 學生：獲取班級比賽並訂閱 Realtime
-    await fetchClassGames()
-    await subscribeToClassGames()
-  }
-})
+// 監聽認證狀態變化，確保在用戶登入後正確加載數據
+watch(
+  () => [authStore.isAuthenticated, authStore.isTeacher],
+  async ([isAuth, isTeacher]) => {
+    console.log('[Arena] 認證狀態變化:', { isAuth, isTeacher })
+    
+    if (isAuth && !isTeacher) {
+      // 學生：獲取班級比賽並訂閱 Realtime
+      console.log('[Arena] 學生登入，開始獲取班級比賽')
+      await fetchClassGames()
+      await subscribeToClassGames()
+    } else {
+      // 老師或未登入：清空班級比賽數據
+      classGames.value = []
+      unsubscribeFromClassGames()
+    }
+  },
+  { immediate: true }  // 立即執行一次，處理頁面刷新的情況
+)
 
 onUnmounted(() => {
   unsubscribeFromClassGames()
