@@ -2,7 +2,9 @@
 /**
  * 共享組件 - 對戰做題頁面（多篇文章版）
  * 
- * 支持多篇文章連續作答：
+ * 使用和練習頁面一致的斷句界面：
+ * - 句豆種植方式
+ * - 顯示剩餘豆子數量
  * - 做完一篇自動進入下一篇
  * - 計分 = 累計正確斷句位置總數
  * - 時間到自動提交
@@ -38,49 +40,48 @@ const remainingTime = ref(0)
 let countdownInterval: ReturnType<typeof setInterval> | null = null
 
 // 句讀遊戲狀態（當前文章）
+const characters = ref<string[]>([])
 const userBreaks = ref<Set<number>>(new Set())
 const correctBreaks = ref<Set<number>>(new Set())
-const attemptCount = ref(0)
+
+// 豆子相關計算
+const totalBeans = computed(() => correctBreaks.value.size)
+const usedBeans = computed(() => userBreaks.value.size)
+const remainingBeans = computed(() => Math.max(0, totalBeans.value - usedBeans.value))
+const hasBeansLeft = computed(() => remainingBeans.value > 0)
+const beanShake = ref(false)
 
 // 全局累計
 const totalCorrectBreaks = ref(0)  // 累計正確斷句數
 const completedTextsCount = ref(0)  // 已完成文章數
-const totalAttempts = ref(0)  // 總嘗試次數
 
 const isSubmitted = ref(false)
 const isLoading = ref(true)
+let startTime = 0
 
 // =====================================================
-// 解析與計算
+// 解析與計算（使用 | 作為斷點標記，和練習頁面一致）
 // =====================================================
 
-// 解析正確斷點（標點符號位置）
-function parseCorrectBreaks(rawContent: string): { text: string; breaks: Set<number> } {
+function parseContent(raw: string): { chars: string[]; breaks: Set<number> } {
+  const chars: string[] = []
   const breaks = new Set<number>()
-  let cleanText = ''
-  let position = 0
+  let pointer = 0
   
-  for (let i = 0; i < rawContent.length; i++) {
-    const char = rawContent[i] ?? ''
-    // 標點符號作為斷點
-    if ('，。！？；：、'.includes(char)) {
-      if (position > 0) {  // 確保斷點在字符之後
-        breaks.add(position - 1)
+  for (const char of raw) {
+    if (char === '|') {
+      // 斷句標記在「前一個字的後面」
+      if (pointer > 0) {
+        breaks.add(pointer - 1)
       }
-    } else {
-      cleanText += char
-      position++
+    } else if (char !== '\n' && char !== '\r') {
+      chars.push(char)
+      pointer++
     }
   }
   
-  return { text: cleanText, breaks }
+  return { chars, breaks }
 }
-
-// 獲取當前乾淨文本
-const cleanText = computed(() => {
-  if (!currentText.value?.content) return ''
-  return currentText.value.content.replace(/[，。！？；：、]/g, '')
-})
 
 // =====================================================
 // 遊戲邏輯
@@ -90,30 +91,99 @@ const cleanText = computed(() => {
 function initCurrentText() {
   if (!currentText.value?.content) return
   
-  const parsed = parseCorrectBreaks(currentText.value.content)
+  const parsed = parseContent(currentText.value.content)
+  characters.value = parsed.chars
   correctBreaks.value = parsed.breaks
   userBreaks.value = new Set()
-  attemptCount.value = 0
+}
+
+// 音效
+let audioCtx: AudioContext | null = null
+
+function playSound(type: 'add' | 'remove' | 'error') {
+  try {
+    if (!audioCtx) {
+      audioCtx = new AudioContext()
+    }
+    const ctx = audioCtx
+    const oscillator = ctx.createOscillator()
+    const gainNode = ctx.createGain()
+    oscillator.connect(gainNode)
+    gainNode.connect(ctx.destination)
+    oscillator.type = 'sine'
+
+    if (type === 'add') {
+      oscillator.frequency.setValueAtTime(400, ctx.currentTime)
+      oscillator.frequency.exponentialRampToValueAtTime(200, ctx.currentTime + 0.1)
+      gainNode.gain.setValueAtTime(0.3, ctx.currentTime)
+      gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1)
+      oscillator.start(ctx.currentTime)
+      oscillator.stop(ctx.currentTime + 0.1)
+    } else if (type === 'remove') {
+      oscillator.frequency.setValueAtTime(300, ctx.currentTime)
+      oscillator.frequency.exponentialRampToValueAtTime(150, ctx.currentTime + 0.08)
+      gainNode.gain.setValueAtTime(0.2, ctx.currentTime)
+      gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.08)
+      oscillator.start(ctx.currentTime)
+      oscillator.stop(ctx.currentTime + 0.08)
+    } else {
+      // error: 沒有豆子了
+      oscillator.frequency.setValueAtTime(200, ctx.currentTime)
+      gainNode.gain.setValueAtTime(0.2, ctx.currentTime)
+      gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15)
+      oscillator.start(ctx.currentTime)
+      oscillator.stop(ctx.currentTime + 0.15)
+    }
+  } catch {
+    // 忽略音效錯誤
+  }
+}
+
+// 震動反饋
+function vibrate(duration: number = 10) {
+  if (navigator.vibrate) {
+    navigator.vibrate(duration)
+  }
 }
 
 // 點擊字符間隙
 function toggleBreak(index: number) {
   if (isSubmitted.value) return
   
-  attemptCount.value++
-  totalAttempts.value++
+  const newSet = new Set(userBreaks.value)
+  const isRemoving = newSet.has(index)
   
-  if (userBreaks.value.has(index)) {
-    userBreaks.value.delete(index)
-  } else {
-    userBreaks.value.add(index)
+  // 如果是添加新斷句，檢查是否還有豆子
+  if (!isRemoving && !hasBeansLeft.value) {
+    playSound('error')
+    beanShake.value = true
+    setTimeout(() => { beanShake.value = false }, 300)
+    vibrate(50)
+    return
   }
   
-  // 強制更新
-  userBreaks.value = new Set(userBreaks.value)
+  if (isRemoving) {
+    newSet.delete(index)
+    playSound('remove')
+    vibrate(5)
+  } else {
+    newSet.add(index)
+    playSound('add')
+    vibrate(10)
+  }
+  
+  userBreaks.value = newSet
   
   // 檢查是否完成當前文章
   checkCurrentTextCompletion()
+}
+
+// 獲取豆子槽的樣式類
+function getBeanClass(index: number) {
+  const hasBreak = userBreaks.value.has(index)
+  return {
+    'has-bean': hasBreak,
+  }
 }
 
 // 檢查當前文章是否完成
@@ -179,13 +249,10 @@ async function submitCurrentProgress() {
   const user = userBreaks.value
   
   let correctCount = 0
-  let wrongCount = 0
   
   for (const b of user) {
     if (correct.has(b)) {
       correctCount++
-    } else {
-      wrongCount++
     }
   }
   
@@ -197,8 +264,6 @@ async function submitCurrentProgress() {
 }
 
 // 提交最終成績
-let startTime = 0
-
 async function submitFinalScore() {
   if (isSubmitted.value) return
   isSubmitted.value = true
@@ -207,7 +272,7 @@ async function submitFinalScore() {
   
   // 計算正確率（基於總正確數 / 總斷點數）
   const totalBreaks = texts.value.reduce((sum, t) => {
-    const parsed = parseCorrectBreaks(t.content)
+    const parsed = parseContent(t.content)
     return sum + parsed.breaks.size
   }, 0)
   
@@ -218,8 +283,8 @@ async function submitFinalScore() {
     score: totalCorrectBreaks.value,  // 分數 = 正確斷句總數
     accuracy,
     timeSpent,
-    firstAccuracy: accuracy,  // 簡化處理
-    attemptCount: totalAttempts.value,
+    firstAccuracy: accuracy,
+    attemptCount: 1,
   })
   
   // 跳轉到結果頁
@@ -245,7 +310,6 @@ function startCountdown() {
     remainingTime.value = Math.max(0, room.value!.time_limit - elapsed)
     
     if (remainingTime.value === 0 && !isSubmitted.value) {
-      // 時間到，自動提交當前進度
       submitCurrentProgress()
     }
   }
@@ -258,7 +322,6 @@ function startCountdown() {
 // 生命週期
 // =====================================================
 
-// 監聯房間狀態
 watch(() => room.value?.status, (status) => {
   if (status === 'finished') {
     router.push({ name: 'arena-result', params: { roomId: roomId.value } })
@@ -272,7 +335,6 @@ onMounted(async () => {
   if (room.value?.text_ids && room.value.text_ids.length > 0) {
     texts.value = await gameStore.fetchTexts(room.value.text_ids)
   } else if (room.value?.text_id) {
-    // 向後兼容：單篇文章
     texts.value = await gameStore.fetchTexts([room.value.text_id])
   }
   
@@ -305,6 +367,7 @@ onUnmounted(() => {
       <header class="play-header">
         <div class="header-left">
           <span class="text-title">{{ currentText?.title }}</span>
+          <span v-if="currentText?.author" class="text-author">{{ currentText.author }}</span>
           <span v-if="texts.length > 1" class="text-progress">
             （{{ currentTextIndex + 1 }} / {{ texts.length }}）
           </span>
@@ -322,7 +385,7 @@ onUnmounted(() => {
         </div>
       </header>
 
-      <!-- 多篇進度條（僅當多篇時顯示） -->
+      <!-- 多篇進度條 -->
       <div v-if="texts.length > 1" class="multi-text-progress">
         <div 
           v-for="(t, index) in texts" 
@@ -341,28 +404,40 @@ onUnmounted(() => {
 
       <!-- 做題區域 -->
       <main class="play-main">
+        <!-- 豆子庫存顯示 -->
+        <div class="bean-header">
+          <span class="bean-hint">點擊字間空隙種下句豆</span>
+          <div class="bean-inventory" :class="{ shake: beanShake, empty: !hasBeansLeft }">
+            <span
+              v-for="i in totalBeans"
+              :key="i"
+              class="inventory-bean"
+              :class="{ used: i > remainingBeans }"
+            ></span>
+          </div>
+        </div>
+
+        <!-- 斷句區域 -->
         <div class="text-container">
-          <div class="text-content">
-            <template v-for="(char, index) in cleanText" :key="index">
-              <span 
-                class="char-wrapper"
+          <div class="practice-line" v-if="characters.length">
+            <span
+              v-for="(char, index) in characters"
+              :key="index"
+              class="char-unit"
+            >
+              <span class="char">{{ char }}</span>
+              <!-- 最後一個字後面不需要斷句熱區 -->
+              <button
+                v-if="index < characters.length - 1"
+                class="bean-slot"
+                :class="getBeanClass(index)"
                 @click="toggleBreak(index)"
+                :aria-label="`在「${char}」後${userBreaks.has(index) ? '移除' : '添加'}斷句`"
               >
-                <span class="char">{{ char }}</span>
-                <span 
-                  v-if="index < cleanText.length - 1"
-                  class="gap"
-                  :class="{ 
-                    marked: userBreaks.has(index),
-                    correct: isSubmitted && correctBreaks.has(index) && userBreaks.has(index),
-                    wrong: isSubmitted && !correctBreaks.has(index) && userBreaks.has(index),
-                    missed: isSubmitted && correctBreaks.has(index) && !userBreaks.has(index),
-                  }"
-                >
-                  <span v-if="userBreaks.has(index)" class="break-mark">|</span>
-                </span>
-              </span>
-            </template>
+                <span class="bean" v-if="userBreaks.has(index)"></span>
+                <span class="bean-hint-dot"></span>
+              </button>
+            </span>
           </div>
         </div>
 
@@ -439,6 +514,12 @@ onUnmounted(() => {
 
 .text-title {
   font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.text-author {
+  font-size: 0.875rem;
+  color: var(--color-neutral-500);
 }
 
 .text-progress {
@@ -545,80 +626,159 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 2rem;
+  padding: 1.5rem 2rem;
 }
 
+/* 豆子庫存顯示 */
+.bean-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 800px;
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.bean-hint {
+  font-size: 0.875rem;
+  color: var(--color-neutral-500);
+}
+
+.bean-inventory {
+  display: flex;
+  gap: 4px;
+  padding: 0.375rem 0.75rem;
+  background: var(--color-neutral-100);
+  border-radius: 20px;
+  transition: all 0.3s ease;
+}
+
+.bean-inventory.shake {
+  animation: shake 0.3s ease-in-out;
+}
+
+.bean-inventory.empty {
+  background: #fee2e2;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+
+.inventory-bean {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  box-shadow: inset 0 -2px 4px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease;
+}
+
+.inventory-bean.used {
+  background: var(--color-neutral-300);
+  box-shadow: none;
+  opacity: 0.5;
+}
+
+/* 斷句區域 */
 .text-container {
   background: white;
   border-radius: 20px;
-  padding: 2.5rem;
+  padding: 2rem 2.5rem;
   max-width: 800px;
   width: 100%;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
 }
 
-.text-content {
+.practice-line {
   font-size: 1.75rem;
-  line-height: 2.5;
+  line-height: 2.8;
   text-align: justify;
-  font-family: 'Noto Serif SC', serif;
   user-select: none;
 }
 
-.char-wrapper {
+.char-unit {
   display: inline;
-  cursor: pointer;
-  position: relative;
+  white-space: nowrap;
 }
 
 .char {
+  display: inline;
   transition: color 0.2s;
 }
 
-.char-wrapper:hover .char {
-  color: var(--color-primary-600);
-}
-
-.gap {
-  display: inline-block;
-  width: 4px;
+/* 豆子槽 */
+.bean-slot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 1.75rem;
+  vertical-align: middle;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  padding: 0;
   position: relative;
 }
 
-.gap.marked {
-  width: 8px;
+.bean-slot:hover {
+  background: rgba(34, 197, 94, 0.1);
+  border-radius: 4px;
 }
 
-.break-mark {
-  color: var(--color-primary-500);
-  font-weight: 700;
-  animation: fadeIn 0.2s;
+.bean-slot .bean-hint-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-neutral-200);
+  opacity: 0;
+  transition: opacity 0.2s;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: scale(0.5); }
-  to { opacity: 1; transform: scale(1); }
+.bean-slot:hover .bean-hint-dot {
+  opacity: 1;
 }
 
-.gap.correct .break-mark {
-  color: #22c55e;
+.bean-slot.has-bean .bean-hint-dot {
+  display: none;
 }
 
-.gap.wrong .break-mark {
-  color: #ef4444;
-  text-decoration: line-through;
+/* 種下的豆子 */
+.bean {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  box-shadow: 
+    inset 0 -3px 6px rgba(0, 0, 0, 0.2),
+    0 2px 4px rgba(0, 0, 0, 0.15);
+  animation: popIn 0.2s ease-out;
 }
 
-.gap.missed::after {
-  content: '|';
-  color: #f59e0b;
-  font-weight: 700;
+@keyframes popIn {
+  0% { 
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% { 
+    transform: scale(1.2);
+  }
+  100% { 
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 /* 進度提示 */
 .progress-hint {
-  margin-top: 1.5rem;
+  margin-top: 1rem;
   font-size: 0.875rem;
   color: var(--color-neutral-500);
 }
@@ -666,5 +826,42 @@ onUnmounted(() => {
 .btn-primary.btn-large {
   padding: 1rem 4rem;
   font-size: 1.2rem;
+}
+
+/* 響應式 */
+@media (max-width: 640px) {
+  .play-header {
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+  }
+  
+  .header-left {
+    flex: 1;
+    min-width: 100%;
+    justify-content: center;
+  }
+  
+  .countdown {
+    order: -1;
+  }
+  
+  .text-container {
+    padding: 1.5rem;
+  }
+  
+  .practice-line {
+    font-size: 1.5rem;
+    line-height: 2.5;
+  }
+  
+  .bean-slot {
+    width: 16px;
+  }
+  
+  .bean {
+    width: 14px;
+    height: 14px;
+  }
 }
 </style>

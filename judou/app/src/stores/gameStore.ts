@@ -248,13 +248,8 @@ export const useGameStore = defineStore('game', () => {
       return null
     }
 
-    // 更新獎池
-    if (entryFee > 0) {
-      await supabase
-        .from('game_rooms')
-        .update({ prize_pool: supabase.rpc('increment_prize_pool', { room_id: roomId, amount: entryFee }) })
-        .eq('id', roomId)
-    }
+    // 獎池（prize_pool）將在結算時根據所有參與者的 fee_paid 計算
+    // 避免並發更新問題
 
     return data
   }
