@@ -36,10 +36,12 @@ async function initApp() {
   
   // 方式 2：從 sessionStorage 獲取（舊方式，保留兼容）
   const redirect = sessionStorage.getItem('redirect')
+  console.log('[App] 檢查 sessionStorage redirect:', redirect)
   if (redirect) {
     sessionStorage.removeItem('redirect')
     await router.isReady()
     const path = redirect.replace('/judou', '') || '/'
+    console.log('[App] sessionStorage 重定向到:', path)
     router.replace(path)
   }
 

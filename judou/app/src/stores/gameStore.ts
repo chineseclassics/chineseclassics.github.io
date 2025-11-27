@@ -23,7 +23,7 @@ import type {
 import {
   getTeamColors,
   getDefaultTeamName,
-  WIN_STREAK_BONUSES,
+  // WIN_STREAK_BONUSES,  // 暫時禁用連勝獎勵
   SAFETY_LIMITS,
 } from '../types/game'
 
@@ -130,6 +130,16 @@ export const useGameStore = defineStore('game', () => {
 
       // 如果是學生模式（PvP），創建者自動加入
       if (params.hostType === 'student') {
+        // 先支付入場費（如果需要）
+        if (params.entryFee && params.entryFee > 0) {
+          const canPay = await checkAndPayEntryFee(room.id, params.entryFee)
+          if (!canPay) {
+            // 扣費失敗，刪除剛創建的房間
+            await supabase.from('game_rooms').delete().eq('id', room.id)
+            return null
+          }
+        }
+        // 加入房間
         await joinRoomInternal(room.id, params.entryFee || 0)
       }
 
@@ -256,12 +266,24 @@ export const useGameStore = defineStore('game', () => {
 
   /**
    * 檢查並支付入場費
+   * 注意：豆子存儲在 profiles 表的 total_beans 欄位
    */
   async function checkAndPayEntryFee(roomId: string, amount: number): Promise<boolean> {
     if (!supabase || !authStore.user) return false
 
-    // 獲取用戶當前豆子數量
+    // 確保有最新的用戶數據
+    if (!userStatsStore.profile) {
+      await userStatsStore.fetchProfile()
+    }
+
+    // 獲取用戶當前豆子數量（從 profiles 表）
     const beans = userStatsStore.profile?.total_beans ?? 0
+
+    // 檢查餘額是否足夠
+    if (beans < amount) {
+      error.value = `豆子不足，需要 ${amount} 豆，當前只有 ${beans} 豆`
+      return false
+    }
 
     // 檢查最低餘額
     if (beans - amount < SAFETY_LIMITS.MIN_BALANCE) {
@@ -269,27 +291,20 @@ export const useGameStore = defineStore('game', () => {
       return false
     }
 
-    // 檢查每日限額（這些欄位將在數據庫遷移後可用）
-    const stats = userStatsStore.profile as any
-    const today = new Date().toISOString().split('T')[0]
-    const dailySpent = stats?.daily_fee_reset_at === today ? (stats?.daily_fee_spent || 0) : 0
-
-    if (dailySpent + amount > SAFETY_LIMITS.DAILY_FEE_LIMIT) {
-      error.value = `今日入場費已達上限 ${SAFETY_LIMITS.DAILY_FEE_LIMIT} 豆`
-      return false
-    }
-
-    // 扣除豆子
+    // 從 profiles 表扣除豆子
+    const newBalance = beans - amount
     const { error: deductError } = await supabase
-      .from('user_stats')
+      .from('profiles')
       .update({
-        beans: beans - amount,
-        daily_fee_spent: dailySpent + amount,
-        daily_fee_reset_at: today,
+        total_beans: newBalance,
+        weekly_beans: Math.max(0, (userStatsStore.profile?.weekly_beans ?? 0) - amount),
+        monthly_beans: Math.max(0, (userStatsStore.profile?.monthly_beans ?? 0) - amount),
+        updated_at: new Date().toISOString(),
       })
-      .eq('user_id', authStore.user.id)
+      .eq('id', authStore.user.id)
 
     if (deductError) {
+      console.error('扣除入場費失敗:', deductError)
       error.value = '扣除入場費失敗'
       return false
     }
@@ -302,13 +317,14 @@ export const useGameStore = defineStore('game', () => {
         room_id: roomId,
         type: 'entry_fee',
         amount: -amount,
-        balance_after: beans - amount,
+        balance_after: newBalance,
         description: `入場費 ${amount} 豆`,
       })
 
-    // 刷新用戶統計
+    // 刷新用戶統計（更新 UI）
     await userStatsStore.fetchProfile()
 
+    console.log(`💰 已扣除入場費 ${amount} 豆，餘額 ${newBalance} 豆`)
     return true
   }
 
@@ -655,16 +671,27 @@ export const useGameStore = defineStore('game', () => {
     // 判斷是否平局（沒有明確獲勝者）
     const isTie = !winnerTeamId && !winnerUserId && winners.length > 1
     
+    // 計算實際獎池（根據所有參與者的 fee_paid 總和）
+    // 注意：prize_pool 欄位可能是 0，因為加入房間時沒有累積
+    // 所以這裡根據實際付款計算
+    const actualPrizePool = room.participants?.reduce(
+      (sum: number, p: GameParticipant) => sum + (p.fee_paid || 0), 
+      0
+    ) || 0
+    
     // 分發獎勵或返還入場費
     let prizeDistribution: { userId: string; displayName: string; prize: number; streakBonus: number }[] = []
     
-    if (room.prize_pool > 0 && winners.length > 0) {
+    if (actualPrizePool > 0 && winners.length > 0) {
+      // 用計算出的實際獎池替換 room.prize_pool
+      const roomWithPrizePool = { ...room, prize_pool: actualPrizePool }
+      
       if (isTie) {
         // 平局：返還入場費，不加連勝獎勵
-        prizeDistribution = await refundEntryFees(room, winners)
+        prizeDistribution = await refundEntryFees(roomWithPrizePool, winners)
       } else {
         // 有明確獲勝者：正常分發獎勵
-        prizeDistribution = await distributePrizes(room, winners)
+        prizeDistribution = await distributePrizes(roomWithPrizePool, winners)
       }
     }
 
@@ -683,6 +710,7 @@ export const useGameStore = defineStore('game', () => {
 
   /**
    * 分發獎勵
+   * 注意：豆子存儲在 profiles 表的 total_beans 欄位
    */
   async function distributePrizes(
     room: GameRoom,
@@ -694,39 +722,32 @@ export const useGameStore = defineStore('game', () => {
     const distribution: { userId: string; displayName: string; prize: number; streakBonus: number }[] = []
 
     for (const winner of winners) {
-      // 計算連勝獎勵
-      const { data: stats } = await supabase
-        .from('user_stats')
-        .select('pvp_win_streak')
-        .eq('user_id', winner.user_id)
-        .single()
-
-      const currentStreak = (stats?.pvp_win_streak || 0) + 1
-      let streakBonus = 0
-
-      // 檢查連勝獎勵
-      for (const [requiredStreak, bonus] of Object.entries(WIN_STREAK_BONUSES)) {
-        if (currentStreak === Number(requiredStreak)) {
-          streakBonus = bonus
-          break
-        }
-      }
+      // 暫時禁用連勝獎勵（因為 user_stats 表可能沒有數據）
+      // TODO: 將連勝數據遷移到 profiles 表
+      const streakBonus = 0
 
       const totalPrize = prizePerWinner + streakBonus
 
-      // 發放獎勵
-      const { data: userStats } = await supabase
-        .from('user_stats')
-        .select('beans')
-        .eq('user_id', winner.user_id)
+      // 獲取當前豆子餘額（從 profiles 表）
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('total_beans, weekly_beans, monthly_beans')
+        .eq('id', winner.user_id)
         .single()
 
-      const newBalance = (userStats?.beans || 0) + totalPrize
+      const currentBeans = profile?.total_beans || 0
+      const newBalance = currentBeans + totalPrize
 
+      // 更新 profiles 表
       await supabase
-        .from('user_stats')
-        .update({ beans: newBalance })
-        .eq('user_id', winner.user_id)
+        .from('profiles')
+        .update({ 
+          total_beans: newBalance,
+          weekly_beans: (profile?.weekly_beans || 0) + totalPrize,
+          monthly_beans: (profile?.monthly_beans || 0) + totalPrize,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', winner.user_id)
 
       // 更新參與者獎勵記錄
       await supabase
@@ -752,6 +773,8 @@ export const useGameStore = defineStore('game', () => {
         prize: prizePerWinner,
         streakBonus,
       })
+      
+      console.log(`🎉 ${winner.user?.display_name} 獲得 ${totalPrize} 豆，餘額 ${newBalance} 豆`)
     }
 
     return distribution
@@ -759,6 +782,7 @@ export const useGameStore = defineStore('game', () => {
 
   /**
    * 平局時返還入場費
+   * 注意：豆子存儲在 profiles 表的 total_beans 欄位
    */
   async function refundEntryFees(
     room: GameRoom,
@@ -766,28 +790,44 @@ export const useGameStore = defineStore('game', () => {
   ): Promise<{ userId: string; displayName: string; prize: number; streakBonus: number }[]> {
     if (!supabase) return []
 
-    const entryFee = room.entry_fee || 0
+    console.log(`🤝 平局！退還入場費給 ${participants.length} 位玩家`)
+    
     const distribution: { userId: string; displayName: string; prize: number; streakBonus: number }[] = []
 
     for (const participant of participants) {
-      // 返還入場費
-      const { data: userStats } = await supabase
-        .from('user_stats')
-        .select('beans')
-        .eq('user_id', participant.user_id)
+      // 使用參與者實際支付的入場費（更準確）
+      const refundAmount = participant.fee_paid || room.entry_fee || 0
+      
+      if (refundAmount <= 0) {
+        console.log(`⚠️ ${participant.user?.display_name} 沒有支付入場費，跳過`)
+        continue
+      }
+
+      // 獲取當前豆子餘額（從 profiles 表）
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('total_beans, weekly_beans, monthly_beans')
+        .eq('id', participant.user_id)
         .single()
 
-      const newBalance = (userStats?.beans || 0) + entryFee
+      const currentBeans = profile?.total_beans || 0
+      const newBalance = currentBeans + refundAmount
 
+      // 返還入場費到 profiles 表
       await supabase
-        .from('user_stats')
-        .update({ beans: newBalance })
-        .eq('user_id', participant.user_id)
+        .from('profiles')
+        .update({ 
+          total_beans: newBalance,
+          weekly_beans: (profile?.weekly_beans || 0) + refundAmount,
+          monthly_beans: (profile?.monthly_beans || 0) + refundAmount,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', participant.user_id)
 
       // 更新參與者獎勵記錄（顯示為返還）
       await supabase
         .from('game_participants')
-        .update({ prize_won: entryFee })
+        .update({ prize_won: refundAmount })
         .eq('id', participant.id)
 
       // 記錄交易
@@ -797,17 +837,19 @@ export const useGameStore = defineStore('game', () => {
           user_id: participant.user_id,
           room_id: room.id,
           type: 'refund',
-          amount: entryFee,
+          amount: refundAmount,
           balance_after: newBalance,
-          description: `平局，返還入場費 ${entryFee} 豆`,
+          description: `平局，返還入場費 ${refundAmount} 豆`,
         })
 
       distribution.push({
         userId: participant.user_id,
         displayName: participant.user?.display_name || '未知',
-        prize: entryFee,
+        prize: refundAmount,
         streakBonus: 0,  // 平局沒有連勝獎勵
       })
+      
+      console.log(`💰 已退還 ${refundAmount} 豆給 ${participant.user?.display_name}，餘額 ${newBalance} 豆`)
     }
 
     return distribution
@@ -1123,21 +1165,32 @@ export const useGameStore = defineStore('game', () => {
   /**
    * 退還入場費
    */
+  /**
+   * 退還單個參與者的入場費（房間取消時調用）
+   */
   async function refundEntryFee(participant: GameParticipant): Promise<void> {
     if (!supabase || !participant.fee_paid) return
 
-    const { data: stats } = await supabase
-      .from('user_stats')
-      .select('beans')
-      .eq('user_id', participant.user_id)
+    // 從 profiles 表獲取當前餘額
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('total_beans, weekly_beans, monthly_beans')
+      .eq('id', participant.user_id)
       .single()
 
-    const newBalance = (stats?.beans || 0) + participant.fee_paid
+    const currentBeans = profile?.total_beans || 0
+    const newBalance = currentBeans + participant.fee_paid
 
+    // 更新 profiles 表
     await supabase
-      .from('user_stats')
-      .update({ beans: newBalance })
-      .eq('user_id', participant.user_id)
+      .from('profiles')
+      .update({ 
+        total_beans: newBalance,
+        weekly_beans: (profile?.weekly_beans || 0) + participant.fee_paid,
+        monthly_beans: (profile?.monthly_beans || 0) + participant.fee_paid,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', participant.user_id)
 
     await supabase
       .from('game_transactions')
@@ -1149,6 +1202,8 @@ export const useGameStore = defineStore('game', () => {
         balance_after: newBalance,
         description: '房間取消，退還入場費',
       })
+    
+    console.log(`💰 已退還 ${participant.fee_paid} 豆給 ${participant.user_id}`)
   }
 
   /**

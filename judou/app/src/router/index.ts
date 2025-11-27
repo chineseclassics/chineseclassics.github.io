@@ -191,4 +191,20 @@ router.afterEach((to) => {
   }
 })
 
+// 全局路由錯誤處理 - 處理懶加載 chunk 失敗
+router.onError((error, to) => {
+  // 檢查是否是 chunk 加載失敗（通常是 "Loading chunk xxx failed"）
+  if (
+    error.message.includes('Loading chunk') ||
+    error.message.includes('Failed to fetch') ||
+    error.message.includes('Loading CSS chunk') ||
+    error.name === 'ChunkLoadError'
+  ) {
+    console.error('[Router] Chunk 加載失敗，正在重新加載頁面...', error.message)
+    // 保存目標路徑，重新加載後恢復
+    sessionStorage.setItem('redirect', to.fullPath)
+    window.location.reload()
+  }
+})
+
 export default router
