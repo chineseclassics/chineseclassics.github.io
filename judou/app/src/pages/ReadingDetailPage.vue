@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useReadingStore } from '@/stores/readingStore'
 import { useAuthStore } from '@/stores/authStore'
@@ -264,7 +264,13 @@ function stopReading() {
   isPlaying.value = false
 }
 
-// 朗讀全文 / 停止朗讀（分段播放，快速響應）
+// TTS 配置
+const TTS_OPTIONS = {
+  voice: 'zh-CN-XiaoxiaoNeural',
+  rate: 0.8  // Azure TTS 語速 (-20%)，適合古文朗讀
+}
+
+// 朗讀全文 / 停止朗讀（分段播放 + 預加載，快速響應）
 async function toggleReadFullText() {
   if (!parsedContent.value.allChars.length) return
   
@@ -284,17 +290,20 @@ async function toggleReadFullText() {
   shouldStopPlaying = false
   
   const segments = getSegmentedTexts()
+  const taixuPreload = (window as any).taixuPreload
   
   try {
-    // 逐段播放
+    // 逐段播放，同時預加載下一段
     for (let i = 0; i < segments.length; i++) {
-      // 檢查是否應該停止
       if (shouldStopPlaying) break
       
-      await (window as any).taixuSpeak(segments[i], { 
-        voice: 'zh-CN-XiaoxiaoNeural',
-        rate: 0.8  // Azure TTS 語速 (-20%)，適合古文朗讀
-      })
+      // 預加載下一段（如果有的話）
+      if (i + 1 < segments.length && taixuPreload) {
+        taixuPreload(segments[i + 1], TTS_OPTIONS)
+      }
+      
+      // 播放當前段
+      await (window as any).taixuSpeak(segments[i], TTS_OPTIONS)
     }
   } catch (e) {
     console.error('TTS 播放失敗:', e)
@@ -360,6 +369,14 @@ onMounted(async () => {
   // 恢復閱讀進度
   if (readingStore.currentText?.progress) {
     currentParagraphIdx.value = readingStore.currentText.progress.last_paragraph
+  }
+  
+  // 等待 Vue 響應式更新完成後，預加載第一段音頻
+  await nextTick()
+  const segments = getSegmentedTexts()
+  if (segments.length > 0 && (window as any).taixuPreload) {
+    // 後台預加載，不阻塞頁面
+    (window as any).taixuPreload(segments[0], TTS_OPTIONS)
   }
 })
 

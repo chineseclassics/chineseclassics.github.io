@@ -74,6 +74,55 @@
     }
   }
 
+  // 生成緩存鍵
+  function getCacheKey(text, voice, rateParam) {
+    return `${voice}::${rateParam}::${text}`;
+  }
+  
+  // 獲取 rate 參數
+  function getRateParam(rate) {
+    if (rate != null && rate !== 1) {
+      const percent = Math.round((rate - 1) * 100);
+      return percent >= 0 ? `+${percent}%` : `${percent}%`;
+    }
+    return '';
+  }
+  
+  // 預加載音頻（只請求並緩存，不播放）
+  async function taixuPreload(text, opts = {}) {
+    const endpoint = (window.TAIXU_TTS_ENDPOINT || '').trim();
+    const anon = (window.SUPABASE_ANON_KEY || '').trim();
+    const voice = (opts.voice || 'zh-CN-XiaoxiaoNeural').trim();
+    const rateParam = getRateParam(opts.rate);
+    
+    if (!endpoint) return false;
+    
+    const cacheKey = getCacheKey(text, voice, rateParam);
+    
+    // 已緩存則跳過
+    if (ttsCache.has(cacheKey)) return true;
+    
+    try {
+      const headers = {};
+      if (anon) {
+        headers['apikey'] = anon;
+        headers['Authorization'] = `Bearer ${anon}`;
+      }
+      let url = `${endpoint}?text=${encodeURIComponent(text)}&voice=${encodeURIComponent(voice)}`;
+      if (rateParam) {
+        url += `&rate=${encodeURIComponent(rateParam)}`;
+      }
+      const resp = await fetch(url, { method: 'GET', headers });
+      if (!resp.ok) throw new Error(`TTS ${resp.status}`);
+      const blob = await resp.blob();
+      ttsCache.set(cacheKey, blob);
+      return true;
+    } catch (e) {
+      console.warn('TTS 預加載失敗:', e);
+      return false;
+    }
+  }
+
   // 對外主函式：優先在線 TTS，失敗回退瀏覽器語音
   async function taixuSpeak(text, opts = {}) {
     // 先停止之前的播放
@@ -82,20 +131,12 @@
     const endpoint = (window.TAIXU_TTS_ENDPOINT || '').trim();
     const anon = (window.SUPABASE_ANON_KEY || '').trim();
     const voice = (opts.voice || 'zh-CN-XiaoxiaoNeural').trim();
+    const rateParam = getRateParam(opts.rate);
 
     // 1) 在線 TTS（若有設定端點）
     if (endpoint) {
       try {
-        // rate 轉換：前端用 0-1 範圍，Azure 用百分比如 "-50%"
-        // 0.5 = 正常, 0.25 = 慢 50% ("-50%"), 1.0 = 快 100% ("+100%")
-        let rateParam = '';
-        if (opts.rate != null && opts.rate !== 1) {
-          // 將 0-2 的 rate 轉換為百分比：rate 0.5 = "-50%", rate 1.5 = "+50%"
-          const percent = Math.round((opts.rate - 1) * 100);
-          rateParam = percent >= 0 ? `+${percent}%` : `${percent}%`;
-        }
-        
-        const cacheKey = `${voice}::${rateParam}::${text}`;
+        const cacheKey = getCacheKey(text, voice, rateParam);
         let blob = ttsCache.get(cacheKey);
         if (!blob) {
           const headers = {};
@@ -110,7 +151,6 @@
           const resp = await fetch(url, { method: 'GET', headers });
           if (!resp.ok) throw new Error(`TTS ${resp.status}`);
           blob = await resp.blob();
-          // 簡單快取（可選：依需求加上大小上限與淘汰策略）
           ttsCache.set(cacheKey, blob);
         }
         await playBlob(blob);
@@ -161,5 +201,8 @@
   }
   if (!window.taixuClearCache) {
     window.taixuClearCache = taixuClearCache;
+  }
+  if (!window.taixuPreload) {
+    window.taixuPreload = taixuPreload;
   }
 })();

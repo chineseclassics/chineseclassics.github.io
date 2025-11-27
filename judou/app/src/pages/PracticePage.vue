@@ -664,6 +664,12 @@ function stopTTS() {
   isPlayingTTS.value = false
 }
 
+// TTS 配置
+const TTS_OPTIONS = {
+  voice: 'zh-CN-XiaoxiaoNeural',
+  rate: 0.8  // Azure TTS 語速 (-20%)，適合古文朗讀
+}
+
 async function toggleReadText() {
   if (!characters.value.length) return
   
@@ -683,16 +689,20 @@ async function toggleReadText() {
   shouldStopTTS = false
   
   const segments = getSegmentedTexts()
+  const taixuPreload = (window as any).taixuPreload
   
   try {
-    // 逐段播放
+    // 逐段播放，同時預加載下一段
     for (let i = 0; i < segments.length; i++) {
       if (shouldStopTTS) break
       
-      await (window as any).taixuSpeak(segments[i], { 
-        voice: 'zh-CN-XiaoxiaoNeural',
-        rate: 0.8  // Azure TTS 語速 (-20%)，適合古文朗讀
-      })
+      // 預加載下一段（如果有的話）
+      if (i + 1 < segments.length && taixuPreload) {
+        taixuPreload(segments[i + 1], TTS_OPTIONS)
+      }
+      
+      // 播放當前段
+      await (window as any).taixuSpeak(segments[i], TTS_OPTIONS)
     }
   } catch (e) {
     console.error('TTS 播放失敗:', e)
