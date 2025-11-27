@@ -209,7 +209,9 @@ export const useGameStore = defineStore('game', () => {
         return { success: false, error: error.value || '加入房間失敗' }
       }
 
-      currentRoom.value = room
+      // 將新參與者添加到房間的參與者列表中
+      const updatedParticipants = [...(room.participants || []), participant]
+      currentRoom.value = { ...room, participants: updatedParticipants }
       myParticipant.value = participant
       subscribeToRoom(room.id)
 
@@ -767,9 +769,18 @@ export const useGameStore = defineStore('game', () => {
   /**
    * 訂閱房間更新
    */
+  // 當前訂閱的房間 ID，用於避免重複訂閱
+  let currentSubscribedRoomId: string | null = null
+
   function subscribeToRoom(roomId: string): void {
     if (!supabase) {
       console.log('[Game] subscribeToRoom: supabase 未初始化')
+      return
+    }
+
+    // 如果已經訂閱了同一個房間，不要重複訂閱
+    if (currentSubscribedRoomId === roomId && roomSubscription) {
+      console.log('[Game] 已經訂閱房間:', roomId, '，跳過重複訂閱')
       return
     }
 
@@ -777,23 +788,34 @@ export const useGameStore = defineStore('game', () => {
 
     // 取消之前的訂閱
     unsubscribe()
+    currentSubscribedRoomId = roomId
 
     // 訂閱房間狀態變更
+    // 注意：不使用 filter，因為 filter 與 RLS 可能有衝突導致 CHANNEL_ERROR
+    // 改為在客戶端過濾
     roomSubscription = supabase
-      .channel(`room:${roomId}`)
+      .channel(`game-room-${roomId}`)
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
           table: 'game_rooms',
-          filter: `id=eq.${roomId}`,
+          // 不使用 filter，避免與 RLS 衝突
         },
         (payload) => {
-          console.log('[Game] 房間更新:', payload.eventType, payload.new)
-          if (payload.new) {
+          const newRoom = payload.new as any
+          const oldRoom = payload.old as any
+          const changedRoomId = newRoom?.id || oldRoom?.id
+          
+          // 客戶端過濾：只處理當前房間的更新
+          if (changedRoomId !== roomId) {
+            return
+          }
+          
+          console.log('[Game] 房間更新:', payload.eventType, newRoom)
+          if (newRoom) {
             // 更新房間狀態，保留已有的關聯數據（participants, teams 等）
-            const newRoom = payload.new as any
             currentRoom.value = { 
               ...currentRoom.value, 
               ...newRoom,
@@ -814,11 +836,19 @@ export const useGameStore = defineStore('game', () => {
           event: '*',
           schema: 'public',
           table: 'game_participants',
-          filter: `room_id=eq.${roomId}`,
+          // 不使用 filter
         },
         async (payload) => {
+          const newParticipant = payload.new as any
+          const oldParticipant = payload.old as any
+          const changedRoomId = newParticipant?.room_id || oldParticipant?.room_id
+          
+          // 客戶端過濾
+          if (changedRoomId !== roomId) {
+            return
+          }
+          
           console.log('[Game] 參與者更新:', payload.eventType)
-          // 刷新參與者列表
           await refreshParticipants(roomId)
         }
       )
@@ -828,16 +858,30 @@ export const useGameStore = defineStore('game', () => {
           event: '*',
           schema: 'public',
           table: 'game_teams',
-          filter: `room_id=eq.${roomId}`,
+          // 不使用 filter
         },
         async (payload) => {
+          const newTeam = payload.new as any
+          const oldTeam = payload.old as any
+          const changedRoomId = newTeam?.room_id || oldTeam?.room_id
+          
+          // 客戶端過濾
+          if (changedRoomId !== roomId) {
+            return
+          }
+          
           console.log('[Game] 團隊更新:', payload.eventType)
-          // 刷新團隊列表
           await refreshTeams(roomId)
         }
       )
       .subscribe((status) => {
         console.log('[Game] 房間訂閱狀態:', status)
+        
+        // 處理訂閱錯誤
+        if (status === 'CHANNEL_ERROR') {
+          console.error('[Game] 訂閱錯誤')
+          currentSubscribedRoomId = null
+        }
       })
   }
 
@@ -894,6 +938,7 @@ export const useGameStore = defineStore('game', () => {
       supabase?.removeChannel(participantsSubscription)
       participantsSubscription = null
     }
+    currentSubscribedRoomId = null
   }
 
   // =====================================================

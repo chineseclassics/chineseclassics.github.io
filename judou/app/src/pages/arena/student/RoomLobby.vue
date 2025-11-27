@@ -82,10 +82,12 @@ async function leaveRoom() {
 }
 
 onMounted(() => {
+  console.log('[RoomLobby] 組件掛載，訂閱房間:', roomId.value)
   gameStore.subscribeToRoom(roomId.value)
 })
 
 onUnmounted(() => {
+  console.log('[RoomLobby] 組件卸載')
   // 不要在離開時取消訂閱，因為可能要去做題頁面
 })
 </script>
@@ -108,7 +110,7 @@ onUnmounted(() => {
       
       <div class="room-meta">
         <span class="meta-item">
-          👥 {{ room?.max_players }} 人對戰
+          👥 {{ room?.max_players ? `${room.max_players} 人對戰` : '多人對戰' }}
         </span>
         <span class="meta-item">
           ⏱️ {{ timeModeText }}
@@ -142,7 +144,7 @@ onUnmounted(() => {
 
     <!-- 參與者列表 -->
     <section class="participants-section">
-      <h3>參與者 ({{ participants.length }}/{{ room?.max_players }})</h3>
+      <h3>參與者 ({{ participants.length }}{{ room?.max_players ? `/${room.max_players}` : '' }})</h3>
       
       <div class="participants-grid">
         <div
