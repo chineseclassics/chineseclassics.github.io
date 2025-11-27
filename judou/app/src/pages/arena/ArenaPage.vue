@@ -288,14 +288,6 @@ onUnmounted(() => {
   <div class="arena-page">
     <!-- 頁面標題 -->
     <header class="arena-header">
-      <div class="header-content">
-        <h1 class="page-title">
-          <span class="title-icon">⚔️</span>
-          鬥豆
-        </h1>
-        <p class="page-subtitle">與同學一較高下，在競技中成長</p>
-      </div>
-
       <!-- 用戶統計卡片 -->
       <div v-if="authStore.isAuthenticated" class="stats-card">
         <div class="stat-item">
