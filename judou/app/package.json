@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "prebuild": "rm -rf ../assets/*.js ../assets/*.css",
     "build": "vue-tsc -b && vite build",
     "preview": "vite preview"
   },
