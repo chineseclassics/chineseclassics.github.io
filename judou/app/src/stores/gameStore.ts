@@ -140,10 +140,17 @@ export const useGameStore = defineStore('game', () => {
           }
         }
         // 加入房間
-        await joinRoomInternal(room.id, params.entryFee || 0)
+        const hostParticipant = await joinRoomInternal(room.id, params.entryFee || 0)
+        
+        // 將房主參與者添加到 room.participants
+        if (hostParticipant) {
+          room.participants = [hostParticipant]
+          myParticipant.value = hostParticipant
+        }
       }
 
       currentRoom.value = room
+      subscribeToRoom(room.id)
       return room
     } catch (e) {
       error.value = (e as Error).message
@@ -1130,31 +1137,59 @@ export const useGameStore = defineStore('game', () => {
   async function leaveRoom(): Promise<void> {
     if (!supabase || !currentRoom.value || !authStore.user) return
 
+    const roomId = currentRoom.value.id
+    const entryFee = currentRoom.value.entry_fee || 0
+
     // 如果是房主且房間還在等待中，取消房間
     if (isHost.value && currentRoom.value.status === 'waiting') {
-      await supabase
-        .from('game_rooms')
-        .update({ status: 'cancelled' })
-        .eq('id', currentRoom.value.id)
+      console.log('[Game] 房主取消房間，退還所有人入場費')
+      
+      // 先從數據庫獲取所有參與者（確保數據完整）
+      let participants = currentRoom.value.participants || []
+      if (participants.length === 0 || !participants[0]?.fee_paid) {
+        const { data: dbParticipants } = await supabase
+          .from('game_participants')
+          .select('*, user:users!game_participants_user_id_fkey(id, display_name)')
+          .eq('room_id', roomId)
+        
+        if (dbParticipants) {
+          participants = dbParticipants
+        }
+      }
+      
+      console.log(`[Game] 找到 ${participants.length} 位參與者需要退款`)
 
       // 退還所有人的入場費
-      if (currentRoom.value.entry_fee > 0) {
-        for (const participant of currentRoom.value.participants || []) {
+      if (entryFee > 0) {
+        for (const participant of participants) {
+          console.log(`[Game] 退還入場費給 ${participant.user_id}，fee_paid: ${participant.fee_paid}`)
           await refundEntryFee(participant)
         }
       }
+
+      // 更新房間狀態為取消
+      await supabase
+        .from('game_rooms')
+        .update({ status: 'cancelled' })
+        .eq('id', roomId)
+
     } else if (!isHost.value && currentRoom.value.status === 'waiting') {
+      console.log('[Game] 玩家離開房間')
+      
+      // 退還入場費（先退款再刪除記錄）
+      // 檢查是否有入場費需要退還（fee_paid 或 entry_fee > 0）
+      const shouldRefund = (myParticipant.value?.fee_paid || 0) > 0 || entryFee > 0
+      if (shouldRefund && myParticipant.value) {
+        console.log(`[Game] 退還入場費 ${myParticipant.value.fee_paid || entryFee} 豆`)
+        await refundEntryFee(myParticipant.value)
+      }
+
       // 非房主離開，刪除參與者記錄
       await supabase
         .from('game_participants')
         .delete()
-        .eq('room_id', currentRoom.value.id)
+        .eq('room_id', roomId)
         .eq('user_id', authStore.user.id)
-
-      // 退還入場費
-      if (myParticipant.value?.fee_paid) {
-        await refundEntryFee(myParticipant.value)
-      }
     }
 
     unsubscribe()
@@ -1169,7 +1204,15 @@ export const useGameStore = defineStore('game', () => {
    * 退還單個參與者的入場費（房間取消時調用）
    */
   async function refundEntryFee(participant: GameParticipant): Promise<void> {
-    if (!supabase || !participant.fee_paid) return
+    if (!supabase) return
+    
+    // 獲取退款金額（優先使用 fee_paid，否則使用房間的 entry_fee）
+    const refundAmount = participant.fee_paid || currentRoom.value?.entry_fee || 0
+    
+    if (refundAmount <= 0) {
+      console.log(`[Game] ${participant.user_id} 無需退款（金額為 0）`)
+      return
+    }
 
     // 從 profiles 表獲取當前餘額
     const { data: profile } = await supabase
@@ -1179,18 +1222,23 @@ export const useGameStore = defineStore('game', () => {
       .single()
 
     const currentBeans = profile?.total_beans || 0
-    const newBalance = currentBeans + participant.fee_paid
+    const newBalance = currentBeans + refundAmount
 
     // 更新 profiles 表
-    await supabase
+    const { error: updateError } = await supabase
       .from('profiles')
       .update({ 
         total_beans: newBalance,
-        weekly_beans: (profile?.weekly_beans || 0) + participant.fee_paid,
-        monthly_beans: (profile?.monthly_beans || 0) + participant.fee_paid,
+        weekly_beans: (profile?.weekly_beans || 0) + refundAmount,
+        monthly_beans: (profile?.monthly_beans || 0) + refundAmount,
         updated_at: new Date().toISOString(),
       })
       .eq('id', participant.user_id)
+
+    if (updateError) {
+      console.error(`[Game] 退款失敗:`, updateError)
+      return
+    }
 
     await supabase
       .from('game_transactions')
@@ -1198,12 +1246,17 @@ export const useGameStore = defineStore('game', () => {
         user_id: participant.user_id,
         room_id: participant.room_id,
         type: 'refund',
-        amount: participant.fee_paid,
+        amount: refundAmount,
         balance_after: newBalance,
         description: '房間取消，退還入場費',
       })
     
-    console.log(`💰 已退還 ${participant.fee_paid} 豆給 ${participant.user_id}`)
+    console.log(`💰 已退還 ${refundAmount} 豆給 ${participant.user_id}，新餘額: ${newBalance}`)
+    
+    // 如果是當前用戶，刷新 profile 以更新 UI
+    if (participant.user_id === authStore.user?.id) {
+      await userStatsStore.fetchProfile()
+    }
   }
 
   /**

@@ -79,46 +79,62 @@ const beans = computed(() => userStatsStore.profile?.total_beans ?? 0)
 const level = computed(() => userStatsStore.level)
 const streakDays = computed(() => userStatsStore.profile?.streak_days ?? 0)
 
-// ========== 豆子變化動畫 ==========
-interface BeanChange {
-  id: number
-  amount: number
-  isPositive: boolean
-}
-
-const beanChanges = ref<BeanChange[]>([])
-let beanChangeId = 0
+// ========== 豆子變化動畫（原地數字滾動） ==========
+const displayBeans = ref(0)  // 顯示的數字（動畫用）
 const isBeansAnimating = ref(false)
+const beansChangeDirection = ref<'up' | 'down' | null>(null)
+let animationFrame: number | null = null
+
+// 數字滾動動畫函數
+function animateNumber(from: number, to: number, duration: number = 800) {
+  const startTime = performance.now()
+  const diff = to - from
+  
+  // 設置變化方向（用於顏色提示）
+  beansChangeDirection.value = diff > 0 ? 'up' : 'down'
+  isBeansAnimating.value = true
+  
+  function update(currentTime: number) {
+    const elapsed = currentTime - startTime
+    const progress = Math.min(elapsed / duration, 1)
+    
+    // 使用 easeOutExpo 緩動函數，讓動畫更自然
+    const easeProgress = 1 - Math.pow(1 - progress, 4)
+    
+    displayBeans.value = Math.round(from + diff * easeProgress)
+    
+    if (progress < 1) {
+      animationFrame = requestAnimationFrame(update)
+    } else {
+      displayBeans.value = to
+      // 動畫結束後延遲一下再移除顏色
+      setTimeout(() => {
+        isBeansAnimating.value = false
+        beansChangeDirection.value = null
+      }, 500)
+    }
+  }
+  
+  if (animationFrame) {
+    cancelAnimationFrame(animationFrame)
+  }
+  animationFrame = requestAnimationFrame(update)
+}
 
 // 監聽豆子變化
 watch(beans, (newVal, oldVal) => {
-  // 忽略初始化時的變化（oldVal 為 0 或 undefined）
-  if (oldVal === undefined || oldVal === 0 || newVal === oldVal) return
-  
-  const diff = newVal - oldVal
-  if (diff === 0) return
-  
-  // 觸發動畫
-  isBeansAnimating.value = true
-  
-  // 創建浮動數字
-  const change: BeanChange = {
-    id: ++beanChangeId,
-    amount: Math.abs(diff),
-    isPositive: diff > 0
+  // 初始化時直接設置
+  if (oldVal === undefined || displayBeans.value === 0) {
+    displayBeans.value = newVal
+    return
   }
-  beanChanges.value.push(change)
   
-  // 動畫結束後移除
-  setTimeout(() => {
-    beanChanges.value = beanChanges.value.filter(c => c.id !== change.id)
-  }, 1500)
+  // 數值相同不做動畫
+  if (newVal === oldVal) return
   
-  // 數字跳動動畫結束
-  setTimeout(() => {
-    isBeansAnimating.value = false
-  }, 600)
-})
+  // 啟動數字滾動動畫
+  animateNumber(displayBeans.value, newVal)
+}, { immediate: true })
 
 // 登入/登出
 const showUserMenu = ref(false)
@@ -189,23 +205,19 @@ const logoUrl = `${import.meta.env.BASE_URL}images/judou-logo.jpg`
         <p class="brand-title">{{ displayName }}</p>
         <!-- 已登入：顯示豆子數量、等級和連續天數 -->
         <div v-if="authStore.isAuthenticated" class="brand-stats-wrapper">
-          <!-- 豆子顯示區（優化版） -->
-          <div class="beans-card" :class="{ 'beans-animating': isBeansAnimating }">
+          <!-- 豆子顯示區（原地數字滾動動畫） -->
+          <div 
+            class="beans-card" 
+            :class="{ 
+              'beans-animating': isBeansAnimating,
+              'beans-up': beansChangeDirection === 'up',
+              'beans-down': beansChangeDirection === 'down'
+            }"
+          >
             <div class="beans-icon">
               <span class="bean-pod">🫛</span>
             </div>
-            <span class="beans-value">{{ beans.toLocaleString() }}</span>
-            <!-- 浮動變化數字 -->
-            <TransitionGroup name="bean-change" tag="div" class="bean-changes">
-              <div 
-                v-for="change in beanChanges" 
-                :key="change.id"
-                class="bean-change-item"
-                :class="change.isPositive ? 'positive' : 'negative'"
-              >
-                {{ change.isPositive ? '+' : '-' }}{{ change.amount }}
-              </div>
-            </TransitionGroup>
+            <span class="beans-value">{{ displayBeans.toLocaleString() }}</span>
           </div>
           <!-- 等級和連續天數 -->
           <div class="secondary-stats">
@@ -421,15 +433,55 @@ const logoUrl = `${import.meta.env.BASE_URL}images/judou-logo.jpg`
     inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }
 
-/* 豆子數字跳動動畫 */
+/* 豆子數字變化動畫 */
 .beans-card.beans-animating {
-  animation: beans-bounce 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  animation: beans-pulse 0.3s ease-out;
 }
 
-@keyframes beans-bounce {
-  0%, 100% { transform: scale(1); }
-  30% { transform: scale(1.15); }
-  60% { transform: scale(0.95); }
+.beans-card.beans-animating .beans-value {
+  animation: number-glow 0.8s ease-out;
+}
+
+/* 增加豆子時 - 綠色閃爍 */
+.beans-card.beans-up {
+  background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+  border-color: rgba(34, 197, 94, 0.4);
+  box-shadow: 
+    0 2px 8px rgba(34, 197, 94, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.beans-card.beans-up .beans-value {
+  color: #15803d;
+  text-shadow: 0 0 8px rgba(34, 197, 94, 0.5);
+}
+
+/* 減少豆子時 - 紅色閃爍 */
+.beans-card.beans-down {
+  background: linear-gradient(135deg, #fef2f2 0%, #fecaca 100%);
+  border-color: rgba(239, 68, 68, 0.4);
+  box-shadow: 
+    0 2px 8px rgba(239, 68, 68, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.beans-card.beans-down .beans-value {
+  color: #dc2626;
+  text-shadow: 0 0 8px rgba(239, 68, 68, 0.5);
+}
+
+@keyframes beans-pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+@keyframes number-glow {
+  0% { opacity: 1; }
+  25% { opacity: 0.7; }
+  50% { opacity: 1; }
+  75% { opacity: 0.8; }
+  100% { opacity: 1; }
 }
 
 .beans-icon {
@@ -457,57 +509,6 @@ const logoUrl = `${import.meta.env.BASE_URL}images/judou-logo.jpg`
   font-family: 'SF Mono', 'Monaco', 'Menlo', monospace;
   letter-spacing: -0.5px;
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
-}
-
-/* ========== 浮動變化數字動畫 ========== */
-.bean-changes {
-  position: absolute;
-  top: 50%;
-  right: -8px;
-  transform: translateY(-50%);
-  pointer-events: none;
-}
-
-.bean-change-item {
-  position: absolute;
-  right: 0;
-  white-space: nowrap;
-  font-size: 0.875rem;
-  font-weight: 700;
-  font-family: 'SF Mono', 'Monaco', 'Menlo', monospace;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-}
-
-.bean-change-item.positive {
-  color: #16a34a;
-}
-
-.bean-change-item.negative {
-  color: #dc2626;
-}
-
-/* Vue TransitionGroup 動畫 */
-.bean-change-enter-active {
-  animation: bean-change-float 1.5s ease-out forwards;
-}
-
-.bean-change-leave-active {
-  display: none;
-}
-
-@keyframes bean-change-float {
-  0% {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-  20% {
-    opacity: 1;
-    transform: translateY(-10px) scale(1.2);
-  }
-  100% {
-    opacity: 0;
-    transform: translateY(-40px) scale(0.8);
-  }
 }
 
 /* ========== 次要統計信息 ========== */
