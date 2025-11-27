@@ -148,7 +148,6 @@ onMounted(async () => {
       <section class="toolbar edamame-glass">
         <button 
           class="toolbar-btn"
-          :class="{ active: viewMode === 'bookmarked' }"
           @click="showBookmarked"
           :disabled="!authStore.isAuthenticated"
         >
@@ -216,11 +215,11 @@ onMounted(async () => {
             >
               <div 
                 class="book-spine"
-                :style="{ background: getCollectionColor(collection.name).spine }"
+                :style="{ background: getCollectionColor(collection.name)?.spine }"
               ></div>
               <div 
                 class="book-cover"
-                :style="{ background: getCollectionColor(collection.name).bg }"
+                :style="{ background: getCollectionColor(collection.name)?.bg }"
               >
                 <div class="book-title">{{ collection.name }}</div>
                 <div class="book-count">{{ getCollectionTextCount(collection.id) }} 篇</div>

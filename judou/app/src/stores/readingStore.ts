@@ -3,8 +3,6 @@ import { computed, ref } from 'vue'
 import { useSupabase } from '@/composables/useSupabase'
 import { useAuthStore } from './authStore'
 import type { 
-  PracticeText, 
-  TextAnnotation, 
   ReadingProgress, 
   ReadingText,
   ReadingCategory,
@@ -203,8 +201,9 @@ export const useReadingStore = defineStore('reading', () => {
       
       // 更新列表中的進度
       const idx = readingTexts.value.findIndex(t => t.id === textId)
-      if (idx !== -1) {
-        readingTexts.value[idx].progress = data
+      const textToUpdate = readingTexts.value[idx]
+      if (idx !== -1 && data && textToUpdate) {
+        textToUpdate.progress = data
       }
       
     } catch (err: any) {
@@ -242,8 +241,9 @@ export const useReadingStore = defineStore('reading', () => {
       }
       
       const idx = readingTexts.value.findIndex(t => t.id === textId)
-      if (idx !== -1) {
-        readingTexts.value[idx].progress = data
+      const textToUpdate = readingTexts.value[idx]
+      if (idx !== -1 && data && textToUpdate) {
+        textToUpdate.progress = data
       }
       
       return data?.bookmarked
@@ -467,7 +467,7 @@ export const useReadingStore = defineStore('reading', () => {
     }
     
     const idx = readingTexts.value.findIndex(t => t.id === textId)
-    if (idx !== -1) {
+    if (idx !== -1 && readingTexts.value[idx]) {
       readingTexts.value[idx].reading_categories = reading_categories
     }
   }

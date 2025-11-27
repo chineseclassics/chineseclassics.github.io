@@ -513,7 +513,7 @@ onMounted(async () => {
   ])
   
   // 預設選中第一個文集
-  if (categoryOptions.value.length > 0 && !selectedCategoryId.value) {
+  if (categoryOptions.value.length > 0 && !selectedCategoryId.value && categoryOptions.value[0]) {
     selectedCategoryId.value = categoryOptions.value[0].id
   }
 })
@@ -895,7 +895,7 @@ onMounted(async () => {
                       :key="cat.id" 
                       :value="cat.id"
                     >
-                      {{ cat.gradeName }} - {{ cat.name }}
+                      {{ cat.name }}
                     </option>
                   </select>
                 </label>
