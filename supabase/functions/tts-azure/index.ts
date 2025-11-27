@@ -46,6 +46,31 @@ function pinyinToIPA(pinyin: string): string | null {
   }
 }
 
+// 多音字詞語發音修正映射表
+// 格式：'詞語': '帶 phoneme 標記的替換文本'
+// 使用 sapi 拼音格式：聲調用數字表示（1-4 對應一二三四聲，5 表示輕聲）
+const PRONUNCIATION_FIXES: Record<string, string> = {
+  // 「為」讀 wéi（第二聲）的情況
+  '為業': '<phoneme alphabet="sapi" ph="wei2">為</phoneme>業',
+  '為人': '<phoneme alphabet="sapi" ph="wei2">為</phoneme>人',
+  '以為': '以<phoneme alphabet="sapi" ph="wei2">為</phoneme>',
+  '成為': '成<phoneme alphabet="sapi" ph="wei2">為</phoneme>',
+  '作為': '作<phoneme alphabet="sapi" ph="wei2">為</phoneme>',
+  '為官': '<phoneme alphabet="sapi" ph="wei2">為</phoneme>官',
+  '為師': '<phoneme alphabet="sapi" ph="wei2">為</phoneme>師',
+  '為學': '<phoneme alphabet="sapi" ph="wei2">為</phoneme>學',
+  // 可繼續添加更多詞語...
+};
+
+// 應用多音字發音修正
+function applyPronunciationFixes(text: string): string {
+  let result = text;
+  for (const [word, replacement] of Object.entries(PRONUNCIATION_FIXES)) {
+    result = result.replace(new RegExp(word, 'g'), replacement);
+  }
+  return result;
+}
+
 function buildSSML(
   text: string,
   voice: string = DEFAULT_VOICE,
@@ -58,7 +83,8 @@ function buildSSML(
   const safeText = (text || '').trim();
   const pText = (pinyinText || '').trim();
   
-  let content = safeText;
+  // 應用多音字發音修正
+  let content = applyPronunciationFixes(safeText);
   if (pText) {
     const tail = pinyinIPA
       ? `<phoneme alphabet="ipa" ph="${pinyinIPA}">${pText}</phoneme>`

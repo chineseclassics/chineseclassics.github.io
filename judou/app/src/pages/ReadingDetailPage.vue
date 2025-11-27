@@ -208,54 +208,63 @@ function hideTooltip() {
   activeTooltip.value = null
 }
 
-// 生成帶停頓標記的朗讀文本
-function getTextWithPauses(): string {
+// 生成分段的朗讀文本（按段落分割，每段帶停頓標記）
+function getSegmentedTexts(): string[] {
   const { allChars, allBreaks, paragraphs } = parsedContent.value
-  if (!allChars.length) return ''
+  if (!allChars.length) return []
   
-  // 收集每個段落的結尾位置
-  const paragraphEnds = new Set(paragraphs.map(p => p.endIdx))
+  const segments: string[] = []
   
-  let result = ''
-  let lastBreakPos = -1
-  
-  for (let i = 0; i < allChars.length; i++) {
-    result += allChars[i]
+  for (const para of paragraphs) {
+    let segmentText = ''
+    let lastBreakPos = para.startIdx - 1
     
-    const isBreak = allBreaks.has(i)
-    const isParagraphEnd = paragraphEnds.has(i)
-    
-    // 段落結尾必須添加停頓（即使沒有斷句標記）
-    if (isParagraphEnd) {
-      result += '。'
-      lastBreakPos = i
-    } else if (isBreak) {
-      const sentenceLength = i - lastBreakPos
-      lastBreakPos = i
+    for (let i = para.startIdx; i <= para.endIdx; i++) {
+      const localIdx = i - para.startIdx
+      segmentText += para.chars[localIdx]
       
-      // 根據句子長度選擇標點
-      if (sentenceLength >= 8) {
-        result += '。'
-      } else if (sentenceLength >= 4) {
-        result += '，'
-      } else {
-        result += '、'
+      const isBreak = allBreaks.has(i)
+      const isParagraphEnd = i === para.endIdx
+      
+      // 段落結尾必須添加停頓
+      if (isParagraphEnd) {
+        segmentText += '。'
+      } else if (isBreak) {
+        const sentenceLength = i - lastBreakPos
+        lastBreakPos = i
+        
+        // 根據句子長度選擇標點
+        if (sentenceLength >= 8) {
+          segmentText += '。'
+        } else if (sentenceLength >= 4) {
+          segmentText += '，'
+        } else {
+          segmentText += '、'
+        }
       }
+    }
+    
+    if (segmentText.trim()) {
+      segments.push(segmentText)
     }
   }
   
-  return result
+  return segments
 }
+
+// 停止標記（用於中斷分段播放）
+let shouldStopPlaying = false
 
 // 停止朗讀
 function stopReading() {
+  shouldStopPlaying = true
   if (typeof window !== 'undefined' && (window as any).taixuStopSpeak) {
     (window as any).taixuStopSpeak()
   }
   isPlaying.value = false
 }
 
-// 朗讀全文 / 停止朗讀
+// 朗讀全文 / 停止朗讀（分段播放，快速響應）
 async function toggleReadFullText() {
   if (!parsedContent.value.allChars.length) return
   
@@ -272,18 +281,29 @@ async function toggleReadFullText() {
   }
   
   isPlaying.value = true
-  const text = getTextWithPauses()
+  shouldStopPlaying = false
+  
+  const segments = getSegmentedTexts()
   
   try {
-    await (window as any).taixuSpeak(text, { 
-      voice: 'zh-CN-XiaoxiaoNeural',
-      rate: 0.7  // Azure TTS 語速 (-30%)，適合古文朗讀
-    })
+    // 逐段播放
+    for (let i = 0; i < segments.length; i++) {
+      // 檢查是否應該停止
+      if (shouldStopPlaying) break
+      
+      await (window as any).taixuSpeak(segments[i], { 
+        voice: 'zh-CN-XiaoxiaoNeural',
+        rate: 0.8  // Azure TTS 語速 (-20%)，適合古文朗讀
+      })
+    }
   } catch (e) {
     console.error('TTS 播放失敗:', e)
-    alert('語音朗讀失敗，請稍後再試')
+    if (!shouldStopPlaying) {
+      alert('語音朗讀失敗，請稍後再試')
+    }
   } finally {
     isPlaying.value = false
+    shouldStopPlaying = false
   }
 }
 

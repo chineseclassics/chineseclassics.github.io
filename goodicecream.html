@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>好味道冰淇凌店 Good Icecream Shop</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;700&display=swap');
+
+        body {
+            font-family: 'Zen Maru Gothic', sans-serif;
+            background-color: #fce7f3; /* Pink-100 */
+            user-select: none;
+            overflow: hidden;
+        }
+
+        /* 晃動動畫 - 用於錯誤或拒絕 */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+        .shake { animation: shake 0.3s ease-in-out; }
+
+        /* 彈跳動畫 - 用於添加配料 */
+        @keyframes pop {
+            0% { transform: scale(0.8); opacity: 0; }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .pop-in { animation: pop 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+
+        /* 冰淇淋球堆疊樣式 */
+        .scoop {
+            width: 70px;
+            height: 60px;
+            border-radius: 50% 50% 10% 10%;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            box-shadow: inset -5px -5px 10px rgba(0,0,0,0.1);
+            transition: all 0.2s;
+        }
+        .scoop::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 100%;
+            height: 15px;
+            background: inherit;
+            border-radius: 50%;
+            z-index: -1;
+        }
+
+        /* 顏色定義 */
+        .bg-flavor-vanilla { background-color: #fdf6e3; border: 1px solid #eee8d5; } /* 香草 */
+        .bg-flavor-chocolate { background-color: #5d4037; border: 1px solid #4e342e; } /* 巧克力 */
+        .bg-flavor-strawberry { background-color: #ff80ab; border: 1px solid #ff4081; } /* 草莓 */
+        .bg-flavor-mint { background-color: #b2dfdb; border: 1px solid #80cbc4; } /* 薄荷 */
+
+        /* 容器 */
+        .container-cone {
+            width: 0; 
+            height: 0; 
+            border-left: 35px solid transparent;
+            border-right: 35px solid transparent;
+            border-top: 100px solid #f6c285;
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.2));
+        }
+        .container-cone::after {
+            content: '';
+            position: absolute;
+            top: -100px;
+            left: -35px;
+            width: 70px;
+            height: 20px;
+            background: #e0a96d;
+            border-radius: 50%;
+        }
+
+        .container-cup {
+            width: 70px;
+            height: 60px;
+            background: #ef5350;
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-radius: 0 0 10px 10px;
+            border-top: 5px solid white;
+            filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.2));
+            clip-path: polygon(0 0, 100% 0, 85% 100%, 15% 100%);
+        }
+
+        /* 遊戲區域 */
+        .game-area {
+            height: calc(100vh - 180px); /* 扣除頂部資訊和底部操作區 */
+        }
+        
+        .ingredient-btn {
+            transition: transform 0.1s;
+        }
+        .ingredient-btn:active {
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<body class="h-screen flex flex-col text-gray-800">
+
+    <!-- 頂部資訊欄 -->
+    <div class="h-16 bg-white shadow-sm flex items-center justify-between px-6 z-20">
+        <div class="flex items-center space-x-4">
+            <div class="bg-blue-100 p-2 rounded-lg text-blue-800 font-bold flex items-center gap-2">
+                <i data-lucide="calendar"></i>
+                <span id="day-display">Day 1</span>
+            </div>
+            <div class="bg-green-100 p-2 rounded-lg text-green-800 font-bold flex items-center gap-2">
+                <i data-lucide="dollar-sign"></i>
+                <span id="money-display">$20.00</span>
+            </div>
+        </div>
+        <div class="text-2xl font-bold text-pink-500 tracking-wider">好味道冰淇凌店 🍦</div>
+        <div class="flex items-center space-x-2">
+            <div class="text-sm text-gray-500">滿意度:</div>
+            <div class="w-32 h-4 bg-gray-200 rounded-full overflow-hidden">
+                <div id="happiness-bar" class="h-full bg-pink-400 w-full transition-all duration-500"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主遊戲畫面 -->
+    <div class="flex-1 relative flex flex-col game-area bg-[#fff5e6]">
+        
+        <!-- 顧客區域 -->
+        <div class="flex-1 flex justify-center items-center relative border-b-4 border-[#e6ccb2]">
+            <!-- 顧客對話框 -->
+            <div id="customer-bubble" class="absolute top-10 left-1/2 -translate-x-1/2 bg-white p-4 rounded-2xl shadow-lg border-2 border-gray-100 max-w-md text-center hidden z-10">
+                <p id="customer-text" class="text-lg font-medium mb-2">我要一個冰淇淋。</p>
+                <div class="flex justify-center gap-2 mt-2">
+                    <button onclick="game.askHint()" class="text-xs bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded-full text-gray-600 transition">什麼？</button>
+                    <button onclick="game.startOrder()" class="text-xs bg-pink-500 hover:bg-pink-600 text-white px-3 py-1 rounded-full transition">好的！</button>
+                </div>
+            </div>
+
+            <!-- 顧客形象 (SVG) -->
+            <div id="customer-img" class="transition-all duration-500 transform translate-y-full opacity-0">
+                <!-- 顧客將由 JS 動態生成 SVG -->
+            </div>
+        </div>
+
+        <!-- 製作台區域 (視覺反饋) -->
+        <div class="h-64 bg-[#f3e5f5] relative flex justify-center items-end pb-8">
+            <div id="prep-area" class="relative w-40 h-60 flex justify-center items-end cursor-pointer group">
+                <div id="trash-btn" onclick="game.trashOrder()" class="absolute -right-32 top-10 bg-gray-200 hover:bg-red-100 p-3 rounded-full cursor-pointer transition text-gray-500 hover:text-red-500 hidden" title="丟棄重做">
+                    <i data-lucide="trash-2"></i>
+                </div>
+                <div id="serve-btn" onclick="game.serveOrder()" class="absolute -right-32 bottom-10 bg-green-500 hover:bg-green-600 text-white p-3 rounded-full cursor-pointer transition shadow-lg hidden animate-bounce" title="出餐">
+                    <i data-lucide="check"></i>
+                </div>
+
+                <!-- 這裡是用 JS 堆疊冰淇淋的地方 -->
+                <div id="icecream-stack" class="relative w-full h-full flex justify-center items-end transition-transform duration-200 group-hover:scale-105">
+                    <!-- 容器 -->
+                    <!-- 冰淇淋球 -->
+                    <!-- 配料 -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 底部操作欄 (Ingredients) -->
+    <div class="h-48 bg-white border-t border-gray-200 p-4 grid grid-cols-4 gap-4">
+        
+        <!-- 容器區 -->
+        <div class="bg-orange-50 rounded-xl p-2 flex flex-col items-center justify-center gap-2 border border-orange-100">
+            <span class="text-xs text-orange-400 font-bold mb-1">容器</span>
+            <div class="flex gap-2">
+                <button onclick="game.addContainer('cone')" class="ingredient-btn w-14 h-14 bg-[#f6c285] rounded-b-full rounded-tl-none rounded-tr-none flex items-center justify-center shadow-sm hover:shadow-md border border-[#e0a96d]">
+                    <span class="text-xs text-white drop-shadow-md font-bold">甜筒</span>
+                </button>
+                <button onclick="game.addContainer('cup')" class="ingredient-btn w-14 h-14 bg-red-400 rounded-b-lg flex items-center justify-center shadow-sm hover:shadow-md border border-red-500">
+                    <span class="text-xs text-white font-bold">紙杯</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- 口味區 -->
+        <div class="col-span-2 bg-blue-50 rounded-xl p-2 flex flex-col items-center justify-center gap-2 border border-blue-100">
+            <span class="text-xs text-blue-400 font-bold mb-1">口味 (點擊添加)</span>
+            <div class="flex gap-4">
+                <button onclick="game.addScoop('vanilla')" class="ingredient-btn w-16 h-16 rounded-full bg-[#fdf6e3] border-4 border-white shadow-md flex items-center justify-center text-xs text-gray-500 font-bold">香草</button>
+                <button onclick="game.addScoop('chocolate')" class="ingredient-btn w-16 h-16 rounded-full bg-[#5d4037] border-4 border-white shadow-md flex items-center justify-center text-xs text-white font-bold">巧克力</button>
+                <button onclick="game.addScoop('strawberry')" class="ingredient-btn w-16 h-16 rounded-full bg-[#ff80ab] border-4 border-white shadow-md flex items-center justify-center text-xs text-white font-bold">草莓</button>
+                <button onclick="game.addScoop('mint')" class="ingredient-btn w-16 h-16 rounded-full bg-[#b2dfdb] border-4 border-white shadow-md flex items-center justify-center text-xs text-teal-700 font-bold">薄荷</button>
+            </div>
+        </div>
+
+        <!-- 配料區 -->
+        <div class="bg-pink-50 rounded-xl p-2 flex flex-col items-center justify-center gap-2 border border-pink-100">
+            <span class="text-xs text-pink-400 font-bold mb-1">配料</span>
+            <div class="flex gap-2">
+                <button onclick="game.addTopping('syrup')" class="ingredient-btn w-12 h-12 bg-gray-700 rounded-full flex items-center justify-center shadow-sm text-white text-xs">醬</button>
+                <button onclick="game.addTopping('sprinkles')" class="ingredient-btn w-12 h-12 bg-yellow-200 rounded-full flex items-center justify-center shadow-sm text-yellow-700 text-xs">糖針</button>
+                <button onclick="game.addTopping('cherry')" class="ingredient-btn w-12 h-12 bg-red-600 rounded-full flex items-center justify-center shadow-sm text-white text-xs">櫻桃</button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- 結算/開始 彈窗 -->
+    <div id="modal-overlay" class="absolute inset-0 bg-black/50 z-50 flex items-center justify-center backdrop-blur-sm">
+        <div class="bg-white p-8 rounded-3xl shadow-2xl max-w-md w-full text-center border-4 border-pink-200 transform transition-all scale-100">
+            <h1 id="modal-title" class="text-3xl font-bold text-pink-600 mb-4">準備好了嗎？</h1>
+            <div id="modal-content" class="mb-6 text-gray-600 text-lg">
+                <p>歡迎來到好味道冰淇凌店！</p>
+                <p class="text-sm mt-2">仔細聽客人的要求，做出完美的冰淇凌。</p>
+            </div>
+            <button onclick="game.startDay()" id="modal-btn" class="bg-pink-500 hover:bg-pink-600 text-white font-bold py-3 px-8 rounded-full text-xl shadow-lg transition transform hover:scale-105 active:scale-95">
+                開始營業
+            </button>
+        </div>
+    </div>
+
+    <!-- 聲音音效 (無聲版，僅示意) -->
+    
+    <script>
+        // 初始化圖標
+        lucide.createIcons();
+
+        // 遊戲數據與邏輯
+        class IceCreamGame {
+            constructor() {
+                this.day = 1;
+                this.money = 20.00;
+                this.rent = 10.00;
+                this.happiness = 100;
+                this.isShopOpen = false;
+                this.currentOrder = null;
+                this.currentBuild = {
+                    container: null,
+                    scoops: [], // { flavor: 'vanilla' }
+                    toppings: [] // 'syrup', 'sprinkles', 'cherry'
+                };
+                
+                // DOM 元素
+                this.els = {
+                    stack: document.getElementById('icecream-stack'),
+                    customerImg: document.getElementById('customer-img'),
+                    customerBubble: document.getElementById('customer-bubble'),
+                    customerText: document.getElementById('customer-text'),
+                    trashBtn: document.getElementById('trash-btn'),
+                    serveBtn: document.getElementById('serve-btn'),
+                    money: document.getElementById('money-display'),
+                    day: document.getElementById('day-display'),
+                    happiness: document.getElementById('happiness-bar'),
+                    modal: document.getElementById('modal-overlay'),
+                    modalTitle: document.getElementById('modal-title'),
+                    modalContent: document.getElementById('modal-content'),
+                    modalBtn: document.getElementById('modal-btn')
+                };
+
+                // 客人設定
+                this.customers = [
+                    { type: 'kid', color: '#FFD700', face: '( ﾟ▽ﾟ)/', name: '小男孩' },
+                    { type: 'lady', color: '#FF69B4', face: '(* ^ ω ^)', name: '時尚女士' },
+                    { type: 'grandpa', color: '#A9A9A9', face: '( - _ - )', name: '爺爺' },
+                    { type: 'hipster', color: '#4CAF50', face: '( ¬ _ ¬ )', name: '文青' }
+                ];
+
+                // 訂單庫 (Good Pizza 風格)
+                this.recipes = [
+                    {
+                        id: 'classic_vanilla',
+                        text: ["我要一個經典的。", "就像天上的白雲一樣。", "最普通的那個口味。"],
+                        hint: "他想要香草口味的冰淇淋。",
+                        req: { container: 'cone', scoops: ['vanilla'] }
+                    },
+                    {
+                        id: 'choco_lover',
+                        text: ["我要黑黑的那種！", "巧克力是生命的源泉。", "我不喜歡白色的冰淇淋。"],
+                        hint: "巧克力口味，越多越好。",
+                        req: { container: 'any', scoops: ['chocolate', 'chocolate'] }
+                    },
+                    {
+                        id: 'berry_nice',
+                        text: ["給我一點粉紅色的驚喜。", "我想嘗嘗戀愛的滋味。", "草莓...一定要有草莓。"],
+                        hint: "草莓口味是關鍵。",
+                        req: { container: 'cup', scoops: ['strawberry'] }
+                    },
+                    {
+                        id: 'minty_fresh',
+                        text: ["我剛刷完牙，想保持清新。", "綠色的那個看起來很涼快。", "這不是牙膏味，這是藝術。"],
+                        hint: "薄荷口味。",
+                        req: { container: 'cone', scoops: ['mint'] }
+                    },
+                    {
+                        id: 'neapolitan',
+                        text: ["我全都要！", "經典三色，你知道的。", "白、棕、粉，缺一不可。"],
+                        hint: "拿坡里三色冰淇淋：香草、巧克力、草莓各一球。",
+                        req: { container: 'any', scoops: ['vanilla', 'chocolate', 'strawberry'] }
+                    },
+                    {
+                        id: 'cherry_top',
+                        text: ["一定要有紅紅的點綴。", "只要上面有櫻桃我就開心。"],
+                        hint: "隨便什麼冰淇淋，但必須加櫻桃。",
+                        req: { container: 'any', scoops: ['any'], toppings: ['cherry'] }
+                    }
+                ];
+
+                this.customersServed = 0;
+                this.dailyGoal = 3; // 每天要服務的客人数
+            }
+
+            // 開始新的一天
+            startDay() {
+                this.els.modal.classList.add('hidden');
+                this.isShopOpen = true;
+                this.customersServed = 0;
+                this.dailyGoal = 3 + Math.floor(this.day / 2); // 難度隨天數增加
+                this.nextCustomer();
+            }
+
+            // 下一位客人
+            nextCustomer() {
+                if (this.customersServed >= this.dailyGoal) {
+                    this.endDay();
+                    return;
+                }
+
+                // 清空工作台
+                this.resetBuild();
+                
+                // 隨機生成客人
+                const customerData = this.customers[Math.floor(Math.random() * this.customers.length)];
+                this.renderCustomer(customerData);
+
+                // 隨機生成訂單
+                const recipe = this.recipes[Math.floor(Math.random() * this.recipes.length)];
+                const text = recipe.text[Math.floor(Math.random() * recipe.text.length)];
+                
+                this.currentOrder = { ...recipe, activeText: text, customer: customerData };
+                
+                // 動畫進場
+                setTimeout(() => {
+                    this.els.customerImg.classList.remove('translate-y-full', 'opacity-0');
+                    setTimeout(() => {
+                        this.els.customerBubble.classList.remove('hidden');
+                        this.els.customerText.textContent = text;
+                    }, 500);
+                }, 500);
+            }
+
+            // 繪製客人 SVG
+            renderCustomer(data) {
+                const svg = `
+                <svg width="200" height="250" viewBox="0 0 200 250">
+                    <circle cx="100" cy="130" r="70" fill="${data.color}" stroke="#333" stroke-width="3"/>
+                    <path d="M30,250 Q100,180 170,250" fill="${data.color}" stroke="#333" stroke-width="3"/>
+                    <text x="100" y="140" text-anchor="middle" font-size="24" fill="#333" font-family="monospace" font-weight="bold">${data.face}</text>
+                </svg>`;
+                this.els.customerImg.innerHTML = svg;
+            }
+
+            // 玩家點擊「好的」開始製作
+            startOrder() {
+                this.els.customerBubble.classList.add('hidden');
+                this.els.trashBtn.classList.remove('hidden');
+                this.els.serveBtn.classList.remove('hidden');
+            }
+
+            // 玩家點擊「什麼？」
+            askHint() {
+                this.els.customerText.textContent = this.currentOrder.hint;
+                // 扣一點點耐心/錢? 暫時不扣，保持友好
+            }
+
+            // 添加容器
+            addContainer(type) {
+                if (this.currentBuild.container) return; // 已經有容器了
+                this.currentBuild.container = type;
+                this.renderIceCream();
+            }
+
+            // 添加冰淇淋球
+            addScoop(flavor) {
+                if (!this.currentBuild.container) {
+                    this.showError("請先選擇容器！");
+                    return;
+                }
+                if (this.currentBuild.scoops.length >= 3) {
+                    this.showError("太多球了，會倒的！");
+                    return;
+                }
+                this.currentBuild.scoops.push(flavor);
+                this.renderIceCream();
+            }
+
+            // 添加配料
+            addTopping(type) {
+                if (this.currentBuild.scoops.length === 0) {
+                    this.showError("還沒有冰淇淋呢！");
+                    return;
+                }
+                if (!this.currentBuild.toppings.includes(type)) {
+                    this.currentBuild.toppings.push(type);
+                    this.renderIceCream();
+                }
+            }
+
+            // 渲染冰淇淋
+            renderIceCream() {
+                this.els.stack.innerHTML = '';
+                
+                // 1. 容器
+                if (this.currentBuild.container) {
+                    const container = document.createElement('div');
+                    container.className = this.currentBuild.container === 'cone' ? 'container-cone pop-in' : 'container-cup pop-in';
+                    this.els.stack.appendChild(container);
+                }
+
+                // 2. 冰淇淋球
+                let bottomOffset = 60; // 基礎高度
+                this.currentBuild.scoops.forEach((flavor, index) => {
+                    const scoop = document.createElement('div');
+                    scoop.className = `scoop bg-flavor-${flavor} pop-in`;
+                    scoop.style.bottom = `${bottomOffset}px`;
+                    scoop.style.zIndex = 10 + index;
+                    // 稍微隨機一點的左右偏移，更有手作感
+                    const wobble = (index % 2 === 0 ? -2 : 2);
+                    scoop.style.transform = `translateX(calc(-50% + ${wobble}px))`;
+                    
+                    this.els.stack.appendChild(scoop);
+                    bottomOffset += 40; // 堆疊高度
+                });
+
+                // 3. 配料
+                const topScoopHeight = bottomOffset - 40;
+                
+                if (this.currentBuild.toppings.includes('syrup')) {
+                    const syrup = document.createElement('div');
+                    syrup.style.cssText = `position: absolute; bottom: ${topScoopHeight + 15}px; left: 50%; transform: translateX(-50%); width: 60px; height: 30px; background: #5d4037; border-radius: 20px; z-index: 20; opacity: 0.9; clip-path: path('M0,0 Q30,40 60,0');`;
+                    syrup.className = 'pop-in';
+                    this.els.stack.appendChild(syrup);
+                }
+
+                if (this.currentBuild.toppings.includes('sprinkles')) {
+                    // 簡單模擬糖針
+                    const sprinkles = document.createElement('div');
+                    sprinkles.innerHTML = '......';
+                    sprinkles.style.cssText = `position: absolute; bottom: ${topScoopHeight + 5}px; left: 50%; transform: translateX(-50%); color: orange; font-weight: bold; font-size: 24px; z-index: 21; letter-spacing: -2px;`;
+                    sprinkles.className = 'pop-in';
+                    this.els.stack.appendChild(sprinkles);
+                }
+
+                if (this.currentBuild.toppings.includes('cherry')) {
+                    const cherry = document.createElement('div');
+                    cherry.style.cssText = `position: absolute; bottom: ${topScoopHeight + 45}px; left: 50%; transform: translateX(-50%); width: 20px; height: 20px; background: #d50000; border-radius: 50%; z-index: 22; box-shadow: 1px 1px 2px rgba(0,0,0,0.3);`;
+                    
+                    // 櫻桃梗
+                    const stem = document.createElement('div');
+                    stem.style.cssText = `position: absolute; top: -10px; right: 5px; width: 15px; height: 15px; border-top: 2px solid green; border-right: 2px solid green; border-radius: 0 10px 0 0;`;
+                    cherry.appendChild(stem);
+                    
+                    cherry.className = 'pop-in';
+                    this.els.stack.appendChild(cherry);
+                }
+            }
+
+            // 錯誤提示
+            showError(msg) {
+                const bubble = document.createElement('div');
+                bubble.className = 'absolute top-0 left-1/2 -translate-x-1/2 bg-red-500 text-white px-4 py-2 rounded-full text-sm font-bold z-50 animate-bounce';
+                bubble.innerText = msg;
+                this.els.stack.parentElement.appendChild(bubble);
+                setTimeout(() => bubble.remove(), 1500);
+            }
+
+            // 重做
+            trashOrder() {
+                this.resetBuild();
+                // 扣一點錢作為浪費成本
+                this.updateMoney(-1.00);
+            }
+
+            resetBuild() {
+                this.currentBuild = { container: null, scoops: [], toppings: [] };
+                this.els.stack.innerHTML = '';
+            }
+
+            // 提交訂單
+            serveOrder() {
+                if (!this.currentBuild.container || this.currentBuild.scoops.length === 0) {
+                    this.showError("這不是一個完整的冰淇淋！");
+                    return;
+                }
+
+                const req = this.currentOrder.req;
+                let isCorrect = true;
+                let tip = 0;
+
+                // 1. 檢查容器
+                if (req.container !== 'any' && req.container !== this.currentBuild.container) isCorrect = false;
+
+                // 2. 檢查冰淇淋球 (簡單檢查：包含所需口味即可，順序暫不嚴格，除非完全不對)
+                // 為了簡化，我們檢查是否所有要求的口味都在做好的冰淇淋裡
+                const buildFlavors = [...this.currentBuild.scoops];
+                req.scoops.forEach(reqFlavor => {
+                    if (reqFlavor === 'any') return;
+                    const index = buildFlavors.indexOf(reqFlavor);
+                    if (index > -1) {
+                        buildFlavors.splice(index, 1); // 找到了就移除，處理重複口味需求
+                    } else {
+                        isCorrect = false;
+                    }
+                });
+                // 如果有額外的口味，Good Pizza 通常會扣分，這裡我們寬容一點，只要主要對了就行
+                // 但如果是"只要香草"，給了巧克力就會錯
+
+                // 3. 檢查配料
+                if (req.toppings) {
+                    req.toppings.forEach(t => {
+                        if (!this.currentBuild.toppings.includes(t)) isCorrect = false;
+                    });
+                }
+
+                // 結算
+                if (isCorrect) {
+                    const price = 5 + (this.currentBuild.scoops.length * 2) + (this.currentBuild.toppings.length * 1);
+                    tip = Math.random() * 3;
+                    this.updateMoney(price + tip);
+                    this.happiness = Math.min(100, this.happiness + 10);
+                    this.customerReaction(true);
+                } else {
+                    this.happiness = Math.max(0, this.happiness - 15);
+                    this.customerReaction(false);
+                }
+            }
+
+            customerReaction(success) {
+                this.els.customerBubble.classList.remove('hidden');
+                this.els.serveBtn.classList.add('hidden');
+                this.els.trashBtn.classList.add('hidden');
+
+                if (success) {
+                    this.els.customerText.textContent = "太好吃了！正如我所想的！";
+                    // 客人開心跳動
+                    this.els.customerImg.firstElementChild.classList.add('animate-bounce');
+                } else {
+                    this.els.customerText.textContent = "這不是我點的...但我還是付錢吧。";
+                    // 客人搖頭
+                    this.els.customerImg.classList.add('shake');
+                }
+
+                this.updateUI();
+
+                setTimeout(() => {
+                    // 客人離開
+                    this.els.customerImg.classList.add('translate-x-full', 'opacity-0');
+                    this.els.customerBubble.classList.add('hidden');
+                    
+                    setTimeout(() => {
+                        this.els.customerImg.classList.remove('translate-x-full', 'shake');
+                        this.els.customerImg.classList.add('translate-y-full'); // 重置位置
+                        this.els.customerImg.innerHTML = ''; // 清除SVG
+                        
+                        this.customersServed++;
+                        this.nextCustomer();
+                    }, 500);
+                }, 2000);
+            }
+
+            updateMoney(amount) {
+                this.money += amount;
+                this.updateUI();
+            }
+
+            updateUI() {
+                this.els.money.innerText = `$${this.money.toFixed(2)}`;
+                this.els.day.innerText = `Day ${this.day}`;
+                this.els.happiness.style.width = `${this.happiness}%`;
+                
+                // 滿意度顏色
+                if (this.happiness > 70) this.els.happiness.className = 'h-full w-full transition-all duration-500 bg-green-400';
+                else if (this.happiness > 30) this.els.happiness.className = 'h-full w-full transition-all duration-500 bg-yellow-400';
+                else this.els.happiness.className = 'h-full w-full transition-all duration-500 bg-red-500';
+            }
+
+            endDay() {
+                this.isShopOpen = false;
+                const profit = this.money;
+                this.money -= this.rent; // 扣租金
+                this.day++;
+
+                this.els.modalTitle.innerText = "今日結算";
+                let html = `
+                    <div class="space-y-2 text-left bg-gray-50 p-4 rounded-lg">
+                        <div class="flex justify-between"><span>營業額:</span> <span class="text-green-600">+$${profit.toFixed(2)}</span></div>
+                        <div class="flex justify-between"><span>租金:</span> <span class="text-red-500">-$${this.rent.toFixed(2)}</span></div>
+                        <div class="border-t border-gray-300 my-2"></div>
+                        <div class="flex justify-between font-bold text-lg"><span>結餘:</span> <span>$${this.money.toFixed(2)}</span></div>
+                    </div>
+                `;
+
+                if (this.money < 0) {
+                    html += `<p class="mt-4 text-red-500 font-bold">警告：資金不足！明天要更努力！</p>`;
+                } else {
+                    html += `<p class="mt-4 text-gray-500">又是美好的一天！</p>`;
+                }
+
+                this.els.modalContent.innerHTML = html;
+                this.els.modalBtn.innerText = "下一天";
+                this.els.modal.classList.remove('hidden');
+                
+                this.updateUI();
+            }
+        }
+
+        // 啟動遊戲
+        const game = new IceCreamGame();
+
+    </script>
+</body>
+</html>

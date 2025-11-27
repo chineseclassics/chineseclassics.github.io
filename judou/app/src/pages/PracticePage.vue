@@ -607,41 +607,57 @@ function playSuccessSound() {
   oscillator.stop(ctx.currentTime + 0.3)
 }
 
-// TTS 朗讀功能
-function getTextWithPauses(): string {
-  if (!characters.value.length) return ''
+// TTS 朗讀功能 - 生成分段文本（按句子分割，快速響應）
+function getSegmentedTexts(): string[] {
+  if (!characters.value.length) return []
   
-  let result = ''
+  const segments: string[] = []
+  let currentSegment = ''
   let lastBreakPos = -1
   
   for (let i = 0; i < characters.value.length; i++) {
-    result += characters.value[i]
+    currentSegment += characters.value[i]
     
-    // 在斷句位置添加停頓標記
+    // 在斷句位置添加停頓標記並可能分段
     if (correctBreaks.value.has(i)) {
       const sentenceLength = i - lastBreakPos
       lastBreakPos = i
       
       // 根據句子長度選擇標點
       if (sentenceLength >= 8) {
-        result += '。'
+        currentSegment += '。'
+        // 較長句子作為獨立段落
+        segments.push(currentSegment)
+        currentSegment = ''
       } else if (sentenceLength >= 4) {
-        result += '，'
+        currentSegment += '，'
       } else {
-        result += '、'
+        currentSegment += '、'
       }
     }
   }
   
-  // 結尾添加句號
-  if (!result.endsWith('。') && !result.endsWith('，') && !result.endsWith('、')) {
-    result += '。'
+  // 處理最後一段
+  if (currentSegment.trim()) {
+    if (!currentSegment.endsWith('。') && !currentSegment.endsWith('，') && !currentSegment.endsWith('、')) {
+      currentSegment += '。'
+    }
+    segments.push(currentSegment)
   }
   
-  return result
+  // 如果沒有分段（短文本），返回整體
+  if (segments.length === 0 && characters.value.length > 0) {
+    return [characters.value.join('') + '。']
+  }
+  
+  return segments
 }
 
+// 停止標記
+let shouldStopTTS = false
+
 function stopTTS() {
+  shouldStopTTS = true
   if (typeof window !== 'undefined' && (window as any).taixuStopSpeak) {
     (window as any).taixuStopSpeak()
   }
@@ -664,18 +680,28 @@ async function toggleReadText() {
   }
   
   isPlayingTTS.value = true
-  const text = getTextWithPauses()
+  shouldStopTTS = false
+  
+  const segments = getSegmentedTexts()
   
   try {
-    await (window as any).taixuSpeak(text, { 
-      voice: 'zh-CN-XiaoxiaoNeural',
-      rate: 0.7  // Azure TTS 語速 (-30%)，適合古文朗讀
-    })
+    // 逐段播放
+    for (let i = 0; i < segments.length; i++) {
+      if (shouldStopTTS) break
+      
+      await (window as any).taixuSpeak(segments[i], { 
+        voice: 'zh-CN-XiaoxiaoNeural',
+        rate: 0.8  // Azure TTS 語速 (-20%)，適合古文朗讀
+      })
+    }
   } catch (e) {
     console.error('TTS 播放失敗:', e)
-    alert('語音朗讀失敗，請稍後再試')
+    if (!shouldStopTTS) {
+      alert('語音朗讀失敗，請稍後再試')
+    }
   } finally {
     isPlayingTTS.value = false
+    shouldStopTTS = false
   }
 }
 
