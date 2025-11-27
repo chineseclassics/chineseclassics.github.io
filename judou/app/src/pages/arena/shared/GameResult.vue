@@ -52,7 +52,6 @@ const myParticipant = computed(() => gameStore.myParticipant)
 // 答案詳情數據
 const gameResultData = ref<GameResultData | null>(null)
 const currentResultIndex = ref(0)
-const showAnswers = ref(false)
 
 // 當前查看的文章結果
 const currentTextResult = computed(() => {
@@ -217,6 +216,39 @@ onMounted(() => {
       </p>
     </header>
 
+    <!-- 排行榜（PvP 模式）- 放在最前面 -->
+    <section v-if="room?.game_mode === 'pvp'" class="ranking-section">
+      <h2>排行榜</h2>
+      <div class="ranking-list">
+        <div 
+          v-for="p in ranking" 
+          :key="p.id"
+          class="ranking-item"
+          :class="{ 
+            me: p.user_id === authStore.user?.id,
+            top: p.rank <= 3
+          }"
+        >
+          <span class="rank" :class="`rank-${p.rank}`">
+            {{ p.rank === 1 ? '🥇' : p.rank === 2 ? '🥈' : p.rank === 3 ? '🥉' : p.rank }}
+          </span>
+          <img 
+            v-if="p.user?.avatar_url" 
+            :src="p.user.avatar_url" 
+            :alt="p.user.display_name"
+            class="avatar"
+          />
+          <span v-else class="avatar-placeholder">
+            {{ p.user?.display_name?.charAt(0) || '?' }}
+          </span>
+          <span class="name">{{ p.user?.display_name || '未知' }}</span>
+          <span class="score">{{ p.score }} 分</span>
+          <span class="time">{{ p.time_spent }}s</span>
+          <span v-if="p.prize_won > 0" class="prize">+{{ p.prize_won }} 🫘</span>
+        </div>
+      </div>
+    </section>
+
     <!-- 我的成績 -->
     <section class="my-score-card">
       <h2>我的成績</h2>
@@ -240,17 +272,18 @@ onMounted(() => {
       </div>
     </section>
 
-    <!-- 答案詳情按鈕 -->
-    <button 
-      v-if="gameResultData" 
-      class="toggle-answers-btn"
-      @click="showAnswers = !showAnswers"
-    >
-      {{ showAnswers ? '隱藏答案詳情' : '📝 查看答案詳情' }}
-    </button>
+    <!-- 連勝信息 -->
+    <div v-if="winStreak > 0 && isWinner" class="streak-card">
+      <span class="streak-icon">🔥</span>
+      <span class="streak-text">
+        連勝 <strong>{{ winStreak }}</strong> 場！
+      </span>
+    </div>
 
-    <!-- 答案詳情區域 -->
-    <section v-if="showAnswers && gameResultData" class="answers-section">
+    <!-- 答案詳情區域（默認展示）-->
+    <section v-if="gameResultData" class="answers-section">
+      <h2>答案詳情</h2>
+      
       <!-- 多篇切換標籤 -->
       <div v-if="gameResultData.texts.length > 1" class="result-tabs">
         <button 
@@ -280,32 +313,32 @@ onMounted(() => {
         <!-- 統計信息 -->
         <div class="answer-stats">
           <span class="stat correct">
-            <span class="stat-icon">✓</span>
+            <span class="bean-legend correct"></span>
             正確 {{ currentTextResult.result.correctCount }}
           </span>
           <span class="stat wrong">
-            <span class="stat-icon">✗</span>
+            <span class="bean-legend wrong"></span>
             錯誤 {{ currentTextResult.result.wrongCount }}
           </span>
           <span class="stat missed">
-            <span class="stat-icon">○</span>
+            <span class="bean-legend missed"></span>
             遺漏 {{ currentTextResult.result.missedCount }}
           </span>
         </div>
 
-        <!-- 答案展示 -->
+        <!-- 答案展示（使用豆子樣式）-->
         <div class="answer-content">
           <div class="answer-line">
             <template v-for="(char, index) in parseCharacters(currentTextResult.text.content)" :key="index">
-              <span class="answer-char">{{ char }}</span>
-              <span 
-                v-if="index < parseCharacters(currentTextResult.text.content).length - 1"
-                class="answer-break"
-                :class="getBreakStatus(index)"
-              >
-                <span v-if="getBreakStatus(index) === 'correct'" class="break-mark correct">|</span>
-                <span v-else-if="getBreakStatus(index) === 'wrong'" class="break-mark wrong">|</span>
-                <span v-else-if="getBreakStatus(index) === 'missed'" class="break-mark missed">|</span>
+              <span class="char-unit">
+                <span class="answer-char">{{ char }}</span>
+                <span 
+                  v-if="index < parseCharacters(currentTextResult.text.content).length - 1 && getBreakStatus(index) !== 'none'"
+                  class="bean-slot"
+                  :class="getBreakStatus(index)"
+                >
+                  <span class="bean"></span>
+                </span>
               </span>
             </template>
           </div>
@@ -314,54 +347,14 @@ onMounted(() => {
         <!-- 圖例說明 -->
         <div class="answer-legend">
           <span class="legend-item">
-            <span class="legend-mark correct">|</span> 正確
+            <span class="bean-legend correct"></span> 正確
           </span>
           <span class="legend-item">
-            <span class="legend-mark wrong">|</span> 錯誤
+            <span class="bean-legend wrong"></span> 錯誤
           </span>
           <span class="legend-item">
-            <span class="legend-mark missed">|</span> 遺漏
+            <span class="bean-legend missed"></span> 遺漏
           </span>
-        </div>
-      </div>
-    </section>
-
-    <!-- 連勝信息 -->
-    <div v-if="winStreak > 0 && isWinner" class="streak-card">
-      <span class="streak-icon">🔥</span>
-      <span class="streak-text">
-        連勝 <strong>{{ winStreak }}</strong> 場！
-      </span>
-    </div>
-
-    <!-- 排行榜（PvP 模式）-->
-    <section v-if="room?.game_mode === 'pvp'" class="ranking-section">
-      <h2>排行榜</h2>
-      <div class="ranking-list">
-        <div 
-          v-for="p in ranking" 
-          :key="p.id"
-          class="ranking-item"
-          :class="{ 
-            me: p.user_id === authStore.user?.id,
-            top: p.rank <= 3
-          }"
-        >
-          <span class="rank" :class="`rank-${p.rank}`">
-            {{ p.rank === 1 ? '🥇' : p.rank === 2 ? '🥈' : p.rank === 3 ? '🥉' : p.rank }}
-          </span>
-          <img 
-            v-if="p.user?.avatar_url" 
-            :src="p.user.avatar_url" 
-            :alt="p.user.display_name"
-            class="avatar"
-          />
-          <span v-else class="avatar-placeholder">
-            {{ p.user?.display_name?.charAt(0) || '?' }}
-          </span>
-          <span class="name">{{ p.user?.display_name || '未知' }}</span>
-          <span class="score">{{ p.score }} 分</span>
-          <span v-if="p.prize_won > 0" class="prize">+{{ p.prize_won }} 🫘</span>
         </div>
       </div>
     </section>
@@ -502,27 +495,6 @@ onMounted(() => {
   color: var(--color-neutral-500);
 }
 
-/* 查看答案按鈕 */
-.toggle-answers-btn {
-  display: block;
-  width: 100%;
-  padding: 1rem;
-  margin-bottom: 1.5rem;
-  background: white;
-  border: 2px dashed var(--color-primary-300);
-  border-radius: 12px;
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--color-primary-600);
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.toggle-answers-btn:hover {
-  background: var(--color-primary-50);
-  border-color: var(--color-primary-400);
-}
-
 /* 答案詳情區域 */
 .answers-section {
   background: white;
@@ -530,6 +502,12 @@ onMounted(() => {
   padding: 1.5rem;
   margin-bottom: 1.5rem;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.answers-section h2 {
+  margin: 0 0 1rem 0;
+  font-size: 1rem;
+  color: var(--color-neutral-500);
 }
 
 /* 結果標籤 */
@@ -639,8 +617,28 @@ onMounted(() => {
   color: #f59e0b;
 }
 
-.stat-icon {
-  font-weight: 700;
+/* 豆子圖例 */
+.bean-legend {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  vertical-align: middle;
+}
+
+.bean-legend.correct {
+  background: linear-gradient(145deg, #6dd400 0%, #43a047 50%, #2e7d32 100%);
+  box-shadow: 0 1px 2px rgba(67, 160, 71, 0.4);
+}
+
+.bean-legend.wrong {
+  background: linear-gradient(145deg, #ff6b6b 0%, #e53935 50%, #c62828 100%);
+  box-shadow: 0 1px 2px rgba(229, 57, 53, 0.4);
+}
+
+.bean-legend.missed {
+  background: linear-gradient(145deg, #ffeb3b 0%, #fbc02d 50%, #f9a825 100%);
+  box-shadow: 0 1px 2px rgba(251, 192, 45, 0.4);
 }
 
 /* 答案內容 */
@@ -652,42 +650,80 @@ onMounted(() => {
 }
 
 .answer-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   font-size: 1.25rem;
-  line-height: 2.2;
+  line-height: 2.4;
   font-family: var(--font-main, 'Noto Serif TC', serif);
+}
+
+.char-unit {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
 }
 
 .answer-char {
   display: inline;
 }
 
-.answer-break {
-  display: inline;
-  width: 0;
+/* 豆子槽 - 和練習模式一致 */
+.bean-slot {
+  width: 20px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 -2px;
 }
 
-.break-mark {
-  font-weight: 700;
-  margin: 0 1px;
+.bean-slot .bean {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
 }
 
-.break-mark.correct {
-  color: #10b981;
+/* 正確（綠豆）*/
+.bean-slot.correct .bean {
+  background: linear-gradient(145deg, #6dd400 0%, #43a047 50%, #2e7d32 100%);
+  box-shadow: 
+    0 0 8px rgba(67, 160, 71, 0.6),
+    0 2px 4px rgba(46, 125, 50, 0.4),
+    inset 0 1px 2px rgba(255, 255, 255, 0.5);
 }
 
-.break-mark.wrong {
-  color: #ef4444;
-  text-decoration: line-through;
+/* 錯誤（紅豆）*/
+.bean-slot.wrong .bean {
+  background: linear-gradient(145deg, #ff6b6b 0%, #e53935 50%, #c62828 100%);
+  box-shadow: 
+    0 0 8px rgba(229, 57, 53, 0.5),
+    0 2px 4px rgba(198, 40, 40, 0.4),
+    inset 0 1px 2px rgba(255, 255, 255, 0.4);
+  animation: bean-shake 400ms ease-in-out;
 }
 
-.break-mark.missed {
-  color: #f59e0b;
-  animation: blink 1s infinite;
+/* 遺漏（黃豆）*/
+.bean-slot.missed .bean {
+  background: linear-gradient(145deg, #ffeb3b 0%, #fbc02d 50%, #f9a825 100%);
+  box-shadow: 
+    0 0 8px rgba(251, 192, 45, 0.6),
+    0 2px 4px rgba(249, 168, 37, 0.4),
+    inset 0 1px 2px rgba(255, 255, 255, 0.5);
+  animation: bean-blink 600ms ease-in-out infinite;
 }
 
-@keyframes blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
+@keyframes bean-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-3px); }
+  40% { transform: translateX(3px); }
+  60% { transform: translateX(-2px); }
+  80% { transform: translateX(2px); }
+}
+
+@keyframes bean-blink {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.1); }
 }
 
 /* 圖例 */
@@ -695,30 +731,14 @@ onMounted(() => {
   display: flex;
   gap: 1.5rem;
   justify-content: center;
-  font-size: 0.8rem;
-  color: var(--color-neutral-500);
+  font-size: 0.875rem;
+  color: var(--color-neutral-600);
 }
 
 .legend-item {
   display: flex;
   align-items: center;
-  gap: 0.25rem;
-}
-
-.legend-mark {
-  font-weight: 700;
-}
-
-.legend-mark.correct {
-  color: #10b981;
-}
-
-.legend-mark.wrong {
-  color: #ef4444;
-}
-
-.legend-mark.missed {
-  color: #f59e0b;
+  gap: 0.5rem;
 }
 
 /* 連勝卡片 */
