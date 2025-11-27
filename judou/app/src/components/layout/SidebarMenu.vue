@@ -7,6 +7,7 @@ import { useAssignmentStore } from '../../stores/assignmentStore'
 
 interface NavItem {
   label: string
+  icon?: string
   description?: string
   to?: { name: string }
   disabled?: boolean
@@ -19,12 +20,13 @@ const assignmentStore = useAssignmentStore()
 const router = useRouter()
 
 const primaryNav: NavItem[] = [
-  { label: '主頁', to: { name: 'home' } },
-  { label: '練習', to: { name: 'practice' } },
-  { label: '閱讀', to: { name: 'reading-list' } },
-  { label: '我的班級', to: { name: 'my-classes' } },
-  { label: '歷史紀錄', to: { name: 'history' } },
-  { label: '自訂練習', to: { name: 'my-texts' }, teacherOnly: true },
+  { label: '首頁', icon: '🏠', to: { name: 'home' } },
+  { label: '句豆', icon: '🫘', to: { name: 'practice' }, description: '練習' },
+  { label: '品豆', icon: '📖', to: { name: 'reading-list' }, description: '閱讀' },
+  { label: '鬥豆', icon: '⚔️', to: { name: 'arena' }, description: '對戰' },
+  { label: '豆跡', icon: '👣', to: { name: 'history' }, description: '歷史' },
+  { label: '豆莢', icon: '🫛', to: { name: 'my-classes' }, description: '班級' },
+  { label: '自訂練習', icon: '✏️', to: { name: 'my-texts' }, teacherOnly: true },
 ]
 
 const adminNav: NavItem[] = [
@@ -182,14 +184,16 @@ const logoUrl = `${import.meta.env.BASE_URL}images/judou-logo.jpg`
             :class="{ active: isActive(item) }"
             :to="item.to"
           >
+            <span v-if="item.icon" class="item-icon">{{ item.icon }}</span>
             <p class="item-title">
               {{ item.label }}
-              <span v-if="item.label === '我的班級' && authStore.isStudent && pendingCount > 0" class="badge">
+              <span v-if="item.label === '豆莢' && authStore.isStudent && pendingCount > 0" class="badge">
                 {{ pendingCount }}
               </span>
             </p>
           </router-link>
           <div v-else class="edamame-sidebar-item disabled">
+            <span v-if="item.icon" class="item-icon">{{ item.icon }}</span>
             <p class="item-title">{{ item.label }}</p>
           </div>
         </li>
@@ -450,6 +454,13 @@ const logoUrl = `${import.meta.env.BASE_URL}images/judou-logo.jpg`
   color: var(--color-neutral-400);
   margin-bottom: 0.5rem;
   font-weight: 500;
+}
+
+.item-icon {
+  font-size: 1.1rem;
+  width: 24px;
+  text-align: center;
+  flex-shrink: 0;
 }
 
 .item-title {

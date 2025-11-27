@@ -484,20 +484,28 @@ onMounted(async () => {
             <p class="page-subtitle">{{ selectedClass.description || '' }}</p>
           </div>
         </div>
-        <button 
-          v-if="authStore.isTeacher && activeTab === 'assignments'"
-          class="create-btn" 
-          @click="showAssignModal = true"
-        >
-          + 布置作業
-        </button>
-        <button 
-          v-if="authStore.isTeacher && activeTab === 'members'"
-          class="create-btn" 
-          @click="showAddStudentsModal = true"
-        >
-          + 添加學生
-        </button>
+        <div v-if="authStore.isTeacher" class="header-actions">
+          <button 
+            v-if="activeTab === 'assignments'"
+            class="create-btn" 
+            @click="showAssignModal = true"
+          >
+            + 布置作業
+          </button>
+          <button 
+            v-if="activeTab === 'members'"
+            class="create-btn" 
+            @click="showAddStudentsModal = true"
+          >
+            + 添加學生
+          </button>
+          <button 
+            class="game-btn"
+            @click="$router.push({ name: 'arena-teacher-create', query: { classId: selectedClass?.id } })"
+          >
+            ⚔️ 發起比賽
+          </button>
+        </div>
       </header>
 
       <!-- 標籤頁（老師） -->
@@ -1002,6 +1010,28 @@ onMounted(async () => {
 
 .create-btn:hover {
   background: var(--color-primary-600);
+}
+
+.header-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.game-btn {
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: white;
+  border: none;
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.game-btn:hover {
+  background: linear-gradient(135deg, #d97706, #b45309);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(217, 119, 6, 0.3);
 }
 
 .back-btn {

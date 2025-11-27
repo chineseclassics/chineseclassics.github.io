@@ -88,6 +88,27 @@
     return '';
   }
   
+  // 帶超時的 fetch（防止 Edge Function 冷啟動導致無限等待）
+  async function fetchWithTimeout(url, options = {}, timeoutMs = 15000) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+    
+    try {
+      const response = await fetch(url, {
+        ...options,
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+      return response;
+    } catch (e) {
+      clearTimeout(timeoutId);
+      if (e.name === 'AbortError') {
+        throw new Error('TTS 請求超時（Edge Function 可能正在冷啟動，請重試）');
+      }
+      throw e;
+    }
+  }
+  
   // 預加載音頻（只請求並緩存，不播放）
   async function taixuPreload(text, opts = {}) {
     const endpoint = (window.TAIXU_TTS_ENDPOINT || '').trim();
@@ -112,7 +133,8 @@
       if (rateParam) {
         url += `&rate=${encodeURIComponent(rateParam)}`;
       }
-      const resp = await fetch(url, { method: 'GET', headers });
+      // 使用帶超時的 fetch（預加載可以更長時間，20秒）
+      const resp = await fetchWithTimeout(url, { method: 'GET', headers }, 20000);
       if (!resp.ok) throw new Error(`TTS ${resp.status}`);
       const blob = await resp.blob();
       ttsCache.set(cacheKey, blob);
@@ -148,7 +170,8 @@
           if (rateParam) {
             url += `&rate=${encodeURIComponent(rateParam)}`;
           }
-          const resp = await fetch(url, { method: 'GET', headers });
+          // 使用帶超時的 fetch（15秒，超時後回退到瀏覽器語音）
+          const resp = await fetchWithTimeout(url, { method: 'GET', headers }, 15000);
           if (!resp.ok) throw new Error(`TTS ${resp.status}`);
           blob = await resp.blob();
           ttsCache.set(cacheKey, blob);
@@ -156,6 +179,7 @@
         await playBlob(blob);
         return true;
       } catch (e) {
+        console.warn('Azure TTS 失敗，回退到瀏覽器語音:', e.message);
         // 失敗則回退到瀏覽器語音
       }
     }
@@ -192,6 +216,45 @@
     console.log('TTS 緩存已清除');
   }
 
+  // ========== Edge Function 預熱機制 ==========
+  // 在頁面加載時發送輕量請求喚醒 Edge Function，避免冷啟動延遲
+  let isWarmedUp = false;
+  
+  async function warmUpEdgeFunction() {
+    const endpoint = (window.TAIXU_TTS_ENDPOINT || '').trim();
+    if (!endpoint || isWarmedUp) return;
+    
+    const anon = (window.SUPABASE_ANON_KEY || '').trim();
+    
+    try {
+      const headers = {};
+      if (anon) {
+        headers['apikey'] = anon;
+        headers['Authorization'] = `Bearer ${anon}`;
+      }
+      // 發送最小請求（單個字）來喚醒函數
+      const url = `${endpoint}?text=${encodeURIComponent('。')}&voice=zh-CN-XiaoxiaoNeural`;
+      const resp = await fetch(url, { method: 'GET', headers });
+      if (resp.ok) {
+        isWarmedUp = true;
+        console.log('TTS Edge Function 已預熱');
+      }
+    } catch (e) {
+      console.warn('TTS 預熱失敗（將在首次使用時重試）:', e.message);
+    }
+  }
+  
+  // 頁面加載後自動預熱（延遲 1 秒，不影響頁面渲染）
+  if (typeof window !== 'undefined') {
+    if (document.readyState === 'complete') {
+      setTimeout(warmUpEdgeFunction, 1000);
+    } else {
+      window.addEventListener('load', () => {
+        setTimeout(warmUpEdgeFunction, 1000);
+      });
+    }
+  }
+
   // 對外暴露到全域（不覆蓋既有定義）
   if (!window.taixuSpeak) {
     window.taixuSpeak = taixuSpeak;
@@ -204,5 +267,8 @@
   }
   if (!window.taixuPreload) {
     window.taixuPreload = taixuPreload;
+  }
+  if (!window.taixuWarmUp) {
+    window.taixuWarmUp = warmUpEdgeFunction;
   }
 })();
