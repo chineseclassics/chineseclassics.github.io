@@ -5,7 +5,7 @@
  * 顯示房間碼、參與者、準備開始
  */
 
-import { computed, onMounted, onUnmounted, watch } from 'vue'
+import { computed, onMounted, onUnmounted, watch, ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../../../stores/authStore'
 import { useGameStore } from '../../../stores/gameStore'
@@ -17,6 +17,9 @@ const authStore = useAuthStore()
 const gameStore = useGameStore()
 
 const roomId = computed(() => route.params.roomId as string)
+
+// 標記是否正常導航到做題頁面（開始比賽）
+const isStartingGame = ref(false)
 
 // 房間數據
 const room = computed(() => gameStore.currentRoom)
@@ -46,6 +49,7 @@ const emptySlots = computed(() => {
 watch(() => room.value?.status, (status) => {
   if (status === 'playing') {
     // 比賽開始，跳轉到做題頁面
+    isStartingGame.value = true  // 標記正在開始比賽，防止清理時取消
     router.push({ name: 'arena-play', params: { roomId: roomId.value } })
   } else if (status === 'cancelled') {
     alert('房間已被取消')
@@ -65,9 +69,12 @@ function copyRoomCode() {
 async function startGame() {
   if (!isHost.value || participants.value.length < 2) return
   
+  isStartingGame.value = true  // 標記正在開始比賽，防止自動取消
   const success = await gameStore.startGame()
   if (success) {
     router.push({ name: 'arena-play', params: { roomId: roomId.value } })
+  } else {
+    isStartingGame.value = false  // 失敗時重置標記
   }
 }
 
@@ -81,14 +88,46 @@ async function leaveRoom() {
   router.push({ name: 'arena' })
 }
 
+// 離開頁面前的清理（退還入場費）
+async function cleanupOnLeave() {
+  // 如果是正常開始比賽，不要取消
+  if (isStartingGame.value) {
+    console.log('[RoomLobby] 正在開始比賽，不執行清理')
+    return
+  }
+  
+  // 如果房間還在等待中，自動離開（會觸發退款）
+  if (room.value?.status === 'waiting') {
+    console.log('[RoomLobby] 用戶離開等待室，自動取消/離開房間')
+    await gameStore.leaveRoom()
+  }
+}
+
+// 瀏覽器關閉/刷新時的警告
+function handleBeforeUnload(e: BeforeUnloadEvent) {
+  if (room.value?.status === 'waiting' && !isStartingGame.value) {
+    e.preventDefault()
+    // 嘗試同步退款（beforeunload 中異步操作可能不可靠）
+    // 這裡主要是給用戶一個警告
+    if (isHost.value) {
+      e.returnValue = '比賽尚未開始，離開將取消房間。確定離開嗎？'
+    } else {
+      e.returnValue = '比賽尚未開始，離開將退出房間。確定離開嗎？'
+    }
+    return e.returnValue
+  }
+}
+
 onMounted(() => {
   console.log('[RoomLobby] 組件掛載，訂閱房間:', roomId.value)
   gameStore.subscribeToRoom(roomId.value)
+  window.addEventListener('beforeunload', handleBeforeUnload)
 })
 
-onUnmounted(() => {
+onUnmounted(async () => {
   console.log('[RoomLobby] 組件卸載')
-  // 不要在離開時取消訂閱，因為可能要去做題頁面
+  window.removeEventListener('beforeunload', handleBeforeUnload)
+  await cleanupOnLeave()
 })
 </script>
 
