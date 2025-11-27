@@ -274,8 +274,19 @@ function pickRandomText() {
     toast.value = '尚未有可練習的文章，請先到管理員頁面新增。'
     return
   }
-  const idx = Math.floor(Math.random() * visibleTexts.length)
-  const selected = visibleTexts[idx]
+  
+  // 排除當前文章，確保每次都選到不同的
+  const currentId = currentText.value?.id
+  const candidates = visibleTexts.filter(t => t.id !== currentId)
+  
+  // 如果只有一篇文章，直接選擇它（雖然是同一篇）
+  if (!candidates.length) {
+    toast.value = '目前只有一篇文章可練習'
+    return
+  }
+  
+  const idx = Math.floor(Math.random() * candidates.length)
+  const selected = candidates[idx]
   if (selected) {
     selectText(selected)
   }
