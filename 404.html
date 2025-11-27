@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <title>太虛幻境 - 重定向中...</title>
+  <script>
+    // GitHub Pages SPA 路由處理
+    // 根據路徑前綴判斷應該重定向到哪個應用
+    const path = window.location.pathname;
+    const search = window.location.search;
+    const hash = window.location.hash;
+    
+    // 句豆 SPA 應用
+    if (path.startsWith('/judou/') || path === '/judou') {
+      // 保存完整路徑到 sessionStorage
+      sessionStorage.setItem('redirect', path + search + hash);
+      // 重定向到句豆首頁
+      window.location.replace('/judou/');
+    }
+    // story-vocab SPA 應用（如果未來需要）
+    else if (path.startsWith('/story-vocab/') || path === '/story-vocab') {
+      sessionStorage.setItem('redirect', path + search + hash);
+      window.location.replace('/story-vocab/');
+    }
+    // 其他路徑：重定向到太虛幻境首頁
+    else {
+      window.location.replace('/');
+    }
+  </script>
+</head>
+<body>
+  <p style="font-family: sans-serif; text-align: center; margin-top: 100px;">正在重定向...</p>
+</body>
+</html>
+
