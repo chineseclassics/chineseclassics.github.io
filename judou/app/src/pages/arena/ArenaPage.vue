@@ -83,23 +83,30 @@ async function fetchMyClassIds(): Promise<string[]> {
 
 // 獲取學生所屬班級的進行中比賽
 async function fetchClassGames() {
-  if (!supabase || !authStore.user || authStore.isTeacher) return
+  console.log('[Arena] fetchClassGames 開始，user:', authStore.user?.id, 'isTeacher:', authStore.isTeacher)
+  
+  if (!supabase || !authStore.user || authStore.isTeacher) {
+    console.log('[Arena] fetchClassGames 跳過：supabase=', !!supabase, 'user=', !!authStore.user, 'isTeacher=', authStore.isTeacher)
+    return
+  }
   
   classGamesLoading.value = true
   
   try {
-    // 先獲取學生所屬的班級 ID（如果還沒有）
-    if (myClassIds.value.length === 0) {
-      myClassIds.value = await fetchMyClassIds()
-    }
+    // 每次都重新獲取學生所屬的班級 ID
+    const classIds = await fetchMyClassIds()
+    myClassIds.value = classIds
     
-    if (myClassIds.value.length === 0) {
+    if (classIds.length === 0) {
+      console.log('[Arena] 學生未加入任何班級')
       classGames.value = []
       return
     }
     
+    console.log('[Arena] 開始查詢班級比賽，班級ID:', classIds)
+    
     // 獲取這些班級的進行中比賽
-    const { data: games } = await supabase
+    const { data: games, error } = await supabase
       .from('game_rooms')
       .select(`
         *,
@@ -108,13 +115,19 @@ async function fetchClassGames() {
         class:classes!game_rooms_class_id_fkey(id, class_name),
         teams:game_teams(*)
       `)
-      .in('class_id', myClassIds.value)
+      .in('class_id', classIds)
       .eq('host_type', 'teacher')
       .in('status', ['waiting', 'playing'])
       .order('created_at', { ascending: false })
     
+    if (error) {
+      console.error('[Arena] 查詢班級比賽失敗:', error)
+      classGames.value = []
+      return
+    }
+    
     classGames.value = games || []
-    console.log('[Arena] 班級比賽:', classGames.value.length, '場')
+    console.log('[Arena] 班級比賽:', classGames.value.length, '場', games)
   } catch (e) {
     console.error('獲取班級比賽失敗:', e)
     classGames.value = []
