@@ -2,12 +2,11 @@
 /**
  * 共享組件 - 對戰做題頁面（多篇文章版）
  * 
- * 使用和練習頁面一致的斷句界面：
- * - 句豆種植方式
- * - 顯示剩餘豆子數量
- * - 做完一篇自動進入下一篇
- * - 計分 = 累計正確斷句位置總數
- * - 時間到自動提交
+ * 核心邏輯：
+ * - 多篇文章自由切換（不自動跳轉）
+ * - 手動提交或時間到提交整局成績
+ * - 提交前可隨時修改任何一篇
+ * - UI 與練習界面保持一致
  */
 
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
@@ -21,6 +20,13 @@ interface TextItem {
   content: string
 }
 
+// 每篇文章的答題狀態
+interface TextState {
+  characters: string[]
+  correctBreaks: Set<number>
+  userBreaks: Set<number>
+}
+
 const router = useRouter()
 const route = useRoute()
 const gameStore = useGameStore()
@@ -32,17 +38,32 @@ const room = computed(() => gameStore.currentRoom)
 // 多篇文章管理
 // =====================================================
 const texts = ref<TextItem[]>([])
+const textStates = ref<Map<string, TextState>>(new Map())  // 每篇文章的狀態
 const currentTextIndex = ref(0)
 const currentText = computed(() => texts.value[currentTextIndex.value])
+
+// 當前文章的狀態（從 Map 中獲取）
+const currentState = computed(() => {
+  if (!currentText.value) return null
+  return textStates.value.get(currentText.value.id) || null
+})
+
+// 當前文章的字符和斷點
+const characters = computed(() => currentState.value?.characters || [])
+const correctBreaks = computed(() => currentState.value?.correctBreaks || new Set<number>())
+const userBreaks = computed({
+  get: () => currentState.value?.userBreaks || new Set<number>(),
+  set: (val) => {
+    if (currentText.value && textStates.value.has(currentText.value.id)) {
+      const state = textStates.value.get(currentText.value.id)!
+      state.userBreaks = val
+    }
+  }
+})
 
 // 倒計時
 const remainingTime = ref(0)
 let countdownInterval: ReturnType<typeof setInterval> | null = null
-
-// 句讀遊戲狀態（當前文章）
-const characters = ref<string[]>([])
-const userBreaks = ref<Set<number>>(new Set())
-const correctBreaks = ref<Set<number>>(new Set())
 
 // 豆子相關計算
 const totalBeans = computed(() => correctBreaks.value.size)
@@ -51,16 +72,13 @@ const remainingBeans = computed(() => Math.max(0, totalBeans.value - usedBeans.v
 const hasBeansLeft = computed(() => remainingBeans.value > 0)
 const beanShake = ref(false)
 
-// 全局累計
-const totalCorrectBreaks = ref(0)  // 累計正確斷句數
-const completedTextsCount = ref(0)  // 已完成文章數
-
+// 提交狀態
 const isSubmitted = ref(false)
 const isLoading = ref(true)
 let startTime = 0
 
 // =====================================================
-// 解析與計算（使用 | 作為斷點標記，和練習頁面一致）
+// 解析內容（使用 | 作為斷點標記，和練習頁面一致）
 // =====================================================
 
 function parseContent(raw: string): { chars: string[]; breaks: Set<number> } {
@@ -70,7 +88,6 @@ function parseContent(raw: string): { chars: string[]; breaks: Set<number> } {
   
   for (const char of raw) {
     if (char === '|') {
-      // 斷句標記在「前一個字的後面」
       if (pointer > 0) {
         breaks.add(pointer - 1)
       }
@@ -84,20 +101,48 @@ function parseContent(raw: string): { chars: string[]; breaks: Set<number> } {
 }
 
 // =====================================================
-// 遊戲邏輯
+// 初始化
 // =====================================================
 
-// 初始化當前文章
-function initCurrentText() {
-  if (!currentText.value?.content) return
+function initAllTexts() {
+  textStates.value.clear()
   
-  const parsed = parseContent(currentText.value.content)
-  characters.value = parsed.chars
-  correctBreaks.value = parsed.breaks
-  userBreaks.value = new Set()
+  for (const text of texts.value) {
+    const parsed = parseContent(text.content)
+    textStates.value.set(text.id, {
+      characters: parsed.chars,
+      correctBreaks: parsed.breaks,
+      userBreaks: new Set(),
+    })
+  }
 }
 
+// =====================================================
+// 切換文章
+// =====================================================
+
+function switchToText(index: number) {
+  if (index >= 0 && index < texts.value.length) {
+    currentTextIndex.value = index
+  }
+}
+
+function prevText() {
+  if (currentTextIndex.value > 0) {
+    currentTextIndex.value--
+  }
+}
+
+function nextText() {
+  if (currentTextIndex.value < texts.value.length - 1) {
+    currentTextIndex.value++
+  }
+}
+
+// =====================================================
 // 音效
+// =====================================================
+
 let audioCtx: AudioContext | null = null
 
 function playSound(type: 'add' | 'remove' | 'error') {
@@ -127,7 +172,6 @@ function playSound(type: 'add' | 'remove' | 'error') {
       oscillator.start(ctx.currentTime)
       oscillator.stop(ctx.currentTime + 0.08)
     } else {
-      // error: 沒有豆子了
       oscillator.frequency.setValueAtTime(200, ctx.currentTime)
       gainNode.gain.setValueAtTime(0.2, ctx.currentTime)
       gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15)
@@ -146,15 +190,22 @@ function vibrate(duration: number = 10) {
   }
 }
 
-// 點擊字符間隙
+// =====================================================
+// 斷句操作
+// =====================================================
+
 function toggleBreak(index: number) {
   if (isSubmitted.value) return
+  if (!currentText.value) return
   
-  const newSet = new Set(userBreaks.value)
+  const state = textStates.value.get(currentText.value.id)
+  if (!state) return
+  
+  const newSet = new Set(state.userBreaks)
   const isRemoving = newSet.has(index)
   
   // 如果是添加新斷句，檢查是否還有豆子
-  if (!isRemoving && !hasBeansLeft.value) {
+  if (!isRemoving && newSet.size >= state.correctBreaks.size) {
     playSound('error')
     beanShake.value = true
     setTimeout(() => { beanShake.value = false }, 300)
@@ -172,10 +223,9 @@ function toggleBreak(index: number) {
     vibrate(10)
   }
   
-  userBreaks.value = newSet
-  
-  // 檢查是否完成當前文章
-  checkCurrentTextCompletion()
+  state.userBreaks = newSet
+  // 觸發響應式更新
+  textStates.value = new Map(textStates.value)
 }
 
 // 獲取豆子槽的樣式類
@@ -186,106 +236,97 @@ function getBeanClass(index: number) {
   }
 }
 
-// 檢查當前文章是否完成
-function checkCurrentTextCompletion() {
-  const correct = correctBreaks.value
-  const user = userBreaks.value
+// 計算每篇文章的完成狀態
+function getTextStatus(textId: string): 'empty' | 'partial' | 'complete' {
+  const state = textStates.value.get(textId)
+  if (!state) return 'empty'
   
-  // 完全匹配
-  if (correct.size === user.size && [...correct].every(b => user.has(b))) {
-    completeCurrentText()
+  const userSize = state.userBreaks.size
+  const correctSize = state.correctBreaks.size
+  
+  if (userSize === 0) return 'empty'
+  if (userSize === correctSize && [...state.correctBreaks].every(b => state.userBreaks.has(b))) {
+    return 'complete'
   }
+  return 'partial'
 }
 
-// 完成當前文章
-async function completeCurrentText() {
-  // 計算這篇的正確數
-  const correct = correctBreaks.value
-  const user = userBreaks.value
-  
-  let correctCount = 0
-  let wrongCount = 0
-  
-  for (const b of user) {
-    if (correct.has(b)) {
-      correctCount++
-    } else {
-      wrongCount++
-    }
-  }
-  
-  // 累加到總分
-  totalCorrectBreaks.value += correctCount
-  completedTextsCount.value++
-  
-  // 提交這篇的進度
-  if (currentText.value) {
-    await gameStore.submitTextProgress({
-      roomId: roomId.value,
-      textId: currentText.value.id,
-      textIndex: currentTextIndex.value,
-      correctCount,
-      wrongCount,
-      timeSpent: Math.round((Date.now() - startTime) / 1000),
-    })
-  }
-  
-  // 如果還有下一篇，繼續
-  if (currentTextIndex.value < texts.value.length - 1) {
-    currentTextIndex.value++
-    initCurrentText()
-  } else {
-    // 所有文章都完成了
-    submitFinalScore()
-  }
-}
+// =====================================================
+// 提交整局成績
+// =====================================================
 
-// 手動提交當前進度（點擊提交按鈕或時間到）
-async function submitCurrentProgress() {
-  if (isSubmitted.value) return
-  
-  // 計算當前文章的正確數
-  const correct = correctBreaks.value
-  const user = userBreaks.value
-  
-  let correctCount = 0
-  
-  for (const b of user) {
-    if (correct.has(b)) {
-      correctCount++
-    }
-  }
-  
-  // 加到總分（只算正確的）
-  totalCorrectBreaks.value += correctCount
-  
-  // 提交最終成績
-  submitFinalScore()
-}
-
-// 提交最終成績
-async function submitFinalScore() {
+async function submitGame() {
   if (isSubmitted.value) return
   isSubmitted.value = true
   
   const timeSpent = Math.round((Date.now() - startTime) / 1000)
   
-  // 計算正確率（基於總正確數 / 總斷點數）
-  const totalBreaks = texts.value.reduce((sum, t) => {
-    const parsed = parseContent(t.content)
-    return sum + parsed.breaks.size
-  }, 0)
+  // 計算總分和詳細結果
+  let totalCorrect = 0
+  let totalBreaks = 0
+  const resultsData: Array<{
+    textId: string
+    userBreaks: number[]
+    correctBreaks: number[]
+    correctCount: number
+    wrongCount: number
+    missedCount: number
+  }> = []
   
-  const accuracy = totalBreaks > 0 ? (totalCorrectBreaks.value / totalBreaks) * 100 : 0
+  for (const text of texts.value) {
+    const state = textStates.value.get(text.id)
+    if (!state) continue
+    
+    const correct = state.correctBreaks
+    const user = state.userBreaks
+    
+    let correctCount = 0
+    let wrongCount = 0
+    
+    for (const b of user) {
+      if (correct.has(b)) {
+        correctCount++
+      } else {
+        wrongCount++
+      }
+    }
+    
+    const missedCount = correct.size - correctCount
+    
+    totalCorrect += correctCount
+    totalBreaks += correct.size
+    
+    resultsData.push({
+      textId: text.id,
+      userBreaks: [...user],
+      correctBreaks: [...correct],
+      correctCount,
+      wrongCount,
+      missedCount,
+    })
+  }
   
+  const accuracy = totalBreaks > 0 ? (totalCorrect / totalBreaks) * 100 : 0
+  
+  // 提交成績
   await gameStore.submitScore({
     roomId: roomId.value,
-    score: totalCorrectBreaks.value,  // 分數 = 正確斷句總數
+    score: totalCorrect,
     accuracy,
     timeSpent,
     firstAccuracy: accuracy,
     attemptCount: 1,
   })
+  
+  // 保存詳細結果到 sessionStorage，供結果頁使用
+  sessionStorage.setItem(`game-result-${roomId.value}`, JSON.stringify({
+    texts: texts.value,
+    results: resultsData,
+    totalCorrect,
+    totalBreaks,
+    accuracy,
+    timeSpent,
+  }))
   
   // 跳轉到結果頁
   router.push({ name: 'arena-result', params: { roomId: roomId.value } })
@@ -310,7 +351,7 @@ function startCountdown() {
     remainingTime.value = Math.max(0, room.value!.time_limit - elapsed)
     
     if (remainingTime.value === 0 && !isSubmitted.value) {
-      submitCurrentProgress()
+      submitGame()
     }
   }
   
@@ -341,7 +382,7 @@ onMounted(async () => {
   isLoading.value = false
   
   if (texts.value.length > 0) {
-    initCurrentText()
+    initAllTexts()
     startTime = Date.now()
     startCountdown()
   }
@@ -366,59 +407,67 @@ onUnmounted(() => {
       <!-- 頂部狀態欄 -->
       <header class="play-header">
         <div class="header-left">
-          <span class="text-title">{{ currentText?.title }}</span>
-          <span v-if="currentText?.author" class="text-author">{{ currentText.author }}</span>
-          <span v-if="texts.length > 1" class="text-progress">
-            （{{ currentTextIndex + 1 }} / {{ texts.length }}）
-          </span>
+          <div class="countdown" :class="{ warning: remainingTime < 30 }">
+            <span class="countdown-label">剩餘時間</span>
+            <span class="countdown-time">{{ formatTime(remainingTime) }}</span>
+          </div>
         </div>
         
-        <div class="countdown" :class="{ warning: remainingTime < 30 }">
-          <span class="countdown-time">{{ formatTime(remainingTime) }}</span>
+        <div class="header-center">
+          <span class="text-title">{{ currentText?.title }}</span>
+          <span v-if="currentText?.author" class="text-author">{{ currentText.author }}</span>
         </div>
         
         <div class="header-right">
-          <span class="score-display">
-            <span class="score-icon">🫘</span>
-            <span class="score-value">{{ totalCorrectBreaks }}</span>
-          </span>
+          <button 
+            class="submit-btn"
+            :disabled="isSubmitted"
+            @click="submitGame"
+          >
+            {{ isSubmitted ? '已提交' : '提交答案' }}
+          </button>
         </div>
       </header>
 
-      <!-- 多篇進度條 -->
-      <div v-if="texts.length > 1" class="multi-text-progress">
-        <div 
+      <!-- 多篇切換標籤（僅當多篇時顯示） -->
+      <div v-if="texts.length > 1" class="text-tabs">
+        <button 
           v-for="(t, index) in texts" 
           :key="t.id"
-          class="progress-dot"
+          class="text-tab"
           :class="{ 
-            completed: index < currentTextIndex,
-            current: index === currentTextIndex,
-            pending: index > currentTextIndex
+            active: index === currentTextIndex,
+            empty: getTextStatus(t.id) === 'empty',
+            partial: getTextStatus(t.id) === 'partial',
+            complete: getTextStatus(t.id) === 'complete',
           }"
+          @click="switchToText(index)"
         >
-          <span v-if="index < currentTextIndex" class="dot-icon">✓</span>
-          <span v-else>{{ index + 1 }}</span>
-        </div>
+          <span class="tab-number">{{ index + 1 }}</span>
+          <span class="tab-title">{{ t.title }}</span>
+          <span v-if="getTextStatus(t.id) === 'complete'" class="tab-check">✓</span>
+        </button>
       </div>
 
       <!-- 做題區域 -->
       <main class="play-main">
-        <!-- 豆子庫存顯示 -->
-        <div class="bean-header">
-          <span class="bean-hint">點擊字間空隙種下句豆</span>
-          <div class="bean-inventory" :class="{ shake: beanShake, empty: !hasBeansLeft }">
-            <span
-              v-for="i in totalBeans"
-              :key="i"
-              class="inventory-bean"
-              :class="{ used: i > remainingBeans }"
-            ></span>
+        <!-- 豆子提示欄 -->
+        <div class="board-header">
+          <p class="board-hint">點擊字間空隙種下句豆來斷句</p>
+          <div class="board-header-right">
+            <div class="bean-inventory" :class="{ shake: beanShake, empty: !hasBeansLeft }">
+              <span
+                v-for="i in totalBeans"
+                :key="i"
+                class="inventory-bean"
+                :class="{ used: i > remainingBeans }"
+              ></span>
+            </div>
           </div>
         </div>
 
         <!-- 斷句區域 -->
-        <div class="text-container">
+        <div class="practice-board">
           <div class="practice-line" v-if="characters.length">
             <span
               v-for="(char, index) in characters"
@@ -426,7 +475,6 @@ onUnmounted(() => {
               class="char-unit"
             >
               <span class="char">{{ char }}</span>
-              <!-- 最後一個字後面不需要斷句熱區 -->
               <button
                 v-if="index < characters.length - 1"
                 class="bean-slot"
@@ -435,7 +483,7 @@ onUnmounted(() => {
                 :aria-label="`在「${char}」後${userBreaks.has(index) ? '移除' : '添加'}斷句`"
               >
                 <span class="bean" v-if="userBreaks.has(index)"></span>
-                <span class="bean-hint-dot"></span>
+                <span class="bean-hint"></span>
               </button>
             </span>
           </div>
@@ -444,22 +492,32 @@ onUnmounted(() => {
         <!-- 進度提示 -->
         <div class="progress-hint">
           <span>已標記 {{ userBreaks.size }} / {{ correctBreaks.size }} 處</span>
-          <span v-if="completedTextsCount > 0" class="divider">·</span>
-          <span v-if="completedTextsCount > 0">已完成 {{ completedTextsCount }} 篇</span>
+        </div>
+
+        <!-- 多篇導航按鈕 -->
+        <div v-if="texts.length > 1" class="text-nav">
+          <button 
+            class="nav-btn" 
+            :disabled="currentTextIndex === 0"
+            @click="prevText"
+          >
+            ← 上一篇
+          </button>
+          <span class="nav-info">{{ currentTextIndex + 1 }} / {{ texts.length }}</span>
+          <button 
+            class="nav-btn" 
+            :disabled="currentTextIndex === texts.length - 1"
+            @click="nextText"
+          >
+            下一篇 →
+          </button>
         </div>
       </main>
 
-      <!-- 底部操作欄 -->
+      <!-- 底部提示 -->
       <footer class="play-footer">
-        <button 
-          class="btn-primary btn-large"
-          :disabled="isSubmitted || userBreaks.size === 0"
-          @click="submitCurrentProgress"
-        >
-          {{ isSubmitted ? '已提交' : '提交當前進度' }}
-        </button>
         <p class="footer-hint">
-          做完自動進入下一篇，或點擊按鈕提交當前進度
+          完成所有文章後點擊「提交答案」，或等待時間結束自動提交
         </p>
       </footer>
     </template>
@@ -501,15 +559,18 @@ onUnmounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem 1.5rem;
+  padding: 0.75rem 1.5rem;
   background: white;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
-.header-left {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+.header-left, .header-right {
+  flex: 0 0 auto;
+}
+
+.header-center {
+  flex: 1;
+  text-align: center;
 }
 
 .text-title {
@@ -518,19 +579,19 @@ onUnmounted(() => {
 }
 
 .text-author {
+  margin-left: 0.5rem;
   font-size: 0.875rem;
   color: var(--color-neutral-500);
 }
 
-.text-progress {
-  font-size: 0.875rem;
-  color: var(--color-neutral-500);
-}
-
+/* 倒計時 */
 .countdown {
-  padding: 0.5rem 1.5rem;
-  background: var(--color-primary-100);
-  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  background: var(--color-primary-50);
+  border-radius: 12px;
 }
 
 .countdown.warning {
@@ -543,8 +604,13 @@ onUnmounted(() => {
   50% { opacity: 0.7; }
 }
 
+.countdown-label {
+  font-size: 0.7rem;
+  color: var(--color-neutral-500);
+}
+
 .countdown-time {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   font-weight: 700;
   font-family: 'JetBrains Mono', monospace;
 }
@@ -553,71 +619,102 @@ onUnmounted(() => {
   color: #dc2626;
 }
 
-.header-right {
-  display: flex;
-  align-items: center;
+/* 提交按鈕 */
+.submit-btn {
+  padding: 0.625rem 1.5rem;
+  background: linear-gradient(135deg, var(--color-primary-500), var(--color-primary-600));
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
-.score-display {
+.submit-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(var(--color-primary-500-rgb), 0.3);
+}
+
+.submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* 多篇切換標籤 */
+.text-tabs {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: white;
+  border-bottom: 1px solid var(--color-neutral-100);
+  overflow-x: auto;
+}
+
+.text-tab {
   display: flex;
   align-items: center;
   gap: 0.375rem;
-  padding: 0.375rem 1rem;
+  padding: 0.5rem 0.875rem;
+  background: var(--color-neutral-100);
+  border: 2px solid transparent;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.text-tab:hover {
+  background: var(--color-neutral-200);
+}
+
+.text-tab.active {
   background: var(--color-primary-50);
-  border-radius: 20px;
-  font-weight: 600;
+  border-color: var(--color-primary-400);
 }
 
-.score-icon {
-  font-size: 1.25rem;
+.text-tab.complete {
+  background: #d1fae5;
 }
 
-.score-value {
-  font-size: 1.25rem;
-  color: var(--color-primary-600);
+.text-tab.complete.active {
+  background: #a7f3d0;
+  border-color: #10b981;
 }
 
-/* 多篇進度條 */
-.multi-text-progress {
-  display: flex;
-  justify-content: center;
-  gap: 0.75rem;
-  padding: 0.75rem;
-  background: white;
-  border-bottom: 1px solid var(--color-neutral-100);
-}
-
-.progress-dot {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
+.tab-number {
+  width: 20px;
+  height: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.75rem;
+  background: var(--color-neutral-300);
+  border-radius: 50%;
+  font-size: 0.7rem;
   font-weight: 600;
-  transition: all 0.3s ease;
 }
 
-.progress-dot.completed {
-  background: #22c55e;
-  color: white;
-}
-
-.progress-dot.current {
+.text-tab.active .tab-number {
   background: var(--color-primary-500);
   color: white;
-  transform: scale(1.15);
-  box-shadow: 0 0 0 4px var(--color-primary-100);
 }
 
-.progress-dot.pending {
-  background: var(--color-neutral-200);
-  color: var(--color-neutral-500);
+.text-tab.complete .tab-number {
+  background: #10b981;
+  color: white;
 }
 
-.dot-icon {
-  font-size: 0.875rem;
+.tab-title {
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tab-check {
+  color: #10b981;
+  font-weight: 700;
 }
 
 /* 做題區域 */
@@ -626,34 +723,39 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 1.5rem 2rem;
+  padding: 1.5rem;
 }
 
-/* 豆子庫存顯示 */
-.bean-header {
+/* 豆子提示欄 - 與練習頁面一致 */
+.board-header {
   display: flex;
-  align-items: center;
   justify-content: space-between;
+  align-items: center;
   width: 100%;
   max-width: 800px;
   margin-bottom: 1rem;
-  padding: 0.75rem 1rem;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
-.bean-hint {
+.board-hint {
+  margin: 0;
   font-size: 0.875rem;
   color: var(--color-neutral-500);
 }
 
+.board-header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* 豆子庫存 - 與練習頁面一致 */
 .bean-inventory {
   display: flex;
   gap: 4px;
   padding: 0.375rem 0.75rem;
-  background: var(--color-neutral-100);
+  background: rgba(255, 255, 255, 0.85);
   border-radius: 20px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
   transition: all 0.3s ease;
 }
 
@@ -672,108 +774,119 @@ onUnmounted(() => {
 }
 
 .inventory-bean {
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
-  box-shadow: inset 0 -2px 4px rgba(0, 0, 0, 0.2);
+  background: linear-gradient(145deg, #a8d45a 0%, #7cb342 50%, #558b2f 100%);
+  box-shadow: 
+    0 1px 3px rgba(85, 139, 47, 0.4),
+    inset 0 1px 2px rgba(255, 255, 255, 0.4);
   transition: all 0.2s ease;
 }
 
 .inventory-bean.used {
   background: var(--color-neutral-300);
   box-shadow: none;
-  opacity: 0.5;
+  opacity: 0.4;
 }
 
-/* 斷句區域 */
-.text-container {
-  background: white;
-  border-radius: 20px;
-  padding: 2rem 2.5rem;
+/* 斷句練習板 - 與練習頁面一致 */
+.practice-board {
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: var(--radius-xl, 16px);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  padding: 2rem;
   max-width: 800px;
   width: 100%;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
 }
 
 .practice-line {
-  font-size: 1.75rem;
-  line-height: 2.8;
-  text-align: justify;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  line-height: 2.4;
   user-select: none;
 }
 
 .char-unit {
-  display: inline;
-  white-space: nowrap;
-}
-
-.char {
-  display: inline;
-  transition: color 0.2s;
-}
-
-/* 豆子槽 */
-.bean-slot {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 1.75rem;
-  vertical-align: middle;
-  cursor: pointer;
-  background: transparent;
-  border: none;
-  padding: 0;
+  white-space: nowrap;
   position: relative;
 }
 
-.bean-slot:hover {
-  background: rgba(34, 197, 94, 0.1);
-  border-radius: 4px;
+.char {
+  font-size: var(--text-2xl, 24px);
+  font-family: var(--font-main, 'Noto Serif TC', serif);
+  color: var(--color-neutral-800);
+  transition: transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  display: inline-block;
 }
 
-.bean-slot .bean-hint-dot {
-  width: 6px;
-  height: 6px;
+/* 句豆熱區 - 與練習頁面一致 */
+.bean-slot {
+  width: 24px;
+  height: 44px;
+  border: none;
+  cursor: pointer;
+  background: transparent;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  margin: 0 -4px;
+  flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+/* 句豆提示 */
+.bean-hint {
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
-  background: var(--color-neutral-200);
+  background: rgba(139, 178, 79, 0.15);
   opacity: 0;
-  transition: opacity 0.2s;
+  transition: opacity 150ms ease, transform 150ms ease;
 }
 
-.bean-slot:hover .bean-hint-dot {
+.bean-slot:hover .bean-hint,
+.bean-slot:focus .bean-hint {
   opacity: 1;
+  background: rgba(139, 178, 79, 0.35);
 }
 
-.bean-slot.has-bean .bean-hint-dot {
-  display: none;
-}
-
-/* 種下的豆子 */
+/* 句豆本體 - 與練習頁面一致 */
 .bean {
-  width: 18px;
-  height: 18px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  background: linear-gradient(145deg, #a8d45a 0%, #7cb342 50%, #558b2f 100%);
   box-shadow: 
-    inset 0 -3px 6px rgba(0, 0, 0, 0.2),
-    0 2px 4px rgba(0, 0, 0, 0.15);
-  animation: popIn 0.2s ease-out;
+    0 1px 3px rgba(85, 139, 47, 0.4),
+    inset 0 1px 2px rgba(255, 255, 255, 0.4);
+  position: absolute;
+  animation: bean-pop 200ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-@keyframes popIn {
-  0% { 
+@keyframes bean-pop {
+  0% {
     transform: scale(0);
     opacity: 0;
   }
-  50% { 
-    transform: scale(1.2);
+  50% {
+    transform: scale(1.3);
   }
-  100% { 
+  100% {
     transform: scale(1);
     opacity: 1;
   }
+}
+
+.bean-slot.has-bean .bean-hint {
+  opacity: 0;
 }
 
 /* 進度提示 */
@@ -783,85 +896,104 @@ onUnmounted(() => {
   color: var(--color-neutral-500);
 }
 
-.divider {
-  margin: 0 0.5rem;
+/* 多篇導航 */
+.text-nav {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.nav-btn {
+  padding: 0.5rem 1rem;
+  background: white;
+  border: 1px solid var(--color-neutral-200);
+  border-radius: 8px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.nav-btn:hover:not(:disabled) {
+  background: var(--color-neutral-50);
+  border-color: var(--color-neutral-300);
+}
+
+.nav-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.nav-info {
+  font-size: 0.875rem;
+  color: var(--color-neutral-500);
 }
 
 /* 底部 */
 .play-footer {
-  padding: 1.25rem 2rem;
+  padding: 1rem 2rem;
   background: white;
   text-align: center;
   box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.05);
 }
 
 .footer-hint {
-  margin-top: 0.5rem;
+  margin: 0;
   font-size: 0.8rem;
   color: var(--color-neutral-400);
 }
 
-.btn-primary {
-  padding: 1rem 3rem;
-  background: linear-gradient(135deg, var(--color-primary-500), var(--color-primary-600));
-  color: white;
-  border: none;
-  border-radius: 12px;
-  font-size: 1.1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.btn-primary:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(var(--color-primary-500-rgb), 0.3);
-}
-
-.btn-primary:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.btn-primary.btn-large {
-  padding: 1rem 4rem;
-  font-size: 1.2rem;
+/* 觸控設備優化 - 與練習頁面一致 */
+@media (hover: none) and (pointer: coarse) {
+  .bean-slot {
+    width: 32px;
+    height: 48px;
+  }
+  
+  .bean-hint {
+    width: 10px;
+    height: 10px;
+    opacity: 0.3;
+  }
+  
+  .bean {
+    width: 12px;
+    height: 12px;
+  }
+  
+  .char {
+    font-size: var(--text-xl, 20px);
+  }
 }
 
 /* 響應式 */
 @media (max-width: 640px) {
   .play-header {
     flex-wrap: wrap;
-    gap: 0.75rem;
+    gap: 0.5rem;
     padding: 0.75rem 1rem;
   }
   
-  .header-left {
-    flex: 1;
-    min-width: 100%;
-    justify-content: center;
-  }
-  
-  .countdown {
+  .header-center {
     order: -1;
+    flex-basis: 100%;
+    margin-bottom: 0.5rem;
   }
   
-  .text-container {
-    padding: 1.5rem;
+  .practice-board {
+    padding: 1.25rem;
   }
   
-  .practice-line {
-    font-size: 1.5rem;
-    line-height: 2.5;
+  .text-tabs {
+    padding: 0.5rem 1rem;
   }
   
-  .bean-slot {
-    width: 16px;
+  .text-tab {
+    padding: 0.375rem 0.625rem;
   }
   
-  .bean {
-    width: 14px;
-    height: 14px;
+  .tab-title {
+    display: none;
   }
 }
 </style>

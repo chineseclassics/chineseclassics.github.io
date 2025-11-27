@@ -3,14 +3,41 @@
  * 共享組件 - 對戰結果頁面
  * 
  * 顯示比賽結果、排名、獎勵
+ * 支持查看每題的答案詳情（正確/錯誤/遺漏）
+ * 多篇可切換查看
  */
 
-import { computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useGameStore } from '../../../stores/gameStore'
 import { useAuthStore } from '../../../stores/authStore'
 import { useUserStatsStore } from '../../../stores/userStatsStore'
 import { TEAM_COLORS, type TeamColor, getRankTitle } from '../../../types/game'
+
+interface TextResult {
+  textId: string
+  userBreaks: number[]
+  correctBreaks: number[]
+  correctCount: number
+  wrongCount: number
+  missedCount: number
+}
+
+interface TextItem {
+  id: string
+  title: string
+  author: string | null
+  content: string
+}
+
+interface GameResultData {
+  texts: TextItem[]
+  results: TextResult[]
+  totalCorrect: number
+  totalBreaks: number
+  accuracy: number
+  timeSpent: number
+}
 
 const router = useRouter()
 const route = useRoute()
@@ -21,6 +48,45 @@ const userStatsStore = useUserStatsStore()
 const roomId = computed(() => route.params.roomId as string)
 const room = computed(() => gameStore.currentRoom)
 const myParticipant = computed(() => gameStore.myParticipant)
+
+// 答案詳情數據
+const gameResultData = ref<GameResultData | null>(null)
+const currentResultIndex = ref(0)
+const showAnswers = ref(false)
+
+// 當前查看的文章結果
+const currentTextResult = computed(() => {
+  if (!gameResultData.value) return null
+  const text = gameResultData.value.texts[currentResultIndex.value]
+  const result = gameResultData.value.results[currentResultIndex.value]
+  if (!text || !result) return null
+  return { text, result }
+})
+
+// 解析文本內容為字符數組
+function parseCharacters(content: string): string[] {
+  const chars: string[] = []
+  for (const char of content) {
+    if (char !== '|' && char !== '\n' && char !== '\r') {
+      chars.push(char)
+    }
+  }
+  return chars
+}
+
+// 獲取斷點狀態
+function getBreakStatus(index: number): 'correct' | 'wrong' | 'missed' | 'none' {
+  if (!currentTextResult.value?.result) return 'none'
+  
+  const result = currentTextResult.value.result
+  const isUserBreak = result.userBreaks.includes(index)
+  const isCorrectBreak = result.correctBreaks.includes(index)
+  
+  if (isUserBreak && isCorrectBreak) return 'correct'
+  if (isUserBreak && !isCorrectBreak) return 'wrong'
+  if (!isUserBreak && isCorrectBreak) return 'missed'
+  return 'none'
+}
 
 // 是否獲勝
 const isWinner = computed(() => {
@@ -44,7 +110,6 @@ const ranking = computed(() => {
     }))
 })
 
-
 // 按團隊分組排名（團隊模式）
 const teamRanking = computed(() => {
   if (!room.value?.teams) return []
@@ -65,15 +130,24 @@ const level = computed(() => userStatsStore.level)
 const rankTitle = computed(() => getRankTitle(level.value))
 const winStreak = computed(() => (userStatsStore.profile as any)?.pvp_win_streak ?? 0)
 
+// 切換文章結果
+function switchResult(index: number) {
+  if (gameResultData.value && index >= 0 && index < gameResultData.value.texts.length) {
+    currentResultIndex.value = index
+  }
+}
+
 // 返回鬥豆主頁
 function goBack() {
   gameStore.reset()
+  sessionStorage.removeItem(`game-result-${roomId.value}`)
   router.push({ name: 'arena' })
 }
 
 // 再來一局
 function playAgain() {
   gameStore.reset()
+  sessionStorage.removeItem(`game-result-${roomId.value}`)
   if (authStore.isTeacher) {
     router.push({ name: 'arena-teacher-create' })
   } else {
@@ -83,9 +157,8 @@ function playAgain() {
 
 // 監聽房間狀態
 watch(() => room.value?.status, (status) => {
-  // 如果房間還在進行中，等待
   if (status === 'playing') {
-    // 可能是提前離開，跳轉回做題頁
+    // 可能是提前離開
   }
 })
 
@@ -94,6 +167,16 @@ onMounted(() => {
   gameStore.subscribeToRoom(roomId.value)
   // 刷新用戶統計
   userStatsStore.fetchProfile()
+  
+  // 讀取詳細結果數據
+  const savedData = sessionStorage.getItem(`game-result-${roomId.value}`)
+  if (savedData) {
+    try {
+      gameResultData.value = JSON.parse(savedData)
+    } catch {
+      // 忽略解析錯誤
+    }
+  }
 })
 </script>
 
@@ -119,7 +202,7 @@ onMounted(() => {
       <div class="score-grid">
         <div class="score-item">
           <span class="score-value">{{ myParticipant?.score || 0 }}</span>
-          <span class="score-label">分數</span>
+          <span class="score-label">正確斷句</span>
         </div>
         <div class="score-item">
           <span class="score-value">{{ myParticipant?.accuracy?.toFixed(0) || 0 }}%</span>
@@ -129,9 +212,95 @@ onMounted(() => {
           <span class="score-value">{{ myParticipant?.time_spent || 0 }}s</span>
           <span class="score-label">用時</span>
         </div>
-        <div class="score-item">
-          <span class="score-value">{{ myParticipant?.attempt_count || 0 }}</span>
-          <span class="score-label">嘗試次數</span>
+        <div class="score-item" v-if="gameResultData">
+          <span class="score-value">{{ gameResultData.texts.length }}</span>
+          <span class="score-label">題目數</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 答案詳情按鈕 -->
+    <button 
+      v-if="gameResultData" 
+      class="toggle-answers-btn"
+      @click="showAnswers = !showAnswers"
+    >
+      {{ showAnswers ? '隱藏答案詳情' : '📝 查看答案詳情' }}
+    </button>
+
+    <!-- 答案詳情區域 -->
+    <section v-if="showAnswers && gameResultData" class="answers-section">
+      <!-- 多篇切換標籤 -->
+      <div v-if="gameResultData.texts.length > 1" class="result-tabs">
+        <button 
+          v-for="(t, index) in gameResultData.texts" 
+          :key="t.id"
+          class="result-tab"
+          :class="{ active: index === currentResultIndex }"
+          @click="switchResult(index)"
+        >
+          <span class="tab-number">{{ index + 1 }}</span>
+          <span class="tab-title">{{ t.title }}</span>
+          <span class="tab-stats">
+            ✓{{ gameResultData.results[index]?.correctCount || 0 }}
+          </span>
+        </button>
+      </div>
+
+      <!-- 當前文章的答案展示 -->
+      <div v-if="currentTextResult && currentTextResult.text && currentTextResult.result" class="answer-detail">
+        <div class="answer-header">
+          <h3>{{ currentTextResult.text.title }}</h3>
+          <span v-if="currentTextResult.text.author" class="answer-author">
+            {{ currentTextResult.text.author }}
+          </span>
+        </div>
+        
+        <!-- 統計信息 -->
+        <div class="answer-stats">
+          <span class="stat correct">
+            <span class="stat-icon">✓</span>
+            正確 {{ currentTextResult.result.correctCount }}
+          </span>
+          <span class="stat wrong">
+            <span class="stat-icon">✗</span>
+            錯誤 {{ currentTextResult.result.wrongCount }}
+          </span>
+          <span class="stat missed">
+            <span class="stat-icon">○</span>
+            遺漏 {{ currentTextResult.result.missedCount }}
+          </span>
+        </div>
+
+        <!-- 答案展示 -->
+        <div class="answer-content">
+          <div class="answer-line">
+            <template v-for="(char, index) in parseCharacters(currentTextResult.text.content)" :key="index">
+              <span class="answer-char">{{ char }}</span>
+              <span 
+                v-if="index < parseCharacters(currentTextResult.text.content).length - 1"
+                class="answer-break"
+                :class="getBreakStatus(index)"
+              >
+                <span v-if="getBreakStatus(index) === 'correct'" class="break-mark correct">|</span>
+                <span v-else-if="getBreakStatus(index) === 'wrong'" class="break-mark wrong">|</span>
+                <span v-else-if="getBreakStatus(index) === 'missed'" class="break-mark missed">|</span>
+              </span>
+            </template>
+          </div>
+        </div>
+
+        <!-- 圖例說明 -->
+        <div class="answer-legend">
+          <span class="legend-item">
+            <span class="legend-mark correct">|</span> 正確
+          </span>
+          <span class="legend-item">
+            <span class="legend-mark wrong">|</span> 錯誤
+          </span>
+          <span class="legend-item">
+            <span class="legend-mark missed">|</span> 遺漏
+          </span>
         </div>
       </div>
     </section>
@@ -301,6 +470,225 @@ onMounted(() => {
 .score-item .score-label {
   font-size: 0.75rem;
   color: var(--color-neutral-500);
+}
+
+/* 查看答案按鈕 */
+.toggle-answers-btn {
+  display: block;
+  width: 100%;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  background: white;
+  border: 2px dashed var(--color-primary-300);
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-primary-600);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.toggle-answers-btn:hover {
+  background: var(--color-primary-50);
+  border-color: var(--color-primary-400);
+}
+
+/* 答案詳情區域 */
+.answers-section {
+  background: white;
+  border-radius: 16px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+/* 結果標籤 */
+.result-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+}
+
+.result-tab {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--color-neutral-100);
+  border: 2px solid transparent;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.result-tab:hover {
+  background: var(--color-neutral-200);
+}
+
+.result-tab.active {
+  background: var(--color-primary-50);
+  border-color: var(--color-primary-400);
+}
+
+.tab-number {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-neutral-300);
+  border-radius: 50%;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.result-tab.active .tab-number {
+  background: var(--color-primary-500);
+  color: white;
+}
+
+.tab-title {
+  max-width: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tab-stats {
+  color: #10b981;
+  font-weight: 600;
+}
+
+/* 答案詳情 */
+.answer-detail {
+  border-top: 1px solid var(--color-neutral-100);
+  padding-top: 1rem;
+}
+
+.answer-header {
+  margin-bottom: 1rem;
+}
+
+.answer-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.answer-author {
+  font-size: 0.875rem;
+  color: var(--color-neutral-500);
+}
+
+/* 統計信息 */
+.answer-stats {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.stat {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.stat.correct {
+  color: #10b981;
+}
+
+.stat.wrong {
+  color: #ef4444;
+}
+
+.stat.missed {
+  color: #f59e0b;
+}
+
+.stat-icon {
+  font-weight: 700;
+}
+
+/* 答案內容 */
+.answer-content {
+  background: var(--color-neutral-50);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.answer-line {
+  font-size: 1.25rem;
+  line-height: 2.2;
+  font-family: var(--font-main, 'Noto Serif TC', serif);
+}
+
+.answer-char {
+  display: inline;
+}
+
+.answer-break {
+  display: inline;
+  width: 0;
+}
+
+.break-mark {
+  font-weight: 700;
+  margin: 0 1px;
+}
+
+.break-mark.correct {
+  color: #10b981;
+}
+
+.break-mark.wrong {
+  color: #ef4444;
+  text-decoration: line-through;
+}
+
+.break-mark.missed {
+  color: #f59e0b;
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* 圖例 */
+.answer-legend {
+  display: flex;
+  gap: 1.5rem;
+  justify-content: center;
+  font-size: 0.8rem;
+  color: var(--color-neutral-500);
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.legend-mark {
+  font-weight: 700;
+}
+
+.legend-mark.correct {
+  color: #10b981;
+}
+
+.legend-mark.wrong {
+  color: #ef4444;
+}
+
+.legend-mark.missed {
+  color: #f59e0b;
 }
 
 /* 連勝卡片 */
@@ -513,6 +901,15 @@ onMounted(() => {
   .score-grid {
     grid-template-columns: repeat(2, 1fr);
   }
+  
+  .answer-stats {
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+  
+  .answer-legend {
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
 }
 </style>
-
