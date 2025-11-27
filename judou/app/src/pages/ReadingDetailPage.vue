@@ -266,7 +266,7 @@ function stopReading() {
 // TTS 配置
 const TTS_OPTIONS = {
   voice: 'zh-CN-XiaoxiaoNeural',
-  rate: 0.8  // Azure TTS 語速 (-20%)，適合古文朗讀
+  rate: 0.75  // Azure TTS 語速 (-25%)，適合古文朗讀
 }
 
 // 朗讀全文 / 停止朗讀（分段播放 + 預加載，快速響應）
