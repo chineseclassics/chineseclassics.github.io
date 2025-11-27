@@ -768,7 +768,12 @@ export const useGameStore = defineStore('game', () => {
    * 訂閱房間更新
    */
   function subscribeToRoom(roomId: string): void {
-    if (!supabase) return
+    if (!supabase) {
+      console.log('[Game] subscribeToRoom: supabase 未初始化')
+      return
+    }
+
+    console.log('[Game] 開始訂閱房間:', roomId)
 
     // 取消之前的訂閱
     unsubscribe()
@@ -785,9 +790,21 @@ export const useGameStore = defineStore('game', () => {
           filter: `id=eq.${roomId}`,
         },
         (payload) => {
-          console.log('[Game] 房間更新:', payload)
+          console.log('[Game] 房間更新:', payload.eventType, payload.new)
           if (payload.new) {
-            currentRoom.value = { ...currentRoom.value, ...payload.new } as GameRoom
+            // 更新房間狀態，保留已有的關聯數據（participants, teams 等）
+            const newRoom = payload.new as any
+            currentRoom.value = { 
+              ...currentRoom.value, 
+              ...newRoom,
+              // 保留這些關聯數據，它們不會在 payload 中
+              participants: currentRoom.value?.participants,
+              teams: currentRoom.value?.teams,
+              host: currentRoom.value?.host,
+              text: currentRoom.value?.text,
+              class: currentRoom.value?.class,
+            } as GameRoom
+            console.log('[Game] 房間狀態已更新為:', newRoom.status)
           }
         }
       )
@@ -800,7 +817,7 @@ export const useGameStore = defineStore('game', () => {
           filter: `room_id=eq.${roomId}`,
         },
         async (payload) => {
-          console.log('[Game] 參與者更新:', payload)
+          console.log('[Game] 參與者更新:', payload.eventType)
           // 刷新參與者列表
           await refreshParticipants(roomId)
         }
@@ -814,12 +831,14 @@ export const useGameStore = defineStore('game', () => {
           filter: `room_id=eq.${roomId}`,
         },
         async (payload) => {
-          console.log('[Game] 團隊更新:', payload)
+          console.log('[Game] 團隊更新:', payload.eventType)
           // 刷新團隊列表
           await refreshTeams(roomId)
         }
       )
-      .subscribe()
+      .subscribe((status) => {
+        console.log('[Game] 房間訂閱狀態:', status)
+      })
   }
 
   /**
