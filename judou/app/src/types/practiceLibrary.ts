@@ -4,7 +4,7 @@ export interface PracticeCategory {
   slug: string
   parent_id: string | null
   level: number
-  type: 'grade' | 'module' | 'theme' | 'custom'
+  type: 'grade' | 'custom'  // 簡化為單層結構：年級或自定義
   description?: string | null
   order_index: number
   is_system?: boolean
@@ -37,8 +37,6 @@ export interface PracticeLibraryState {
   categories: PracticeCategory[]
   texts: PracticeLibraryText[]
   selectedGradeId: string | null
-  selectedModuleId: string | null
-  selectedThemeId: string | null
   selectedTextId: string | null
 }
 

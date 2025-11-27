@@ -8,6 +8,7 @@ import type {
   PracticeLibraryText,
 } from '@/types/practiceLibrary'
 
+// 備用數據：簡化為單層年級結構
 const FALLBACK_CATEGORIES: PracticeCategory[] = [
   {
     id: 'grade-7',
@@ -20,107 +21,37 @@ const FALLBACK_CATEGORIES: PracticeCategory[] = [
     order_index: 1,
   },
   {
-    id: 'grade-7-module-lunyu',
-    name: '論語讀本',
-    slug: 'grade-7-module-lunyu',
-    parent_id: 'grade-7',
-    level: 2,
-    type: 'module',
-    description: '以語錄題材培養句型感與節奏感。',
-    order_index: 1,
-  },
-  {
-    id: 'grade-7-theme-renyi',
-    name: '仁義篇',
-    slug: 'grade-7-theme-renyi',
-    parent_id: 'grade-7-module-lunyu',
-    level: 3,
-    type: 'theme',
-    description: '圍繞「仁」與「義」的章句，適合練習短句斷讀。',
-    order_index: 1,
-  },
-  {
-    id: 'grade-7-theme-xuexi',
-    name: '學習篇',
-    slug: 'grade-7-theme-xuexi',
-    parent_id: 'grade-7-module-lunyu',
-    level: 3,
-    type: 'theme',
-    description: '關於求學與修身的篇章，句式多變。',
-    order_index: 2,
-  },
-  {
-    id: 'anthology-guwenguan-zhi',
-    name: '古文觀止',
-    slug: 'anthology-guwenguan-zhi',
+    id: 'grade-8',
+    name: '八年級',
+    slug: 'grade-8',
     parent_id: null,
     level: 1,
     type: 'grade',
-    description: '以主題式選編進行高階訓練。',
+    description: '中階練習，接觸更多古文體裁。',
     order_index: 2,
-  },
-  {
-    id: 'anthology-guwenguan-zhi-warring',
-    name: '戰國策',
-    slug: 'anthology-guwenguan-zhi-warring',
-    parent_id: 'anthology-guwenguan-zhi',
-    level: 2,
-    type: 'module',
-    description: '戰國時期縱橫家精彩篇章，節奏快速。',
-    order_index: 1,
-  },
-  {
-    id: 'anthology-guwenguan-zhi-warring-theme',
-    name: '遊說名篇',
-    slug: 'anthology-guwenguan-zhi-warring-theme',
-    parent_id: 'anthology-guwenguan-zhi-warring',
-    level: 3,
-    type: 'theme',
-    description: '以遊說篇章作為高階斷句挑戰。',
-    order_index: 1,
   },
 ]
 
 const FALLBACK_TEXTS: PracticeLibraryText[] = [
   {
-    id: 'text-renyi-01',
+    id: 'text-lunyu-01',
     title: '論語・學而篇',
     author: '孔子及弟子',
-    category_id: 'grade-7-theme-renyi',
+    category_id: 'grade-7',
     difficulty: 1,
     summary: '子曰：「弟子入則孝...」',
     word_count: 86,
-    content: '子曰|弟子入則孝||出則弟|信而好|犯而不|怨...',
+    content: '子曰|弟子入則孝|出則弟|謹而信|汎愛眾|而親仁',
   },
   {
-    id: 'text-renyi-02',
-    title: '論語・里仁篇',
-    author: '孔子及弟子',
-    category_id: 'grade-7-theme-renyi',
-    difficulty: 2,
-    summary: '里仁為美，擇其善者而從之。',
-    word_count: 120,
-    content: '子曰|里仁為美|擇不處仁|焉得知||仁者安仁|知者利仁',
-  },
-  {
-    id: 'text-xuexi-01',
+    id: 'text-lunyu-02',
     title: '論語・為政篇',
     author: '孔子及弟子',
-    category_id: 'grade-7-theme-xuexi',
+    category_id: 'grade-7',
     difficulty: 2,
     summary: '溫故而知新，可以為師矣。',
     word_count: 95,
     content: '子曰|溫故而知新|可以為師矣|學而不思則罔|思而不學則殆',
-  },
-  {
-    id: 'text-warring-01',
-    title: '蘇秦說齊王',
-    author: '蘇秦',
-    category_id: 'anthology-guwenguan-zhi-warring-theme',
-    difficulty: 3,
-    summary: '以合縱策略說服齊王，語勢跌宕。',
-    word_count: 260,
-    content: '蘇秦曰|大王處東海之濱|南有江淮之饒|北有燕代之利|...',
   },
 ]
 
@@ -141,8 +72,6 @@ export const usePracticeLibraryStore = defineStore('practice-library', () => {
     categories: [],
     texts: [],
     selectedGradeId: null,
-    selectedModuleId: null,
-    selectedThemeId: null,
     selectedTextId: null,
   })
   const isLoading = ref(false)
@@ -197,19 +126,8 @@ export const usePracticeLibraryStore = defineStore('practice-library', () => {
     }
   }
 
-  function resetSelections(level: 'grade' | 'module' | 'theme') {
-    if (level === 'grade') {
-      state.value.selectedModuleId = null
-      state.value.selectedThemeId = null
-    }
-
-    if (level !== 'theme') {
-      state.value.selectedTextId = null
-    }
-
-    if (level === 'module') {
-      state.value.selectedThemeId = null
-    }
+  function resetSelections() {
+    state.value.selectedTextId = null
   }
 
   const sortedCategories = computed(() =>
@@ -221,20 +139,13 @@ export const usePracticeLibraryStore = defineStore('practice-library', () => {
     })
   )
 
+  // 根分類（年級）
   const rootCategories = computed(() => sortedCategories.value.filter((category) => category.level === 1))
 
-  const modules = computed(() =>
-    state.value.categories.filter((category) => category.parent_id === state.value.selectedGradeId)
-  )
-
-  const themes = computed(() =>
-    state.value.categories.filter((category) => category.parent_id === state.value.selectedModuleId)
-  )
-
+  // 當前年級下的文章
   const visibleTexts = computed(() => {
-    const activeCategoryId = state.value.selectedThemeId ?? state.value.selectedModuleId ?? state.value.selectedGradeId
-    if (!activeCategoryId) return []
-    return state.value.texts.filter((text) => text.category_id === activeCategoryId)
+    if (!state.value.selectedGradeId) return []
+    return state.value.texts.filter((text) => text.category_id === state.value.selectedGradeId)
   })
 
   const selectedText = computed(() =>
@@ -244,21 +155,7 @@ export const usePracticeLibraryStore = defineStore('practice-library', () => {
   function selectGrade(id: string) {
     if (state.value.selectedGradeId !== id) {
       state.value.selectedGradeId = id
-      resetSelections('grade')
-    }
-  }
-
-  function selectModule(id: string) {
-    if (state.value.selectedModuleId !== id) {
-      state.value.selectedModuleId = id
-      resetSelections('module')
-    }
-  }
-
-  function selectTheme(id: string) {
-    if (state.value.selectedThemeId !== id) {
-      state.value.selectedThemeId = id
-      resetSelections('theme')
+      resetSelections()
     }
   }
 
@@ -268,18 +165,10 @@ export const usePracticeLibraryStore = defineStore('practice-library', () => {
 
   async function addCategory(payload: PracticeCategoryInput, userId?: string) {
     if (!supabase) throw new Error('Supabase 尚未配置')
-    const parent = payload.parent_id ? state.value.categories.find((cat) => cat.id === payload.parent_id) : null
-
-    if (payload.type !== 'grade' && !parent) {
-      throw new Error('請選擇上層分類')
-    }
-
-    if (parent && parent.level >= 3) {
-      throw new Error('目前僅支援三級分類')
-    }
-
-    const level = parent ? parent.level + 1 : 1
-    const type = payload.type ?? (parent ? (parent.level === 1 ? 'module' : 'theme') : 'grade')
+    
+    // 簡化為單層結構：只支持年級
+    const level = 1
+    const type = payload.type ?? 'grade'
     
     // 根據 is_system 參數決定是系統分類還是私有分類
     const isSystem = payload.is_system ?? true
@@ -370,12 +259,6 @@ export const usePracticeLibraryStore = defineStore('practice-library', () => {
     if (state.value.selectedGradeId === id) {
       state.value.selectedGradeId = null
     }
-    if (state.value.selectedModuleId === id) {
-      state.value.selectedModuleId = null
-    }
-    if (state.value.selectedThemeId === id) {
-      state.value.selectedThemeId = null
-    }
   }
 
   return {
@@ -383,14 +266,10 @@ export const usePracticeLibraryStore = defineStore('practice-library', () => {
     isLoading,
     error,
     rootCategories,
-    modules,
-    themes,
     visibleTexts,
     selectedText,
     fetchLibrary,
     selectGrade,
-    selectModule,
-    selectTheme,
     selectText,
     addCategory,
     updateCategory,

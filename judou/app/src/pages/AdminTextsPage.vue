@@ -175,10 +175,10 @@ async function handleTextSubmit() {
     feedback.value = '請先選擇一個分類'
     return
   }
-  // 確保選中的是單元（level 2）
+  // 確保選中的是年級（level 1）
   const category = selectedCategory.value
-  if (!category || category.level !== 2) {
-    feedback.value = '請選擇一個單元（而非年級）來新增文章'
+  if (!category || category.level !== 1) {
+    feedback.value = '請選擇一個年級來新增文章'
     return
   }
 
