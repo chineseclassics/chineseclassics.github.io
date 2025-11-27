@@ -79,6 +79,47 @@ const beans = computed(() => userStatsStore.profile?.total_beans ?? 0)
 const level = computed(() => userStatsStore.level)
 const streakDays = computed(() => userStatsStore.profile?.streak_days ?? 0)
 
+// ========== 豆子變化動畫 ==========
+interface BeanChange {
+  id: number
+  amount: number
+  isPositive: boolean
+}
+
+const beanChanges = ref<BeanChange[]>([])
+let beanChangeId = 0
+const isBeansAnimating = ref(false)
+
+// 監聽豆子變化
+watch(beans, (newVal, oldVal) => {
+  // 忽略初始化時的變化（oldVal 為 0 或 undefined）
+  if (oldVal === undefined || oldVal === 0 || newVal === oldVal) return
+  
+  const diff = newVal - oldVal
+  if (diff === 0) return
+  
+  // 觸發動畫
+  isBeansAnimating.value = true
+  
+  // 創建浮動數字
+  const change: BeanChange = {
+    id: ++beanChangeId,
+    amount: Math.abs(diff),
+    isPositive: diff > 0
+  }
+  beanChanges.value.push(change)
+  
+  // 動畫結束後移除
+  setTimeout(() => {
+    beanChanges.value = beanChanges.value.filter(c => c.id !== change.id)
+  }, 1500)
+  
+  // 數字跳動動畫結束
+  setTimeout(() => {
+    isBeansAnimating.value = false
+  }, 600)
+})
+
 // 登入/登出
 const showUserMenu = ref(false)
 
@@ -147,11 +188,30 @@ const logoUrl = `${import.meta.env.BASE_URL}images/judou-logo.jpg`
       <div class="brand-info">
         <p class="brand-title">{{ displayName }}</p>
         <!-- 已登入：顯示豆子數量、等級和連續天數 -->
-        <p v-if="authStore.isAuthenticated" class="brand-stats">
-          <span class="beans-display"><span class="bean-dot"></span> {{ beans }}</span>
-          <span class="level-display">Lv.{{ level }}</span>
-          <span v-if="streakDays > 0" class="streak-display">🔥 {{ streakDays }}天</span>
-        </p>
+        <div v-if="authStore.isAuthenticated" class="brand-stats-wrapper">
+          <!-- 豆子顯示區（優化版） -->
+          <div class="beans-card" :class="{ 'beans-animating': isBeansAnimating }">
+            <div class="beans-icon">
+              <span class="bean-pod">🫛</span>
+            </div>
+            <span class="beans-value">{{ beans.toLocaleString() }}</span>
+            <!-- 浮動變化數字 -->
+            <TransitionGroup name="bean-change" tag="div" class="bean-changes">
+              <div 
+                v-for="change in beanChanges" 
+                :key="change.id"
+                class="bean-change-item"
+                :class="change.isPositive ? 'positive' : 'negative'"
+              >
+                {{ change.isPositive ? '+' : '-' }}{{ change.amount }}
+              </div>
+            </TransitionGroup>
+          </div>
+          <!-- 等級和連續天數 -->
+          <div class="secondary-stats">
+            <span v-if="streakDays > 0" class="streak-display">🔥 {{ streakDays }}天</span>
+          </div>
+        </div>
         <!-- 未登入：顯示登入提示 -->
         <p v-else class="brand-subtitle">點擊登入</p>
       </div>
@@ -328,43 +388,141 @@ const logoUrl = `${import.meta.env.BASE_URL}images/judou-logo.jpg`
 
 .brand-info {
   flex: 1;
+  min-width: 0;
 }
 
-.brand-stats {
-  margin: 0;
+.brand-stats-wrapper {
   display: flex;
-  gap: 0.75rem;
-  font-size: var(--text-sm);
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-top: 0.25rem;
 }
 
-.beans-display {
-  color: var(--color-primary-600);
-  font-weight: 500;
+/* ========== 豆子卡片（優化版） ========== */
+.beans-card {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-}
-
-/* 綠色毛豆圓點 */
-.bean-dot {
-  display: inline-block;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: linear-gradient(145deg, #a8d45a 0%, #7cb342 50%, #558b2f 100%);
+  gap: 0.375rem;
+  background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+  padding: 0.25rem 0.625rem 0.25rem 0.375rem;
+  border-radius: 20px;
+  position: relative;
   box-shadow: 
-    0 1px 2px rgba(85, 139, 47, 0.4),
-    inset 0 1px 1px rgba(255, 255, 255, 0.4);
+    0 2px 4px rgba(76, 175, 80, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(76, 175, 80, 0.2);
+  transition: transform 0.15s, box-shadow 0.15s;
 }
 
-.level-display {
-  color: #d97706;
-  font-weight: 500;
+.beans-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 
+    0 4px 8px rgba(76, 175, 80, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+/* 豆子數字跳動動畫 */
+.beans-card.beans-animating {
+  animation: beans-bounce 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+@keyframes beans-bounce {
+  0%, 100% { transform: scale(1); }
+  30% { transform: scale(1.15); }
+  60% { transform: scale(0.95); }
+}
+
+.beans-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.1));
+}
+
+.bean-pod {
+  display: block;
+  animation: bean-wiggle 3s ease-in-out infinite;
+}
+
+@keyframes bean-wiggle {
+  0%, 100% { transform: rotate(-3deg); }
+  50% { transform: rotate(3deg); }
+}
+
+.beans-value {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #2e7d32;
+  font-family: 'SF Mono', 'Monaco', 'Menlo', monospace;
+  letter-spacing: -0.5px;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+/* ========== 浮動變化數字動畫 ========== */
+.bean-changes {
+  position: absolute;
+  top: 50%;
+  right: -8px;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.bean-change-item {
+  position: absolute;
+  right: 0;
+  white-space: nowrap;
+  font-size: 0.875rem;
+  font-weight: 700;
+  font-family: 'SF Mono', 'Monaco', 'Menlo', monospace;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.bean-change-item.positive {
+  color: #16a34a;
+}
+
+.bean-change-item.negative {
+  color: #dc2626;
+}
+
+/* Vue TransitionGroup 動畫 */
+.bean-change-enter-active {
+  animation: bean-change-float 1.5s ease-out forwards;
+}
+
+.bean-change-leave-active {
+  display: none;
+}
+
+@keyframes bean-change-float {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  20% {
+    opacity: 1;
+    transform: translateY(-10px) scale(1.2);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-40px) scale(0.8);
+  }
+}
+
+/* ========== 次要統計信息 ========== */
+.secondary-stats {
+  display: flex;
+  gap: 0.5rem;
+  font-size: 0.75rem;
 }
 
 .streak-display {
   color: #dc2626;
-  font-weight: 500;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 2px;
 }
 
 .arrow-icon {
