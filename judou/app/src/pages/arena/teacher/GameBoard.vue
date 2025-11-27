@@ -3,12 +3,13 @@
  * 老師模式 - 課堂鬥豆大屏幕展示（鬥豆台）
  * 
  * 實時顯示各隊伍分數、成員完成情況、倒計時
+ * 使用平均分制確保人數不均時的公平性
  */
 
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useGameStore } from '../../../stores/gameStore'
-import { TEAM_COLORS, type TeamColor } from '../../../types/game'
+import { TEAM_COLORS, type TeamColor, type GameTeam } from '../../../types/game'
 
 const router = useRouter()
 const route = useRoute()
@@ -28,9 +29,34 @@ let countdownInterval: any = null
 // 是否已結束
 const isFinished = computed(() => room.value?.status === 'finished')
 
-// 按分數排序的隊伍
-const sortedTeams = computed(() => {
-  return [...teams.value].sort((a, b) => b.total_score - a.total_score)
+// 計算每個隊伍的統計數據
+interface TeamStats {
+  team: GameTeam
+  memberCount: number
+  completedCount: number
+  averageScore: number  // 平均分（顯示用）
+}
+
+const teamStats = computed((): TeamStats[] => {
+  return teams.value.map(team => {
+    const teamMembers = participants.value.filter(p => p.team_id === team.id)
+    const completedMembers = teamMembers.filter(p => p.status === 'completed')
+    
+    // 計算平均分（從數據庫獲取的 total_score 已經是 平均分×100）
+    const averageScore = team.total_score / 100
+    
+    return {
+      team,
+      memberCount: teamMembers.length,
+      completedCount: completedMembers.length,
+      averageScore,
+    }
+  })
+})
+
+// 按平均分排序的隊伍統計
+const sortedTeamStats = computed(() => {
+  return [...teamStats.value].sort((a, b) => b.averageScore - a.averageScore)
 })
 
 // 按團隊分組的參與者（含完成狀態）
@@ -159,20 +185,23 @@ onUnmounted(() => {
         
         <div class="final-ranking">
           <div 
-            v-for="(team, index) in sortedTeams" 
-            :key="team.id"
+            v-for="(stats, index) in sortedTeamStats" 
+            :key="stats.team.id"
             class="ranking-item"
             :class="{ winner: index === 0 }"
             :style="{ 
-              '--team-primary': TEAM_COLORS[team.team_color as TeamColor].primary,
-              '--team-secondary': TEAM_COLORS[team.team_color as TeamColor].secondary,
+              '--team-primary': TEAM_COLORS[stats.team.team_color as TeamColor].primary,
+              '--team-secondary': TEAM_COLORS[stats.team.team_color as TeamColor].secondary,
             }"
           >
             <span class="rank">{{ index + 1 }}</span>
-            <span class="team-name">{{ team.team_name }}</span>
-            <span class="team-score">{{ team.total_score }} 分</span>
+            <span class="team-name">{{ stats.team.team_name }}</span>
+            <span class="team-members">{{ stats.completedCount }}/{{ stats.memberCount }} 人</span>
+            <span class="team-avg-score">{{ stats.averageScore.toFixed(1) }} 分</span>
           </div>
         </div>
+        
+        <p class="scoring-note">* 以隊員平均分計算排名</p>
         
         <button class="btn-primary btn-large" @click="goBack">
           返回鬥豆
@@ -184,28 +213,31 @@ onUnmounted(() => {
     <main v-else class="board-main">
       <div class="teams-battle">
         <div 
-          v-for="team in sortedTeams" 
-          :key="team.id"
+          v-for="stats in sortedTeamStats" 
+          :key="stats.team.id"
           class="team-column"
           :style="{ 
-            '--team-primary': TEAM_COLORS[team.team_color as TeamColor].primary,
-            '--team-secondary': TEAM_COLORS[team.team_color as TeamColor].secondary,
-            '--team-text': TEAM_COLORS[team.team_color as TeamColor].text,
+            '--team-primary': TEAM_COLORS[stats.team.team_color as TeamColor].primary,
+            '--team-secondary': TEAM_COLORS[stats.team.team_color as TeamColor].secondary,
+            '--team-text': TEAM_COLORS[stats.team.team_color as TeamColor].text,
           }"
         >
           <!-- 隊伍標題 -->
           <div class="team-title">
-            <h2>{{ team.team_name }}</h2>
+            <div class="team-name-row">
+              <h2>{{ stats.team.team_name }}</h2>
+              <span class="team-progress">{{ stats.completedCount }}/{{ stats.memberCount }}</span>
+            </div>
             <div class="team-score">
-              <span class="score-value">{{ team.total_score }}</span>
-              <span class="score-label">分</span>
+              <span class="score-value">{{ stats.averageScore.toFixed(1) }}</span>
+              <span class="score-label">平均分</span>
             </div>
           </div>
           
           <!-- 成員列表 -->
           <div class="members-list">
             <div 
-              v-for="p in participantsByTeam[team.id]" 
+              v-for="p in participantsByTeam[stats.team.id]" 
               :key="p.id"
               class="member-row"
               :class="{ completed: p.status === 'completed' }"
@@ -241,19 +273,19 @@ onUnmounted(() => {
       </div>
     </main>
 
-    <!-- 底部分數條 -->
+    <!-- 底部分數條（按平均分比例顯示）-->
     <footer v-if="!isFinished" class="score-bar">
       <div 
-        v-for="team in teams" 
-        :key="team.id"
+        v-for="stats in teamStats" 
+        :key="stats.team.id"
         class="score-segment"
         :style="{ 
-          flex: Math.max(team.total_score, 1),
-          background: TEAM_COLORS[team.team_color as TeamColor].primary,
+          flex: Math.max(stats.averageScore, 1),
+          background: TEAM_COLORS[stats.team.team_color as TeamColor].primary,
         }"
       >
-        <span v-if="team.total_score > 0" class="segment-label">
-          {{ team.team_name }}
+        <span v-if="stats.averageScore > 0" class="segment-label">
+          {{ stats.team.team_name }}
         </span>
       </div>
     </footer>
@@ -411,10 +443,25 @@ onUnmounted(() => {
   background: var(--team-secondary);
 }
 
+.team-name-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
 .team-title h2 {
   margin: 0;
   font-size: 1.25rem;
   color: var(--team-text);
+}
+
+.team-progress {
+  font-size: 0.875rem;
+  color: var(--team-text);
+  opacity: 0.7;
+  padding: 0.125rem 0.5rem;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
 }
 
 .team-score {
@@ -430,7 +477,7 @@ onUnmounted(() => {
 }
 
 .score-label {
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   color: var(--team-text);
   opacity: 0.7;
 }
@@ -604,15 +651,30 @@ onUnmounted(() => {
   color: #eab308;
 }
 
-.team-name {
+.ranking-item .team-name {
   flex: 1;
   font-weight: 600;
   text-align: left;
 }
 
-.team-score {
+.team-members {
+  font-size: 0.875rem;
+  opacity: 0.7;
+  min-width: 60px;
+  text-align: center;
+}
+
+.team-avg-score {
   font-size: 1.25rem;
   font-weight: 700;
+  min-width: 80px;
+  text-align: right;
+}
+
+.scoring-note {
+  font-size: 0.875rem;
+  opacity: 0.5;
+  margin-bottom: 2rem;
 }
 
 .btn-primary {

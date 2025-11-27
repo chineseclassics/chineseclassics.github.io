@@ -449,23 +449,31 @@ export const useGameStore = defineStore('game', () => {
   }
 
   /**
-   * 更新團隊分數
+   * 更新團隊分數（使用平均分制，確保人數不均時的公平性）
    */
   async function updateTeamScore(teamId: string): Promise<void> {
     if (!supabase || !currentRoom.value) return
 
-    // 計算團隊總分
+    // 獲取該隊伍所有已完成成員的分數
     const { data: participants } = await supabase
       .from('game_participants')
       .select('score')
       .eq('team_id', teamId)
       .eq('status', 'completed')
 
+    // 計算平均分（乘以 100 存儲以保留精度，顯示時除以 100）
+    const completedCount = participants?.length || 0
     const totalScore = participants?.reduce((sum, p) => sum + (p.score || 0), 0) || 0
+    
+    // 團隊分數 = 平均分 × 100（整數存儲）
+    // 如果沒有人完成，分數為 0
+    const averageScore = completedCount > 0 
+      ? Math.round((totalScore / completedCount) * 100) 
+      : 0
 
     await supabase
       .from('game_teams')
-      .update({ total_score: totalScore })
+      .update({ total_score: averageScore })
       .eq('id', teamId)
   }
 
