@@ -167,10 +167,14 @@ function getDifficultyLabel(difficulty: number): string {
   }
 }
 
-// 獲取分類名稱
-function getCategoryName(categoryId: string): string {
-  const cat = categories.value.find(c => c.id === categoryId)
-  return cat?.name || '未分類'
+// 獲取內容預覽（移除斷句標記，顯示前 20 個字）
+function getContentPreview(content: string | null): string {
+  if (!content) return ''
+  // 移除斷句標記 |
+  const clean = content.replace(/\|/g, '')
+  // 取前 20 個字
+  if (clean.length <= 20) return clean
+  return clean.slice(0, 20) + '…'
 }
 
 onMounted(async () => {
@@ -305,21 +309,19 @@ defineExpose({
               {{ getOrder(text.id) }}
             </div>
             
-            <!-- 文本信息 -->
-            <div class="text-main">
+            <!-- 標題行：標題 + 難度標籤 -->
+            <div class="text-header">
               <h4 class="text-title">{{ text.title }}</h4>
-              <p v-if="text.author" class="text-author">{{ text.author }}</p>
-            </div>
-            
-            <!-- 標籤 -->
-            <div class="text-tags">
-              <span class="tag difficulty" :class="`diff-${text.difficulty}`">
+              <span class="difficulty-badge" :class="`diff-${text.difficulty}`">
                 {{ getDifficultyLabel(text.difficulty) }}
               </span>
-              <span v-if="text.category_id && textSource === 'system'" class="tag category">
-                {{ getCategoryName(text.category_id) }}
-              </span>
             </div>
+            
+            <!-- 作者 -->
+            <p v-if="text.author" class="text-author">{{ text.author }}</p>
+            
+            <!-- 內容預覽 -->
+            <p class="text-preview">{{ getContentPreview(text.content) }}</p>
           </button>
         </div>
       </div>
@@ -570,15 +572,14 @@ defineExpose({
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  padding: 0.875rem;
+  gap: 0.375rem;
+  padding: 0.75rem;
   background: white;
   border: 2px solid transparent;
   border-radius: 10px;
   cursor: pointer;
   text-align: left;
   transition: all 0.2s;
-  min-height: 90px;
 }
 
 .text-card:hover {
@@ -597,76 +598,79 @@ defineExpose({
   position: absolute;
   top: -8px;
   right: -8px;
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   background: var(--color-primary-500);
   color: white;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   font-weight: 700;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-.text-main {
-  flex: 1;
+/* 標題行 */
+.text-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
 }
 
 .text-title {
   margin: 0;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
   font-weight: 600;
   line-height: 1.3;
+  flex: 1;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 1;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
 
-.text-author {
-  margin: 0.25rem 0 0 0;
-  font-size: 0.75rem;
-  color: var(--color-neutral-500);
-}
-
-/* 標籤 */
-.text-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.375rem;
-}
-
-.tag {
-  padding: 0.125rem 0.5rem;
+/* 難度標籤 */
+.difficulty-badge {
+  padding: 0.125rem 0.375rem;
   border-radius: 4px;
-  font-size: 0.7rem;
-  font-weight: 500;
+  font-size: 0.65rem;
+  font-weight: 600;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
-.tag.difficulty {
-  background: var(--color-neutral-100);
-}
-
-.tag.diff-1 {
+.difficulty-badge.diff-1 {
   background: #d1fae5;
   color: #047857;
 }
 
-.tag.diff-2 {
+.difficulty-badge.diff-2 {
   background: #fef3c7;
   color: #d97706;
 }
 
-.tag.diff-3 {
+.difficulty-badge.diff-3 {
   background: #fee2e2;
   color: #dc2626;
 }
 
-.tag.category {
-  background: var(--color-neutral-100);
+.text-author {
+  margin: 0;
+  font-size: 0.7rem;
+  color: var(--color-neutral-500);
+}
+
+/* 內容預覽 */
+.text-preview {
+  margin: 0;
+  font-size: 0.75rem;
   color: var(--color-neutral-600);
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* 已選預覽 */
