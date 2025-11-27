@@ -50,7 +50,7 @@ const pvpStats = computed(() => ({
 }))
 
 // 解鎖條件（僅適用於學生自己創建的 PvP 競技）
-const UNLOCK_LEVEL = 5
+const UNLOCK_LEVEL = 3
 const isPvpUnlocked = computed(() => level.value >= UNLOCK_LEVEL)
 
 // =====================================================
