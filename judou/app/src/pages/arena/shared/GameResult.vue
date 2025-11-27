@@ -88,15 +88,33 @@ function getBreakStatus(index: number): 'correct' | 'wrong' | 'missed' | 'none' 
   return 'none'
 }
 
-// 是否獲勝
+// 是否獲勝（包括平局情況）
 const isWinner = computed(() => {
   if (!room.value || !authStore.user) return false
   
   if (room.value.game_mode === 'team_battle') {
     return myParticipant.value?.team_id === room.value.winner_team_id
   } else {
-    return room.value.winner_user_id === authStore.user.id
+    // 如果有明確的獲勝者
+    if (room.value.winner_user_id) {
+      return room.value.winner_user_id === authStore.user.id
+    }
+    // 如果沒有明確獲勝者（平局），檢查是否是分數最高者之一
+    if (!room.value.participants) return false
+    const myScore = myParticipant.value?.score ?? 0
+    const myTime = myParticipant.value?.time_spent ?? 999999
+    const topScore = Math.max(...room.value.participants.map(p => p.score))
+    const topPlayers = room.value.participants.filter(p => p.score === topScore)
+    const topTime = Math.min(...topPlayers.map(p => p.time_spent ?? 999999))
+    return myScore === topScore && myTime === topTime
   }
+})
+
+// 是否平局
+const isTie = computed(() => {
+  if (!room.value || room.value.game_mode === 'team_battle') return false
+  // 沒有明確獲勝者且自己是贏家 = 平局
+  return !room.value.winner_user_id && isWinner.value
 })
 
 // 排名（PvP 模式）
@@ -181,14 +199,17 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="game-result" :class="{ winner: isWinner }">
+  <div class="game-result" :class="{ winner: isWinner, tie: isTie }">
     <!-- 結果標題 -->
     <header class="result-header">
       <div class="result-icon">
-        {{ isWinner ? '🏆' : '💪' }}
+        {{ isTie ? '🤝' : isWinner ? '🏆' : '💪' }}
       </div>
-      <h1>{{ isWinner ? '恭喜收豆！' : '惜敗' }}</h1>
-      <p v-if="isWinner && prizeInfo.prize > 0" class="prize-text">
+      <h1>{{ isTie ? '平局！' : isWinner ? '恭喜收豆！' : '惜敗' }}</h1>
+      <p v-if="isTie" class="tie-text">
+        勢均力敵，旗鼓相當！
+      </p>
+      <p v-else-if="isWinner && prizeInfo.prize > 0" class="prize-text">
         獲得 <span class="prize-value">{{ prizeInfo.prize }}</span> 豆
       </p>
       <p v-else class="encourage-text">
@@ -396,6 +417,15 @@ onMounted(() => {
 
 .game-result.winner {
   background: linear-gradient(135deg, #fef3c7, #fde68a);
+}
+
+.game-result.tie {
+  background: linear-gradient(135deg, #e0f2fe, #bae6fd);
+}
+
+.tie-text {
+  font-size: 1.1rem;
+  color: #0369a1;
 }
 
 /* 結果標題 */

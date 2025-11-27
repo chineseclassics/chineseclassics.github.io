@@ -615,11 +615,30 @@ export const useGameStore = defineStore('game', () => {
       winnerTeamId = winningTeam?.id
       winners = room.participants?.filter((p: GameParticipant) => p.team_id === winnerTeamId) || []
     } else {
-      // PvP 模式：分數最高的個人獲勝
-      const sortedParticipants = [...(room.participants || [])].sort((a, b) => b.score - a.score)
-      const winner = sortedParticipants[0]
-      winnerUserId = winner?.user_id
-      winners = winner ? [winner] : []
+      // PvP 模式：分數優先，用時次之
+      // 1. 分數高者優先
+      // 2. 分數相同時，用時少者優先（鼓勵手動提交）
+      // 3. 分數和用時都相同時，判定為平局（所有平局者都算贏家）
+      const sortedParticipants = [...(room.participants || [])].sort((a, b) => {
+        if (b.score !== a.score) return b.score - a.score
+        return (a.time_spent || 999999) - (b.time_spent || 999999)
+      })
+      
+      const topPlayer = sortedParticipants[0]
+      if (topPlayer) {
+        // 找出所有與第一名分數和用時相同的人（平局者）
+        winners = sortedParticipants.filter(p => 
+          p.score === topPlayer.score && 
+          (p.time_spent || 999999) === (topPlayer.time_spent || 999999)
+        )
+        
+        // 如果只有一個贏家，設置 winner_user_id
+        // 如果多人平局，winner_user_id 保持為 null
+        if (winners.length === 1) {
+          winnerUserId = topPlayer.user_id
+        }
+        // 平局時 winnerUserId 保持為 null，獎勵會平分給所有 winners
+      }
     }
 
     // 更新房間狀態
@@ -633,15 +652,26 @@ export const useGameStore = defineStore('game', () => {
       })
       .eq('id', room.id)
 
-    // 分發獎勵（如果有入場費）
+    // 判斷是否平局（沒有明確獲勝者）
+    const isTie = !winnerTeamId && !winnerUserId && winners.length > 1
+    
+    // 分發獎勵或返還入場費
     let prizeDistribution: { userId: string; displayName: string; prize: number; streakBonus: number }[] = []
     
     if (room.prize_pool > 0 && winners.length > 0) {
-      prizeDistribution = await distributePrizes(room, winners)
+      if (isTie) {
+        // 平局：返還入場費，不加連勝獎勵
+        prizeDistribution = await refundEntryFees(room, winners)
+      } else {
+        // 有明確獲勝者：正常分發獎勵
+        prizeDistribution = await distributePrizes(room, winners)
+      }
     }
 
-    // 更新連勝/連敗統計
-    await updatePvpStats(room, winners)
+    // 更新連勝/連敗統計（平局時不更新）
+    if (!isTie) {
+      await updatePvpStats(room, winners)
+    }
 
     return {
       room,
@@ -721,6 +751,62 @@ export const useGameStore = defineStore('game', () => {
         displayName: winner.user?.display_name || '未知',
         prize: prizePerWinner,
         streakBonus,
+      })
+    }
+
+    return distribution
+  }
+
+  /**
+   * 平局時返還入場費
+   */
+  async function refundEntryFees(
+    room: GameRoom,
+    participants: GameParticipant[]
+  ): Promise<{ userId: string; displayName: string; prize: number; streakBonus: number }[]> {
+    if (!supabase) return []
+
+    const entryFee = room.entry_fee || 0
+    const distribution: { userId: string; displayName: string; prize: number; streakBonus: number }[] = []
+
+    for (const participant of participants) {
+      // 返還入場費
+      const { data: userStats } = await supabase
+        .from('user_stats')
+        .select('beans')
+        .eq('user_id', participant.user_id)
+        .single()
+
+      const newBalance = (userStats?.beans || 0) + entryFee
+
+      await supabase
+        .from('user_stats')
+        .update({ beans: newBalance })
+        .eq('user_id', participant.user_id)
+
+      // 更新參與者獎勵記錄（顯示為返還）
+      await supabase
+        .from('game_participants')
+        .update({ prize_won: entryFee })
+        .eq('id', participant.id)
+
+      // 記錄交易
+      await supabase
+        .from('game_transactions')
+        .insert({
+          user_id: participant.user_id,
+          room_id: room.id,
+          type: 'refund',
+          amount: entryFee,
+          balance_after: newBalance,
+          description: `平局，返還入場費 ${entryFee} 豆`,
+        })
+
+      distribution.push({
+        userId: participant.user_id,
+        displayName: participant.user?.display_name || '未知',
+        prize: entryFee,
+        streakBonus: 0,  // 平局沒有連勝獎勵
       })
     }
 

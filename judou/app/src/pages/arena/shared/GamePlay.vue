@@ -308,16 +308,6 @@ async function submitGame() {
   
   const accuracy = totalBreaks > 0 ? (totalCorrect / totalBreaks) * 100 : 0
   
-  // 提交成績
-  await gameStore.submitScore({
-    roomId: roomId.value,
-    score: totalCorrect,
-    accuracy,
-    timeSpent,
-    firstAccuracy: accuracy,
-    attemptCount: 1,
-  })
-  
   // 保存詳細結果到 sessionStorage，供結果頁使用
   sessionStorage.setItem(`game-result-${roomId.value}`, JSON.stringify({
     texts: texts.value,
@@ -328,8 +318,18 @@ async function submitGame() {
     timeSpent,
   }))
   
-  // 跳轉到結果頁
-  router.push({ name: 'arena-result', params: { roomId: roomId.value } })
+  // 提交成績（gameStore 會檢查是否所有人都完成）
+  await gameStore.submitScore({
+    roomId: roomId.value,
+    score: totalCorrect,
+    accuracy,
+    timeSpent,
+    firstAccuracy: accuracy,
+    attemptCount: 1,
+  })
+  
+  // 不立即跳轉！等待房間狀態變為 'finished'
+  // 跳轉邏輯在 watch(room.status) 中處理
 }
 
 // =====================================================
@@ -421,10 +421,16 @@ onUnmounted(() => {
         <div class="header-right">
           <button 
             class="submit-btn"
+            :class="{ waiting: isSubmitted }"
             :disabled="isSubmitted"
             @click="submitGame"
           >
-            {{ isSubmitted ? '已提交' : '提交答案' }}
+            <template v-if="isSubmitted">
+              <span class="waiting-spinner">⏳</span> 等待其他玩家...
+            </template>
+            <template v-else>
+              提交答案
+            </template>
           </button>
         </div>
       </header>
@@ -516,7 +522,10 @@ onUnmounted(() => {
 
       <!-- 底部提示 -->
       <footer class="play-footer">
-        <p class="footer-hint">
+        <p v-if="isSubmitted" class="footer-hint submitted">
+          ✅ 已提交答案，等待其他玩家完成或時間結束...
+        </p>
+        <p v-else class="footer-hint">
           完成所有文章後點擊「提交答案」，或等待時間結束自動提交
         </p>
       </footer>
@@ -640,6 +649,26 @@ onUnmounted(() => {
 .submit-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.submit-btn.waiting {
+  background: linear-gradient(135deg, #10b981, #059669);
+  animation: pulse-waiting 2s infinite;
+}
+
+.waiting-spinner {
+  display: inline-block;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes pulse-waiting {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.footer-hint.submitted {
+  color: #10b981;
+  font-weight: 500;
 }
 
 /* 多篇切換標籤 */

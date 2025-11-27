@@ -1,4 +1,4 @@
-import{v as O,u as M,r as w,c as P}from"./index-Dqh4cMIB.js";import{u as U}from"./useSupabase-D8P2uKmu.js";const j=O("reading",()=>{const o=U(),s=M(),u=w([]),c=w(null),l=w([]),_=w(!1),g=w(null),x=P(()=>u.value.filter(e=>e.progress?.bookmarked));async function p(){if(!o){g.value="Supabase 尚未配置";return}_.value=!0,g.value=null;try{const{data:e,error:t}=await o.from("practice_texts").select(`
+import{v as O,u as M,r as w,c as P}from"./index-DFJvHeuU.js";import{u as U}from"./useSupabase-BEm2s_FC.js";const j=O("reading",()=>{const o=U(),s=M(),u=w([]),c=w(null),l=w([]),_=w(!1),g=w(null),x=P(()=>u.value.filter(e=>e.progress?.bookmarked));async function p(){if(!o){g.value="Supabase 尚未配置";return}_.value=!0,g.value=null;try{const{data:e,error:t}=await o.from("practice_texts").select(`
           *,
           text_reading_categories (
             category:reading_categories (
