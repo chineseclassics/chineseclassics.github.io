@@ -35,6 +35,13 @@ const timeModeText = computed(() => {
   return option ? `${option.label}（${option.description}）` : ''
 })
 
+// 空位數量（確保為正整數）
+const emptySlots = computed(() => {
+  const maxPlayers = room.value?.max_players || 0
+  const currentPlayers = participants.value.length
+  return Math.max(0, maxPlayers - currentPlayers)
+})
+
 // 監聽房間狀態
 watch(() => room.value?.status, (status) => {
   if (status === 'playing') {
@@ -162,7 +169,7 @@ onUnmounted(() => {
 
         <!-- 空位 -->
         <div 
-          v-for="i in (room?.max_players || 0) - participants.length" 
+          v-for="i in emptySlots" 
           :key="'empty-' + i"
           class="participant-card empty"
         >
