@@ -46,35 +46,6 @@ function pinyinToIPA(pinyin: string): string | null {
   }
 }
 
-// 多音字發音修正規則
-// 使用 <sub> 標籤將多音字替換為同音字，這是最可靠的方法
-// 注意：「為」有兩種寫法：為 (標準) 和 爲 (異體字)，需要同時支持
-const PRONUNCIATION_RULES: Array<{ pattern: RegExp; replacement: string }> = [
-  // 「為/爲」讀 wéi（第二聲）的情況 - 用同音字「維」替換
-  { pattern: /[為爲]業/g, replacement: '<sub alias="維業">為業</sub>' },
-  { pattern: /[為爲]人/g, replacement: '<sub alias="維人">為人</sub>' },
-  { pattern: /以[為爲]/g, replacement: '<sub alias="以維">以為</sub>' },
-  { pattern: /成[為爲]/g, replacement: '<sub alias="成維">成為</sub>' },
-  { pattern: /作[為爲]/g, replacement: '<sub alias="作維">作為</sub>' },
-  { pattern: /[為爲]官/g, replacement: '<sub alias="維官">為官</sub>' },
-  { pattern: /[為爲]師/g, replacement: '<sub alias="維師">為師</sub>' },
-  { pattern: /[為爲]學/g, replacement: '<sub alias="維學">為學</sub>' },
-  // 可繼續添加更多規則...
-];
-
-// 應用多音字發音修正
-function applyPronunciationFixes(text: string): string {
-  let result = text;
-  for (const rule of PRONUNCIATION_RULES) {
-    result = result.replace(rule.pattern, rule.replacement);
-  }
-  // 添加調試日誌
-  if (text !== result) {
-    console.log('發音修正:', { original: text, fixed: result });
-  }
-  return result;
-}
-
 function buildSSML(
   text: string,
   voice: string = DEFAULT_VOICE,
@@ -84,11 +55,11 @@ function buildSSML(
 ) {
   // 若提供 pinyinIPA，使用 <phoneme> 強制拼音發音。
   // 若提供 rate，使用 <prosody> 控制語速（Azure 支持 0.5-2.0 或百分比如 "-50%"）
+  // 注意：多音字發音修正已移至前端處理（taixu-tts.js）
   const safeText = (text || '').trim();
   const pText = (pinyinText || '').trim();
   
-  // 應用多音字發音修正
-  let content = applyPronunciationFixes(safeText);
+  let content = safeText;
   
   // 如果有拼音參數，追加拼音發音
   if (pText) {

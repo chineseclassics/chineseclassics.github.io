@@ -3,6 +3,7 @@ import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useReadingStore } from '@/stores/readingStore'
 import { useAuthStore } from '@/stores/authStore'
+import { classicalSpeak, classicalPreload, classicalStopSpeak } from '@/composables/useClassicalTTS'
 import type { TextAnnotation } from '@/types/text'
 
 const route = useRoute()
@@ -258,9 +259,7 @@ let shouldStopPlaying = false
 // 停止朗讀
 function stopReading() {
   shouldStopPlaying = true
-  if (typeof window !== 'undefined' && (window as any).taixuStopSpeak) {
-    (window as any).taixuStopSpeak()
-  }
+  classicalStopSpeak()
   isPlaying.value = false
 }
 
@@ -280,17 +279,10 @@ async function toggleReadFullText() {
     return
   }
   
-  // 檢查 Azure TTS 是否可用
-  if (typeof window === 'undefined' || !(window as any).taixuSpeak) {
-    alert('語音朗讀功能暫時不可用，請稍後再試')
-    return
-  }
-  
   isPlaying.value = true
   shouldStopPlaying = false
   
   const segments = getSegmentedTexts()
-  const taixuPreload = (window as any).taixuPreload
   
   try {
     // 逐段播放，同時預加載下一段
@@ -298,12 +290,16 @@ async function toggleReadFullText() {
       if (shouldStopPlaying) break
       
       // 預加載下一段（如果有的話）
-      if (i + 1 < segments.length && taixuPreload) {
-        taixuPreload(segments[i + 1], TTS_OPTIONS)
+      const nextSegment = segments[i + 1]
+      if (nextSegment) {
+        classicalPreload(nextSegment, TTS_OPTIONS)
       }
       
-      // 播放當前段
-      await (window as any).taixuSpeak(segments[i], TTS_OPTIONS)
+      // 播放當前段（使用文言文發音修正）
+      const currentSegment = segments[i]
+      if (currentSegment) {
+        await classicalSpeak(currentSegment, TTS_OPTIONS)
+      }
     }
   } catch (e) {
     console.error('TTS 播放失敗:', e)
@@ -374,9 +370,10 @@ onMounted(async () => {
   // 等待 Vue 響應式更新完成後，預加載第一段音頻
   await nextTick()
   const segments = getSegmentedTexts()
-  if (segments.length > 0 && (window as any).taixuPreload) {
-    // 後台預加載，不阻塞頁面
-    (window as any).taixuPreload(segments[0], TTS_OPTIONS)
+  const firstSegment = segments[0]
+  if (firstSegment) {
+    // 後台預加載，不阻塞頁面（使用文言文發音修正）
+    classicalPreload(firstSegment, TTS_OPTIONS)
   }
 })
 

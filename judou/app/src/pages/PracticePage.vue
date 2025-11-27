@@ -7,6 +7,7 @@ import { useAssignmentStore } from '@/stores/assignmentStore'
 import { useAuthStore } from '@/stores/authStore'
 import { useUserStatsStore, type ScoreBreakdown } from '@/stores/userStatsStore'
 import { useClassStore } from '@/stores/classStore'
+import { classicalSpeak, classicalPreload, classicalStopSpeak } from '@/composables/useClassicalTTS'
 import type { PracticeText } from '@/types/text'
 
 interface SlotStatus {
@@ -658,9 +659,7 @@ let shouldStopTTS = false
 
 function stopTTS() {
   shouldStopTTS = true
-  if (typeof window !== 'undefined' && (window as any).taixuStopSpeak) {
-    (window as any).taixuStopSpeak()
-  }
+  classicalStopSpeak()
   isPlayingTTS.value = false
 }
 
@@ -679,17 +678,10 @@ async function toggleReadText() {
     return
   }
   
-  // 檢查 Azure TTS 是否可用
-  if (typeof window === 'undefined' || !(window as any).taixuSpeak) {
-    alert('語音朗讀功能暫時不可用，請稍後再試')
-    return
-  }
-  
   isPlayingTTS.value = true
   shouldStopTTS = false
   
   const segments = getSegmentedTexts()
-  const taixuPreload = (window as any).taixuPreload
   
   try {
     // 逐段播放，同時預加載下一段
@@ -697,12 +689,16 @@ async function toggleReadText() {
       if (shouldStopTTS) break
       
       // 預加載下一段（如果有的話）
-      if (i + 1 < segments.length && taixuPreload) {
-        taixuPreload(segments[i + 1], TTS_OPTIONS)
+      const nextSegment = segments[i + 1]
+      if (nextSegment) {
+        classicalPreload(nextSegment, TTS_OPTIONS)
       }
       
-      // 播放當前段
-      await (window as any).taixuSpeak(segments[i], TTS_OPTIONS)
+      // 播放當前段（使用文言文發音修正）
+      const currentSegment = segments[i]
+      if (currentSegment) {
+        await classicalSpeak(currentSegment, TTS_OPTIONS)
+      }
     }
   } catch (e) {
     console.error('TTS 播放失敗:', e)
