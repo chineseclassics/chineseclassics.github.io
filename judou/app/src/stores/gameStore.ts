@@ -162,7 +162,7 @@ export const useGameStore = defineStore('game', () => {
           *,
           host:users!game_rooms_host_id_fkey(id, display_name, avatar_url),
           text:practice_texts!game_rooms_text_id_fkey(id, title, author, content),
-          teams:game_teams(*),
+          teams:game_teams!game_teams_room_id_fkey(*),
           participants:game_participants(
             *,
             user:users!game_participants_user_id_fkey(id, display_name, avatar_url, email)
@@ -595,7 +595,7 @@ export const useGameStore = defineStore('game', () => {
       .from('game_rooms')
       .select(`
         *,
-        teams:game_teams(*),
+        teams:game_teams!game_teams_room_id_fkey(*),
         participants:game_participants(
           *,
           user:users!game_participants_user_id_fkey(id, display_name, avatar_url)

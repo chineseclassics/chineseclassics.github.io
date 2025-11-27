@@ -106,6 +106,7 @@ async function fetchClassGames() {
     console.log('[Arena] 開始查詢班級比賽，班級ID:', classIds)
     
     // 獲取這些班級的進行中比賽
+    // 注意：game_teams 需要指定外鍵，因為有兩個關係（room_id 和 winner_team_id）
     const { data: games, error } = await supabase
       .from('game_rooms')
       .select(`
@@ -113,7 +114,7 @@ async function fetchClassGames() {
         host:users!game_rooms_host_id_fkey(id, display_name, avatar_url),
         text:practice_texts!game_rooms_text_id_fkey(id, title, author),
         class:classes!game_rooms_class_id_fkey(id, class_name),
-        teams:game_teams(*)
+        teams:game_teams!game_teams_room_id_fkey(*)
       `)
       .in('class_id', classIds)
       .eq('host_type', 'teacher')
