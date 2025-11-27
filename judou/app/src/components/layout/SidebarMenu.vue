@@ -346,7 +346,7 @@ const logoUrl = `${import.meta.env.BASE_URL}images/judou-logo.jpg`
   justify-content: center;
   font-weight: var(--font-semibold);
   color: var(--color-primary-700);
-  overflow: hidden;
+  /* 注意：不用 overflow: hidden，讓 badge 可以顯示在外面 */
 }
 
 .brand-avatar.has-avatar {
@@ -357,6 +357,7 @@ const logoUrl = `${import.meta.env.BASE_URL}images/judou-logo.jpg`
   width: 100%;
   height: 100%;
   object-fit: cover;
+  border-radius: var(--radius-full);  /* 圖片自己處理圓角裁剪 */
 }
 
 .level-badge {
