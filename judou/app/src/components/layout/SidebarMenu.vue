@@ -79,52 +79,21 @@ const beans = computed(() => userStatsStore.profile?.total_beans ?? 0)
 const level = computed(() => userStatsStore.level)
 const streakDays = computed(() => userStatsStore.profile?.streak_days ?? 0)
 
-// ========== 豆子變化動畫（原地數字滾動） ==========
-const displayBeans = ref(0)  // 顯示的數字（動畫用）
+// ========== 豆子變化動畫（滾輪動畫） ==========
+const displayBeans = ref(0)  // 顯示的數字
 const isBeansAnimating = ref(false)
 const beansChangeDirection = ref<'up' | 'down' | null>(null)
-let animationFrame: number | null = null
 
-// 數字滾動動畫函數
-function animateNumber(from: number, to: number, duration: number = 800) {
-  const startTime = performance.now()
-  const diff = to - from
-  
-  // 設置變化方向（用於顏色提示）
-  beansChangeDirection.value = diff > 0 ? 'up' : 'down'
-  isBeansAnimating.value = true
-  
-  function update(currentTime: number) {
-    const elapsed = currentTime - startTime
-    const progress = Math.min(elapsed / duration, 1)
-    
-    // 使用 easeOutExpo 緩動函數，讓動畫更自然
-    const easeProgress = 1 - Math.pow(1 - progress, 4)
-    
-    displayBeans.value = Math.round(from + diff * easeProgress)
-    
-    if (progress < 1) {
-      animationFrame = requestAnimationFrame(update)
-    } else {
-      displayBeans.value = to
-      // 動畫結束後延遲一下再移除顏色
-      setTimeout(() => {
-        isBeansAnimating.value = false
-        beansChangeDirection.value = null
-      }, 500)
-    }
-  }
-  
-  if (animationFrame) {
-    cancelAnimationFrame(animationFrame)
-  }
-  animationFrame = requestAnimationFrame(update)
-}
+// 將數字拆分成位數數組（用於滾輪顯示）
+const beansDigits = computed(() => {
+  const str = displayBeans.value.toString()
+  return str.split('').map(d => parseInt(d))
+})
 
 // 監聽豆子變化
 watch(beans, (newVal, oldVal) => {
   // 初始化時直接設置
-  if (oldVal === undefined || displayBeans.value === 0) {
+  if (oldVal === undefined || oldVal === 0) {
     displayBeans.value = newVal
     return
   }
@@ -132,8 +101,19 @@ watch(beans, (newVal, oldVal) => {
   // 數值相同不做動畫
   if (newVal === oldVal) return
   
-  // 啟動數字滾動動畫
-  animateNumber(displayBeans.value, newVal)
+  // 設置動畫方向
+  const diff = newVal - oldVal
+  beansChangeDirection.value = diff > 0 ? 'up' : 'down'
+  isBeansAnimating.value = true
+  
+  // 更新數字（觸發滾輪動畫）
+  displayBeans.value = newVal
+  
+  // 動畫結束後重置狀態
+  setTimeout(() => {
+    isBeansAnimating.value = false
+    beansChangeDirection.value = null
+  }, 800)
 }, { immediate: true })
 
 // 登入/登出
@@ -205,7 +185,7 @@ const logoUrl = `${import.meta.env.BASE_URL}images/judou-logo.jpg`
         <p class="brand-title">{{ displayName }}</p>
         <!-- 已登入：顯示豆子數量、等級和連續天數 -->
         <div v-if="authStore.isAuthenticated" class="brand-stats-wrapper">
-          <!-- 豆子顯示區（原地數字滾動動畫） -->
+          <!-- 豆子顯示區（滾輪動畫） -->
           <div 
             class="beans-card" 
             :class="{ 
@@ -217,7 +197,21 @@ const logoUrl = `${import.meta.env.BASE_URL}images/judou-logo.jpg`
             <div class="beans-icon">
               <span class="bean-pod">🫛</span>
             </div>
-            <span class="beans-value">{{ displayBeans.toLocaleString() }}</span>
+            <!-- 滾輪數字顯示 -->
+            <div class="beans-roller">
+              <div 
+                v-for="(digit, index) in beansDigits" 
+                :key="index"
+                class="digit-slot"
+              >
+                <div 
+                  class="digit-roller"
+                  :style="{ transform: `translateY(-${digit * 10}%)` }"
+                >
+                  <span v-for="n in 10" :key="n" class="digit">{{ n - 1 }}</span>
+                </div>
+              </div>
+            </div>
           </div>
           <!-- 等級和連續天數 -->
           <div class="secondary-stats">
@@ -451,7 +445,7 @@ const logoUrl = `${import.meta.env.BASE_URL}images/judou-logo.jpg`
     inset 0 1px 0 rgba(255, 255, 255, 0.8);
 }
 
-.beans-card.beans-up .beans-value {
+.beans-card.beans-up .digit {
   color: #15803d;
   text-shadow: 0 0 8px rgba(34, 197, 94, 0.5);
 }
@@ -465,7 +459,7 @@ const logoUrl = `${import.meta.env.BASE_URL}images/judou-logo.jpg`
     inset 0 1px 0 rgba(255, 255, 255, 0.8);
 }
 
-.beans-card.beans-down .beans-value {
+.beans-card.beans-down .digit {
   color: #dc2626;
   text-shadow: 0 0 8px rgba(239, 68, 68, 0.5);
 }
@@ -502,13 +496,39 @@ const logoUrl = `${import.meta.env.BASE_URL}images/judou-logo.jpg`
   50% { transform: rotate(3deg); }
 }
 
-.beans-value {
+/* ========== 滾輪數字動畫 ========== */
+.beans-roller {
+  display: flex;
+  align-items: center;
+  height: 1.25rem;
+  overflow: hidden;
+}
+
+.digit-slot {
+  height: 1.25rem;
+  overflow: hidden;
+  position: relative;
+}
+
+.digit-roller {
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.beans-animating .digit-roller {
+  transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.digit {
+  height: 1.25rem;
+  line-height: 1.25rem;
   font-size: 1rem;
   font-weight: 700;
   color: #2e7d32;
   font-family: 'SF Mono', 'Monaco', 'Menlo', monospace;
-  letter-spacing: -0.5px;
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
+  text-align: center;
+  min-width: 0.65rem;
 }
 
 /* ========== 次要統計信息 ========== */
