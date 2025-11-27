@@ -12,6 +12,7 @@ import { useAuthStore } from '../../../stores/authStore'
 import { useGameStore } from '../../../stores/gameStore'
 import { supabase } from '../../../lib/supabaseClient'
 import { TIME_MODE_OPTIONS, TEAM_COUNT_OPTIONS, getTeamColors, TEAM_COLORS } from '../../../types/game'
+import TextSelector from '../../../components/arena/TextSelector.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -23,35 +24,30 @@ const totalSteps = 3
 
 // 表單數據
 const selectedClassId = ref<string>('')
-const selectedTextIds = ref<string[]>([])  // 改為多選
+const selectedTextIds = ref<string[]>([])
 const teamCount = ref(2)
 const timeLimit = ref(180)
 
-// 文本來源選擇
-type TextSource = 'system' | 'custom'
-const textSource = ref<TextSource>('system')
-
 // 數據
 const classes = ref<any[]>([])
-const systemTexts = ref<any[]>([])
-const customTexts = ref<any[]>([])
 const loading = ref(false)
 const error = ref('')
-const textsLoading = ref(false)
 
-// 根據來源篩選文本
-const filteredTexts = computed(() => {
-  return textSource.value === 'system' ? systemTexts.value : customTexts.value
-})
+// 文本選擇器引用
+const textSelector = ref<InstanceType<typeof TextSelector> | null>(null)
 
-// 當前選中的文本列表
+// 已選文本詳情
 const selectedTexts = computed(() => {
-  const allTexts = [...systemTexts.value, ...customTexts.value]
-  return selectedTextIds.value.map(id => allTexts.find(t => t.id === id)).filter(Boolean)
+  return textSelector.value?.selectedTexts || []
 })
 
 // 預覽團隊顏色
 const previewTeamColors = computed(() => getTeamColors(teamCount.value))
+
+// 更新選中的文本 ID
+function updateSelectedIds(ids: string[]) {
+  selectedTextIds.value = ids
+}
 
 // 加載班級列表
 async function loadClasses() {
@@ -69,63 +65,6 @@ async function loadClasses() {
   if (classes.value.length > 0 && !selectedClassId.value) {
     selectedClassId.value = classes.value[0].id
   }
-}
-
-// 加載系統文庫文本
-async function loadSystemTexts() {
-  if (!supabase) return
-  
-  const { data } = await supabase
-    .from('practice_texts')
-    .select('id, title, author, content, difficulty')
-    .eq('is_system', true)
-    .order('created_at', { ascending: false })
-    .limit(100)
-
-  systemTexts.value = data || []
-}
-
-// 加載老師自訂文本
-async function loadCustomTexts() {
-  if (!supabase || !authStore.user?.id) return
-  
-  const { data } = await supabase
-    .from('practice_texts')
-    .select('id, title, author, content, difficulty')
-    .eq('created_by', authStore.user.id)
-    .eq('is_system', false)
-    .order('created_at', { ascending: false })
-    .limit(100)
-
-  customTexts.value = data || []
-}
-
-// 切換文本來源時清空選擇
-function switchTextSource(source: TextSource) {
-  textSource.value = source
-  selectedTextIds.value = []
-}
-
-// 切換選中文本
-function toggleTextSelection(textId: string) {
-  const index = selectedTextIds.value.indexOf(textId)
-  if (index === -1) {
-    // 添加選中
-    selectedTextIds.value.push(textId)
-  } else {
-    // 取消選中
-    selectedTextIds.value.splice(index, 1)
-  }
-}
-
-// 檢查文本是否選中
-function isTextSelected(textId: string): boolean {
-  return selectedTextIds.value.includes(textId)
-}
-
-// 獲取文本的選中順序
-function getTextOrder(textId: string): number {
-  return selectedTextIds.value.indexOf(textId) + 1
 }
 
 // 下一步
@@ -162,7 +101,7 @@ async function createGame() {
   const room = await gameStore.createRoom({
     hostType: 'teacher',
     gameMode: 'team_battle',
-    textIds: selectedTextIds.value,  // 傳遞多篇文章ID
+    textIds: selectedTextIds.value,
     timeLimit: timeLimit.value,
     teamCount: teamCount.value,
     classId: selectedClassId.value,
@@ -177,24 +116,8 @@ async function createGame() {
   loading.value = false
 }
 
-// 難度標籤
-function getDifficultyLabel(difficulty: number): string {
-  switch (difficulty) {
-    case 1: return '初級'
-    case 2: return '中級'
-    case 3: return '高級'
-    default: return '未知'
-  }
-}
-
 onMounted(async () => {
-  textsLoading.value = true
-  await Promise.all([
-    loadClasses(),
-    loadSystemTexts(),
-    loadCustomTexts(),
-  ])
-  textsLoading.value = false
+  await loadClasses()
 })
 </script>
 
@@ -264,88 +187,11 @@ onMounted(async () => {
         <h2>選擇比賽文本</h2>
         <p class="step-hint">可選擇多篇文章，學生將按順序在限時內盡量完成</p>
 
-        <!-- 已選文本提示 -->
-        <div v-if="selectedTextIds.length > 0" class="selected-summary">
-          <span class="summary-icon">📋</span>
-          <span>已選 {{ selectedTextIds.length }} 篇文章</span>
-          <button 
-            v-if="selectedTextIds.length > 0" 
-            class="clear-btn"
-            @click="selectedTextIds = []"
-          >
-            清空
-          </button>
-        </div>
-
-        <!-- 文本來源切換 -->
-        <div class="source-tabs">
-          <button
-            class="source-tab"
-            :class="{ active: textSource === 'system' }"
-            @click="switchTextSource('system')"
-          >
-            <span class="tab-icon">📚</span>
-            <span class="tab-label">系統文庫</span>
-            <span class="tab-count">{{ systemTexts.length }}</span>
-          </button>
-          <button
-            class="source-tab"
-            :class="{ active: textSource === 'custom' }"
-            @click="switchTextSource('custom')"
-          >
-            <span class="tab-icon">✏️</span>
-            <span class="tab-label">自訂練習</span>
-            <span class="tab-count">{{ customTexts.length }}</span>
-          </button>
-        </div>
-
-        <!-- 加載狀態 -->
-        <div v-if="textsLoading" class="loading-state">
-          <span class="loading-spinner">⏳</span>
-          <span>載入文本中...</span>
-        </div>
-
-        <!-- 空狀態 -->
-        <div v-else-if="filteredTexts.length === 0" class="empty-state">
-          <template v-if="textSource === 'system'">
-            <p>系統文庫暫無文本</p>
-          </template>
-          <template v-else>
-            <p>您還沒有自訂練習文本</p>
-            <router-link to="/judou/my-texts" class="btn-link">
-              去創建自訂練習 →
-            </router-link>
-          </template>
-        </div>
-
-        <!-- 文本列表（多選） -->
-        <div v-else class="text-list">
-          <button
-            v-for="text in filteredTexts"
-            :key="text.id"
-            class="text-card"
-            :class="{ selected: isTextSelected(text.id) }"
-            @click="toggleTextSelection(text.id)"
-          >
-            <div class="text-header">
-              <div class="text-info">
-                <h4 class="text-title">{{ text.title }}</h4>
-                <p v-if="text.author" class="text-author">{{ text.author }}</p>
-              </div>
-              <span class="difficulty-badge" :class="`diff-${text.difficulty}`">
-                {{ getDifficultyLabel(text.difficulty) }}
-              </span>
-            </div>
-            <div class="text-preview">
-              {{ text.content?.slice(0, 60) }}...
-            </div>
-            <!-- 選中順序標記 -->
-            <div v-if="isTextSelected(text.id)" class="selected-indicator">
-              <span class="order-badge">{{ getTextOrder(text.id) }}</span>
-              已選擇
-            </div>
-          </button>
-        </div>
+        <TextSelector
+          ref="textSelector"
+          :show-custom-texts="true"
+          @update:selected-ids="updateSelectedIds"
+        />
       </div>
 
       <!-- 步驟 3：比賽設置 -->

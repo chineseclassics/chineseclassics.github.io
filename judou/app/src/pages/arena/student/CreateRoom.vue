@@ -3,13 +3,14 @@
  * 學生模式 - 創建鬥豆場
  * 
  * 學生選擇文本、設置入場費和人數，創建 PvP 房間
+ * 支持多篇文本選擇和年級分類篩選
  */
 
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useGameStore } from '../../../stores/gameStore'
 import { useUserStatsStore } from '../../../stores/userStatsStore'
-import { supabase } from '../../../lib/supabaseClient'
+import TextSelector from '../../../components/arena/TextSelector.vue'
 import { 
   TIME_MODE_OPTIONS, 
   ENTRY_FEE_OPTIONS, 
@@ -20,16 +21,22 @@ const router = useRouter()
 const gameStore = useGameStore()
 const userStatsStore = useUserStatsStore()
 
+// 步驟控制
+const currentStep = ref(1)
+const totalSteps = 2
+
 // 表單數據
-const selectedTextId = ref<string>('')
+const selectedTextIds = ref<string[]>([])
 const maxPlayers = ref(2)
 const timeLimit = ref(180)
 const entryFee = ref(0)
 
-// 數據
-const texts = ref<any[]>([])
+// 狀態
 const loading = ref(false)
 const error = ref('')
+
+// 文本選擇器引用
+const textSelector = ref<InstanceType<typeof TextSelector> | null>(null)
 
 // 用戶豆子
 const beans = computed(() => userStatsStore.profile?.total_beans ?? 0)
@@ -40,25 +47,35 @@ const canAffordFee = computed(() => {
   return beans.value - entryFee.value >= SAFETY_LIMITS.MIN_BALANCE
 })
 
+// 已選文本詳情
+const selectedTexts = computed(() => {
+  return textSelector.value?.selectedTexts || []
+})
 
-// 加載文本列表（系統文本，練習類型）
-async function loadTexts() {
-  if (!supabase) return
-  
-  const { data } = await supabase
-    .from('practice_texts')
-    .select('id, title, author, content')
-    .eq('is_system', true)
-    .eq('text_type', 'practice')
-    .order('created_at', { ascending: false })
-    .limit(50)
+// 更新選中的文本 ID
+function updateSelectedIds(ids: string[]) {
+  selectedTextIds.value = ids
+}
 
-  texts.value = data || []
+// 下一步
+function nextStep() {
+  if (currentStep.value === 1 && selectedTextIds.value.length === 0) {
+    error.value = '請至少選擇一篇文本'
+    return
+  }
+  error.value = ''
+  currentStep.value++
+}
+
+// 上一步
+function prevStep() {
+  error.value = ''
+  currentStep.value--
 }
 
 // 創建房間
 async function createRoom() {
-  if (!selectedTextId.value) {
+  if (selectedTextIds.value.length === 0) {
     error.value = '請選擇文本'
     return
   }
@@ -74,7 +91,7 @@ async function createRoom() {
   const room = await gameStore.createRoom({
     hostType: 'student',
     gameMode: 'pvp',
-    textIds: [selectedTextId.value],  // 學生模式目前只支持單篇
+    textIds: selectedTextIds.value,
     timeLimit: timeLimit.value,
     maxPlayers: maxPlayers.value,
     entryFee: entryFee.value,
@@ -88,10 +105,6 @@ async function createRoom() {
 
   loading.value = false
 }
-
-onMounted(() => {
-  loadTexts()
-})
 </script>
 
 <template>
@@ -117,106 +130,173 @@ onMounted(() => {
       <span class="balance-label">我的豆子</span>
     </div>
 
-    <!-- 設置表單 -->
-    <div class="settings-form">
-      <!-- 選擇文本 -->
-      <div class="form-section">
-        <label class="section-label">選擇比賽文本</label>
-        <div class="text-grid">
-          <button
-            v-for="text in texts.slice(0, 12)"
-            :key="text.id"
-            class="text-card"
-            :class="{ selected: selectedTextId === text.id }"
-            @click="selectedTextId = text.id"
-          >
-            <h4>{{ text.title }}</h4>
-            <p v-if="text.author">{{ text.author }}</p>
-          </button>
-        </div>
-        <button v-if="texts.length > 12" class="btn-text">
-          查看更多 →
-        </button>
+    <!-- 步驟指示器 -->
+    <div class="steps-indicator">
+      <div 
+        v-for="step in totalSteps" 
+        :key="step"
+        class="step-dot"
+        :class="{ 
+          active: currentStep === step,
+          completed: currentStep > step 
+        }"
+      >
+        <span v-if="currentStep > step">✓</span>
+        <span v-else>{{ step }}</span>
       </div>
+    </div>
 
-      <!-- 人數設置 -->
-      <div class="form-section">
-        <label class="section-label">對戰人數</label>
-        <div class="player-options">
-          <button
-            v-for="count in [2, 3, 4]"
-            :key="count"
-            class="option-btn"
-            :class="{ selected: maxPlayers === count }"
-            @click="maxPlayers = count"
-          >
-            {{ count }} 人
-          </button>
-        </div>
-      </div>
-
-      <!-- 時間設置 -->
-      <div class="form-section">
-        <label class="section-label">時間限制</label>
-        <div class="time-options">
-          <button
-            v-for="option in TIME_MODE_OPTIONS"
-            :key="option.value"
-            class="option-btn"
-            :class="{ selected: timeLimit === option.value }"
-            @click="timeLimit = option.value"
-          >
-            <span class="option-label">{{ option.label }}</span>
-            <span class="option-desc">{{ option.description }}</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- 入場費設置 -->
-      <div class="form-section">
-        <label class="section-label">入場費</label>
-        <div class="fee-options">
-          <button
-            v-for="fee in ENTRY_FEE_OPTIONS"
-            :key="fee"
-            class="fee-btn"
-            :class="{ 
-              selected: entryFee === fee,
-              disabled: fee > 0 && beans - fee < SAFETY_LIMITS.MIN_BALANCE
-            }"
-            :disabled="fee > 0 && beans - fee < SAFETY_LIMITS.MIN_BALANCE"
-            @click="entryFee = fee"
-          >
-            {{ fee === 0 ? '免費' : `${fee} 豆` }}
-          </button>
-        </div>
+    <!-- 步驟內容 -->
+    <div class="step-content">
+      <!-- 步驟 1：選擇文本 -->
+      <div v-if="currentStep === 1" class="step-panel">
+        <h2>選擇比賽文本</h2>
+        <p class="step-hint">可選擇多篇文章，對戰時按順序完成</p>
         
-        <div v-if="entryFee > 0" class="fee-info">
-          <p>
-            入場費：<strong>{{ entryFee }} 豆</strong>
-            × {{ maxPlayers }} 人
-            = 獎池 <strong>{{ entryFee * maxPlayers }} 豆</strong>
-          </p>
-          <p class="fee-note">獲勝者收豆！</p>
-        </div>
-
-        <div class="safety-notice">
-          <span class="notice-icon">🛡️</span>
-          <span class="notice-text">
-            每日入場費上限 {{ SAFETY_LIMITS.DAILY_FEE_LIMIT }} 豆 · 
-            賬戶保留 {{ SAFETY_LIMITS.MIN_BALANCE }} 豆
-          </span>
-        </div>
+        <TextSelector
+          ref="textSelector"
+          :show-custom-texts="false"
+          @update:selected-ids="updateSelectedIds"
+        />
       </div>
 
-      <!-- 錯誤提示 -->
-      <p v-if="error" class="error-message">{{ error }}</p>
+      <!-- 步驟 2：比賽設置 -->
+      <div v-if="currentStep === 2" class="step-panel">
+        <h2>比賽設置</h2>
+        <p class="step-hint">設置對戰人數、時間和入場費</p>
 
-      <!-- 創建按鈕 -->
+        <!-- 人數設置 -->
+        <div class="form-section">
+          <label class="section-label">對戰人數</label>
+          <div class="player-options">
+            <button
+              v-for="count in [2, 3, 4]"
+              :key="count"
+              class="option-btn"
+              :class="{ selected: maxPlayers === count }"
+              @click="maxPlayers = count"
+            >
+              {{ count }} 人
+            </button>
+          </div>
+        </div>
+
+        <!-- 時間設置 -->
+        <div class="form-section">
+          <label class="section-label">時間限制</label>
+          <div class="time-options">
+            <button
+              v-for="option in TIME_MODE_OPTIONS"
+              :key="option.value"
+              class="option-btn time-btn"
+              :class="{ selected: timeLimit === option.value }"
+              @click="timeLimit = option.value"
+            >
+              <span class="option-label">{{ option.label }}</span>
+              <span class="option-desc">{{ option.description }}</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 入場費設置 -->
+        <div class="form-section">
+          <label class="section-label">入場費</label>
+          <div class="fee-options">
+            <button
+              v-for="fee in ENTRY_FEE_OPTIONS"
+              :key="fee"
+              class="fee-btn"
+              :class="{ 
+                selected: entryFee === fee,
+                disabled: fee > 0 && beans - fee < SAFETY_LIMITS.MIN_BALANCE
+              }"
+              :disabled="fee > 0 && beans - fee < SAFETY_LIMITS.MIN_BALANCE"
+              @click="entryFee = fee"
+            >
+              {{ fee === 0 ? '免費' : `${fee} 豆` }}
+            </button>
+          </div>
+          
+          <div v-if="entryFee > 0" class="fee-info">
+            <p>
+              入場費：<strong>{{ entryFee }} 豆</strong>
+              × {{ maxPlayers }} 人
+              = 獎池 <strong>{{ entryFee * maxPlayers }} 豆</strong>
+            </p>
+            <p class="fee-note">獲勝者收豆！</p>
+          </div>
+
+          <div class="safety-notice">
+            <span class="notice-icon">🛡️</span>
+            <span class="notice-text">
+              每日入場費上限 {{ SAFETY_LIMITS.DAILY_FEE_LIMIT }} 豆 · 
+              賬戶保留 {{ SAFETY_LIMITS.MIN_BALANCE }} 豆
+            </span>
+          </div>
+        </div>
+
+        <!-- 確認信息 -->
+        <div class="confirm-card">
+          <h3>確認信息</h3>
+          <div class="confirm-row texts-row">
+            <span class="confirm-label">文本</span>
+            <div class="confirm-texts">
+              <div 
+                v-for="(text, index) in selectedTexts" 
+                :key="text.id" 
+                class="confirm-text-item"
+              >
+                <span class="text-order">{{ index + 1 }}.</span>
+                <span class="text-name">{{ text.title }}</span>
+              </div>
+            </div>
+          </div>
+          <div class="confirm-row">
+            <span class="confirm-label">人數</span>
+            <span class="confirm-value">{{ maxPlayers }} 人</span>
+          </div>
+          <div class="confirm-row">
+            <span class="confirm-label">時間</span>
+            <span class="confirm-value">
+              {{ TIME_MODE_OPTIONS.find(t => t.value === timeLimit)?.description }}
+            </span>
+          </div>
+          <div class="confirm-row">
+            <span class="confirm-label">入場費</span>
+            <span class="confirm-value">{{ entryFee === 0 ? '免費' : `${entryFee} 豆` }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 錯誤提示 -->
+    <p v-if="error" class="error-message">{{ error }}</p>
+
+    <!-- 導航按鈕 -->
+    <div class="nav-buttons">
       <button 
-        class="btn-primary btn-large"
-        :disabled="loading || !selectedTextId || !canAffordFee"
+        v-if="currentStep > 1"
+        class="btn-secondary" 
+        @click="prevStep"
+        :disabled="loading"
+      >
+        上一步
+      </button>
+      
+      <button 
+        v-if="currentStep < totalSteps"
+        class="btn-primary" 
+        @click="nextStep"
+        :disabled="selectedTextIds.length === 0"
+      >
+        下一步
+      </button>
+      
+      <button 
+        v-if="currentStep === totalSteps"
+        class="btn-primary" 
         @click="createRoom"
+        :disabled="loading || !canAffordFee"
       >
         {{ loading ? '創建中...' : '創建鬥豆場' }}
       </button>
@@ -226,7 +306,7 @@ onMounted(() => {
 
 <style scoped>
 .create-room-page {
-  max-width: 600px;
+  max-width: 700px;
   margin: 0 auto;
   padding: 2rem;
 }
@@ -273,7 +353,7 @@ onMounted(() => {
   padding: 1rem;
   background: linear-gradient(135deg, var(--color-primary-50), var(--color-primary-100));
   border-radius: 12px;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
 }
 
 .balance-icon {
@@ -290,14 +370,61 @@ onMounted(() => {
   color: var(--color-neutral-600);
 }
 
-/* 設置表單 */
-.settings-form {
+/* 步驟指示器 */
+.steps-indicator {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 2rem;
+  margin-bottom: 1.5rem;
+}
+
+.step-dot {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--color-neutral-200);
+  color: var(--color-neutral-500);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.875rem;
+  transition: all 0.3s ease;
+}
+
+.step-dot.active {
+  background: var(--color-primary-500);
+  color: white;
+  transform: scale(1.1);
+}
+
+.step-dot.completed {
+  background: var(--color-success);
+  color: white;
+}
+
+/* 步驟內容 */
+.step-panel {
   background: white;
   border-radius: 16px;
   padding: 1.5rem;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  margin-bottom: 1.5rem;
 }
 
+.step-panel h2 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.25rem;
+}
+
+.step-hint {
+  color: var(--color-neutral-500);
+  margin: 0 0 1.25rem 0;
+  font-size: 0.875rem;
+}
+
+/* 設置表單 */
 .form-section {
   margin-bottom: 1.5rem;
 }
@@ -306,45 +433,6 @@ onMounted(() => {
   display: block;
   font-weight: 600;
   margin-bottom: 0.75rem;
-}
-
-/* 文本選擇 */
-.text-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 0.75rem;
-  margin-bottom: 0.5rem;
-}
-
-.text-card {
-  padding: 0.75rem;
-  background: var(--color-neutral-50);
-  border: 2px solid transparent;
-  border-radius: 10px;
-  cursor: pointer;
-  text-align: left;
-  transition: all 0.2s ease;
-}
-
-.text-card:hover {
-  background: var(--color-primary-50);
-}
-
-.text-card.selected {
-  background: var(--color-primary-50);
-  border-color: var(--color-primary-500);
-}
-
-.text-card h4 {
-  margin: 0;
-  font-size: 0.9rem;
-  line-height: 1.3;
-}
-
-.text-card p {
-  margin: 0.25rem 0 0 0;
-  font-size: 0.75rem;
-  color: var(--color-neutral-500);
 }
 
 /* 選項按鈕 */
@@ -364,6 +452,7 @@ onMounted(() => {
   border-radius: 10px;
   cursor: pointer;
   transition: all 0.2s ease;
+  font-weight: 500;
 }
 
 .option-btn:hover:not(:disabled),
@@ -383,7 +472,7 @@ onMounted(() => {
   cursor: not-allowed;
 }
 
-.option-btn {
+.time-btn {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -434,15 +523,85 @@ onMounted(() => {
   font-size: 1rem;
 }
 
-/* 按鈕 */
-.btn-primary {
+/* 確認卡片 */
+.confirm-card {
+  background: var(--color-neutral-50);
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin-top: 1.5rem;
+}
+
+.confirm-card h3 {
+  margin: 0 0 1rem 0;
+  font-size: 1rem;
+}
+
+.confirm-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--color-neutral-200);
+}
+
+.confirm-row:last-child {
+  border-bottom: none;
+}
+
+.confirm-label {
+  color: var(--color-neutral-500);
+}
+
+.confirm-value {
+  font-weight: 600;
+}
+
+/* 多文本確認 */
+.texts-row {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.confirm-texts {
   width: 100%;
-  padding: 1rem;
+}
+
+.confirm-text-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.375rem 0;
+  border-bottom: 1px dashed var(--color-neutral-200);
+}
+
+.confirm-text-item:last-child {
+  border-bottom: none;
+}
+
+.text-order {
+  color: var(--color-primary-500);
+  font-weight: 600;
+  min-width: 1.5rem;
+}
+
+.text-name {
+  font-weight: 500;
+}
+
+/* 導航按鈕 */
+.nav-buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.btn-primary {
+  padding: 0.875rem 2rem;
   background: linear-gradient(135deg, var(--color-primary-500), var(--color-primary-600));
   color: white;
   border: none;
-  border-radius: 12px;
-  font-size: 1.1rem;
+  border-radius: 10px;
+  font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -458,12 +617,25 @@ onMounted(() => {
   cursor: not-allowed;
 }
 
-.btn-text {
-  background: none;
-  border: none;
-  color: var(--color-primary-600);
+.btn-secondary {
+  padding: 0.875rem 2rem;
+  background: white;
+  color: var(--color-neutral-700);
+  border: 2px solid var(--color-neutral-200);
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: 600;
   cursor: pointer;
-  font-size: 0.875rem;
+  transition: all 0.2s ease;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  border-color: var(--color-neutral-400);
+}
+
+.btn-secondary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .error-message {
@@ -472,4 +644,3 @@ onMounted(() => {
   margin-bottom: 1rem;
 }
 </style>
-
