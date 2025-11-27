@@ -73,7 +73,7 @@ async function createRoom() {
   const room = await gameStore.createRoom({
     hostType: 'student',
     gameMode: 'pvp',
-    textId: selectedTextId.value,
+    textIds: [selectedTextId.value],  // 學生模式目前只支持單篇
     timeLimit: timeLimit.value,
     maxPlayers: maxPlayers.value,
     entryFee: entryFee.value,

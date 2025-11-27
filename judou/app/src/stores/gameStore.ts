@@ -17,6 +17,7 @@ import type {
   CreateRoomParams,
   JoinRoomResult,
   SubmitScoreParams,
+  SubmitTextProgressParams,
   GameResult,
 } from '../types/game'
 import {
@@ -79,14 +80,15 @@ export const useGameStore = defineStore('game', () => {
     error.value = null
 
     try {
-      // 創建房間
+      // 創建房間（使用 text_ids 支持多篇文章）
       const { data: room, error: createError } = await supabase
         .from('game_rooms')
         .insert({
           host_id: authStore.user.id,
           host_type: params.hostType,
           game_mode: params.gameMode,
-          text_id: params.textId,
+          text_id: params.textIds[0],  // 向後兼容，存第一篇
+          text_ids: params.textIds,     // 存全部文章ID
           time_limit: params.timeLimit,
           team_count: params.teamCount || null,
           max_players: params.maxPlayers || null,
@@ -95,8 +97,7 @@ export const useGameStore = defineStore('game', () => {
         })
         .select(`
           *,
-          host:users!game_rooms_host_id_fkey(id, display_name, avatar_url),
-          text:practice_texts!game_rooms_text_id_fkey(id, title, author, content)
+          host:users!game_rooms_host_id_fkey(id, display_name, avatar_url)
         `)
         .single()
 
@@ -410,7 +411,7 @@ export const useGameStore = defineStore('game', () => {
   }
 
   /**
-   * 提交分數
+   * 提交分數（最終提交，遊戲結束時調用）
    */
   async function submitScore(params: SubmitScoreParams): Promise<boolean> {
     if (!supabase || !authStore.user || !currentRoom.value) {
@@ -446,6 +447,85 @@ export const useGameStore = defineStore('game', () => {
     await checkGameCompletion()
 
     return true
+  }
+
+  /**
+   * 提交單篇文章進度（多篇模式）
+   * 做完一篇調用一次，累計正確斷句數
+   */
+  async function submitTextProgress(params: SubmitTextProgressParams): Promise<boolean> {
+    if (!supabase || !authStore.user || !myParticipant.value) {
+      error.value = '無法提交進度'
+      return false
+    }
+
+    // 1. 記錄這篇文章的詳細進度
+    await supabase
+      .from('game_text_progress')
+      .upsert({
+        participant_id: myParticipant.value.id,
+        text_id: params.textId,
+        text_index: params.textIndex,
+        correct_count: params.correctCount,
+        wrong_count: params.wrongCount,
+        time_spent: params.timeSpent,
+        completed_at: new Date().toISOString(),
+      }, {
+        onConflict: 'participant_id,text_id'
+      })
+
+    // 2. 更新參與者的累計數據
+    const newCorrectBreaks = (myParticipant.value.correct_breaks || 0) + params.correctCount
+    const newCompletedTexts = (myParticipant.value.completed_texts || 0) + 1
+    const newTextIndex = params.textIndex + 1
+
+    const { error: updateError } = await supabase
+      .from('game_participants')
+      .update({
+        correct_breaks: newCorrectBreaks,
+        completed_texts: newCompletedTexts,
+        current_text_index: newTextIndex,
+        score: newCorrectBreaks,  // 分數 = 正確斷句總數
+      })
+      .eq('id', myParticipant.value.id)
+
+    if (updateError) {
+      error.value = updateError.message
+      return false
+    }
+
+    // 更新本地狀態
+    myParticipant.value.correct_breaks = newCorrectBreaks
+    myParticipant.value.completed_texts = newCompletedTexts
+    myParticipant.value.current_text_index = newTextIndex
+    myParticipant.value.score = newCorrectBreaks
+
+    // 更新團隊分數（如果是團隊模式）
+    if (myParticipant.value.team_id) {
+      await updateTeamScore(myParticipant.value.team_id)
+    }
+
+    return true
+  }
+
+  /**
+   * 獲取多篇文章內容
+   */
+  async function fetchTexts(textIds: string[]): Promise<{ id: string; title: string; author: string | null; content: string }[]> {
+    if (!supabase || textIds.length === 0) return []
+
+    const { data } = await supabase
+      .from('practice_texts')
+      .select('id, title, author, content')
+      .in('id', textIds)
+
+    // 按照 textIds 的順序排列
+    if (data) {
+      const textMap = new Map(data.map(t => [t.id, t]))
+      return textIds.map(id => textMap.get(id)).filter(Boolean) as typeof data
+    }
+
+    return []
   }
 
   /**
@@ -962,6 +1042,8 @@ export const useGameStore = defineStore('game', () => {
     // 遊戲進行
     startGame,
     submitScore,
+    submitTextProgress,
+    fetchTexts,
     endGame,
 
     // 實時

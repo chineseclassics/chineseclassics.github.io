@@ -107,7 +107,8 @@ export interface GameRoom {
   host_id: string
   host_type: HostType
   game_mode: GameMode
-  text_id: string
+  text_id: string | null  // 向後兼容（單篇）
+  text_ids: string[]      // 多篇文章ID列表（新版）
   time_limit: number
   team_count: number | null
   max_players: number | null
@@ -133,6 +134,12 @@ export interface GameRoom {
     author: string | null
     content: string
   }
+  texts?: {
+    id: string
+    title: string
+    author: string | null
+    content: string
+  }[]
   class?: {
     id: string
     class_name: string
@@ -176,6 +183,11 @@ export interface GameParticipant {
   prize_won: number
   joined_at: string
   
+  // 多篇文章進度
+  current_text_index: number    // 當前文章索引
+  completed_texts: number       // 已完成文章數
+  correct_breaks: number        // 正確斷句總數
+  
   // 關聯數據
   user?: {
     id: string
@@ -200,6 +212,33 @@ export interface GameTransaction {
   created_at: string
 }
 
+/**
+ * 文章進度記錄（多篇模式）
+ */
+export interface GameTextProgress {
+  id: string
+  participant_id: string
+  text_id: string
+  text_index: number
+  correct_count: number
+  wrong_count: number
+  time_spent: number | null
+  completed_at: string | null
+  created_at: string
+}
+
+/**
+ * 提交單篇文章成績的參數
+ */
+export interface SubmitTextProgressParams {
+  roomId: string
+  textId: string
+  textIndex: number
+  correctCount: number
+  wrongCount: number
+  timeSpent: number
+}
+
 // =====================================================
 // 前端狀態類型
 // =====================================================
@@ -210,7 +249,7 @@ export interface GameTransaction {
 export interface CreateRoomParams {
   hostType: HostType
   gameMode: GameMode
-  textId: string
+  textIds: string[]       // 多篇文章ID列表
   timeLimit: number
   teamCount?: number      // 團隊模式
   maxPlayers?: number     // PvP 模式

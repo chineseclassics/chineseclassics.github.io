@@ -23,7 +23,7 @@ const totalSteps = 3
 
 // 表單數據
 const selectedClassId = ref<string>('')
-const selectedTextId = ref<string>('')
+const selectedTextIds = ref<string[]>([])  // 改為多選
 const teamCount = ref(2)
 const timeLimit = ref(180)
 
@@ -44,10 +44,10 @@ const filteredTexts = computed(() => {
   return textSource.value === 'system' ? systemTexts.value : customTexts.value
 })
 
-// 當前選中的文本
-const selectedText = computed(() => {
+// 當前選中的文本列表
+const selectedTexts = computed(() => {
   const allTexts = [...systemTexts.value, ...customTexts.value]
-  return allTexts.find(t => t.id === selectedTextId.value)
+  return selectedTextIds.value.map(id => allTexts.find(t => t.id === id)).filter(Boolean)
 })
 
 // 預覽團隊顏色
@@ -103,7 +103,29 @@ async function loadCustomTexts() {
 // 切換文本來源時清空選擇
 function switchTextSource(source: TextSource) {
   textSource.value = source
-  selectedTextId.value = ''
+  selectedTextIds.value = []
+}
+
+// 切換選中文本
+function toggleTextSelection(textId: string) {
+  const index = selectedTextIds.value.indexOf(textId)
+  if (index === -1) {
+    // 添加選中
+    selectedTextIds.value.push(textId)
+  } else {
+    // 取消選中
+    selectedTextIds.value.splice(index, 1)
+  }
+}
+
+// 檢查文本是否選中
+function isTextSelected(textId: string): boolean {
+  return selectedTextIds.value.includes(textId)
+}
+
+// 獲取文本的選中順序
+function getTextOrder(textId: string): number {
+  return selectedTextIds.value.indexOf(textId) + 1
 }
 
 // 下一步
@@ -112,8 +134,8 @@ function nextStep() {
     error.value = '請選擇班級'
     return
   }
-  if (currentStep.value === 2 && !selectedTextId.value) {
-    error.value = '請選擇文本'
+  if (currentStep.value === 2 && selectedTextIds.value.length === 0) {
+    error.value = '請至少選擇一篇文本'
     return
   }
   
@@ -129,7 +151,7 @@ function prevStep() {
 
 // 創建遊戲
 async function createGame() {
-  if (!selectedClassId.value || !selectedTextId.value) {
+  if (!selectedClassId.value || selectedTextIds.value.length === 0) {
     error.value = '請完成所有設置'
     return
   }
@@ -140,7 +162,7 @@ async function createGame() {
   const room = await gameStore.createRoom({
     hostType: 'teacher',
     gameMode: 'team_battle',
-    textId: selectedTextId.value,
+    textIds: selectedTextIds.value,  // 傳遞多篇文章ID
     timeLimit: timeLimit.value,
     teamCount: teamCount.value,
     classId: selectedClassId.value,
@@ -240,7 +262,20 @@ onMounted(async () => {
       <!-- 步驟 2：選擇文本 -->
       <div v-if="currentStep === 2" class="step-panel">
         <h2>選擇比賽文本</h2>
-        <p class="step-hint">從系統文庫或自訂練習中選擇文章</p>
+        <p class="step-hint">可選擇多篇文章，學生將按順序在限時內盡量完成</p>
+
+        <!-- 已選文本提示 -->
+        <div v-if="selectedTextIds.length > 0" class="selected-summary">
+          <span class="summary-icon">📋</span>
+          <span>已選 {{ selectedTextIds.length }} 篇文章</span>
+          <button 
+            v-if="selectedTextIds.length > 0" 
+            class="clear-btn"
+            @click="selectedTextIds = []"
+          >
+            清空
+          </button>
+        </div>
 
         <!-- 文本來源切換 -->
         <div class="source-tabs">
@@ -283,14 +318,14 @@ onMounted(async () => {
           </template>
         </div>
 
-        <!-- 文本列表 -->
+        <!-- 文本列表（多選） -->
         <div v-else class="text-list">
           <button
             v-for="text in filteredTexts"
             :key="text.id"
             class="text-card"
-            :class="{ selected: selectedTextId === text.id }"
-            @click="selectedTextId = text.id"
+            :class="{ selected: isTextSelected(text.id) }"
+            @click="toggleTextSelection(text.id)"
           >
             <div class="text-header">
               <div class="text-info">
@@ -304,8 +339,10 @@ onMounted(async () => {
             <div class="text-preview">
               {{ text.content?.slice(0, 60) }}...
             </div>
-            <div v-if="selectedTextId === text.id" class="selected-indicator">
-              ✓ 已選擇
+            <!-- 選中順序標記 -->
+            <div v-if="isTextSelected(text.id)" class="selected-indicator">
+              <span class="order-badge">{{ getTextOrder(text.id) }}</span>
+              已選擇
             </div>
           </button>
         </div>
@@ -372,9 +409,18 @@ onMounted(async () => {
             <span class="confirm-label">班級</span>
             <span class="confirm-value">{{ classes.find(c => c.id === selectedClassId)?.class_name }}</span>
           </div>
-          <div class="confirm-row">
+          <div class="confirm-row texts-row">
             <span class="confirm-label">文本</span>
-            <span class="confirm-value">{{ selectedText?.title }}</span>
+            <div class="confirm-texts">
+              <div 
+                v-for="(text, index) in selectedTexts" 
+                :key="text.id" 
+                class="confirm-text-item"
+              >
+                <span class="text-order">{{ index + 1 }}.</span>
+                <span class="text-name">{{ text.title }}</span>
+              </div>
+            </div>
           </div>
           <div class="confirm-row">
             <span class="confirm-label">隊伍</span>
@@ -732,6 +778,90 @@ onMounted(async () => {
   color: var(--color-primary-600);
   font-size: 0.8rem;
   font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.order-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  background: var(--color-primary-500);
+  color: white;
+  border-radius: 50%;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+/* 已選文本提示 */
+.selected-summary {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: var(--color-primary-50);
+  border: 1px solid var(--color-primary-200);
+  border-radius: 10px;
+  margin-bottom: 1rem;
+  font-weight: 500;
+  color: var(--color-primary-700);
+}
+
+.summary-icon {
+  font-size: 1.125rem;
+}
+
+.clear-btn {
+  margin-left: auto;
+  padding: 0.25rem 0.75rem;
+  background: white;
+  border: 1px solid var(--color-neutral-300);
+  border-radius: 6px;
+  font-size: 0.8rem;
+  color: var(--color-neutral-600);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.clear-btn:hover {
+  background: var(--color-neutral-100);
+  border-color: var(--color-neutral-400);
+}
+
+/* 確認信息中的多文本顯示 */
+.texts-row {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.confirm-texts {
+  width: 100%;
+}
+
+.confirm-text-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.375rem 0;
+  border-bottom: 1px dashed var(--color-neutral-200);
+}
+
+.confirm-text-item:last-child {
+  border-bottom: none;
+}
+
+.text-order {
+  color: var(--color-primary-500);
+  font-weight: 600;
+  min-width: 1.5rem;
+}
+
+.text-name {
+  font-weight: 500;
 }
 
 .btn-link {
