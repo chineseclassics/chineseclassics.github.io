@@ -146,11 +146,20 @@
     }
   }
 
+  // 清除 TTS 緩存（用於更新發音修正後清除舊緩存）
+  function taixuClearCache() {
+    ttsCache.clear();
+    console.log('TTS 緩存已清除');
+  }
+
   // 對外暴露到全域（不覆蓋既有定義）
   if (!window.taixuSpeak) {
     window.taixuSpeak = taixuSpeak;
   }
   if (!window.taixuStopSpeak) {
     window.taixuStopSpeak = taixuStopSpeak;
+  }
+  if (!window.taixuClearCache) {
+    window.taixuClearCache = taixuClearCache;
   }
 })();

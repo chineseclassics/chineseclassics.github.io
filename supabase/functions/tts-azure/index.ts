@@ -46,27 +46,31 @@ function pinyinToIPA(pinyin: string): string | null {
   }
 }
 
-// 多音字詞語發音修正映射表
-// 格式：'詞語': '帶 phoneme 標記的替換文本'
-// 使用 sapi 拼音格式：聲調用數字表示（1-4 對應一二三四聲，5 表示輕聲）
-const PRONUNCIATION_FIXES: Record<string, string> = {
-  // 「為」讀 wéi（第二聲）的情況
-  '為業': '<phoneme alphabet="sapi" ph="wei2">為</phoneme>業',
-  '為人': '<phoneme alphabet="sapi" ph="wei2">為</phoneme>人',
-  '以為': '以<phoneme alphabet="sapi" ph="wei2">為</phoneme>',
-  '成為': '成<phoneme alphabet="sapi" ph="wei2">為</phoneme>',
-  '作為': '作<phoneme alphabet="sapi" ph="wei2">為</phoneme>',
-  '為官': '<phoneme alphabet="sapi" ph="wei2">為</phoneme>官',
-  '為師': '<phoneme alphabet="sapi" ph="wei2">為</phoneme>師',
-  '為學': '<phoneme alphabet="sapi" ph="wei2">為</phoneme>學',
-  // 可繼續添加更多詞語...
-};
+// 多音字發音修正規則
+// 使用 <sub> 標籤將多音字替換為同音字，這是最可靠的方法
+// 注意：「為」有兩種寫法：為 (標準) 和 爲 (異體字)，需要同時支持
+const PRONUNCIATION_RULES: Array<{ pattern: RegExp; replacement: string }> = [
+  // 「為/爲」讀 wéi（第二聲）的情況 - 用同音字「維」替換
+  { pattern: /[為爲]業/g, replacement: '<sub alias="維業">為業</sub>' },
+  { pattern: /[為爲]人/g, replacement: '<sub alias="維人">為人</sub>' },
+  { pattern: /以[為爲]/g, replacement: '<sub alias="以維">以為</sub>' },
+  { pattern: /成[為爲]/g, replacement: '<sub alias="成維">成為</sub>' },
+  { pattern: /作[為爲]/g, replacement: '<sub alias="作維">作為</sub>' },
+  { pattern: /[為爲]官/g, replacement: '<sub alias="維官">為官</sub>' },
+  { pattern: /[為爲]師/g, replacement: '<sub alias="維師">為師</sub>' },
+  { pattern: /[為爲]學/g, replacement: '<sub alias="維學">為學</sub>' },
+  // 可繼續添加更多規則...
+];
 
 // 應用多音字發音修正
 function applyPronunciationFixes(text: string): string {
   let result = text;
-  for (const [word, replacement] of Object.entries(PRONUNCIATION_FIXES)) {
-    result = result.replace(new RegExp(word, 'g'), replacement);
+  for (const rule of PRONUNCIATION_RULES) {
+    result = result.replace(rule.pattern, rule.replacement);
+  }
+  // 添加調試日誌
+  if (text !== result) {
+    console.log('發音修正:', { original: text, fixed: result });
   }
   return result;
 }
@@ -85,11 +89,13 @@ function buildSSML(
   
   // 應用多音字發音修正
   let content = applyPronunciationFixes(safeText);
+  
+  // 如果有拼音參數，追加拼音發音
   if (pText) {
     const tail = pinyinIPA
       ? `<phoneme alphabet="ipa" ph="${pinyinIPA}">${pText}</phoneme>`
-      : pText; // 若無 IPA，直接輸出拼音文字，讓語音引擎以普通話規則讀取
-    content = `${safeText ? safeText + ' ' : ''}${tail}`;
+      : pText;
+    content = `${content ? content + ' ' : ''}${tail}`;
   }
   
   // 如果有語速設定，用 prosody 包裹
@@ -98,7 +104,7 @@ function buildSSML(
   }
 
   return `<?xml version="1.0" encoding="utf-8"?>
-<speak version="1.0" xml:lang="zh-CN">
+<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="zh-CN">
   <voice name="${voice}">${content}</voice>
 </speak>`;
 }
@@ -116,6 +122,9 @@ async function ttsWithAzure(text: string, voice?: string, rate?: string | null, 
   const endpoint = `https://${region}.tts.speech.microsoft.com/cognitiveservices/v1`;
   const ipa = pinyin ? pinyinToIPA(pinyin) : null;
   const ssml = buildSSML(text, voice || DEFAULT_VOICE, rate, ipa, pinyin || null);
+  
+  // 調試：輸出生成的 SSML
+  console.log('TTS Request:', { text: text.substring(0, 100), ssml: ssml.substring(0, 500) });
 
   const resp = await fetch(endpoint, {
     method: "POST",
