@@ -204,12 +204,15 @@ onMounted(() => {
       <div class="result-icon">
         {{ isTie ? '🤝' : isWinner ? '🏆' : '💪' }}
       </div>
-      <h1>{{ isTie ? '平局！' : isWinner ? '恭喜收豆！' : '惜敗' }}</h1>
+      <h1>{{ isTie ? '平局！' : isWinner ? (prizeInfo.prize > 0 ? '恭喜收豆！' : '恭喜獲勝！') : '惜敗' }}</h1>
       <p v-if="isTie" class="tie-text">
         勢均力敵，旗鼓相當！
       </p>
       <p v-else-if="isWinner && prizeInfo.prize > 0" class="prize-text">
         獲得 <span class="prize-value">{{ prizeInfo.prize }}</span> 豆
+      </p>
+      <p v-else-if="isWinner" class="winner-text">
+        技高一籌，贏得勝利！
       </p>
       <p v-else class="encourage-text">
         再接再厲，下次一定贏！
@@ -456,6 +459,11 @@ onMounted(() => {
 
 .encourage-text {
   color: var(--color-neutral-600);
+}
+
+.winner-text {
+  font-size: 1.1rem;
+  color: #d97706;
 }
 
 /* 我的成績卡片 */
