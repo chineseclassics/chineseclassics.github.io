@@ -229,7 +229,6 @@ async function createRoom() {
           <div class="safety-notice">
             <span class="notice-icon">🛡️</span>
             <span class="notice-text">
-              每日入場費上限 {{ SAFETY_LIMITS.DAILY_FEE_LIMIT }} 豆 · 
               賬戶保留 {{ SAFETY_LIMITS.MIN_BALANCE }} 豆
             </span>
           </div>

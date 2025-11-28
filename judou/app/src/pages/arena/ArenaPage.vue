@@ -511,7 +511,6 @@ onUnmounted(() => {
                 <div class="safety-text">
                   <p>安全機制</p>
                   <ul>
-                    <li>每日入場費上限：{{ SAFETY_LIMITS.DAILY_FEE_LIMIT }} 豆</li>
                     <li>賬戶保留餘額：{{ SAFETY_LIMITS.MIN_BALANCE }} 豆</li>
                     <li>房間取消自動退款</li>
                   </ul>

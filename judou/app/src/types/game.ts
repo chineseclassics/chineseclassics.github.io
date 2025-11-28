@@ -90,7 +90,6 @@ export const WIN_STREAK_BONUSES: Record<number, number> = {
  * 安全限制配置
  */
 export const SAFETY_LIMITS = {
-  DAILY_FEE_LIMIT: 100,    // 每日最多花費 100 豆
   MIN_BALANCE: 20,         // 賬戶至少保留 20 豆
   MAX_LOSS_STREAK: 5,      // 連輸 5 場觸發提示
 }
