@@ -5,6 +5,10 @@
  * 顯示比賽結果、排名、獎勵
  * 支持查看每題的答案詳情（正確/錯誤/遺漏）
  * 多篇可切換查看
+ * 
+ * 2025-11-28 更新：
+ * - 添加得豆/失豆的老虎機滾動動畫
+ * - 刪除「我的成績」區域，在排行榜中顯示正確率
  */
 
 import { ref, computed, onMounted, watch } from 'vue'
@@ -133,19 +137,80 @@ const teamRanking = computed(() => {
   return [...room.value.teams].sort((a, b) => b.total_score - a.total_score)
 })
 
-// 獎勵信息
-const prizeInfo = computed(() => {
-  const prize = myParticipant.value?.prize_won || 0
-  return {
-    prize,
-    isWinner: prize > 0,
-  }
-})
 
 // 用戶統計
 const level = computed(() => userStatsStore.level)
 const rankTitle = computed(() => getRankTitle(level.value))
 const winStreak = computed(() => (userStatsStore.profile as any)?.pvp_win_streak ?? 0)
+
+// 得豆/失豆動畫相關
+const showBeanAnimation = ref(false)
+const animatedBeanValue = ref(0)
+const beanAnimationComplete = ref(false)
+
+// 計算我的得豆/失豆情況
+const myBeanChange = computed(() => {
+  if (!myParticipant.value) return { amount: 0, type: 'neutral' as const }
+  
+  const prizeWon = myParticipant.value.prize_won || 0
+  const feePaid = myParticipant.value.fee_paid || 0
+  
+  if (prizeWon > 0) {
+    // 贏家：獲得獎勵
+    return { amount: prizeWon, type: 'win' as const }
+  } else if (feePaid > 0 && !isWinner.value) {
+    // 輸家：失去入場費
+    return { amount: -feePaid, type: 'lose' as const }
+  } else if (isTie.value && feePaid > 0) {
+    // 平局：退還入場費（顯示為 0 變化）
+    return { amount: 0, type: 'tie' as const }
+  }
+  return { amount: 0, type: 'neutral' as const }
+})
+
+// 老虎機數字滾動動畫
+function startBeanAnimation() {
+  const target = Math.abs(myBeanChange.value.amount)
+  if (target === 0 && myBeanChange.value.type !== 'tie') {
+    beanAnimationComplete.value = true
+    return
+  }
+  
+  showBeanAnimation.value = true
+  animatedBeanValue.value = 0
+  
+  // 動畫持續 2.5 秒
+  const duration = 2500
+  const startTime = Date.now()
+  const maxValue = target > 0 ? target : 100 // 平局時也滾動一下
+  
+  function animate() {
+    const elapsed = Date.now() - startTime
+    const progress = Math.min(elapsed / duration, 1)
+    
+    if (progress < 1) {
+      // 滾動中：快速變化的隨機數字效果
+      if (progress < 0.8) {
+        // 前 80% 時間快速滾動
+        animatedBeanValue.value = Math.floor(Math.random() * maxValue * 1.5)
+      } else {
+        // 最後 20% 時間逐漸接近目標值
+        const remaining = (progress - 0.8) / 0.2
+        animatedBeanValue.value = Math.floor(target * remaining + Math.random() * (target * (1 - remaining)))
+      }
+      requestAnimationFrame(animate)
+    } else {
+      // 動畫結束，顯示最終值
+      animatedBeanValue.value = target
+      beanAnimationComplete.value = true
+    }
+  }
+  
+  // 延遲 0.5 秒後開始動畫
+  setTimeout(() => {
+    requestAnimationFrame(animate)
+  }, 500)
+}
 
 // 切換文章結果
 function switchResult(index: number) {
@@ -194,6 +259,9 @@ onMounted(() => {
       // 忽略解析錯誤
     }
   }
+  
+  // 啟動得豆動畫
+  startBeanAnimation()
 })
 </script>
 
@@ -204,22 +272,24 @@ onMounted(() => {
       <div class="result-icon">
         {{ isTie ? '🤝' : isWinner ? '🏆' : '💪' }}
       </div>
-      <h1>{{ isTie ? '平局！' : isWinner ? (prizeInfo.prize > 0 ? '恭喜收豆！' : '恭喜獲勝！') : '惜敗' }}</h1>
-      <p v-if="isTie" class="tie-text">
-        勢均力敵，旗鼓相當！
-      </p>
-      <p v-else-if="isWinner && prizeInfo.prize > 0" class="prize-text">
-        獲得 <span class="prize-value">{{ prizeInfo.prize }}</span> 豆
-      </p>
-      <p v-else-if="isWinner" class="winner-text">
-        技高一籌，贏得勝利！
-      </p>
-      <p v-else class="encourage-text">
-        再接再厲，下次一定贏！
-      </p>
+      <h1>{{ isTie ? '平局！' : isWinner ? '恭喜獲勝！' : '惜敗' }}</h1>
+      
+      <!-- 得豆/失豆動畫區域 -->
+      <div 
+        v-if="showBeanAnimation || myBeanChange.type !== 'neutral'" 
+        class="bean-change-display"
+        :class="[myBeanChange.type, { complete: beanAnimationComplete }]"
+      >
+        <span class="bean-sign">{{ myBeanChange.type === 'lose' ? '-' : myBeanChange.type === 'win' ? '+' : '' }}</span>
+        <span class="bean-number" :class="{ rolling: !beanAnimationComplete }">
+          {{ animatedBeanValue }}
+        </span>
+        <span class="bean-icon">🫘</span>
+        <span v-if="isTie && beanAnimationComplete" class="bean-note">入場費已退還</span>
+      </div>
     </header>
 
-    <!-- 排行榜（PvP 模式）- 放在最前面 -->
+    <!-- 排行榜（PvP 模式）-->
     <section v-if="room?.game_mode === 'pvp'" class="ranking-section">
       <h2>排行榜</h2>
       <div class="ranking-list">
@@ -246,31 +316,8 @@ onMounted(() => {
           </span>
           <span class="name">{{ p.user?.display_name || '未知' }}</span>
           <span class="score">{{ p.score }} 分</span>
+          <span class="accuracy">{{ p.accuracy?.toFixed(0) || 0 }}%</span>
           <span class="time">{{ p.time_spent }}s</span>
-          <span v-if="p.prize_won > 0" class="prize">+{{ p.prize_won }} 🫘</span>
-        </div>
-      </div>
-    </section>
-
-    <!-- 我的成績 -->
-    <section class="my-score-card">
-      <h2>我的成績</h2>
-      <div class="score-grid">
-        <div class="score-item">
-          <span class="score-value">{{ myParticipant?.score || 0 }}</span>
-          <span class="score-label">正確斷句</span>
-        </div>
-        <div class="score-item">
-          <span class="score-value">{{ myParticipant?.accuracy?.toFixed(0) || 0 }}%</span>
-          <span class="score-label">正確率</span>
-        </div>
-        <div class="score-item">
-          <span class="score-value">{{ myParticipant?.time_spent || 0 }}s</span>
-          <span class="score-label">用時</span>
-        </div>
-        <div class="score-item" v-if="gameResultData">
-          <span class="score-value">{{ gameResultData.texts.length }}</span>
-          <span class="score-label">題目數</span>
         </div>
       </div>
     </section>
@@ -461,46 +508,131 @@ onMounted(() => {
   color: var(--color-neutral-600);
 }
 
-.winner-text {
-  font-size: 1.1rem;
-  color: #d97706;
-}
-
-/* 我的成績卡片 */
-.my-score-card {
-  background: white;
+/* 得豆/失豆動畫區域 */
+.bean-change-display {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  margin-top: 1rem;
+  padding: 1rem 2rem;
   border-radius: 16px;
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  animation: fadeInUp 0.5s ease;
 }
 
-.my-score-card h2 {
-  margin: 0 0 1rem 0;
-  font-size: 1rem;
-  color: var(--color-neutral-500);
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-.score-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 1rem;
+.bean-change-display.win {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(34, 197, 94, 0.25));
+  border: 2px solid rgba(34, 197, 94, 0.3);
 }
 
-.score-item {
+.bean-change-display.lose {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(239, 68, 68, 0.25));
+  border: 2px solid rgba(239, 68, 68, 0.3);
+}
+
+.bean-change-display.tie {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(59, 130, 246, 0.25));
+  border: 2px solid rgba(59, 130, 246, 0.3);
+}
+
+.bean-sign {
+  font-size: 2.5rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.bean-change-display.win .bean-sign {
+  color: #16a34a;
+}
+
+.bean-change-display.lose .bean-sign {
+  color: #dc2626;
+}
+
+.bean-number {
+  font-size: 3rem;
+  font-weight: 800;
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace;
+  line-height: 1;
+  min-width: 80px;
   text-align: center;
 }
 
-.score-item .score-value {
-  display: block;
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--color-primary-600);
+.bean-change-display.win .bean-number {
+  color: #16a34a;
 }
 
-.score-item .score-label {
-  font-size: 0.75rem;
-  color: var(--color-neutral-500);
+.bean-change-display.lose .bean-number {
+  color: #dc2626;
+}
+
+.bean-change-display.tie .bean-number {
+  color: #2563eb;
+}
+
+/* 滾動中的模糊效果 */
+.bean-number.rolling {
+  filter: blur(1px);
+  animation: numberShake 0.1s ease infinite;
+}
+
+@keyframes numberShake {
+  0%, 100% { transform: translateY(0); }
+  25% { transform: translateY(-2px); }
+  75% { transform: translateY(2px); }
+}
+
+/* 動畫完成後的效果 */
+.bean-change-display.complete .bean-number {
+  filter: blur(0);
+  animation: numberPop 0.3s ease;
+}
+
+@keyframes numberPop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+
+.bean-change-display.complete.win {
+  animation: winGlow 0.5s ease;
+}
+
+@keyframes winGlow {
+  0%, 100% { box-shadow: 0 0 0 rgba(34, 197, 94, 0); }
+  50% { box-shadow: 0 0 30px rgba(34, 197, 94, 0.4); }
+}
+
+.bean-icon {
+  font-size: 2.5rem;
+  margin-left: 0.25rem;
+}
+
+.bean-note {
+  position: absolute;
+  bottom: -1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.875rem;
+  color: #2563eb;
+  white-space: nowrap;
+}
+
+.bean-change-display {
+  position: relative;
 }
 
 /* 答案詳情區域 */
@@ -850,9 +982,12 @@ onMounted(() => {
   color: var(--color-primary-600);
 }
 
-.prize {
-  color: #d97706;
-  font-weight: 600;
+.accuracy {
+  font-size: 0.875rem;
+  color: var(--color-neutral-500);
+  background: var(--color-neutral-100);
+  padding: 0.125rem 0.5rem;
+  border-radius: 4px;
 }
 
 /* 團隊排行 */
