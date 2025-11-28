@@ -1,4 +1,4 @@
-import{x as F,u as P,r as m,I as n}from"./index-CF00Prb0.js";const z=F("assignment",()=>{const l=P(),c=m([]),f=m([]),g=m(new Map),i=m(!1),s=m(null);async function A(e){if(n){i.value=!0,s.value=null;try{const{data:t,error:a}=await n.from("class_assignments").select(`
+import{x as F,u as P,r as m,I as n}from"./index-CTD8rdEU.js";const z=F("assignment",()=>{const l=P(),c=m([]),f=m([]),g=m(new Map),i=m(!1),s=m(null);async function A(e){if(n){i.value=!0,s.value=null;try{const{data:t,error:a}=await n.from("class_assignments").select(`
           *,
           text:practice_texts (
             id,

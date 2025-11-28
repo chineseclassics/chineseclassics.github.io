@@ -149,57 +149,43 @@ const animatedBeanValue = ref(0)
 const beanAnimationComplete = ref(false)
 
 // 計算我的得豆/失豆情況
+// 簡單邏輯：
+// - 贏家獲得 = 入場費 × 玩家人數（整個獎池，因為入場費已經在開始時扣掉了）
+// - 輸家失去 = 入場費（已經扣掉了，這裡顯示損失）
+// - 平局 = 退還入場費
 const myBeanChange = computed(() => {
-  if (!myParticipant.value) {
-    console.log('[GameResult] myParticipant 為空')
+  if (!myParticipant.value || !room.value) {
     return { amount: 0, type: 'neutral' as const }
   }
   
-  const prizeWon = myParticipant.value.prize_won || 0
-  const feePaid = myParticipant.value.fee_paid || 0
+  const feePaid = myParticipant.value.fee_paid || room.value.entry_fee || 0
+  const playerCount = room.value.participants?.length || 0
   
-  console.log('[GameResult] 計算得豆變化:', {
-    prizeWon,
-    feePaid,
-    isWinner: isWinner.value,
-    isTie: isTie.value,
-    participant: myParticipant.value
-  })
-  
-  if (prizeWon > 0) {
-    // 贏家：獲得獎勵
-    return { amount: prizeWon, type: 'win' as const }
-  } else if (feePaid > 0 && !isWinner.value) {
+  if (isTie.value) {
+    // 平局：退還入場費
+    return { amount: 0, type: 'tie' as const }
+  } else if (isWinner.value && feePaid > 0) {
+    // 贏家：獲得整個獎池
+    const totalPrize = feePaid * playerCount
+    return { amount: totalPrize, type: 'win' as const }
+  } else if (!isWinner.value && feePaid > 0) {
     // 輸家：失去入場費
     return { amount: -feePaid, type: 'lose' as const }
-  } else if (isTie.value && feePaid > 0) {
-    // 平局：退還入場費（顯示為 0 變化）
-    return { amount: 0, type: 'tie' as const }
   }
+  
   return { amount: 0, type: 'neutral' as const }
 })
 
 // 老虎機數字滾動動畫
-let animationStarted = false
-
 function startBeanAnimation() {
   const target = Math.abs(myBeanChange.value.amount)
   const type = myBeanChange.value.type
   
-  console.log('[GameResult] startBeanAnimation:', { target, type, animationStarted })
-  
-  // 如果是贏家但 prizeWon 還是 0，等待數據更新
-  if (type === 'neutral' || (target === 0 && type !== 'tie')) {
-    console.log('[GameResult] 等待數據更新...')
+  // 如果沒有變化（免費房間或數據不完整），直接完成
+  if (target === 0 && type !== 'tie') {
+    beanAnimationComplete.value = true
     return
   }
-  
-  // 防止重複啟動動畫
-  if (animationStarted) {
-    console.log('[GameResult] 動畫已啟動，跳過')
-    return
-  }
-  animationStarted = true
   
   showBeanAnimation.value = true
   animatedBeanValue.value = 0
@@ -208,14 +194,13 @@ function startBeanAnimation() {
   // 動畫持續 2.5 秒
   const duration = 2500
   const startTime = Date.now()
-  const maxValue = target > 0 ? target : 100 // 平局時也滾動一下
+  const maxValue = target > 0 ? target : 100
   
   function animate() {
     const elapsed = Date.now() - startTime
     const progress = Math.min(elapsed / duration, 1)
     
     if (progress < 1) {
-      // 滾動中：快速變化的隨機數字效果
       if (progress < 0.8) {
         // 前 80% 時間快速滾動
         animatedBeanValue.value = Math.floor(Math.random() * maxValue * 1.5)
@@ -226,10 +211,9 @@ function startBeanAnimation() {
       }
       requestAnimationFrame(animate)
     } else {
-      // 動畫結束，顯示最終值
+      // 動畫結束
       animatedBeanValue.value = target
       beanAnimationComplete.value = true
-      console.log('[GameResult] 動畫完成，最終值:', target)
     }
   }
   
@@ -238,16 +222,6 @@ function startBeanAnimation() {
     requestAnimationFrame(animate)
   }, 500)
 }
-
-// 監聽 myBeanChange 變化，當數據更新時啟動動畫
-watch(myBeanChange, (newVal, oldVal) => {
-  console.log('[GameResult] myBeanChange 變化:', { old: oldVal, new: newVal })
-  
-  // 如果從 neutral/0 變為有值，啟動動畫
-  if (newVal.type !== 'neutral' && Math.abs(newVal.amount) > 0) {
-    startBeanAnimation()
-  }
-}, { immediate: false })
 
 // 切換文章結果
 function switchResult(index: number) {
@@ -297,11 +271,8 @@ onMounted(() => {
     }
   }
   
-  // 嘗試啟動動畫（如果數據已經準備好）
-  // 如果數據還沒準備好，watch 會在數據更新時啟動動畫
-  setTimeout(() => {
-    startBeanAnimation()
-  }, 100)
+  // 啟動得豆動畫
+  startBeanAnimation()
 })
 </script>
 
