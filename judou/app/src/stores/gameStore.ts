@@ -47,7 +47,9 @@ export const useGameStore = defineStore('game', () => {
   
   // 備用輪詢機制（當 Realtime 訂閱失敗時使用）
   let pollingInterval: ReturnType<typeof setInterval> | null = null
-  const POLLING_INTERVAL = 3000  // 3 秒輪詢一次
+  let pollingStartTime: number | null = null
+  const POLLING_INTERVAL = 5000  // 5 秒輪詢一次（降低流量）
+  const POLLING_MAX_DURATION = 10 * 60 * 1000  // 最多輪詢 10 分鐘
   const isRealtimeConnected = ref(false)  // 追蹤 Realtime 連接狀態
 
   // =====================================================
@@ -1058,15 +1060,31 @@ export const useGameStore = defineStore('game', () => {
       return  // 已經在輪詢中
     }
     
-    console.log('[Game] 🔄 啟動輪詢備用方案，每', POLLING_INTERVAL / 1000, '秒檢查一次')
+    console.log('[Game] 🔄 啟動輪詢備用方案，每', POLLING_INTERVAL / 1000, '秒檢查一次，最多持續', POLLING_MAX_DURATION / 60000, '分鐘')
+    pollingStartTime = Date.now()
     
     pollingInterval = setInterval(async () => {
+      // 檢查房間是否還存在
       if (!currentRoom.value || currentRoom.value.id !== roomId) {
+        console.log('[Game] 房間不存在，停止輪詢')
         stopPolling()
         return
       }
       
-      console.log('[Game] 輪詢檢查房間狀態...')
+      // 檢查輪詢是否超時
+      if (pollingStartTime && Date.now() - pollingStartTime > POLLING_MAX_DURATION) {
+        console.log('[Game] 輪詢超時（', POLLING_MAX_DURATION / 60000, '分鐘），停止輪詢')
+        stopPolling()
+        return
+      }
+      
+      // 如果房間已結束，停止輪詢
+      if (currentRoom.value.status === 'finished' || currentRoom.value.status === 'cancelled') {
+        console.log('[Game] 房間已結束，停止輪詢')
+        stopPolling()
+        return
+      }
+      
       await pollRoomStatus(roomId)
     }, POLLING_INTERVAL)
     
@@ -1081,21 +1099,22 @@ export const useGameStore = defineStore('game', () => {
     if (pollingInterval) {
       clearInterval(pollingInterval)
       pollingInterval = null
+      pollingStartTime = null
       console.log('[Game] 輪詢已停止')
     }
   }
 
   /**
-   * 輪詢獲取房間狀態
+   * 輪詢獲取房間狀態（優化版：只查詢必要字段）
    */
   async function pollRoomStatus(roomId: string): Promise<void> {
     if (!supabase) return
 
     try {
-      // 獲取房間最新狀態
+      // 只獲取房間狀態相關字段（減少數據傳輸）
       const { data: room, error: roomError } = await supabase
         .from('game_rooms')
-        .select('id, status, started_at, ended_at')
+        .select('status, started_at')
         .eq('id', roomId)
         .single()
 
@@ -1113,13 +1132,14 @@ export const useGameStore = defineStore('game', () => {
             ...currentRoom.value,
             status: room.status,
             started_at: room.started_at,
-            ended_at: room.ended_at,
           }
         }
       }
 
-      // 獲取參與者最新狀態
-      await refreshParticipants(roomId)
+      // 只在等待中時刷新參與者列表（遊戲進行中不需要頻繁刷新）
+      if (currentRoom.value?.status === 'waiting') {
+        await refreshParticipants(roomId)
+      }
     } catch (e) {
       console.error('[Game] 輪詢錯誤:', e)
     }
