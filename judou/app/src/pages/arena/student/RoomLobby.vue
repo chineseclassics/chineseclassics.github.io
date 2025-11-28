@@ -25,6 +25,7 @@ const isStartingGame = ref(false)
 const room = computed(() => gameStore.currentRoom)
 const participants = computed(() => room.value?.participants || [])
 const isHost = computed(() => gameStore.isHost)
+const isRealtimeConnected = computed(() => gameStore.isRealtimeConnected)
 
 // 房間碼顯示
 const roomCodeDisplay = computed(() => {
@@ -139,6 +140,12 @@ onUnmounted(async () => {
         ← {{ isHost ? '取消房間' : '離開' }}
       </button>
     </header>
+
+    <!-- 連接狀態提示 -->
+    <div v-if="!isRealtimeConnected" class="connection-warning">
+      <span class="warning-icon">⚠️</span>
+      <span>實時連接異常，已啟用備用方案</span>
+    </div>
 
     <!-- 房間信息 -->
     <section class="room-info-card">
@@ -269,6 +276,25 @@ onUnmounted(async () => {
 
 .back-btn:hover {
   color: var(--color-error);
+}
+
+/* 連接狀態警告 */
+.connection-warning {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  border: 1px solid #f59e0b;
+  border-radius: 10px;
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
+  color: #92400e;
+}
+
+.warning-icon {
+  font-size: 1rem;
 }
 
 /* 房間信息卡片 */

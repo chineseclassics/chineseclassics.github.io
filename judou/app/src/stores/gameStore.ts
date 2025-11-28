@@ -44,6 +44,11 @@ export const useGameStore = defineStore('game', () => {
   // 實時訂閱
   let roomSubscription: any = null
   let participantsSubscription: any = null
+  
+  // 備用輪詢機制（當 Realtime 訂閱失敗時使用）
+  let pollingInterval: ReturnType<typeof setInterval> | null = null
+  const POLLING_INTERVAL = 3000  // 3 秒輪詢一次
+  const isRealtimeConnected = ref(false)  // 追蹤 Realtime 連接狀態
 
   // =====================================================
   // 計算屬性
@@ -901,15 +906,18 @@ export const useGameStore = defineStore('game', () => {
    */
   // 當前訂閱的房間 ID，用於避免重複訂閱
   let currentSubscribedRoomId: string | null = null
+  let subscriptionRetryCount = 0
+  const MAX_SUBSCRIPTION_RETRIES = 3
 
   function subscribeToRoom(roomId: string): void {
     if (!supabase) {
       console.log('[Game] subscribeToRoom: supabase 未初始化')
+      startPolling(roomId)  // 使用輪詢作為備用
       return
     }
 
     // 如果已經訂閱了同一個房間，不要重複訂閱
-    if (currentSubscribedRoomId === roomId && roomSubscription) {
+    if (currentSubscribedRoomId === roomId && roomSubscription && isRealtimeConnected.value) {
       console.log('[Game] 已經訂閱房間:', roomId, '，跳過重複訂閱')
       return
     }
@@ -919,6 +927,7 @@ export const useGameStore = defineStore('game', () => {
     // 取消之前的訂閱
     unsubscribe()
     currentSubscribedRoomId = roomId
+    subscriptionRetryCount = 0
 
     // 訂閱房間狀態變更
     // 注意：不使用 filter，因為 filter 與 RLS 可能有衝突導致 CHANNEL_ERROR
@@ -1007,12 +1016,113 @@ export const useGameStore = defineStore('game', () => {
       .subscribe((status) => {
         console.log('[Game] 房間訂閱狀態:', status)
         
-        // 處理訂閱錯誤
-        if (status === 'CHANNEL_ERROR') {
-          console.error('[Game] 訂閱錯誤')
+        if (status === 'SUBSCRIBED') {
+          // 訂閱成功
+          isRealtimeConnected.value = true
+          stopPolling()  // 停止輪詢（如果有的話）
+          subscriptionRetryCount = 0
+          console.log('[Game] ✅ Realtime 訂閱成功')
+        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          // 訂閱失敗
+          isRealtimeConnected.value = false
+          console.error('[Game] ❌ Realtime 訂閱失敗:', status)
           currentSubscribedRoomId = null
+          
+          // 嘗試重新訂閱
+          if (subscriptionRetryCount < MAX_SUBSCRIPTION_RETRIES) {
+            subscriptionRetryCount++
+            console.log(`[Game] 嘗試重新訂閱 (${subscriptionRetryCount}/${MAX_SUBSCRIPTION_RETRIES})...`)
+            setTimeout(() => {
+              if (currentRoom.value?.id === roomId) {
+                subscribeToRoom(roomId)
+              }
+            }, 2000 * subscriptionRetryCount)  // 指數退避
+          } else {
+            // 重試次數用盡，啟用輪詢作為備用
+            console.log('[Game] Realtime 訂閱重試次數用盡，啟用輪詢備用方案')
+            startPolling(roomId)
+          }
+        } else if (status === 'CLOSED') {
+          // 連接關閉
+          isRealtimeConnected.value = false
+          console.log('[Game] Realtime 連接已關閉')
         }
       })
+  }
+
+  /**
+   * 啟動輪詢備用方案
+   */
+  function startPolling(roomId: string): void {
+    if (pollingInterval) {
+      return  // 已經在輪詢中
+    }
+    
+    console.log('[Game] 🔄 啟動輪詢備用方案，每', POLLING_INTERVAL / 1000, '秒檢查一次')
+    
+    pollingInterval = setInterval(async () => {
+      if (!currentRoom.value || currentRoom.value.id !== roomId) {
+        stopPolling()
+        return
+      }
+      
+      console.log('[Game] 輪詢檢查房間狀態...')
+      await pollRoomStatus(roomId)
+    }, POLLING_INTERVAL)
+    
+    // 立即執行一次
+    pollRoomStatus(roomId)
+  }
+
+  /**
+   * 停止輪詢
+   */
+  function stopPolling(): void {
+    if (pollingInterval) {
+      clearInterval(pollingInterval)
+      pollingInterval = null
+      console.log('[Game] 輪詢已停止')
+    }
+  }
+
+  /**
+   * 輪詢獲取房間狀態
+   */
+  async function pollRoomStatus(roomId: string): Promise<void> {
+    if (!supabase) return
+
+    try {
+      // 獲取房間最新狀態
+      const { data: room, error: roomError } = await supabase
+        .from('game_rooms')
+        .select('id, status, started_at, ended_at')
+        .eq('id', roomId)
+        .single()
+
+      if (roomError) {
+        console.error('[Game] 輪詢獲取房間狀態失敗:', roomError)
+        return
+      }
+
+      // 檢查狀態是否有變化
+      if (room && currentRoom.value) {
+        const oldStatus = currentRoom.value.status
+        if (room.status !== oldStatus) {
+          console.log('[Game] 輪詢發現狀態變化:', oldStatus, '->', room.status)
+          currentRoom.value = {
+            ...currentRoom.value,
+            status: room.status,
+            started_at: room.started_at,
+            ended_at: room.ended_at,
+          }
+        }
+      }
+
+      // 獲取參與者最新狀態
+      await refreshParticipants(roomId)
+    } catch (e) {
+      console.error('[Game] 輪詢錯誤:', e)
+    }
   }
 
   /**
@@ -1069,6 +1179,8 @@ export const useGameStore = defineStore('game', () => {
       participantsSubscription = null
     }
     currentSubscribedRoomId = null
+    isRealtimeConnected.value = false
+    stopPolling()  // 同時停止輪詢
   }
 
   // =====================================================
@@ -1277,6 +1389,7 @@ export const useGameStore = defineStore('game', () => {
     myParticipant,
     loading,
     error,
+    isRealtimeConnected,  // 新增：Realtime 連接狀態
 
     // 計算屬性
     isHost,

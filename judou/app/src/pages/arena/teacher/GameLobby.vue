@@ -26,6 +26,7 @@ const room = computed(() => gameStore.currentRoom)
 const teams = computed(() => room.value?.teams || [])
 const participants = computed(() => room.value?.participants || [])
 const unassigned = computed(() => participants.value.filter(p => !p.team_id))
+const isRealtimeConnected = computed(() => gameStore.isRealtimeConnected)
 
 // 房間碼顯示
 const roomCodeDisplay = computed(() => {
@@ -158,6 +159,12 @@ onUnmounted(async () => {
         <p class="text-title">{{ room?.text?.title }}</p>
       </div>
     </header>
+
+    <!-- 連接狀態提示 -->
+    <div v-if="!isRealtimeConnected" class="connection-warning">
+      <span class="warning-icon">⚠️</span>
+      <span>實時連接異常，已啟用備用方案</span>
+    </div>
 
     <!-- 房間碼 -->
     <section class="room-code-section">
@@ -343,6 +350,25 @@ onUnmounted(async () => {
   margin: 0.25rem 0 0 0;
   color: var(--color-neutral-500);
   font-size: 0.95rem;
+}
+
+/* 連接狀態警告 */
+.connection-warning {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  border: 1px solid #f59e0b;
+  border-radius: 10px;
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
+  color: #92400e;
+}
+
+.warning-icon {
+  font-size: 1rem;
 }
 
 /* 房間碼 */
