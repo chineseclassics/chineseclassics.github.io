@@ -732,6 +732,8 @@ export const useGameStore = defineStore('game', () => {
   ): Promise<{ userId: string; displayName: string; prize: number; streakBonus: number }[]> {
     if (!supabase) return []
 
+    const authStore = useAuthStore()
+    const currentUserId = authStore.user?.id
     const prizePerWinner = Math.floor(room.prize_pool / winners.length)
     const distribution: { userId: string; displayName: string; prize: number; streakBonus: number }[] = []
 
@@ -742,44 +744,50 @@ export const useGameStore = defineStore('game', () => {
 
       const totalPrize = prizePerWinner + streakBonus
 
-      // 獲取當前豆子餘額（從 profiles 表）
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('total_beans, weekly_beans, monthly_beans')
-        .eq('id', winner.user_id)
-        .single()
+      // 只為自己更新豆子（RLS 限制）
+      // 其他贏家的更新由他們自己的客戶端處理
+      if (winner.user_id === currentUserId) {
+        // 獲取當前豆子餘額（從 profiles 表）
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('total_beans, weekly_beans, monthly_beans')
+          .eq('id', winner.user_id)
+          .single()
 
-      const currentBeans = profile?.total_beans || 0
-      const newBalance = currentBeans + totalPrize
+        const currentBeans = profile?.total_beans || 0
+        const newBalance = currentBeans + totalPrize
 
-      // 更新 profiles 表
-      await supabase
-        .from('profiles')
-        .update({ 
-          total_beans: newBalance,
-          weekly_beans: (profile?.weekly_beans || 0) + totalPrize,
-          monthly_beans: (profile?.monthly_beans || 0) + totalPrize,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', winner.user_id)
+        // 更新 profiles 表
+        await supabase
+          .from('profiles')
+          .update({ 
+            total_beans: newBalance,
+            weekly_beans: (profile?.weekly_beans || 0) + totalPrize,
+            monthly_beans: (profile?.monthly_beans || 0) + totalPrize,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', winner.user_id)
 
-      // 更新參與者獎勵記錄
-      await supabase
-        .from('game_participants')
-        .update({ prize_won: totalPrize })
-        .eq('id', winner.id)
+        // 更新參與者獎勵記錄
+        await supabase
+          .from('game_participants')
+          .update({ prize_won: totalPrize })
+          .eq('id', winner.id)
 
-      // 記錄交易
-      await supabase
-        .from('game_transactions')
-        .insert({
-          user_id: winner.user_id,
-          room_id: room.id,
-          type: 'prize',
-          amount: totalPrize,
-          balance_after: newBalance,
-          description: `收豆 ${prizePerWinner} 豆${streakBonus > 0 ? ` + 連勝獎勵 ${streakBonus} 豆` : ''}`,
-        })
+        // 記錄交易（只為自己記錄，RLS 要求 user_id = auth.uid()）
+        await supabase
+          .from('game_transactions')
+          .insert({
+            user_id: winner.user_id,
+            room_id: room.id,
+            type: 'prize',
+            amount: totalPrize,
+            balance_after: newBalance,
+            description: `收豆 ${prizePerWinner} 豆${streakBonus > 0 ? ` + 連勝獎勵 ${streakBonus} 豆` : ''}`,
+          })
+
+        console.log(`🎉 ${winner.user?.display_name} 獲得 ${totalPrize} 豆，餘額 ${newBalance} 豆`)
+      }
 
       distribution.push({
         userId: winner.user_id,
@@ -787,8 +795,6 @@ export const useGameStore = defineStore('game', () => {
         prize: prizePerWinner,
         streakBonus,
       })
-      
-      console.log(`🎉 ${winner.user?.display_name} 獲得 ${totalPrize} 豆，餘額 ${newBalance} 豆`)
     }
 
     return distribution
@@ -797,6 +803,7 @@ export const useGameStore = defineStore('game', () => {
   /**
    * 平局時返還入場費
    * 注意：豆子存儲在 profiles 表的 total_beans 欄位
+   * 每個客戶端只為自己處理退款（RLS 限制）
    */
   async function refundEntryFees(
     room: GameRoom,
@@ -804,6 +811,9 @@ export const useGameStore = defineStore('game', () => {
   ): Promise<{ userId: string; displayName: string; prize: number; streakBonus: number }[]> {
     if (!supabase) return []
 
+    const authStore = useAuthStore()
+    const currentUserId = authStore.user?.id
+    
     console.log(`🤝 平局！退還入場費給 ${participants.length} 位玩家`)
     
     const distribution: { userId: string; displayName: string; prize: number; streakBonus: number }[] = []
@@ -817,44 +827,50 @@ export const useGameStore = defineStore('game', () => {
         continue
       }
 
-      // 獲取當前豆子餘額（從 profiles 表）
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('total_beans, weekly_beans, monthly_beans')
-        .eq('id', participant.user_id)
-        .single()
+      // 只為自己處理退款（RLS 限制）
+      // 其他參與者的退款由他們自己的客戶端處理
+      if (participant.user_id === currentUserId) {
+        // 獲取當前豆子餘額（從 profiles 表）
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('total_beans, weekly_beans, monthly_beans')
+          .eq('id', participant.user_id)
+          .single()
 
-      const currentBeans = profile?.total_beans || 0
-      const newBalance = currentBeans + refundAmount
+        const currentBeans = profile?.total_beans || 0
+        const newBalance = currentBeans + refundAmount
 
-      // 返還入場費到 profiles 表
-      await supabase
-        .from('profiles')
-        .update({ 
-          total_beans: newBalance,
-          weekly_beans: (profile?.weekly_beans || 0) + refundAmount,
-          monthly_beans: (profile?.monthly_beans || 0) + refundAmount,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', participant.user_id)
+        // 返還入場費到 profiles 表
+        await supabase
+          .from('profiles')
+          .update({ 
+            total_beans: newBalance,
+            weekly_beans: (profile?.weekly_beans || 0) + refundAmount,
+            monthly_beans: (profile?.monthly_beans || 0) + refundAmount,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', participant.user_id)
 
-      // 更新參與者獎勵記錄（顯示為返還）
-      await supabase
-        .from('game_participants')
-        .update({ prize_won: refundAmount })
-        .eq('id', participant.id)
+        // 更新參與者獎勵記錄（顯示為返還）
+        await supabase
+          .from('game_participants')
+          .update({ prize_won: refundAmount })
+          .eq('id', participant.id)
 
-      // 記錄交易
-      await supabase
-        .from('game_transactions')
-        .insert({
-          user_id: participant.user_id,
-          room_id: room.id,
-          type: 'refund',
-          amount: refundAmount,
-          balance_after: newBalance,
-          description: `平局，返還入場費 ${refundAmount} 豆`,
-        })
+        // 記錄交易（只為自己記錄，RLS 要求 user_id = auth.uid()）
+        await supabase
+          .from('game_transactions')
+          .insert({
+            user_id: participant.user_id,
+            room_id: room.id,
+            type: 'refund',
+            amount: refundAmount,
+            balance_after: newBalance,
+            description: `平局，返還入場費 ${refundAmount} 豆`,
+          })
+
+        console.log(`💰 已退還 ${refundAmount} 豆給 ${participant.user?.display_name}，餘額 ${newBalance} 豆`)
+      }
 
       distribution.push({
         userId: participant.user_id,
@@ -862,8 +878,6 @@ export const useGameStore = defineStore('game', () => {
         prize: refundAmount,
         streakBonus: 0,  // 平局沒有連勝獎勵
       })
-      
-      console.log(`💰 已退還 ${refundAmount} 豆給 ${participant.user?.display_name}，餘額 ${newBalance} 豆`)
     }
 
     return distribution

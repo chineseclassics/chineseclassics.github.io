@@ -552,7 +552,7 @@ async function submitResult() {
         const bonusMsg = result.isNewRecord ? ' (新紀錄!)' : ''
         toast.value = `${toast.value}${bonusMsg} 實得 +${result.beansEarned} 豆`
       } else if (result.beansEarned === 0 && !result.isNewRecord) {
-        toast.value = `${toast.value}（未超過最高分，不加分）`
+        toast.value = `${toast.value}（未超過個人最高記錄，不加分）`
       }
     }
     
@@ -973,7 +973,7 @@ onBeforeUnmount(() => {
         <p class="result-desc">
           <template v-if="evaluation?.beansEarned !== undefined">
             <span v-if="evaluation.isNewRecord" class="new-record">🏆 新紀錄！</span>
-            <span v-else-if="evaluation.beansEarned === 0">未超過最高分</span>
+            <span v-else-if="evaluation.beansEarned === 0">未超過個人最高記錄</span>
             <span v-else>增量加分</span>
           </template>
           <template v-else>
