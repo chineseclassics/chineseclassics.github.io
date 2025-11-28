@@ -180,15 +180,30 @@ const myBeanChange = computed(() => {
 })
 
 // 老虎機數字滾動動畫
+let animationStarted = false
+
 function startBeanAnimation() {
   const target = Math.abs(myBeanChange.value.amount)
-  if (target === 0 && myBeanChange.value.type !== 'tie') {
-    beanAnimationComplete.value = true
+  const type = myBeanChange.value.type
+  
+  console.log('[GameResult] startBeanAnimation:', { target, type, animationStarted })
+  
+  // 如果是贏家但 prizeWon 還是 0，等待數據更新
+  if (type === 'neutral' || (target === 0 && type !== 'tie')) {
+    console.log('[GameResult] 等待數據更新...')
     return
   }
   
+  // 防止重複啟動動畫
+  if (animationStarted) {
+    console.log('[GameResult] 動畫已啟動，跳過')
+    return
+  }
+  animationStarted = true
+  
   showBeanAnimation.value = true
   animatedBeanValue.value = 0
+  beanAnimationComplete.value = false
   
   // 動畫持續 2.5 秒
   const duration = 2500
@@ -214,6 +229,7 @@ function startBeanAnimation() {
       // 動畫結束，顯示最終值
       animatedBeanValue.value = target
       beanAnimationComplete.value = true
+      console.log('[GameResult] 動畫完成，最終值:', target)
     }
   }
   
@@ -222,6 +238,16 @@ function startBeanAnimation() {
     requestAnimationFrame(animate)
   }, 500)
 }
+
+// 監聽 myBeanChange 變化，當數據更新時啟動動畫
+watch(myBeanChange, (newVal, oldVal) => {
+  console.log('[GameResult] myBeanChange 變化:', { old: oldVal, new: newVal })
+  
+  // 如果從 neutral/0 變為有值，啟動動畫
+  if (newVal.type !== 'neutral' && Math.abs(newVal.amount) > 0) {
+    startBeanAnimation()
+  }
+}, { immediate: false })
 
 // 切換文章結果
 function switchResult(index: number) {
@@ -271,8 +297,11 @@ onMounted(() => {
     }
   }
   
-  // 啟動得豆動畫
-  startBeanAnimation()
+  // 嘗試啟動動畫（如果數據已經準備好）
+  // 如果數據還沒準備好，watch 會在數據更新時啟動動畫
+  setTimeout(() => {
+    startBeanAnimation()
+  }, 100)
 })
 </script>
 
