@@ -478,8 +478,8 @@ async function submitResult() {
   const isComplete = missedCount === 0 && extraCount === 0
   
   // 停止計時
-  stopTimer()
-  isTimerStopped.value = true
+    stopTimer()
+    isTimerStopped.value = true
   const elapsed = timer.value
   
   // 記錄首次提交的數據
@@ -511,65 +511,65 @@ async function submitResult() {
   }
 
   // 每次提交都記錄成績（新邏輯）
-  try {
-    isSubmitting.value = true
-    
-    // 記錄練習結果到 practice_records
-    const recordUsername = authStore.isAuthenticated 
-      ? (authStore.user?.email?.split('@')[0] || 'user')
-      : visitorUsername.value
-    const recordDisplayName = authStore.isAuthenticated 
-      ? authStore.displayName 
-      : visitorDisplayName.value
-    
-    const practiceRecordId = await textsStore.recordPracticeResult({
-      text_id: currentText.value.id,
-      score,
+    try {
+      isSubmitting.value = true
+      
+      // 記錄練習結果到 practice_records
+      const recordUsername = authStore.isAuthenticated 
+        ? (authStore.user?.email?.split('@')[0] || 'user')
+        : visitorUsername.value
+      const recordDisplayName = authStore.isAuthenticated 
+        ? authStore.displayName 
+        : visitorDisplayName.value
+      
+      const practiceRecordId = await textsStore.recordPracticeResult({
+        text_id: currentText.value.id,
+        score,
       accuracy,
-      elapsed_seconds: elapsed,
-      user_breaks: userBreaks.value.size,
-      correct_breaks: correctBreaks.value.size,
-      username: recordUsername,
-      display_name: recordDisplayName,
+        elapsed_seconds: elapsed,
+        user_breaks: userBreaks.value.size,
+        correct_breaks: correctBreaks.value.size,
+        username: recordUsername,
+        display_name: recordDisplayName,
       user_id: authStore.user?.id || null,
-    })
-    
-    // 如果用戶已登入，記錄到積分系統（增量加分）
-    if (authStore.isAuthenticated) {
-      const result = await userStatsStore.recordPracticeScore({
-        textId: currentText.value.id,
-        score
       })
       
-      // 更新評估結果
-      if (evaluation.value) {
-        evaluation.value.beansEarned = result.beansEarned
-        evaluation.value.isNewRecord = result.isNewRecord
-      }
-      
+    // 如果用戶已登入，記錄到積分系統（增量加分）
+      if (authStore.isAuthenticated) {
+        const result = await userStatsStore.recordPracticeScore({
+          textId: currentText.value.id,
+        score
+        })
+        
+        // 更新評估結果
+        if (evaluation.value) {
+          evaluation.value.beansEarned = result.beansEarned
+          evaluation.value.isNewRecord = result.isNewRecord
+        }
+        
       // 更新 toast 顯示獲得的豆子
-      if (result.beansEarned > 0) {
-        const bonusMsg = result.isNewRecord ? ' (新紀錄!)' : ''
+        if (result.beansEarned > 0) {
+          const bonusMsg = result.isNewRecord ? ' (新紀錄!)' : ''
         toast.value = `${toast.value}${bonusMsg} 實得 +${result.beansEarned} 豆`
       } else if (result.beansEarned === 0 && !result.isNewRecord) {
         toast.value = `${toast.value}（未超過個人最高記錄，不加分）`
+        }
       }
-    }
-    
-    // 如果是作業，記錄到 assignment_completions
-    if (assignmentId.value && authStore.isAuthenticated && practiceRecordId) {
-      await assignmentStore.recordCompletion(
-        assignmentId.value,
-        practiceRecordId,
-        score,
+      
+      // 如果是作業，記錄到 assignment_completions
+      if (assignmentId.value && authStore.isAuthenticated && practiceRecordId) {
+        await assignmentStore.recordCompletion(
+          assignmentId.value,
+          practiceRecordId,
+          score,
         accuracy * 100
-      )
+        )
+      }
+    } catch (error) {
+      console.warn('記錄練習結果失敗', error)
+    } finally {
+      isSubmitting.value = false
     }
-  } catch (error) {
-    console.warn('記錄練習結果失敗', error)
-  } finally {
-    isSubmitting.value = false
-  }
 }
 
 // 重新挑戰（完全重置棋盤）
@@ -927,7 +927,7 @@ onBeforeUnmount(() => {
             正確 {{ evaluation.breakdown.baseScore }} 豆
             <template v-if="evaluation.breakdown.speedBonus > 0">
               + 速度 {{ evaluation.breakdown.speedBonus }} 豆
-            </template>
+          </template>
           </template>
           <template v-else>
             對幾個得幾豆
@@ -958,7 +958,7 @@ onBeforeUnmount(() => {
             基準 {{ evaluation.breakdown.baseTime }} 秒
             <template v-if="evaluation.breakdown.speedBonus > 0">
               · 節省 {{ evaluation.breakdown.baseTime - evaluation.elapsed }} 秒
-            </template>
+          </template>
           </template>
           <template v-else>
             全對才有速度獎勵

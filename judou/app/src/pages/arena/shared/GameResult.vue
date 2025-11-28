@@ -150,10 +150,21 @@ const beanAnimationComplete = ref(false)
 
 // 計算我的得豆/失豆情況
 const myBeanChange = computed(() => {
-  if (!myParticipant.value) return { amount: 0, type: 'neutral' as const }
+  if (!myParticipant.value) {
+    console.log('[GameResult] myParticipant 為空')
+    return { amount: 0, type: 'neutral' as const }
+  }
   
   const prizeWon = myParticipant.value.prize_won || 0
   const feePaid = myParticipant.value.fee_paid || 0
+  
+  console.log('[GameResult] 計算得豆變化:', {
+    prizeWon,
+    feePaid,
+    isWinner: isWinner.value,
+    isTie: isTie.value,
+    participant: myParticipant.value
+  })
   
   if (prizeWon > 0) {
     // 贏家：獲得獎勵
