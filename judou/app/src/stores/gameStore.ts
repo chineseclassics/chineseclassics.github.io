@@ -1114,7 +1114,7 @@ export const useGameStore = defineStore('game', () => {
       // 只獲取房間狀態相關字段（減少數據傳輸）
       const { data: room, error: roomError } = await supabase
         .from('game_rooms')
-        .select('status, started_at')
+        .select('status, started_at, ended_at')
         .eq('id', roomId)
         .single()
 
@@ -1132,16 +1132,45 @@ export const useGameStore = defineStore('game', () => {
             ...currentRoom.value,
             status: room.status,
             started_at: room.started_at,
+            ended_at: room.ended_at,
           }
         }
       }
 
-      // 只在等待中時刷新參與者列表（遊戲進行中不需要頻繁刷新）
+      // 等待中時刷新參與者列表（顯示加入的玩家）
       if (currentRoom.value?.status === 'waiting') {
         await refreshParticipants(roomId)
       }
+      
+      // 遊戲進行中時刷新參與者狀態（檢測誰已完成）
+      if (currentRoom.value?.status === 'playing') {
+        await refreshParticipantsStatus(roomId)
+      }
     } catch (e) {
       console.error('[Game] 輪詢錯誤:', e)
+    }
+  }
+
+  /**
+   * 刷新參與者狀態（僅獲取 status，用於遊戲進行中檢測）
+   */
+  async function refreshParticipantsStatus(roomId: string): Promise<void> {
+    if (!supabase) return
+
+    const { data } = await supabase
+      .from('game_participants')
+      .select('id, user_id, status, completed_at')
+      .eq('room_id', roomId)
+
+    if (data && currentRoom.value?.participants) {
+      // 更新參與者狀態，保留其他數據
+      for (const p of data) {
+        const existing = currentRoom.value.participants.find(ep => ep.id === p.id)
+        if (existing) {
+          existing.status = p.status
+          existing.completed_at = p.completed_at
+        }
+      }
     }
   }
 

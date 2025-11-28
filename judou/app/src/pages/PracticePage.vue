@@ -42,9 +42,8 @@ const evaluation = ref<{
   score: number
   isComplete: boolean  // 是否全對
   breakdown?: ScoreBreakdown  // 得分明細
-  beansEarned?: number  // 實際獲得的豆子（最高分制）
+  beansEarned?: number  // 實際獲得的豆子（增量加分）
   isNewRecord?: boolean  // 是否創下新紀錄
-  isFirstClear?: boolean  // 是否首次完成
 } | null>(null)
 const timer = ref(0)
 const toast = ref<string | null>(null)
@@ -331,15 +330,10 @@ async function ensureDataLoaded() {
 }
 
 function toggleBreak(index: number) {
-  // 如果已經全對，不允許再修改
-  if (evaluation.value?.isComplete) {
-    toast.value = '已完成！如要重新練習請點擊重新開始。'
+  // 如果已經提交過，不允許再修改，需要重新挑戰
+  if (evaluation.value) {
+    toast.value = '已提交！如要再次嘗試請點擊「重新挑戰」'
     return
-  }
-  
-  // 如果有評分結果但還沒全對，清除評分狀態以允許修改
-  if (evaluation.value && !evaluation.value.isComplete) {
-    evaluation.value = null
   }
   
   const newSet = new Set(userBreaks.value)
@@ -430,14 +424,14 @@ function getContentPreview(text: PracticeText) {
   return text.content.replace(/\|/g, '').slice(0, 30) + '...'
 }
 
-// 計算得分（使用新的積分系統）
-function calculateScoreWithBreakdown(elapsed: number, attempts: number, isFirstClear: boolean): { score: number; breakdown: ScoreBreakdown } {
+// 計算得分（新版簡化公式）
+// 得分 = 正確斷句數 + 速度獎勵（全對時才有）
+function calculateScoreWithBreakdown(correctCount: number, elapsed: number): { score: number; breakdown: ScoreBreakdown } {
   return userStatsStore.calculateScore({
-    breakCount: correctBreaks.value.size,
+    correctCount,
+    totalBreaks: correctBreaks.value.size,
     charCount: characters.value.length,
-    elapsedSeconds: elapsed,
-    attemptCount: attempts,
-    isFirstClear
+    elapsedSeconds: elapsed
   })
 }
 
@@ -483,27 +477,20 @@ async function submitResult() {
   // 判斷是否全對
   const isComplete = missedCount === 0 && extraCount === 0
   
-  // 首次提交時記錄數據並停止計時
+  // 停止計時
+  stopTimer()
+  isTimerStopped.value = true
+  const elapsed = timer.value
+  
+  // 記錄首次提交的數據
   if (attemptCount.value === 1) {
     firstAttemptAccuracy.value = accuracy
-    firstAttemptTime.value = timer.value
-    stopTimer()
-    isTimerStopped.value = true
+    firstAttemptTime.value = elapsed
   }
   
-  // 計算得分（只在全對時計算最終得分）
-  const elapsed = firstAttemptTime.value || timer.value
-  
-  // 檢查是否首次完成該文章（用於首次完成加成）
-  let isFirstClear = false
-  if (isComplete && authStore.isAuthenticated) {
-    isFirstClear = await userStatsStore.checkFirstClear(currentText.value.id)
-  }
-  
-  // 使用新的計分系統
-  const { score, breakdown } = isComplete 
-    ? calculateScoreWithBreakdown(elapsed, attemptCount.value, isFirstClear)
-    : { score: 0, breakdown: undefined as ScoreBreakdown | undefined }
+  // 計算得分（新版簡化公式：每次提交都計算）
+  // 基礎分 = 正確斷句數，速度獎勵只有全對時才有
+  const { score, breakdown } = calculateScoreWithBreakdown(correctCount, elapsed)
   
   evaluation.value = {
     statuses,
@@ -511,89 +498,84 @@ async function submitResult() {
     elapsed,
     score,
     isComplete,
-    breakdown,
-    isFirstClear
+    breakdown
   }
   
-  // 播放反饋音效
+  // 構建提示訊息
   if (isComplete) {
     playSuccessSound()
-    
-    // 構建提示訊息
-    let toastMsg = attemptCount.value === 1 
-      ? '🎉 一次過關！太厲害了！' 
-      : `✅ 完成！共嘗試 ${attemptCount.value} 次`
-    
-    if (isFirstClear) {
-      toastMsg += ' 🌟 首次完成獎勵！'
-    }
-    
-    toast.value = toastMsg
+    const speedBonusMsg = breakdown.speedBonus > 0 ? ` + 速度獎勵 ${breakdown.speedBonus}` : ''
+    toast.value = `🎉 全對！正確 ${correctCount} 豆${speedBonusMsg} = ${score} 豆`
   } else {
-    toast.value = `還有 ${missedCount} 個遺漏、${extraCount} 個多餘，請修正後再次提交`
+    toast.value = `正確 ${correctCount} 個，遺漏 ${missedCount} 個，多餘 ${extraCount} 個 → 獲得 ${score} 豆`
   }
 
-  // 只在全對時記錄成績
-  if (isComplete) {
-    try {
-      isSubmitting.value = true
-      
-      // 記錄練習結果到 practice_records
-      // 優先使用已登入用戶的真實信息，否則使用訪客信息
-      const recordUsername = authStore.isAuthenticated 
-        ? (authStore.user?.email?.split('@')[0] || 'user')
-        : visitorUsername.value
-      const recordDisplayName = authStore.isAuthenticated 
-        ? authStore.displayName 
-        : visitorDisplayName.value
-      
-      const practiceRecordId = await textsStore.recordPracticeResult({
-        text_id: currentText.value.id,
-        score,
-        accuracy: firstAttemptAccuracy.value,
-        elapsed_seconds: elapsed,
-        user_breaks: userBreaks.value.size,
-        correct_breaks: correctBreaks.value.size,
-        username: recordUsername,
-        display_name: recordDisplayName,
-        user_id: authStore.user?.id || null, // 關聯到當前登入用戶
+  // 每次提交都記錄成績（新邏輯）
+  try {
+    isSubmitting.value = true
+    
+    // 記錄練習結果到 practice_records
+    const recordUsername = authStore.isAuthenticated 
+      ? (authStore.user?.email?.split('@')[0] || 'user')
+      : visitorUsername.value
+    const recordDisplayName = authStore.isAuthenticated 
+      ? authStore.displayName 
+      : visitorDisplayName.value
+    
+    const practiceRecordId = await textsStore.recordPracticeResult({
+      text_id: currentText.value.id,
+      score,
+      accuracy,
+      elapsed_seconds: elapsed,
+      user_breaks: userBreaks.value.size,
+      correct_breaks: correctBreaks.value.size,
+      username: recordUsername,
+      display_name: recordDisplayName,
+      user_id: authStore.user?.id || null,
+    })
+    
+    // 如果用戶已登入，記錄到積分系統（增量加分）
+    if (authStore.isAuthenticated) {
+      const result = await userStatsStore.recordPracticeScore({
+        textId: currentText.value.id,
+        score
       })
       
-      // 如果用戶已登入，記錄到新的積分系統
-      if (authStore.isAuthenticated) {
-        const result = await userStatsStore.recordPracticeScore({
-          textId: currentText.value.id,
-          score,
-          isFirstClear
-        })
-        
-        // 更新評估結果
-        if (evaluation.value) {
-          evaluation.value.beansEarned = result.beansEarned
-          evaluation.value.isNewRecord = result.isNewRecord
-        }
-        
-        // 顯示獲得的豆子
-        if (result.beansEarned > 0) {
-          const bonusMsg = result.isNewRecord ? ' (新紀錄!)' : ''
-          toast.value = `${toast.value} 獲得 ${result.beansEarned} 豆${bonusMsg}`
-        }
+      // 更新評估結果
+      if (evaluation.value) {
+        evaluation.value.beansEarned = result.beansEarned
+        evaluation.value.isNewRecord = result.isNewRecord
       }
       
-      // 如果是作業，記錄到 assignment_completions
-      if (assignmentId.value && authStore.isAuthenticated && practiceRecordId) {
-        await assignmentStore.recordCompletion(
-          assignmentId.value,
-          practiceRecordId,
-          score,
-          firstAttemptAccuracy.value * 100
-        )
+      // 更新 toast 顯示獲得的豆子
+      if (result.beansEarned > 0) {
+        const bonusMsg = result.isNewRecord ? ' (新紀錄!)' : ''
+        toast.value = `${toast.value}${bonusMsg} 實得 +${result.beansEarned} 豆`
+      } else if (result.beansEarned === 0 && !result.isNewRecord) {
+        toast.value = `${toast.value}（未超過最高分，不加分）`
       }
-    } catch (error) {
-      console.warn('記錄練習結果失敗', error)
-    } finally {
-      isSubmitting.value = false
     }
+    
+    // 如果是作業，記錄到 assignment_completions
+    if (assignmentId.value && authStore.isAuthenticated && practiceRecordId) {
+      await assignmentStore.recordCompletion(
+        assignmentId.value,
+        practiceRecordId,
+        score,
+        accuracy * 100
+      )
+    }
+  } catch (error) {
+    console.warn('記錄練習結果失敗', error)
+  } finally {
+    isSubmitting.value = false
+  }
+}
+
+// 重新挑戰（完全重置棋盤）
+function retryChallenge() {
+  if (currentText.value) {
+    resetBoard(currentText.value)
   }
 }
 
@@ -906,21 +888,23 @@ onBeforeUnmount(() => {
         <div v-else class="state-info">尚無可顯示的文字內容。</div>
 
         <div class="board-actions">
+          <!-- 尚未提交：顯示「提交答案」按鈕 -->
           <button 
-            class="edamame-btn edamame-btn-lg" 
-            :class="evaluation?.isComplete ? 'edamame-btn-success' : 'edamame-btn-primary'"
-            :disabled="isSubmitting || evaluation?.isComplete" 
+            v-if="!evaluation"
+            class="edamame-btn edamame-btn-lg edamame-btn-primary"
+            :disabled="isSubmitting" 
             @click="submitResult"
           >
-            <template v-if="evaluation?.isComplete">
-              ✓ 完成！
-            </template>
-            <template v-else-if="attemptCount > 0">
-              再次提交 ({{ attemptCount + 1 }})
-            </template>
-            <template v-else>
-              提交答案
-            </template>
+            提交答案
+          </button>
+          
+          <!-- 已提交：顯示「重新挑戰」按鈕 -->
+          <button 
+            v-else
+            class="edamame-btn edamame-btn-lg edamame-btn-secondary"
+            @click="retryChallenge"
+          >
+            🔄 重新挑戰
           </button>
         </div>
         <p v-if="toast" class="toast" :class="{ success: evaluation?.isComplete }">{{ toast }}</p>
@@ -933,69 +917,66 @@ onBeforeUnmount(() => {
     <!-- 結果區域 -->
     <section class="results-grid">
       <article class="result-card edamame-glass">
-        <p class="result-label">得分</p>
-        <p class="result-value" :class="{ placeholder: !evaluation?.isComplete }">
-          {{ evaluation?.isComplete ? formatScore(evaluation.score) : '--' }}
+        <p class="result-label">本次得分</p>
+        <p class="result-value" :class="{ placeholder: !evaluation }">
+          {{ evaluation ? formatScore(evaluation.score) : '--' }}
         </p>
         <p class="result-desc">
-          <template v-if="evaluation?.isComplete && evaluation?.beansEarned !== undefined">
-            <span v-if="evaluation.isNewRecord" class="new-record">🏆 新紀錄！</span>
-            <span v-else>已是最高分</span>
-            +{{ evaluation.beansEarned }} 豆
-          </template>
-          <template v-else-if="evaluation?.isComplete && attemptCount > 1">
-            嘗試 {{ attemptCount }} 次後完成
+          <template v-if="evaluation?.breakdown">
+            正確 {{ evaluation.breakdown.baseScore }} 豆
+            <template v-if="evaluation.breakdown.speedBonus > 0">
+              + 速度 {{ evaluation.breakdown.speedBonus }} 豆
+            </template>
           </template>
           <template v-else>
-            全對後顯示最終得分
+            對幾個得幾豆
           </template>
         </p>
       </article>
       <article class="result-card edamame-glass">
-        <p class="result-label">首次正確率</p>
-        <p class="result-value" :class="{ placeholder: attemptCount === 0 }">
-          {{ attemptCount > 0 ? formatAccuracy(firstAttemptAccuracy) : '--' }}
+        <p class="result-label">正確率</p>
+        <p class="result-value" :class="{ placeholder: !evaluation }">
+          {{ evaluation ? formatAccuracy(evaluation.accuracy) : '--' }}
         </p>
         <p class="result-desc">
-          <template v-if="attemptCount > 0 && !evaluation?.isComplete">
-            當前：{{ formatAccuracy(evaluation?.accuracy || 0) }}
+          <template v-if="evaluation">
+            {{ evaluation.isComplete ? '🎉 全對！' : '繼續加油' }}
           </template>
           <template v-else>
-            反映真實水平
+            正確數 ÷ 總斷句數
           </template>
         </p>
       </article>
       <article class="result-card edamame-glass">
         <p class="result-label">用時</p>
-        <p class="result-value" :class="{ placeholder: attemptCount === 0 }">
-          {{ attemptCount > 0 ? `${firstAttemptTime} 秒` : '--' }}
+        <p class="result-value" :class="{ placeholder: !evaluation }">
+          {{ evaluation ? `${evaluation.elapsed} 秒` : '--' }}
         </p>
         <p class="result-desc">
-          <template v-if="evaluation?.isComplete && evaluation?.breakdown">
-            時間係數：×{{ evaluation.breakdown.timeFactor }}
-          </template>
-          <template v-else-if="attemptCount > 0">
-            首次提交時記錄
+          <template v-if="evaluation?.breakdown">
+            基準 {{ evaluation.breakdown.baseTime }} 秒
+            <template v-if="evaluation.breakdown.speedBonus > 0">
+              · 節省 {{ evaluation.breakdown.baseTime - evaluation.elapsed }} 秒
+            </template>
           </template>
           <template v-else>
-            計時至首次提交
+            全對才有速度獎勵
           </template>
         </p>
       </article>
       <article class="result-card edamame-glass">
-        <p class="result-label">嘗試次數</p>
-        <p class="result-value" :class="{ placeholder: attemptCount === 0 }">
-          {{ attemptCount > 0 ? attemptCount : '--' }}
+        <p class="result-label">實得豆子</p>
+        <p class="result-value" :class="{ placeholder: !evaluation || evaluation.beansEarned === undefined }">
+          {{ evaluation?.beansEarned !== undefined ? `+${evaluation.beansEarned}` : '--' }}
         </p>
         <p class="result-desc">
-          <template v-if="evaluation?.isComplete && evaluation?.breakdown">
-            嘗試係數：×{{ evaluation.breakdown.attemptFactor }}
-          </template>
-          <template v-else-if="evaluation?.isComplete">
-            {{ attemptCount === 1 ? '一次過關！' : '堅持就是勝利' }}
+          <template v-if="evaluation?.beansEarned !== undefined">
+            <span v-if="evaluation.isNewRecord" class="new-record">🏆 新紀錄！</span>
+            <span v-else-if="evaluation.beansEarned === 0">未超過最高分</span>
+            <span v-else>增量加分</span>
           </template>
           <template v-else>
-            可多次嘗試直到全對
+            登入後記錄
           </template>
         </p>
       </article>

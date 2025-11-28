@@ -58,8 +58,9 @@ export const GAME_MODES: GameModeConfig[] = [
 
 /**
  * 入場費選項
+ * 調整為較低的數值，讓練習得分（對幾個得幾豆）更容易參與鬥豆
  */
-export const ENTRY_FEE_OPTIONS = [0, 10, 30, 50, 100]
+export const ENTRY_FEE_OPTIONS = [0, 5, 15, 50]
 
 /**
  * 時間模式選項

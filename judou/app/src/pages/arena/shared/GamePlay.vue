@@ -77,6 +77,12 @@ const isSubmitted = ref(false)
 const isLoading = ref(true)
 let startTime = 0
 
+// 提交後的狀態檢查（備用機制）
+let statusCheckInterval: ReturnType<typeof setInterval> | null = null
+let statusCheckTimeout: ReturnType<typeof setTimeout> | null = null
+const STATUS_CHECK_INTERVAL = 3000  // 每 3 秒檢查一次
+const STATUS_CHECK_TIMEOUT = 60000  // 最多等待 60 秒後強制跳轉
+
 // =====================================================
 // 解析內容（使用 | 作為斷點標記，和練習頁面一致）
 // =====================================================
@@ -328,8 +334,89 @@ async function submitGame() {
     attemptCount: 1,
   })
   
-  // 不立即跳轉！等待房間狀態變為 'finished'
-  // 跳轉邏輯在 watch(room.status) 中處理
+  // 啟動備用狀態檢查（防止 Realtime 失敗時無法跳轉）
+  startStatusCheck()
+}
+
+// =====================================================
+// 備用狀態檢查機制
+// =====================================================
+
+/**
+ * 啟動狀態檢查（提交後調用）
+ * 每隔 3 秒主動檢查房間狀態，防止 Realtime 失敗時卡住
+ */
+function startStatusCheck() {
+  console.log('[GamePlay] 啟動備用狀態檢查機制')
+  
+  // 清理之前的檢查（如果有）
+  stopStatusCheck()
+  
+  // 定期檢查房間狀態
+  statusCheckInterval = setInterval(async () => {
+    await checkRoomStatusAndNavigate()
+  }, STATUS_CHECK_INTERVAL)
+  
+  // 設置超時：超過 60 秒後強制跳轉
+  statusCheckTimeout = setTimeout(() => {
+    console.log('[GamePlay] 狀態檢查超時，強制跳轉到結果頁')
+    stopStatusCheck()
+    router.push({ name: 'arena-result', params: { roomId: roomId.value } })
+  }, STATUS_CHECK_TIMEOUT)
+  
+  // 立即執行一次檢查
+  checkRoomStatusAndNavigate()
+}
+
+/**
+ * 停止狀態檢查
+ */
+function stopStatusCheck() {
+  if (statusCheckInterval) {
+    clearInterval(statusCheckInterval)
+    statusCheckInterval = null
+  }
+  if (statusCheckTimeout) {
+    clearTimeout(statusCheckTimeout)
+    statusCheckTimeout = null
+  }
+}
+
+/**
+ * 檢查房間狀態並在需要時跳轉
+ */
+async function checkRoomStatusAndNavigate() {
+  if (!gameStore.currentRoom) return
+  
+  // 如果本地狀態已經是 finished，立即跳轉
+  if (gameStore.currentRoom.status === 'finished') {
+    console.log('[GamePlay] 本地狀態為 finished，跳轉到結果頁')
+    stopStatusCheck()
+    router.push({ name: 'arena-result', params: { roomId: roomId.value } })
+    return
+  }
+  
+  // 主動從數據庫查詢最新狀態
+  try {
+    const { supabase } = await import('../../../lib/supabaseClient')
+    if (!supabase) return
+    
+    const { data: latestRoom } = await supabase
+      .from('game_rooms')
+      .select('status')
+      .eq('id', roomId.value)
+      .single()
+    
+    if (latestRoom?.status === 'finished') {
+      console.log('[GamePlay] 數據庫狀態為 finished，跳轉到結果頁')
+      stopStatusCheck()
+      router.push({ name: 'arena-result', params: { roomId: roomId.value } })
+    } else {
+      console.log('[GamePlay] 狀態檢查: 當前狀態為', latestRoom?.status)
+    }
+  } catch (e) {
+    console.error('[GamePlay] 狀態檢查錯誤:', e)
+  }
 }
 
 // =====================================================
@@ -365,6 +452,8 @@ function startCountdown() {
 
 watch(() => room.value?.status, (status) => {
   if (status === 'finished') {
+    console.log('[GamePlay] watch 檢測到 finished 狀態，跳轉到結果頁')
+    stopStatusCheck()  // 停止備用檢查
     router.push({ name: 'arena-result', params: { roomId: roomId.value } })
   }
 })
@@ -392,6 +481,8 @@ onUnmounted(() => {
   if (countdownInterval) {
     clearInterval(countdownInterval)
   }
+  // 停止狀態檢查
+  stopStatusCheck()
 })
 </script>
 

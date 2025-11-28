@@ -24,35 +24,10 @@ const LEVEL_THRESHOLDS = [
   3000,   // Lv.10: 3000
 ]
 
-// 時間係數配置（平均每字用時）
-const TIME_FACTORS = [
-  { maxTime: 1, factor: 1.3 },   // < 1秒/字
-  { maxTime: 2, factor: 1.2 },   // 1-2秒/字
-  { maxTime: 3, factor: 1.1 },   // 2-3秒/字
-  { maxTime: 5, factor: 1.0 },   // 3-5秒/字
-  { maxTime: 8, factor: 0.9 },   // 5-8秒/字
-  { maxTime: Infinity, factor: 0.7 }, // > 8秒/字
-]
-
-// 嘗試係數配置
-const ATTEMPT_FACTORS = [
-  1.2,   // 第1次：×1.2（一次過關獎勵）
-  1.0,   // 第2次：×1.0
-  0.95,  // 第3次：×0.95
-  0.9,   // 第4次+：×0.9
-]
-
-// 連續天數加成配置
-const STREAK_FACTORS = [
-  { minDays: 30, factor: 1.2 },   // 30天+
-  { minDays: 14, factor: 1.15 },  // 14-29天
-  { minDays: 7, factor: 1.1 },    // 7-13天
-  { minDays: 3, factor: 1.05 },   // 3-6天
-  { minDays: 0, factor: 1.0 },    // 1-2天
-]
-
-// 首次完成加成
-const FIRST_CLEAR_FACTOR = 1.2
+// 速度獎勵配置
+// 基準時間 = 字數 × 3 秒
+// 速度獎勵 = (基準時間 - 用時) ÷ 10（只有全對時才計算）
+const SPEED_BONUS_DIVISOR = 10  // 每節省 10 秒 = 1 豆速度獎勵
 
 // 每日獎勵
 const DAILY_LOGIN_REWARD = 5
@@ -141,74 +116,50 @@ export const useUserStatsStore = defineStore('userStats', () => {
     return Math.max(0, nextThreshold - profile.value.total_beans)
   })
 
-  // 獲取時間係數
-  function getTimeFactor(avgTimePerChar: number): number {
-    for (const config of TIME_FACTORS) {
-      if (avgTimePerChar < config.maxTime) {
-        return config.factor
-      }
-    }
-    return 0.7
-  }
-
-  // 獲取嘗試係數
-  function getAttemptFactor(attemptCount: number): number {
-    if (attemptCount <= 0) return 1.0
-    if (attemptCount > ATTEMPT_FACTORS.length) {
-      return ATTEMPT_FACTORS[ATTEMPT_FACTORS.length - 1] || 0.9
-    }
-    return ATTEMPT_FACTORS[attemptCount - 1] || 0.9
-  }
-
-  // 獲取連續天數加成
-  function getStreakFactor(streakDays: number): number {
-    for (const config of STREAK_FACTORS) {
-      if (streakDays >= config.minDays) {
-        return config.factor
-      }
-    }
-    return 1.0
-  }
-
-  // 計算最終得分
+  /**
+   * 計算練習得分（新版簡化公式）
+   * 
+   * 公式：得分 = 基礎分 + 速度獎勵
+   * - 基礎分 = 正確斷句數（對幾個得幾豆，非常直觀）
+   * - 速度獎勵 = 只有全對時才計算：(基準時間 - 用時) ÷ 10
+   * - 基準時間 = 字數 × 3 秒
+   */
   function calculateScore(params: {
-    breakCount: number       // 斷句數
+    correctCount: number     // 正確斷句數
+    totalBreaks: number      // 總斷句數（用於判斷是否全對）
     charCount: number        // 文章字數
     elapsedSeconds: number   // 用時（秒）
-    attemptCount: number     // 嘗試次數
-    isFirstClear: boolean    // 是否首次完成該文章
   }): { score: number; breakdown: ScoreBreakdown } {
-    const { breakCount, charCount, elapsedSeconds, attemptCount, isFirstClear } = params
+    const { correctCount, totalBreaks, charCount, elapsedSeconds } = params
     
-    // 基礎分 = 斷句數 × 2
-    const baseScore = breakCount * 2
+    // 基礎分 = 正確斷句數（對幾個得幾豆）
+    const baseScore = correctCount
     
-    // 時間係數
-    const avgTimePerChar = charCount > 0 ? elapsedSeconds / charCount : 5
-    const timeFactor = getTimeFactor(avgTimePerChar)
+    // 判斷是否全對
+    const isAllCorrect = correctCount === totalBreaks
     
-    // 嘗試係數
-    const attemptFactor = getAttemptFactor(attemptCount)
-    
-    // 連續天數加成
-    const streakDays = profile.value?.streak_days || 0
-    const streakFactor = getStreakFactor(streakDays)
-    
-    // 首次完成加成
-    const firstClearFactor = isFirstClear ? FIRST_CLEAR_FACTOR : 1.0
+    // 速度獎勵（只有全對時才計算）
+    let speedBonus = 0
+    if (isAllCorrect && correctCount > 0) {
+      // 基準時間 = 字數 × 3 秒
+      const baseTime = charCount * 3
+      // 節省的秒數
+      const savedSeconds = Math.max(0, baseTime - elapsedSeconds)
+      // 速度獎勵 = 節省秒數 ÷ 10
+      speedBonus = Math.floor(savedSeconds / SPEED_BONUS_DIVISOR)
+    }
     
     // 最終得分
-    const finalScore = Math.round(baseScore * timeFactor * attemptFactor * streakFactor * firstClearFactor)
+    const finalScore = baseScore + speedBonus
     
     return {
       score: finalScore,
       breakdown: {
         baseScore,
-        timeFactor,
-        attemptFactor,
-        streakFactor,
-        firstClearFactor,
-        avgTimePerChar: Math.round(avgTimePerChar * 10) / 10
+        speedBonus,
+        isAllCorrect,
+        elapsedSeconds,
+        baseTime: charCount * 3
       }
     }
   }
@@ -449,18 +400,17 @@ export const useUserStatsStore = defineStore('userStats', () => {
     }
   }
 
-  // 記錄練習結果並更新分數（最高分制）
+  // 記錄練習結果並更新分數（增量加分制）
+  // 只有超過之前最高分時才加分，加的是增量部分
   async function recordPracticeScore(params: {
     textId: string
     score: number
-    isFirstClear: boolean
   }): Promise<{ beansEarned: number; isNewRecord: boolean }> {
     if (!supabase || !profile.value || !authStore.user) {
       return { beansEarned: 0, isNewRecord: false }
     }
     
     const { textId, score } = params
-    // isFirstClear 和 today 暫時未使用，但保留以備將來擴展
     
     try {
       // 獲取現有記錄（使用 maybeSingle 避免無記錄時報錯）
@@ -686,10 +636,7 @@ export const useUserStatsStore = defineStore('userStats', () => {
     levelProgress,
     beansToNextLevel,
     
-    // 係數計算
-    getTimeFactor,
-    getAttemptFactor,
-    getStreakFactor,
+    // 計分函數
     calculateScore,
     
     // 方法
@@ -715,10 +662,9 @@ export const useUserStatsStore = defineStore('userStats', () => {
 
 // 得分明細類型
 export interface ScoreBreakdown {
-  baseScore: number
-  timeFactor: number
-  attemptFactor: number
-  streakFactor: number
-  firstClearFactor: number
-  avgTimePerChar: number
+  baseScore: number      // 基礎分（= 正確斷句數）
+  speedBonus: number     // 速度獎勵（全對時才有）
+  isAllCorrect: boolean  // 是否全對
+  elapsedSeconds: number // 實際用時
+  baseTime: number       // 基準時間（字數 × 3）
 }
