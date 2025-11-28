@@ -872,11 +872,12 @@ onBeforeUnmount(() => {
               :style="{ transform: getCharOffset(index) }"
             >{{ char }}</span>
             <!-- 最後一個字後面不需要斷句熱區 -->
+            <!-- 使用 @pointerdown 代替 @click 以獲得更即時的響應 -->
             <button
               v-if="index < characters.length - 1"
               class="bean-slot"
               :class="getBeanClass(index)"
-              @click="toggleBreak(index)"
+              @pointerdown.prevent="toggleBreak(index)"
               :aria-label="`在「${char}」後${userBreaks.has(index) ? '移除' : '添加'}斷句`"
             >
               <!-- 只顯示用戶放置的豆子，遺漏的不顯示（不能直接告訴答案） -->
@@ -1376,7 +1377,10 @@ onBeforeUnmount(() => {
   border: 1px solid rgba(0, 0, 0, 0.06);
   background: rgba(255, 255, 255, 0.85);
   line-height: 2.4;
+  /* 防止文字選擇干擾點擊 */
   user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
 }
 
 /* 字 + 句豆熱區的不可分割單元 */
@@ -1398,8 +1402,8 @@ onBeforeUnmount(() => {
 
 /* 句豆熱區 - 點擊區域 */
 .bean-slot {
-  width: 24px;
-  height: 44px;
+  width: 28px;
+  height: 48px;
   border: none;
   cursor: pointer;
   background: transparent;
@@ -1408,49 +1412,67 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: center;
   padding: 0;
-  margin: 0 -4px;
+  margin: 0 -6px;
   flex-shrink: 0;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
+  user-select: none;
+  /* 確保按鈕可以即時響應 */
+  outline: none;
+}
+
+/* 點擊時的即時反饋 */
+.bean-slot:active {
+  transform: scale(0.92);
 }
 
 /* 句豆提示 - hover 時顯示 */
 .bean-hint {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
-  background: rgba(139, 178, 79, 0.15);
+  background: rgba(139, 178, 79, 0.2);
   opacity: 0;
-  transition: opacity 150ms ease, transform 150ms ease;
+  transition: opacity 100ms ease, transform 100ms ease, background 100ms ease;
+  pointer-events: none;
 }
 
 .bean-slot:hover .bean-hint,
 .bean-slot:focus .bean-hint {
   opacity: 1;
-  background: rgba(139, 178, 79, 0.35);
+  background: rgba(139, 178, 79, 0.4);
+}
+
+/* 點擊時提示變大變亮 */
+.bean-slot:active .bean-hint {
+  opacity: 1;
+  background: rgba(139, 178, 79, 0.6);
+  transform: scale(1.3);
 }
 
 /* 句豆本體 - 簡約綠色漸層圓形 */
 .bean {
-  width: 10px;
-  height: 10px;
+  width: 11px;
+  height: 11px;
   border-radius: 50%;
   background: linear-gradient(145deg, #a8d45a 0%, #7cb342 50%, #558b2f 100%);
   box-shadow: 
     0 1px 3px rgba(85, 139, 47, 0.4),
     inset 0 1px 2px rgba(255, 255, 255, 0.4);
   position: absolute;
-  animation: bean-pop 250ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  pointer-events: none;
+  /* 更快更有彈性的動畫 */
+  animation: bean-pop 150ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
-/* 句豆出現動畫 */
+/* 句豆出現動畫 - 更快更爽 */
 @keyframes bean-pop {
   0% {
     transform: scale(0);
     opacity: 0;
   }
-  60% {
-    transform: scale(1.3);
+  50% {
+    transform: scale(1.4);
     opacity: 1;
   }
   100% {
@@ -1521,19 +1543,26 @@ onBeforeUnmount(() => {
 /* 觸控設備優化 */
 @media (hover: none) and (pointer: coarse) {
   .bean-slot {
-    width: 32px;
-    height: 48px;
+    width: 36px;
+    height: 52px;
+    margin: 0 -8px;
   }
   
+  /* 觸控設備上始終顯示提示，方便點擊 */
   .bean-hint {
-    width: 10px;
-    height: 10px;
-    opacity: 0.3;
+    width: 12px;
+    height: 12px;
+    opacity: 0.25;
+  }
+  
+  .bean-slot:active .bean-hint {
+    opacity: 1;
+    transform: scale(1.5);
   }
   
   .bean {
-    width: 12px;
-    height: 12px;
+    width: 13px;
+    height: 13px;
   }
   
   .char {
