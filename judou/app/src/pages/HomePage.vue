@@ -219,6 +219,8 @@ onMounted(async () => {
   min-height: 100vh;
   padding: clamp(1.5rem, 3vw, 3rem);
   position: relative;
+  overflow-x: hidden;
+  /* 內容不超過視窗時不顯示滾動條，超過時自然滾動 */
 }
 
 /* 主佈局：兩欄（桌面）或單欄（移動） */
