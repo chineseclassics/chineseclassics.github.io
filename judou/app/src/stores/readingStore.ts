@@ -538,6 +538,48 @@ export const useReadingStore = defineStore('reading', () => {
     await saveReadingRecord(textId, 100, true)
   }
   
+  // 刪除閱讀文章
+  async function deleteReadingText(textId: string) {
+    if (!supabase) throw new Error('Supabase 尚未配置')
+    if (!authStore.user) throw new Error('請先登入')
+    if (!authStore.isAdmin) throw new Error('只有管理員可以刪除閱讀文章')
+    
+    // 檢查權限：查找文章是否為系統文章
+    const { data: existingText } = await supabase
+      .from('practice_texts')
+      .select('is_system, created_by, text_type')
+      .eq('id', textId)
+      .single()
+    
+    if (existingText) {
+      // 確保是閱讀文章
+      if (existingText.text_type !== 'reading') {
+        throw new Error('只能刪除閱讀文章')
+      }
+      // 系統文章只能由管理員刪除
+      if (existingText.is_system && !authStore.isAdmin) {
+        throw new Error('只有管理員可以刪除系統文章')
+      }
+      // 私有文章只能由創建者刪除
+      if (!existingText.is_system && existingText.created_by !== authStore.user.id) {
+        throw new Error('只能刪除自己創建的文章')
+      }
+    }
+    
+    const { error: deleteError } = await supabase
+      .from('practice_texts')
+      .delete()
+      .eq('id', textId)
+    
+    if (deleteError) throw deleteError
+    
+    // 從本地狀態移除
+    readingTexts.value = readingTexts.value.filter(t => t.id !== textId)
+    if (currentText.value?.id === textId) {
+      currentText.value = null
+    }
+  }
+  
   // 更新閱讀文章內容
   async function updateReadingText(
     textId: string,
@@ -797,6 +839,7 @@ export const useReadingStore = defineStore('reading', () => {
     fetchTextDetail,
     createReadingText,
     updateReadingText,
+    deleteReadingText,
     extractPracticeFragment,
     clearCurrentText,
     // 進度和書籤

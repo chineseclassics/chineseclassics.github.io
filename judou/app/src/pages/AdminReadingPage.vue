@@ -203,12 +203,16 @@ function openCreateForm() {
   isFormOpen.value = true
 }
 
-// 打開編輯表單
+// 打開編輯表單（從詳情頁）
 function openEditForm() {
   // 優先使用 currentText（包含完整數據），否則使用 selectedText
   const text = readingStore.currentText || selectedText.value
   if (!text) return
-  
+  openEditFormForText(text)
+}
+
+// 打開編輯表單（從列表）
+function openEditFormForText(text: ReadingText) {
   editingText.value = text
   textForm.title = text.title
   textForm.author = text.author || ''
@@ -229,6 +233,23 @@ function openEditForm() {
   textForm.reading_category_ids = text.reading_categories?.map(c => c.id) || []
   feedback.value = null
   isFormOpen.value = true
+}
+
+// 刪除文章
+async function handleDeleteText(text: ReadingText) {
+  if (!confirm(`確定要刪除「${text.title}」嗎？此操作無法復原。`)) {
+    return
+  }
+  
+  try {
+    await readingStore.deleteReadingText(text.id)
+    // 如果刪除的是當前選中的文章，返回列表
+    if (selectedText.value?.id === text.id) {
+      backToList()
+    }
+  } catch (err: any) {
+    alert(err?.message || '刪除失敗')
+  }
 }
 
 // 提交文章表單
@@ -682,6 +703,7 @@ onMounted(async () => {
                     <th>作者</th>
                     <th>字數</th>
                     <th>建立日期</th>
+                    <th style="width: 120px">操作</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -689,15 +711,18 @@ onMounted(async () => {
                     v-for="text in textsInCategory" 
                     :key="text.id"
                     class="text-row"
-                    @click="openTextDetail(text)"
                   >
-                    <td>
+                    <td @click="openTextDetail(text)">
                       <p class="text-title">{{ text.title }}</p>
                       <p class="text-preview">{{ getPreview(text) }}</p>
                     </td>
-                    <td>{{ text.author || '佚名' }}</td>
-                    <td>{{ getWordCount(text) }}</td>
-                    <td>{{ formatDate(text.created_at) }}</td>
+                    <td @click="openTextDetail(text)">{{ text.author || '佚名' }}</td>
+                    <td @click="openTextDetail(text)">{{ getWordCount(text) }}</td>
+                    <td @click="openTextDetail(text)">{{ formatDate(text.created_at) }}</td>
+                    <td class="actions" @click.stop>
+                      <button class="ghost-btn" @click="openEditFormForText(text)">編輯</button>
+                      <button class="ghost-btn danger" @click="handleDeleteText(text)">刪除</button>
+                    </td>
                   </tr>
                 </tbody>
               </table>
@@ -1359,6 +1384,37 @@ th, td {
 
 .text-row:hover {
   background: rgba(139, 178, 79, 0.08);
+}
+
+.text-row .actions {
+  cursor: default;
+}
+
+.text-row .actions:hover {
+  background: transparent;
+}
+
+.ghost-btn {
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: var(--radius-full);
+  padding: 0.25rem 0.6rem;
+  background: transparent;
+  cursor: pointer;
+  font-size: var(--text-xs);
+  transition: all var(--duration-base) ease;
+  margin-right: 0.5rem;
+}
+
+.ghost-btn:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.ghost-btn.danger {
+  color: var(--color-error);
+}
+
+.ghost-btn.danger:hover {
+  background: rgba(239, 68, 68, 0.1);
 }
 
 .text-title {
