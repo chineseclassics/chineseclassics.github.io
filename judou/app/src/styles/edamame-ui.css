@@ -8,19 +8,7 @@
    全局樣式
    ============================================ */
 
-@font-face {
-    font-family: main_font;
-    src: url(/font/hanserif.otf);
-    font-display: swap;
-}
-
-@font-face {
-    font-family: inter_ui;
-    src: url(/font/main.ttf);
-    font-display: swap;
-}
-
-/* 思源柔黑 - UI 字體 */
+/* 思源柔黑 - UI 字體（保留本地字體文件） */
 @font-face {
     font-family: 'Gen Jyuu Gothic';
     src: url(/judou/font/GenJyuuGothicX-P-Regular.ttf) format('truetype');
@@ -574,7 +562,7 @@ html, body {
     color: var(--color-neutral-700);
     font-size: var(--text-base);
     font-weight: var(--font-medium);
-    font-family: inter_ui, main_font;
+    font-family: var(--font-ui, 'Gen Jyuu Gothic', -apple-system, BlinkMacSystemFont, sans-serif);
     cursor: pointer;
     /* 性能優化：只動畫需要的屬性 */
     transition: transform var(--duration-base) var(--ease-out),
