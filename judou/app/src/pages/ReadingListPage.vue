@@ -136,12 +136,6 @@ onMounted(async () => {
 
 <template>
   <div class="reading-list-page">
-    <!-- 頁面標題 -->
-    <header class="page-header">
-      <h1 class="page-title">📖 閱讀文庫</h1>
-      <p class="page-subtitle">沉浸式古文閱讀，可選自主斷句練習</p>
-    </header>
-    
     <!-- ========== 文集書架視圖 ========== -->
     <template v-if="viewMode === 'shelf'">
       <!-- 工具列 -->
@@ -332,24 +326,6 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
-}
-
-.page-header {
-  text-align: center;
-  padding: 1rem 0;
-}
-
-.page-title {
-  font-size: var(--text-2xl);
-  font-weight: var(--font-bold);
-  color: var(--color-neutral-800);
-  margin: 0;
-}
-
-.page-subtitle {
-  font-size: var(--text-sm);
-  color: var(--color-neutral-500);
-  margin: 0.5rem 0 0;
 }
 
 /* ========== 工具列 ========== */

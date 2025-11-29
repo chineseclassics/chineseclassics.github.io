@@ -115,15 +115,6 @@ async function createRoom() {
       ← 返回鬥豆
     </button>
 
-    <!-- 頁面標題 -->
-    <header class="page-header">
-      <h1>
-        <span class="title-icon">➕</span>
-        創建鬥豆場
-      </h1>
-      <p class="subtitle">邀請同學加入，贏取豆子！</p>
-    </header>
-
     <!-- 豆子餘額 -->
     <div class="balance-card">
       <BeanIcon :size="24" class="balance-icon" />
@@ -323,25 +314,6 @@ async function createRoom() {
 
 .back-btn:hover {
   color: var(--color-primary-600);
-}
-
-.page-header {
-  text-align: center;
-  margin-bottom: 1.5rem;
-}
-
-.page-header h1 {
-  font-size: 1.75rem;
-  margin: 0 0 0.5rem 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-}
-
-.subtitle {
-  color: var(--color-neutral-500);
-  margin: 0;
 }
 
 /* 餘額卡片 */

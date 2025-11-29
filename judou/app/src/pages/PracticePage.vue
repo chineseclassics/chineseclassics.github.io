@@ -311,8 +311,8 @@ async function ensureDataLoaded() {
   
   await Promise.all(promises)
   
-  // 如果 URL 中有 textId 和 assignmentId，載入該文章
-  if (textId.value && assignmentId.value) {
+  // 如果 URL 中有 textId，載入該文章（支持作業或直接練習）
+  if (textId.value) {
     const text = textsStore.texts.find(t => t.id === textId.value)
     if (text) {
       selectText(text)

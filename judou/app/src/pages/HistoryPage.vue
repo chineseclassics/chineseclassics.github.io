@@ -166,17 +166,6 @@ const statsCards = computed(() => {
 
 <template>
   <div class="history-shell">
-    <!-- 頁面標題 -->
-    <section class="history-hero edamame-glass fade-in">
-      <div>
-        <p class="edamame-text-level-detail">練習足跡 · 成長旅程</p>
-        <h1 class="edamame-heading-gradient">豆跡</h1>
-        <p class="hero-desc">
-          每一次練習、對戰、閱讀都會被記錄下來，見證你的學習成長。
-        </p>
-      </div>
-    </section>
-
     <!-- 統計卡片 -->
     <section v-if="historyStore.stats" class="stats-grid">
       <div 
@@ -351,16 +340,6 @@ const statsCards = computed(() => {
 }
 
 /* 頁面標題 */
-.history-hero {
-  padding: clamp(1.5rem, 3vw, 2.5rem);
-}
-
-.hero-desc {
-  margin-top: 0.5rem;
-  color: var(--color-neutral-600);
-  max-width: 520px;
-}
-
 /* 統計卡片 */
 .stats-grid {
   display: grid;
