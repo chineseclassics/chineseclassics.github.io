@@ -538,6 +538,127 @@ export const useReadingStore = defineStore('reading', () => {
     await saveReadingRecord(textId, 100, true)
   }
   
+  // 更新閱讀文章內容
+  async function updateReadingText(
+    textId: string,
+    input: ReadingTextInput & { reading_category_ids?: string[] }
+  ) {
+    if (!supabase) throw new Error('Supabase 尚未配置')
+    if (!authStore.user) throw new Error('請先登入')
+    if (!authStore.isAdmin) throw new Error('只有管理員可以更新閱讀文章')
+    
+    // 檢查權限：查找文章是否為系統文章
+    const { data: existingText } = await supabase
+      .from('practice_texts')
+      .select('is_system, created_by, text_type')
+      .eq('id', textId)
+      .single()
+    
+    if (existingText) {
+      // 確保是閱讀文章
+      if (existingText.text_type !== 'reading') {
+        throw new Error('只能更新閱讀文章')
+      }
+      // 系統文章只能由管理員更新
+      if (existingText.is_system && !authStore.isAdmin) {
+        throw new Error('只有管理員可以更新系統文章')
+      }
+      // 私有文章只能由創建者更新
+      if (!existingText.is_system && existingText.created_by !== authStore.user.id) {
+        throw new Error('只能更新自己創建的文章')
+      }
+    }
+    
+    // 更新文章內容
+    const { error: updateError } = await supabase
+      .from('practice_texts')
+      .update({
+        title: input.title,
+        author: input.author ?? null,
+        source: input.source ?? null,
+        summary: input.summary ?? null,
+        content: input.content,
+      })
+      .eq('id', textId)
+    
+    if (updateError) throw updateError
+    
+    // 更新文集關聯
+    if (input.reading_category_ids !== undefined) {
+      // 先刪除現有關聯
+      const { error: deleteError } = await supabase
+        .from('text_reading_categories')
+        .delete()
+        .eq('text_id', textId)
+      
+      if (deleteError) throw deleteError
+      
+      // 添加新關聯
+      if (input.reading_category_ids.length > 0) {
+        const { error: insertError } = await supabase
+          .from('text_reading_categories')
+          .insert(input.reading_category_ids.map(catId => ({
+            text_id: textId,
+            category_id: catId
+          })))
+        
+        if (insertError) throw insertError
+      }
+    }
+    
+    // 重新獲取更新後的文章（包含文集信息）
+    const { data: updatedText, error: fetchError } = await supabase
+      .from('practice_texts')
+      .select(`
+        *,
+        text_reading_categories (
+          category:reading_categories (
+            id,
+            name,
+            description,
+            order_index
+          )
+        )
+      `)
+      .eq('id', textId)
+      .single()
+    
+    if (fetchError) throw fetchError
+    
+    // 轉換文集數據格式
+    const reading_categories = (updatedText as any).text_reading_categories
+      ?.map((trc: any) => trc.category)
+      .filter(Boolean) || []
+    
+    const updatedReadingText = {
+      ...updatedText,
+      reading_categories,
+      text_reading_categories: undefined,
+    }
+    
+    // 更新本地狀態
+    if (currentText.value?.id === textId) {
+      currentText.value = {
+        ...currentText.value,
+        ...updatedReadingText,
+        annotations: currentText.value.annotations,
+        progress: currentText.value.progress,
+      }
+    }
+    
+    const idx = readingTexts.value.findIndex(t => t.id === textId)
+    if (idx !== -1 && readingTexts.value[idx]) {
+      readingTexts.value[idx] = {
+        ...readingTexts.value[idx],
+        ...updatedReadingText,
+        progress: readingTexts.value[idx].progress,
+        annotations: readingTexts.value[idx].annotations || [],
+      }
+    }
+    
+    return updatedReadingText
+  }
+  
   // 更新文章的文集關聯
   async function updateTextCategories(textId: string, categoryIds: string[]) {
     if (!supabase) throw new Error('Supabase 尚未配置')
@@ -675,6 +796,7 @@ export const useReadingStore = defineStore('reading', () => {
     fetchReadingTexts,
     fetchTextDetail,
     createReadingText,
+    updateReadingText,
     extractPracticeFragment,
     clearCurrentText,
     // 進度和書籤

@@ -236,11 +236,16 @@ async function handleFormSubmit() {
     }
     
     if (editingText.value) {
-      // 更新文集關聯
-      await readingStore.updateTextCategories(
-        editingText.value.id, 
-        textForm.reading_category_ids
-      )
+      // 更新文章內容和文集關聯
+      await readingStore.updateReadingText(editingText.value.id, {
+        title: textForm.title.trim(),
+        author: textForm.author.trim() || null,
+        source: textForm.source.trim() || null,
+        summary: textForm.summary.trim() || null,
+        category_id: null,
+        content: processedContent,
+        reading_category_ids: textForm.reading_category_ids,
+      })
       isFormOpen.value = false
     } else {
       await readingStore.createReadingText({
