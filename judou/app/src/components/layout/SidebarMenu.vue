@@ -263,8 +263,8 @@ const logoUrl = `${import.meta.env.BASE_URL}images/judou-logo.jpg`
             :to="item.to"
           >
             <span v-if="item.icon" class="item-icon">
-              <BeanIcon v-if="item.iconType === 'bean'" :size="16" />
-              <component v-else-if="item.iconType === 'lucide'" :is="item.icon" :size="16" :stroke-width="1.5" class="lucide-icon" />
+              <BeanIcon v-if="item.iconType === 'bean'" :size="18" />
+              <component v-else-if="item.iconType === 'lucide'" :is="item.icon" :size="18" :stroke-width="1.5" class="lucide-icon" />
               <template v-else>{{ item.icon }}</template>
             </span>
             <p class="item-title">
@@ -276,8 +276,8 @@ const logoUrl = `${import.meta.env.BASE_URL}images/judou-logo.jpg`
           </router-link>
           <div v-else class="edamame-sidebar-item disabled">
             <span v-if="item.icon" class="item-icon">
-              <BeanIcon v-if="item.iconType === 'bean'" :size="16" />
-              <component v-else-if="item.iconType === 'lucide'" :is="item.icon" :size="16" :stroke-width="1.5" class="lucide-icon" />
+              <BeanIcon v-if="item.iconType === 'bean'" :size="18" />
+              <component v-else-if="item.iconType === 'lucide'" :is="item.icon" :size="18" :stroke-width="1.5" class="lucide-icon" />
               <template v-else>{{ item.icon }}</template>
             </span>
             <p class="item-title">{{ item.label }}</p>
@@ -681,15 +681,15 @@ const logoUrl = `${import.meta.env.BASE_URL}images/judou-logo.jpg`
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
   flex-shrink: 0;
 }
 
 /* Lucide 圖標樣式 - 句豆綠色配色 */
 .item-icon .lucide-icon {
-  width: 16px !important;
-  height: 16px !important;
+  width: 18px !important;
+  height: 18px !important;
   color: #6f9638; /* 句豆深綠色 */
   stroke-width: 1.5 !important;
   transition: color 0.2s ease;
