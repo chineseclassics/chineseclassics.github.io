@@ -150,8 +150,10 @@ async function handleDeleteCategory(category: { id: string; name: string }) {
 
 // 純文字內容（移除斷句符號）
 const pureContent = computed(() => {
-  if (!selectedText.value) return ''
-  return selectedText.value.content.replace(/\|/g, '')
+  // 優先使用 currentText（包含完整數據），否則使用 selectedText
+  const text = readingStore.currentText || selectedText.value
+  if (!text) return ''
+  return text.content.replace(/\|/g, '')
 })
 
 // 文章段落（按 || 分段）
@@ -246,6 +248,15 @@ async function handleFormSubmit() {
         content: processedContent,
         reading_category_ids: textForm.reading_category_ids,
       })
+      
+      // 同步更新 selectedText（如果正在查看這篇文章）
+      if (editingText.value && selectedText.value?.id === editingText.value.id) {
+        const updatedText = readingStore.readingTexts.find(t => t.id === editingText.value!.id)
+        if (updatedText) {
+          selectedText.value = updatedText
+        }
+      }
+      
       isFormOpen.value = false
     } else {
       await readingStore.createReadingText({
