@@ -17,6 +17,7 @@ import { useGameStore } from '../../../stores/gameStore'
 import { useAuthStore } from '../../../stores/authStore'
 import { useUserStatsStore } from '../../../stores/userStatsStore'
 import { TEAM_COLORS, type TeamColor, getRankTitle } from '../../../types/game'
+import BeanIcon from '../../../components/common/BeanIcon.vue'
 
 interface TextResult {
   textId: string
@@ -295,7 +296,7 @@ onMounted(() => {
         <span class="bean-number" :class="{ rolling: !beanAnimationComplete }">
           {{ animatedBeanValue }}
         </span>
-        <span class="bean-icon">🫘</span>
+        <BeanIcon :size="40" class="bean-icon-img" />
         <span v-if="isTie && beanAnimationComplete" class="bean-note">入場費已退還</span>
       </div>
     </header>

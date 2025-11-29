@@ -11,6 +11,7 @@ import { useRouter } from 'vue-router'
 import { useGameStore } from '../../../stores/gameStore'
 import { useUserStatsStore } from '../../../stores/userStatsStore'
 import TextSelector from '../../../components/arena/TextSelector.vue'
+import BeanIcon from '../../../components/common/BeanIcon.vue'
 import { 
   TIME_MODE_OPTIONS, 
   ENTRY_FEE_OPTIONS, 
@@ -125,7 +126,7 @@ async function createRoom() {
 
     <!-- 豆子餘額 -->
     <div class="balance-card">
-      <span class="balance-icon">🫘</span>
+      <BeanIcon :size="24" class="balance-icon" />
       <span class="balance-value">{{ beans }}</span>
       <span class="balance-label">我的豆子</span>
     </div>

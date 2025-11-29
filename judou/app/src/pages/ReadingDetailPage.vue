@@ -362,6 +362,9 @@ function getBreakClass(globalIdx: number) {
 onMounted(async () => {
   await readingStore.fetchTextDetail(textId.value)
   
+  // 開始追蹤閱讀時長
+  readingStore.startReadingTracking()
+  
   // 恢復閱讀進度
   if (readingStore.currentText?.progress) {
     currentParagraphIdx.value = readingStore.currentText.progress.last_paragraph
@@ -377,9 +380,28 @@ onMounted(async () => {
   }
 })
 
+// 計算當前閱讀進度（基於驗證結果或顯示模式）
+function calculateProgress(): number {
+  if (verificationResult.value) {
+    return Math.round(verificationResult.value.accuracy * 100)
+  }
+  if (showPunctuation.value) {
+    // 在顯示模式下，假設用戶正在學習
+    return 50
+  }
+  return 0
+}
+
 // 清理
 onUnmounted(() => {
   stopReading()
+  
+  // 保存閱讀記錄
+  if (textId.value && authStore.isAuthenticated) {
+    const progress = calculateProgress()
+    const completed = verificationResult.value?.accuracy === 1
+    readingStore.saveReadingRecord(textId.value, progress, completed)
+  }
 })
 
 // 監聽顯示模式切換

@@ -4,6 +4,10 @@ import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/authStore'
 import { useUserStatsStore } from '../../stores/userStatsStore'
 import { useAssignmentStore } from '../../stores/assignmentStore'
+import BeanIcon from '../common/BeanIcon.vue'
+
+// 豆子圖標標識
+const BEAN_ICON = 'bean'
 
 interface NavItem {
   label: string
@@ -21,7 +25,7 @@ const router = useRouter()
 
 const primaryNav: NavItem[] = [
   { label: '首頁', icon: '🏠', to: { name: 'home' } },
-  { label: '句豆', icon: '🫘', to: { name: 'practice' }, description: '練習' },
+  { label: '句豆', icon: BEAN_ICON, to: { name: 'practice' }, description: '練習' },
   { label: '品豆', icon: '📖', to: { name: 'reading-list' }, description: '閱讀' },
   { label: '鬥豆', icon: '⚔️', to: { name: 'arena' }, description: '對戰' },
   { label: '豆跡', icon: '👣', to: { name: 'history' }, description: '歷史' },
@@ -239,7 +243,10 @@ const logoUrl = `${import.meta.env.BASE_URL}images/judou-logo.jpg`
             :class="{ active: isActive(item) }"
             :to="item.to"
           >
-            <span v-if="item.icon" class="item-icon">{{ item.icon }}</span>
+            <span v-if="item.icon" class="item-icon">
+              <BeanIcon v-if="item.icon === BEAN_ICON" :size="20" />
+              <template v-else>{{ item.icon }}</template>
+            </span>
             <p class="item-title">
               {{ item.label }}
               <span v-if="item.label === '豆莢' && authStore.isStudent && pendingCount > 0" class="badge">
@@ -248,7 +255,10 @@ const logoUrl = `${import.meta.env.BASE_URL}images/judou-logo.jpg`
             </p>
           </router-link>
           <div v-else class="edamame-sidebar-item disabled">
-            <span v-if="item.icon" class="item-icon">{{ item.icon }}</span>
+            <span v-if="item.icon" class="item-icon">
+              <BeanIcon v-if="item.icon === BEAN_ICON" :size="20" />
+              <template v-else>{{ item.icon }}</template>
+            </span>
             <p class="item-title">{{ item.label }}</p>
           </div>
         </li>

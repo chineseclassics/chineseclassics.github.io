@@ -15,6 +15,7 @@ import { useGameStore } from '../../stores/gameStore'
 import { useUserStatsStore } from '../../stores/userStatsStore'
 import { supabase } from '../../lib/supabaseClient'
 import { ENTRY_FEE_OPTIONS, SAFETY_LIMITS, getRankTitle, type GameRoom } from '../../types/game'
+import BeanIcon from '../../components/common/BeanIcon.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -291,7 +292,7 @@ onUnmounted(() => {
       <!-- 用戶統計卡片 -->
       <div v-if="authStore.isAuthenticated" class="stats-card">
         <div class="stat-item">
-          <span class="stat-icon">🫘</span>
+          <BeanIcon :size="24" class="stat-icon-img" />
           <span class="stat-value">{{ beans }}</span>
           <span class="stat-label">豆子</span>
         </div>

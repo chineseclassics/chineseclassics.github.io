@@ -10,6 +10,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../../../stores/authStore'
 import { useGameStore } from '../../../stores/gameStore'
 import { TIME_MODE_OPTIONS } from '../../../types/game'
+import BeanIcon from '../../../components/common/BeanIcon.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -162,7 +163,7 @@ onUnmounted(async () => {
           ⏱️ {{ timeModeText }}
         </span>
         <span v-if="room?.entry_fee" class="meta-item fee">
-          🫘 {{ room.entry_fee }} 豆入場
+          <BeanIcon :size="14" /> {{ room.entry_fee }} 豆入場
         </span>
         <span v-else class="meta-item free">
           🆓 免費房間

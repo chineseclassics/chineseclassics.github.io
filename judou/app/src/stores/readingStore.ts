@@ -434,6 +434,109 @@ export const useReadingStore = defineStore('reading', () => {
     currentText.value = null
   }
   
+  // ===== 閱讀記錄（豆跡） =====
+  
+  // 開始閱讀計時
+  let readingStartTime: number | null = null
+  
+  /**
+   * 開始追蹤閱讀（進入閱讀頁面時調用）
+   */
+  function startReadingTracking() {
+    readingStartTime = Date.now()
+  }
+  
+  /**
+   * 結束追蹤並保存閱讀記錄
+   * @param textId 文章 ID
+   * @param progress 閱讀進度 (0-100)
+   * @param completed 是否完成
+   */
+  async function saveReadingRecord(textId: string, progress: number = 0, completed: boolean = false) {
+    if (!supabase || !authStore.isAuthenticated || !authStore.user?.id) return
+    
+    // 計算閱讀時長
+    const duration = readingStartTime 
+      ? Math.floor((Date.now() - readingStartTime) / 1000) 
+      : 0
+    
+    // 重置計時器
+    readingStartTime = null
+    
+    // 如果閱讀時長太短（小於 3 秒），不記錄
+    if (duration < 3) return
+    
+    try {
+      // 使用 upsert 更新或創建記錄
+      const { error: upsertError } = await supabase
+        .from('reading_records')
+        .upsert({
+          user_id: authStore.user.id,
+          text_id: textId,
+          progress: Math.max(progress, 0),
+          is_completed: completed,
+          read_duration: duration, // 這次閱讀的時長，後面會累加
+          read_count: 1, // 這次閱讀計數，後面會累加
+          last_read_at: new Date().toISOString()
+        }, {
+          onConflict: 'user_id,text_id',
+          ignoreDuplicates: false
+        })
+      
+      if (upsertError) {
+        // 如果表不存在，靜默失敗（遷移可能尚未執行）
+        if (upsertError.code === '42P01') {
+          console.log('閱讀記錄表尚未創建')
+          return
+        }
+        
+        // 如果是重複記錄，嘗試更新現有記錄
+        const { error: updateError } = await supabase.rpc('update_reading_record', {
+          p_user_id: authStore.user.id,
+          p_text_id: textId,
+          p_duration: duration,
+          p_progress: progress,
+          p_completed: completed
+        })
+        
+        if (updateError) {
+          // RPC 不存在時，使用原始 SQL 更新
+          const { data: existing } = await supabase
+            .from('reading_records')
+            .select('id, read_duration, read_count, progress, is_completed')
+            .eq('user_id', authStore.user.id)
+            .eq('text_id', textId)
+            .maybeSingle()
+          
+          if (existing) {
+            await supabase
+              .from('reading_records')
+              .update({
+                read_duration: existing.read_duration + duration,
+                read_count: existing.read_count + 1,
+                progress: Math.max(existing.progress, progress),
+                is_completed: existing.is_completed || completed,
+                last_read_at: new Date().toISOString(),
+                completed_at: completed && !existing.is_completed ? new Date().toISOString() : undefined
+              })
+              .eq('id', existing.id)
+          }
+        }
+      }
+      
+      console.log(`📖 記錄閱讀：${duration} 秒，進度 ${progress}%`)
+    } catch (err) {
+      console.error('保存閱讀記錄失敗:', err)
+    }
+  }
+  
+  /**
+   * 標記文章為已完成閱讀
+   */
+  async function markAsCompleted(textId: string) {
+    await saveReadingRecord(textId, 100, true)
+  }
+  
   // 更新文章的文集關聯
   async function updateTextCategories(textId: string, categoryIds: string[]) {
     if (!supabase) throw new Error('Supabase 尚未配置')
@@ -576,6 +679,10 @@ export const useReadingStore = defineStore('reading', () => {
     // 進度和書籤
     updateProgress,
     toggleBookmark,
+    // 閱讀記錄（豆跡）
+    startReadingTracking,
+    saveReadingRecord,
+    markAsCompleted,
     // 註釋操作
     addAnnotation,
     updateAnnotation,

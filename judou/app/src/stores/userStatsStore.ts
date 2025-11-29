@@ -261,10 +261,11 @@ export const useUserStatsStore = defineStore('userStats', () => {
     
     // 更新登入日期和領取登入獎勵
     try {
+      const newBalance = profile.value.total_beans + DAILY_LOGIN_REWARD
       const updates: Partial<UserProfile> = {
         last_login_date: today,
         daily_login_claimed: true,
-        total_beans: profile.value.total_beans + DAILY_LOGIN_REWARD,
+        total_beans: newBalance,
         weekly_beans: profile.value.weekly_beans + DAILY_LOGIN_REWARD,
         monthly_beans: profile.value.monthly_beans + DAILY_LOGIN_REWARD,
         updated_at: new Date().toISOString()
@@ -281,6 +282,17 @@ export const useUserStatsStore = defineStore('userStats', () => {
         .eq('id', authStore.user.id)
       
       if (updateError) throw updateError
+      
+      // 記錄交易
+      await supabase
+        .from('game_transactions')
+        .insert({
+          user_id: authStore.user.id,
+          type: 'daily_login',
+          amount: DAILY_LOGIN_REWARD,
+          balance_after: newBalance,
+          description: '每日登入獎勵'
+        })
       
       // 更新本地狀態
       Object.assign(profile.value, updates)
@@ -303,9 +315,10 @@ export const useUserStatsStore = defineStore('userStats', () => {
     }
     
     try {
+      const newBalance = profile.value.total_beans + DAILY_FIRST_PRACTICE_REWARD
       const updates = {
         daily_first_claimed: true,
-        total_beans: profile.value.total_beans + DAILY_FIRST_PRACTICE_REWARD,
+        total_beans: newBalance,
         weekly_beans: profile.value.weekly_beans + DAILY_FIRST_PRACTICE_REWARD,
         monthly_beans: profile.value.monthly_beans + DAILY_FIRST_PRACTICE_REWARD,
         updated_at: new Date().toISOString()
@@ -317,6 +330,17 @@ export const useUserStatsStore = defineStore('userStats', () => {
         .eq('id', authStore.user.id)
       
       if (updateError) throw updateError
+      
+      // 記錄交易
+      await supabase
+        .from('game_transactions')
+        .insert({
+          user_id: authStore.user.id,
+          type: 'daily_first',
+          amount: DAILY_FIRST_PRACTICE_REWARD,
+          balance_after: newBalance,
+          description: '每日首練獎勵'
+        })
       
       // 更新本地狀態
       Object.assign(profile.value, updates)
@@ -405,12 +429,13 @@ export const useUserStatsStore = defineStore('userStats', () => {
   async function recordPracticeScore(params: {
     textId: string
     score: number
+    textTitle?: string  // 用於交易記錄描述
   }): Promise<{ beansEarned: number; isNewRecord: boolean }> {
     if (!supabase || !profile.value || !authStore.user) {
       return { beansEarned: 0, isNewRecord: false }
     }
     
-    const { textId, score } = params
+    const { textId, score, textTitle } = params
     
     try {
       // 獲取現有記錄（使用 maybeSingle 避免無記錄時報錯）
@@ -472,10 +497,11 @@ export const useUserStatsStore = defineStore('userStats', () => {
       
       // 更新用戶總豆子數
       if (beansEarned > 0) {
+        const newBalance = profile.value.total_beans + beansEarned
         const { error: updateError } = await supabase
           .from('profiles')
           .update({
-            total_beans: profile.value.total_beans + beansEarned,
+            total_beans: newBalance,
             weekly_beans: profile.value.weekly_beans + beansEarned,
             monthly_beans: profile.value.monthly_beans + beansEarned,
             updated_at: new Date().toISOString()
@@ -486,6 +512,22 @@ export const useUserStatsStore = defineStore('userStats', () => {
           profile.value.total_beans += beansEarned
           profile.value.weekly_beans += beansEarned
           profile.value.monthly_beans += beansEarned
+          
+          // 記錄練習獎勵交易
+          const description = textTitle 
+            ? `練習《${textTitle}》${isNewRecord ? '（新紀錄）' : ''}獲得 ${beansEarned} 豆`
+            : `練習獲得 ${beansEarned} 豆`
+          
+          await supabase
+            .from('game_transactions')
+            .insert({
+              user_id: authStore.user.id,
+              type: 'practice_reward',
+              amount: beansEarned,
+              balance_after: newBalance,
+              description,
+              text_id: textId
+            })
         }
       }
       

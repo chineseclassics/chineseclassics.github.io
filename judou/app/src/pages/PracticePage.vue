@@ -538,7 +538,8 @@ async function submitResult() {
       if (authStore.isAuthenticated) {
         const result = await userStatsStore.recordPracticeScore({
           textId: currentText.value.id,
-        score
+          score,
+          textTitle: currentText.value.title
         })
         
         // 更新評估結果
