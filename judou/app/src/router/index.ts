@@ -14,6 +14,14 @@ const routes: RouteRecordRaw[] = [
         },
       },
       {
+        path: 'icon-test',
+        name: 'icon-test',
+        component: () => import('../pages/IconTestPage.vue'),
+        meta: {
+          title: '句豆 - 圖標測試',
+        },
+      },
+      {
         path: 'practice',
         name: 'practice',
         component: () => import('../pages/PracticePage.vue'),

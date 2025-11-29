@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch, onMounted } from 'vue'
+import { computed, ref, watch, onMounted, type Component } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/authStore'
 import { useUserStatsStore } from '../../stores/userStatsStore'
@@ -8,12 +8,26 @@ import { useAvatarStore } from '../../stores/avatarStore'
 import BeanIcon from '../common/BeanIcon.vue'
 import UserAvatar from '../avatar/UserAvatar.vue'
 
-// 豆子圖標標識
-const BEAN_ICON = 'bean'
+// Lucide 圖標
+import { 
+  Home, 
+  BookOpen, 
+  Swords, 
+  Footprints, 
+  Users, 
+  PenLine,
+  Library,
+  BookMarked,
+  UserCog
+} from 'lucide-vue-next'
+
+// 圖標類型
+type IconType = 'bean' | 'lucide' | 'emoji'
 
 interface NavItem {
   label: string
-  icon?: string
+  icon?: Component | string  // Lucide 組件或 emoji 字符串
+  iconType?: IconType
   description?: string
   to?: { name: string }
   disabled?: boolean
@@ -27,23 +41,23 @@ const avatarStore = useAvatarStore()
 const router = useRouter()
 
 const primaryNav: NavItem[] = [
-  { label: '首頁', icon: '🏠', to: { name: 'home' } },
-  { label: '句豆', icon: BEAN_ICON, to: { name: 'practice' }, description: '練習' },
-  { label: '品豆', icon: '📖', to: { name: 'reading-list' }, description: '閱讀' },
-  { label: '鬥豆', icon: '⚔️', to: { name: 'arena' }, description: '對戰' },
-  { label: '豆跡', icon: '👣', to: { name: 'history' }, description: '歷史' },
-  { label: '豆莢', icon: '🫛', to: { name: 'my-classes' }, description: '班級' },
-  { label: '自訂練習', icon: '✏️', to: { name: 'my-texts' }, teacherOnly: true },
+  { label: '首頁', icon: Home, iconType: 'lucide', to: { name: 'home' } },
+  { label: '句豆', icon: BeanIcon, iconType: 'bean', to: { name: 'practice' }, description: '練習' },
+  { label: '品豆', icon: BookOpen, iconType: 'lucide', to: { name: 'reading-list' }, description: '閱讀' },
+  { label: '鬥豆', icon: Swords, iconType: 'lucide', to: { name: 'arena' }, description: '對戰' },
+  { label: '豆跡', icon: Footprints, iconType: 'lucide', to: { name: 'history' }, description: '歷史' },
+  { label: '豆莢', icon: Users, iconType: 'lucide', to: { name: 'my-classes' }, description: '班級' },
+  { label: '自訂練習', icon: PenLine, iconType: 'lucide', to: { name: 'my-texts' }, teacherOnly: true },
 ]
 
 const adminNav: NavItem[] = [
-  { label: '練習文庫', to: { name: 'admin-texts' } },
-  { label: '閱讀文庫', to: { name: 'admin-reading' } },
+  { label: '練習文庫', icon: Library, iconType: 'lucide', to: { name: 'admin-texts' } },
+  { label: '閱讀文庫', icon: BookMarked, iconType: 'lucide', to: { name: 'admin-reading' } },
 ]
 
 // 超級管理員導航
 const superAdminNav: NavItem[] = [
-  { label: '用戶管理', to: { name: 'admin-users' } },
+  { label: '用戶管理', icon: UserCog, iconType: 'lucide', to: { name: 'admin-users' } },
 ]
 
 // 過濾常用功能導航（老師專屬項目）
@@ -249,7 +263,8 @@ const logoUrl = `${import.meta.env.BASE_URL}images/judou-logo.jpg`
             :to="item.to"
           >
             <span v-if="item.icon" class="item-icon">
-              <BeanIcon v-if="item.icon === BEAN_ICON" :size="20" />
+              <BeanIcon v-if="item.iconType === 'bean'" :size="16" />
+              <component v-else-if="item.iconType === 'lucide'" :is="item.icon" :size="16" :stroke-width="1.5" class="lucide-icon" />
               <template v-else>{{ item.icon }}</template>
             </span>
             <p class="item-title">
@@ -261,7 +276,8 @@ const logoUrl = `${import.meta.env.BASE_URL}images/judou-logo.jpg`
           </router-link>
           <div v-else class="edamame-sidebar-item disabled">
             <span v-if="item.icon" class="item-icon">
-              <BeanIcon v-if="item.icon === BEAN_ICON" :size="20" />
+              <BeanIcon v-if="item.iconType === 'bean'" :size="16" />
+              <component v-else-if="item.iconType === 'lucide'" :is="item.icon" :size="16" :stroke-width="1.5" class="lucide-icon" />
               <template v-else>{{ item.icon }}</template>
             </span>
             <p class="item-title">{{ item.label }}</p>
@@ -281,9 +297,17 @@ const logoUrl = `${import.meta.env.BASE_URL}images/judou-logo.jpg`
             :class="{ active: isActive(item) }"
             :to="item.to"
           >
+            <span v-if="item.icon" class="item-icon">
+              <component v-if="item.iconType === 'lucide'" :is="item.icon" :size="16" :stroke-width="1.5" class="lucide-icon" />
+              <template v-else>{{ item.icon }}</template>
+            </span>
             <p class="item-title">{{ item.label }}</p>
           </router-link>
           <div v-else class="edamame-sidebar-item disabled">
+            <span v-if="item.icon" class="item-icon">
+              <component v-if="item.iconType === 'lucide'" :is="item.icon" :size="16" :stroke-width="1.5" class="lucide-icon" />
+              <template v-else>{{ item.icon }}</template>
+            </span>
             <p class="item-title">{{ item.label }}</p>
           </div>
         </li>
@@ -301,9 +325,17 @@ const logoUrl = `${import.meta.env.BASE_URL}images/judou-logo.jpg`
             :class="{ active: isActive(item) }"
             :to="item.to"
           >
+            <span v-if="item.icon" class="item-icon">
+              <component v-if="item.iconType === 'lucide'" :is="item.icon" :size="16" :stroke-width="1.5" class="lucide-icon" />
+              <template v-else>{{ item.icon }}</template>
+            </span>
             <p class="item-title">{{ item.label }}</p>
           </router-link>
           <div v-else class="edamame-sidebar-item disabled">
+            <span v-if="item.icon" class="item-icon">
+              <component v-if="item.iconType === 'lucide'" :is="item.icon" :size="16" :stroke-width="1.5" class="lucide-icon" />
+              <template v-else>{{ item.icon }}</template>
+            </span>
             <p class="item-title">{{ item.label }}</p>
           </div>
         </li>
@@ -646,10 +678,29 @@ const logoUrl = `${import.meta.env.BASE_URL}images/judou-logo.jpg`
 }
 
 .item-icon {
-  font-size: 1.1rem;
-  width: 24px;
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
   flex-shrink: 0;
+}
+
+/* Lucide 圖標樣式 - 句豆綠色配色 */
+.item-icon .lucide-icon {
+  width: 16px !important;
+  height: 16px !important;
+  color: #6f9638; /* 句豆深綠色 */
+  stroke-width: 1.5 !important;
+  transition: color 0.2s ease;
+}
+
+.edamame-sidebar-item:hover .item-icon .lucide-icon {
+  color: #8bb24f; /* 句豆主綠色，懸停時更亮 */
+}
+
+.edamame-sidebar-item.active .item-icon .lucide-icon {
+  color: #587a2b; /* 句豆最深綠色，激活狀態 */
 }
 
 .item-title {
