@@ -18,14 +18,11 @@ const props = withDefaults(defineProps<Props>(), {
 
 // 計算尺寸
 const sizeValue = typeof props.size === 'number' ? `${props.size}px` : props.size
-
-// 圖片 URL（使用 BASE_URL 確保路徑正確）
-const iconUrl = `${import.meta.env.BASE_URL}images/bean-icon.png`
 </script>
 
 <template>
   <img
-    :src="iconUrl"
+    src="/images/bean-icon.png"
     alt="豆"
     class="bean-icon"
     :class="{ inline }"

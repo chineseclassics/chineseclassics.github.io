@@ -9,13 +9,12 @@
    ============================================ */
 
 /* 思源柔黑 - UI 字體（保留本地字體文件） */
-/* 使用 optional 避免阻塞渲染：如果字體在短時間內無法下載，立即使用備用字體 */
 @font-face {
     font-family: 'Gen Jyuu Gothic';
     src: url(/judou/font/GenJyuuGothicX-P-Regular.ttf) format('truetype');
     font-weight: 400;
     font-style: normal;
-    font-display: optional; /* 改為 optional：不阻塞渲染，優先下載其他關鍵資源 */
+    font-display: swap;
 }
 
 @font-face {
@@ -23,7 +22,7 @@
     src: url(/judou/font/GenJyuuGothicX-P-Medium.ttf) format('truetype');
     font-weight: 500;
     font-style: normal;
-    font-display: optional; /* 改為 optional：不阻塞渲染，優先下載其他關鍵資源 */
+    font-display: swap;
 }
 
 * {
