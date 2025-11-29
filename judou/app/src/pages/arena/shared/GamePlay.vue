@@ -92,7 +92,10 @@ function parseContent(raw: string): { chars: string[]; breaks: Set<number> } {
   const breaks = new Set<number>()
   let pointer = 0
   
-  for (const char of raw) {
+  // 先去除末尾的 | 和空白字符，因為文章最後的斷句點沒有意義
+  const trimmed = raw.replace(/[\|\s]+$/, '')
+  
+  for (const char of trimmed) {
     if (char === '|') {
       if (pointer > 0) {
         breaks.add(pointer - 1)

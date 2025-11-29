@@ -59,7 +59,10 @@ const parsedContent = computed(() => {
     const paraBreaks = new Set<number>()
     const paraStartIdx = globalPointer
     
-    for (const char of rawPara) {
+    // 先去除段落末尾的 | 和空白字符，因為段落最後的斷句點沒有意義
+    const trimmedPara = rawPara.replace(/[\|\s]+$/, '')
+    
+    for (const char of trimmedPara) {
       if (char === '|') {
         // 記錄斷句位置（相對於前一個字符）
         if (globalPointer > 0) {

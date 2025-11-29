@@ -209,7 +209,11 @@ function parseContent(raw: string) {
   const chars: string[] = []
   const breaks = new Set<number>()
   let pointer = 0
-  for (const char of raw) {
+  
+  // 先去除末尾的 | 和空白字符，因為文章最後的斷句點沒有意義
+  const trimmed = raw.replace(/[\|\s]+$/, '')
+  
+  for (const char of trimmed) {
     if (char === '|') {
       // 斷句標記在「前一個字的後面」，所以用 pointer - 1
       // 例如 "林|盡" 表示在「林」後面斷句，即 index = 0
