@@ -1,0 +1,464 @@
+/**
+ * 句豆設計系統 2.0 - 通用組件樣式
+ * 
+ * 這些樣式類可以在任何地方使用，保持 UI 一致性
+ * 
+ * 包含：
+ * - 分組標題 (.judou-group-header)
+ * - 卡片樣式 (.judou-card)
+ * - 徽章/標籤 (.judou-badge)
+ * - 統計展示 (.judou-stat)
+ * - Toast 提示 (.judou-toast)
+ */
+
+/* =====================================================
+   分組標題 - 帶稀有度色彩
+   
+   用法：
+   <div class="judou-group-header legendary">
+     <span class="group-stars">⭐⭐⭐⭐</span>
+     <span class="group-label">傳奇</span>
+   </div>
+   ===================================================== */
+.judou-group-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem 0.5rem 0 0;
+  border-bottom: 2px solid;
+}
+
+.judou-group-header .group-stars {
+  font-size: 0.7rem;
+  letter-spacing: -2px;
+}
+
+.judou-group-header .group-label {
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+/* 傳奇 - 金色 */
+.judou-group-header.legendary {
+  border-color: #f59e0b;
+  background: linear-gradient(90deg, rgba(245, 158, 11, 0.1), transparent);
+}
+.judou-group-header.legendary .group-label { color: #d97706; }
+
+/* 珍貴/史詩 - 紫色 */
+.judou-group-header.epic {
+  border-color: #a855f7;
+  background: linear-gradient(90deg, rgba(168, 85, 247, 0.08), transparent);
+}
+.judou-group-header.epic .group-label { color: #9333ea; }
+
+/* 稀有 - 藍色 */
+.judou-group-header.rare {
+  border-color: #3b82f6;
+  background: linear-gradient(90deg, rgba(59, 130, 246, 0.08), transparent);
+}
+.judou-group-header.rare .group-label { color: #2563eb; }
+
+/* 普通 - 句豆綠 */
+.judou-group-header.common {
+  border-color: #8bb24f;
+  background: linear-gradient(90deg, rgba(139, 178, 79, 0.08), transparent);
+}
+.judou-group-header.common .group-label { color: #6f9638; }
+
+/* 簡潔版（無背景） */
+.judou-group-header.minimal {
+  background: transparent;
+  padding: 0 0 0.5rem 0;
+}
+
+/* =====================================================
+   卡片樣式
+   
+   用法：
+   <div class="judou-card">內容</div>
+   <div class="judou-card hoverable">可懸浮卡片</div>
+   <div class="judou-card selected">選中狀態</div>
+   ===================================================== */
+.judou-card {
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(139, 178, 79, 0.1);
+  border-radius: 1rem;
+  padding: 1rem;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.judou-card.hoverable {
+  cursor: pointer;
+}
+
+.judou-card.hoverable:hover {
+  background: rgba(255, 255, 255, 0.9);
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(139, 178, 79, 0.2);
+  border-color: rgba(139, 178, 79, 0.3);
+}
+
+.judou-card.selected {
+  background: linear-gradient(135deg, #eff6e5, #deedc4);
+  border: 2px solid #8bb24f;
+  box-shadow: 
+    0 4px 12px rgba(139, 178, 79, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.judou-card.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.judou-card.disabled:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+/* 卡片尺寸 */
+.judou-card.sm { padding: 0.625rem; border-radius: 0.75rem; }
+.judou-card.lg { padding: 1.5rem; border-radius: 1.25rem; }
+
+/* 無內邊距 */
+.judou-card.no-padding { padding: 0; }
+
+/* =====================================================
+   徽章/標籤
+   
+   用法：
+   <span class="judou-badge">默認</span>
+   <span class="judou-badge primary">主要</span>
+   <span class="judou-badge success">成功</span>
+   ===================================================== */
+.judou-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem 0.625rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 1rem;
+  background: rgba(120, 113, 108, 0.1);
+  color: #57534e;
+}
+
+.judou-badge.primary {
+  background: linear-gradient(135deg, #8bb24f, #6f9638);
+  color: white;
+}
+
+.judou-badge.success {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  color: white;
+}
+
+.judou-badge.warning {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: white;
+}
+
+.judou-badge.error {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: white;
+}
+
+.judou-badge.info {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: white;
+}
+
+/* 稀有度徽章 */
+.judou-badge.legendary {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: white;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+}
+
+.judou-badge.epic {
+  background: linear-gradient(135deg, #a855f7, #9333ea);
+  color: white;
+  box-shadow: 0 2px 8px rgba(168, 85, 247, 0.3);
+}
+
+.judou-badge.rare {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: white;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+/* 尺寸 */
+.judou-badge.sm {
+  padding: 0.125rem 0.375rem;
+  font-size: 0.625rem;
+}
+
+.judou-badge.lg {
+  padding: 0.375rem 0.875rem;
+  font-size: 0.875rem;
+}
+
+/* =====================================================
+   統計展示
+   
+   用法：
+   <div class="judou-stat">
+     <span class="stat-icon">🌱</span>
+     <span class="stat-label">已解鎖</span>
+     <span class="stat-value">5</span>
+     <span class="stat-total">/ 18</span>
+   </div>
+   ===================================================== */
+.judou-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.875rem;
+  color: #57534e;
+}
+
+.judou-stat .stat-icon {
+  font-size: 0.9rem;
+  margin-right: 0.125rem;
+}
+
+.judou-stat .stat-value {
+  color: #6f9638;
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.judou-stat .stat-total {
+  color: #a8a29e;
+}
+
+/* 大尺寸統計 */
+.judou-stat.lg {
+  font-size: 1rem;
+}
+.judou-stat.lg .stat-value {
+  font-size: 1.5rem;
+}
+.judou-stat.lg .stat-icon {
+  font-size: 1.25rem;
+}
+
+/* =====================================================
+   Toast 提示
+   
+   用法（通常配合 JS）：
+   <div class="judou-toast success">
+     <span class="toast-icon">🎉</span>
+     <span class="toast-text">操作成功！</span>
+   </div>
+   ===================================================== */
+.judou-toast {
+  position: fixed;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.875rem 1.5rem;
+  border-radius: 2rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  animation: judou-toast-enter 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.judou-toast.success {
+  background: linear-gradient(135deg, #8bb24f, #6f9638);
+  color: white;
+  box-shadow: 0 4px 20px rgba(111, 150, 56, 0.35);
+}
+
+.judou-toast.error {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: white;
+  box-shadow: 0 4px 20px rgba(239, 68, 68, 0.35);
+}
+
+.judou-toast.warning {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: white;
+  box-shadow: 0 4px 20px rgba(245, 158, 11, 0.35);
+}
+
+.judou-toast.info {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: white;
+  box-shadow: 0 4px 20px rgba(59, 130, 246, 0.35);
+}
+
+.judou-toast .toast-icon {
+  font-size: 1.25rem;
+}
+
+@keyframes judou-toast-enter {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-30px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+}
+
+/* =====================================================
+   圖標按鈕
+   
+   用法：
+   <button class="judou-icon-btn">×</button>
+   <button class="judou-icon-btn primary">✓</button>
+   ===================================================== */
+.judou-icon-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid rgba(139, 178, 79, 0.2);
+  background: rgba(255, 255, 255, 0.7);
+  color: #78716c;
+  font-size: 1.25rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.judou-icon-btn:hover {
+  background: rgba(139, 178, 79, 0.1);
+  color: #587a2b;
+  border-color: #8bb24f;
+}
+
+.judou-icon-btn.primary {
+  background: linear-gradient(135deg, #8bb24f, #6f9638);
+  color: white;
+  border: none;
+}
+
+.judou-icon-btn.primary:hover {
+  background: linear-gradient(135deg, #6f9638, #587a2b);
+  transform: scale(1.05);
+}
+
+.judou-icon-btn.sm {
+  width: 28px;
+  height: 28px;
+  font-size: 1rem;
+}
+
+.judou-icon-btn.lg {
+  width: 44px;
+  height: 44px;
+  font-size: 1.5rem;
+}
+
+/* =====================================================
+   圓形頭像/圖標容器
+   
+   用法：
+   <div class="judou-avatar">
+     <img src="..." />
+   </div>
+   ===================================================== */
+.judou-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: linear-gradient(135deg, #f8faf5, #eff6e5);
+  box-shadow: 
+    0 2px 8px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.judou-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.judou-avatar.sm { width: 32px; height: 32px; }
+.judou-avatar.md { width: 48px; height: 48px; }
+.judou-avatar.lg { width: 64px; height: 64px; }
+.judou-avatar.xl { width: 80px; height: 80px; }
+
+.judou-avatar.bordered {
+  border: 3px solid #deedc4;
+}
+
+.judou-avatar.bordered:hover {
+  border-color: #8bb24f;
+}
+
+/* =====================================================
+   分隔線
+   ===================================================== */
+.judou-divider {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(139, 178, 79, 0.2),
+    transparent
+  );
+  margin: 1rem 0;
+}
+
+.judou-divider.solid {
+  background: rgba(139, 178, 79, 0.15);
+}
+
+/* =====================================================
+   空狀態
+   ===================================================== */
+.judou-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1.5rem;
+  text-align: center;
+  color: #a8a29e;
+}
+
+.judou-empty .empty-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  opacity: 0.6;
+}
+
+.judou-empty .empty-text {
+  font-size: 0.9rem;
+}
+
+/* =====================================================
+   網格佈局輔助
+   ===================================================== */
+.judou-grid {
+  display: grid;
+  gap: 0.875rem;
+}
+
+.judou-grid.cols-2 { grid-template-columns: repeat(2, 1fr); }
+.judou-grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
+.judou-grid.cols-4 { grid-template-columns: repeat(4, 1fr); }
+.judou-grid.cols-auto { grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)); }
+
+@media (max-width: 640px) {
+  .judou-grid.cols-4 { grid-template-columns: repeat(2, 1fr); }
+  .judou-grid.cols-3 { grid-template-columns: repeat(2, 1fr); }
+}
+

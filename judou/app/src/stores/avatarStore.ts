@@ -85,7 +85,7 @@ export const useAvatarStore = defineStore('avatar', () => {
   // 計算屬性：當前頭像 URL
   const currentAvatarUrl = computed(() => {
     if (!currentAvatar.value) return null
-    return `/images/avatars/${currentAvatar.value.filename}`
+    return `${import.meta.env.BASE_URL}images/avatars/${currentAvatar.value.filename}`
   })
 
   // 計算屬性：已解鎖頭像數量
@@ -99,10 +99,10 @@ export const useAvatarStore = defineStore('avatar', () => {
   // =====================================================
 
   /**
-   * 獲取頭像的 URL
+   * 獲取頭像的 URL（使用 BASE_URL 確保路徑正確）
    */
   function getAvatarUrl(avatar: Avatar): string {
-    return `/images/avatars/${avatar.filename}`
+    return `${import.meta.env.BASE_URL}images/avatars/${avatar.filename}`
   }
 
   /**

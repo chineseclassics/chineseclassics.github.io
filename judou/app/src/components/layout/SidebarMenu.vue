@@ -195,7 +195,7 @@ const logoUrl = `${import.meta.env.BASE_URL}images/judou-logo.jpg`
           }"
         >
           <div class="beans-icon">
-            <span class="bean-pod">🫛</span>
+            <BeanIcon :size="24" />
           </div>
           <!-- 滾輪數字顯示 -->
           <div class="beans-roller">

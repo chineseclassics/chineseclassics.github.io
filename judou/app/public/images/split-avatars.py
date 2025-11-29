@@ -12,7 +12,7 @@
 from PIL import Image
 import os
 
-def split_avatars(input_path, output_dir, cols=6, rows=3):
+def split_avatars(input_path, output_dir, cols=6, rows=3, default_padding=0.08):
     """
     分割頭像圖片
     
@@ -21,6 +21,7 @@ def split_avatars(input_path, output_dir, cols=6, rows=3):
         output_dir: 輸出目錄
         cols: 列數（默認 6）
         rows: 行數（默認 3）
+        default_padding: 默認邊距比例（默認 8%）
     """
     # 創建輸出目錄
     os.makedirs(output_dir, exist_ok=True)
@@ -34,7 +35,8 @@ def split_avatars(input_path, output_dir, cols=6, rows=3):
     avatar_height = height // rows
     
     print(f"圖片尺寸: {width} x {height}")
-    print(f"頭像尺寸: {avatar_width} x {avatar_height}")
+    print(f"格子尺寸: {avatar_width} x {avatar_height}")
+    print(f"默認裁剪邊距: {default_padding*100:.0f}%")
     print(f"總數: {cols} x {rows} = {cols * rows} 個頭像")
     print()
     
@@ -63,14 +65,26 @@ def split_avatars(input_path, output_dir, cols=6, rows=3):
         "俠客豆",      # 拿劍的俠客
     ]
     
+    # 為有較大透明邊距的頭像設置更大的裁剪比例
+    # 格式：索引 -> 裁剪比例（0=學者豆, 6=讀書豆, 等）
+    custom_padding = {
+        0: 0.12,   # 學者豆 - 圓形較小，需要更多裁剪
+        6: 0.12,   # 讀書豆 - 圓形較小，需要更多裁剪
+    }
+    
     count = 0
     for row in range(rows):
         for col in range(cols):
-            # 計算裁剪區域
-            left = col * avatar_width
-            top = row * avatar_height
-            right = left + avatar_width
-            bottom = top + avatar_height
+            # 獲取當前頭像的裁剪比例
+            padding_ratio = custom_padding.get(count, default_padding)
+            padding_x = int(avatar_width * padding_ratio)
+            padding_y = int(avatar_height * padding_ratio)
+            
+            # 計算裁剪區域（加入 padding 去除透明邊距）
+            left = col * avatar_width + padding_x
+            top = row * avatar_height + padding_y
+            right = (col + 1) * avatar_width - padding_x
+            bottom = (row + 1) * avatar_height - padding_y
             
             # 裁剪頭像
             avatar = img.crop((left, top, right, bottom))
@@ -78,6 +92,10 @@ def split_avatars(input_path, output_dir, cols=6, rows=3):
             # 生成文件名
             name = avatar_names[count] if count < len(avatar_names) else f"avatar_{count + 1}"
             output_path = os.path.join(output_dir, f"{name}.png")
+            
+            # 如果有自定義裁剪，顯示提示
+            if count in custom_padding:
+                print(f"  [自定義裁剪 {padding_ratio*100:.0f}%]", end="")
             
             # 保存頭像
             avatar.save(output_path, "PNG")

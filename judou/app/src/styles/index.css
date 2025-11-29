@@ -1,6 +1,7 @@
 @import './design-tokens.css';
 @import './edamame-ui.css';
 @import './edamame-character.css';
+@import './components.css';
 
 :root {
   font-family: var(--font-ui, 'Inter', -apple-system, BlinkMacSystemFont, sans-serif);

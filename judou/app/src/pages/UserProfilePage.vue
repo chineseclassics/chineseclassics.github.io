@@ -3,7 +3,9 @@ import { ref, onMounted, computed } from 'vue'
 import { useAuthStore } from '../stores/authStore'
 import { useUserStatsStore } from '../stores/userStatsStore'
 import { useAvatarStore } from '../stores/avatarStore'
+import { getRankTitle } from '../types/game'
 import AvatarSelector from '../components/avatar/AvatarSelector.vue'
+import BeanIcon from '../components/common/BeanIcon.vue'
 
 const authStore = useAuthStore()
 const userStatsStore = useUserStatsStore()
@@ -23,6 +25,9 @@ const level = computed(() => userStatsStore.level)
 const levelProgress = computed(() => userStatsStore.levelProgress)
 const beansToNextLevel = computed(() => userStatsStore.beansToNextLevel)
 
+// 等級稱號（如童生、秀才）
+const rankTitle = computed(() => getRankTitle(level.value))
+
 // 登出
 async function handleLogout() {
   await authStore.logout()
@@ -34,7 +39,7 @@ onMounted(async () => {
   if (authStore.isAuthenticated) {
     // 獲取用戶數據
     if (!profile.value) {
-      userStatsStore.fetchProfile()
+    userStatsStore.fetchProfile()
     }
     
     // 初始化頭像系統並檢查解鎖
@@ -57,7 +62,6 @@ onMounted(async () => {
       <!-- 頭像選擇器區域 -->
       <div class="avatar-section">
         <AvatarSelector ref="avatarSelectorRef" />
-        <div class="level-badge">Lv.{{ level }}</div>
       </div>
       
       <div class="user-info">
@@ -74,10 +78,8 @@ onMounted(async () => {
     <!-- 豆子和等級 -->
     <section class="stats-section">
       <div class="stat-card edamame-glass beans-card">
-        <div class="stat-icon bean-icon">
-          <span class="edamame"></span>
-          <span class="edamame"></span>
-          <span class="edamame"></span>
+        <div class="stat-icon">
+          <BeanIcon :size="48" />
         </div>
         <div class="stat-content">
           <p class="stat-label">我的豆子</p>
@@ -86,12 +88,18 @@ onMounted(async () => {
       </div>
 
       <div class="stat-card edamame-glass level-card">
-        <div class="stat-icon">⭐</div>
+        <div class="stat-icon rank-icon">
+          {{ rankTitle.icon }}
+        </div>
         <div class="stat-content">
           <p class="stat-label">當前等級</p>
-          <p class="stat-value">Lv.{{ level }}</p>
+          <p class="stat-value rank-value">
+            <span class="rank-title" :style="{ color: rankTitle.color }">{{ rankTitle.title }}</span>
+            <span class="rank-level">Lv.{{ level }}</span>
+          </p>
+          <p class="rank-description">{{ rankTitle.description }}</p>
           <div class="level-progress-bar">
-            <div class="level-progress-fill" :style="{ width: levelProgress + '%' }"></div>
+            <div class="level-progress-fill" :style="{ width: levelProgress + '%', background: rankTitle.color }"></div>
           </div>
           <p class="stat-detail">距離下一級還需 {{ beansToNextLevel }} 豆</p>
         </div>
@@ -202,18 +210,6 @@ onMounted(async () => {
   color: var(--color-primary-700);
 }
 
-.level-badge {
-  position: absolute;
-  bottom: -4px;
-  right: -4px;
-  background: linear-gradient(135deg, #f59e0b, #d97706);
-  color: white;
-  font-size: 0.75rem;
-  font-weight: bold;
-  padding: 0.25rem 0.5rem;
-  border-radius: 1rem;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-}
 
 .user-info {
   flex: 1;
@@ -267,24 +263,39 @@ onMounted(async () => {
 
 .stat-icon {
   font-size: 2.5rem;
-}
-
-/* 綠色毛豆圖標 */
-.stat-icon.bean-icon {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 8px;
+  justify-content: center;
 }
 
-.edamame {
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: linear-gradient(145deg, #a8d45a 0%, #7cb342 50%, #558b2f 100%);
-  box-shadow: 
-    0 2px 4px rgba(85, 139, 47, 0.4),
-    inset 0 1px 2px rgba(255, 255, 255, 0.4);
+/* 等級稱號圖標 */
+.rank-icon {
+  font-size: 2rem;
+}
+
+/* 等級稱號顯示 */
+.rank-value {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.rank-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.rank-level {
+  font-size: 1rem;
+  color: var(--color-neutral-500);
+  font-weight: 500;
+}
+
+.rank-description {
+  margin: 0.25rem 0 0.5rem;
+  font-size: 0.75rem;
+  color: var(--color-neutral-400);
+  font-style: italic;
 }
 
 .stat-content {

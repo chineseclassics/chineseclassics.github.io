@@ -341,37 +341,75 @@ export function getDefaultTeamName(color: TeamColor): string {
 }
 
 // =====================================================
-// 等級稱號系統
+// 等級稱號系統（科舉制度）
 // =====================================================
 
 export interface RankTitle {
-  minLevel: number
-  maxLevel: number
+  level: number
   title: string
+  description: string
+  icon: string
   color: string
 }
 
+/**
+ * 科舉等級稱號表
+ * 每個等級一個獨特稱號，從蒙童到大學士
+ */
 export const RANK_TITLES: RankTitle[] = [
-  { minLevel: 1, maxLevel: 2, title: '童生', color: '#78716c' },
-  { minLevel: 3, maxLevel: 5, title: '秀才', color: '#22c55e' },
-  { minLevel: 6, maxLevel: 9, title: '舉人', color: '#3b82f6' },
-  { minLevel: 10, maxLevel: 14, title: '進士', color: '#8b5cf6' },
-  { minLevel: 15, maxLevel: 19, title: '探花', color: '#f59e0b' },
-  { minLevel: 20, maxLevel: 24, title: '榜眼', color: '#ef4444' },
-  { minLevel: 25, maxLevel: 999, title: '狀元', color: '#dc2626' },
+  // 啟蒙階段（灰色系）
+  { level: 1,  title: '蒙童',     description: '剛開始啟蒙識字',       icon: '📒', color: '#78716c' },
+  { level: 2,  title: '童生',     description: '準備參加科考',         icon: '📚', color: '#78716c' },
+  
+  // 秀才階段（綠色系）
+  { level: 3,  title: '生員',     description: '通過縣試',             icon: '📖', color: '#22c55e' },
+  { level: 4,  title: '秀才',     description: '通過院試',             icon: '🎓', color: '#22c55e' },
+  { level: 5,  title: '廩生',     description: '優秀秀才，享廩膳',     icon: '📜', color: '#16a34a' },
+  
+  // 舉人階段（藍色系）
+  { level: 6,  title: '貢生',     description: '被選送國子監',         icon: '🏛️', color: '#3b82f6' },
+  { level: 7,  title: '監生',     description: '國子監學生',           icon: '🎋', color: '#3b82f6' },
+  { level: 8,  title: '舉人',     description: '鄉試及第',             icon: '🏮', color: '#2563eb' },
+  { level: 9,  title: '解元',     description: '鄉試第一名',           icon: '🎖️', color: '#1d4ed8' },
+  
+  // 進士階段（紫色系）
+  { level: 10, title: '貢士',     description: '會試及第',             icon: '📯', color: '#8b5cf6' },
+  { level: 11, title: '會元',     description: '會試第一名',           icon: '🏆', color: '#8b5cf6' },
+  { level: 12, title: '進士',     description: '殿試及第',             icon: '👨‍🎓', color: '#7c3aed' },
+  { level: 13, title: '二甲進士', description: '殿試前列',             icon: '🥈', color: '#7c3aed' },
+  { level: 14, title: '一甲進士', description: '殿試頂尖',             icon: '🥇', color: '#6d28d9' },
+  
+  // 三鼎甲階段（金色系）
+  { level: 15, title: '探花',     description: '殿試第三名',           icon: '🌸', color: '#f59e0b' },
+  { level: 16, title: '榜眼',     description: '殿試第二名',           icon: '👁️', color: '#d97706' },
+  { level: 17, title: '狀元',     description: '殿試第一名',           icon: '👑', color: '#b45309' },
+  
+  // 翰林階段（紅金色系）
+  { level: 18, title: '翰林',     description: '入翰林院',             icon: '🖋️', color: '#dc2626' },
+  { level: 19, title: '學士',     description: '翰林學士',             icon: '📿', color: '#b91c1c' },
+  { level: 20, title: '大學士',   description: '內閣大學士，位極人臣', icon: '🎭', color: '#991b1b' },
 ]
 
 /**
  * 根據等級獲取稱號
  */
 export function getRankTitle(level: number): RankTitle {
-  for (const rank of RANK_TITLES) {
-    if (level >= rank.minLevel && level <= rank.maxLevel) {
-      return rank
-    }
+  // 等級超過最高定義時，返回最高稱號
+  if (level >= RANK_TITLES.length) {
+    return RANK_TITLES[RANK_TITLES.length - 1]!
   }
-  // 默認返回童生（第一個等級）
-  return RANK_TITLES[0]!
+  // 等級從1開始，數組從0開始
+  return RANK_TITLES[Math.max(0, level - 1)]!
+}
+
+/**
+ * 獲取下一個等級的稱號（用於顯示升級目標）
+ */
+export function getNextRankTitle(level: number): RankTitle | null {
+  if (level >= RANK_TITLES.length) {
+    return null // 已達最高等級
+  }
+  return RANK_TITLES[level] || null
 }
 
 /**

@@ -88,30 +88,44 @@ function handleClick() {
 </script>
 
 <style scoped>
+/* =====================================================
+   句豆設計系統 - 頭像卡片
+   ===================================================== */
 .avatar-item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.375rem;
-  padding: 0.5rem;
-  border-radius: 0.75rem;
+  gap: 0.5rem;
+  padding: 0.625rem;
+  border-radius: 1rem;
   cursor: pointer;
-  transition: all 0.2s ease;
-  background: var(--color-surface-100);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(139, 178, 79, 0.1);
 }
 
 .avatar-item.is-unlocked:hover {
-  background: var(--color-surface-200);
-  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.9);
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(139, 178, 79, 0.2);
+  border-color: rgba(139, 178, 79, 0.3);
 }
 
 .avatar-item.is-locked {
   cursor: not-allowed;
+  opacity: 0.75;
+}
+
+.avatar-item.is-locked:hover {
+  transform: none;
 }
 
 .avatar-item.is-current {
-  background: var(--color-primary-100);
-  border: 2px solid var(--color-primary-400);
+  background: linear-gradient(135deg, #eff6e5, #deedc4);
+  border: 2px solid #8bb24f;
+  box-shadow: 
+    0 4px 12px rgba(139, 178, 79, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
 }
 
 /* 頭像圖片區域 */
@@ -121,18 +135,21 @@ function handleClick() {
   height: 64px;
   border-radius: 50%;
   overflow: hidden;
-  background: var(--color-surface-50);
+  background: linear-gradient(135deg, #f8faf5, #eff6e5);
+  box-shadow: 
+    0 2px 8px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
 }
 
 .avatar-image {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: filter 0.2s ease;
+  transition: all 0.3s ease;
 }
 
 .avatar-image.locked-image {
-  filter: grayscale(100%) brightness(0.7);
+  filter: grayscale(100%) brightness(0.65) contrast(0.9);
 }
 
 /* 鎖定遮罩 */
@@ -142,64 +159,84 @@ function handleClick() {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.4);
+  background: rgba(68, 64, 60, 0.5);
+  backdrop-filter: blur(1px);
 }
 
 .lock-icon {
-  font-size: 1.25rem;
+  font-size: 1.1rem;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
 }
 
 /* 當前使用標記 */
 .current-badge {
   position: absolute;
-  bottom: 0;
-  right: 0;
-  width: 20px;
-  height: 20px;
+  bottom: -2px;
+  right: -2px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
-  background: var(--color-primary-500);
+  background: linear-gradient(135deg, #8bb24f, #6f9638);
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 2px solid var(--color-surface-50);
+  border: 2px solid white;
+  box-shadow: 0 2px 6px rgba(111, 150, 56, 0.4);
 }
 
 .current-icon {
   color: white;
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   font-weight: bold;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
 }
 
 /* 頭像名稱 */
 .avatar-name {
   font-size: 0.75rem;
-  font-weight: 500;
-  color: var(--color-text-primary);
+  font-weight: 600;
+  color: #44403c;
   text-align: center;
-  line-height: 1.2;
-}
-
-.is-locked .avatar-name {
-  color: var(--color-text-muted);
-}
-
-/* 解鎖提示 */
-.unlock-hint {
-  font-size: 0.625rem;
-  color: var(--color-text-muted);
-  text-align: center;
-  line-height: 1.2;
+  line-height: 1.3;
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+.is-locked .avatar-name {
+  color: #a8a29e;
+}
+
+.is-current .avatar-name {
+  color: #587a2b;
+}
+
+/* 解鎖提示 */
+.unlock-hint {
+  font-size: 0.625rem;
+  color: #a8a29e;
+  text-align: center;
+  line-height: 1.3;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 0.125rem 0.375rem;
+  background: rgba(168, 162, 158, 0.1);
+  border-radius: 0.25rem;
+}
+
 /* 響應式 */
 @media (max-width: 640px) {
+  .avatar-item {
+    padding: 0.5rem;
+    gap: 0.375rem;
+  }
+
   .avatar-image-wrapper {
-    width: 56px;
-    height: 56px;
+    width: 52px;
+    height: 52px;
   }
 
   .avatar-name {
@@ -207,6 +244,15 @@ function handleClick() {
   }
 
   .unlock-hint {
+    font-size: 0.575rem;
+  }
+
+  .current-badge {
+    width: 18px;
+    height: 18px;
+  }
+
+  .current-icon {
     font-size: 0.6rem;
   }
 }

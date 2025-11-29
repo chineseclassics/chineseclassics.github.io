@@ -224,15 +224,15 @@ const statsCards = computed(() => {
         </div>
         
         <div class="limit-filter">
-          <label>
+        <label>
             顯示
-            <select v-model.number="selectedLimit">
-              <option v-for="option in historyStore.getLimitOptions()" :key="option" :value="option">
-                {{ option }}
-              </option>
-            </select>
+          <select v-model.number="selectedLimit">
+            <option v-for="option in historyStore.getLimitOptions()" :key="option" :value="option">
+              {{ option }}
+            </option>
+          </select>
             筆
-          </label>
+        </label>
         </div>
       </div>
     </section>
