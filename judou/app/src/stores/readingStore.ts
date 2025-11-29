@@ -405,6 +405,7 @@ export const useReadingStore = defineStore('reading', () => {
     // 獲取來源文章信息
     const sourceText = readingTexts.value.find(t => t.id === sourceTextId) || currentText.value
     
+    // 從閱讀文庫提取的練習片段一定是系統文章（只有管理員才能管理閱讀文庫）
     const { data, error: insertError } = await supabase
       .from('practice_texts')
       .insert({
@@ -418,8 +419,8 @@ export const useReadingStore = defineStore('reading', () => {
         source_text_id: sourceTextId,
         source_start_index: startIndex,
         source_end_index: endIndex,
-        is_system: false,
-        created_by: authStore.user.id,
+        is_system: true,
+        created_by: null,
       })
       .select()
       .single()
