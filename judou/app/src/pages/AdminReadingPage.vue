@@ -469,7 +469,15 @@ function convertPunctuationToBreaks(rawContent: string): string {
   const punctuationRegex = /[。，、；：！？,.;:!?]/g
   const removeRegex = /[「」『』""''（）()【】\[\]《》<>·—…～\-]/g
   
-  const lines = rawContent.split(/\n+/)
+  // 如果內容已經是內部格式（包含 ||），先按 || 分割處理每一段
+  let lines: string[]
+  if (rawContent.includes('||')) {
+    // 已經是內部格式，按 || 分割
+    lines = rawContent.split('||')
+  } else {
+    // 新內容，按換行符分割
+    lines = rawContent.split(/\n+/)
+  }
   
   const processedLines = lines
     .map(line => {
