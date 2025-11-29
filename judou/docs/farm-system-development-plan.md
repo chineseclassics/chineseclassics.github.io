@@ -43,23 +43,29 @@
 ### 1.1 豆田系統表
 
 ```sql
--- 用戶豆田表
+-- 用戶豆田表（支持地圖位置）
 CREATE TABLE user_farms (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   plot_number INTEGER NOT NULL, -- 田地編號（1, 2, 3...）
+  x INTEGER NOT NULL, -- X 座標（地圖位置）
+  y INTEGER NOT NULL, -- Y 座標（地圖位置）
+  width INTEGER NOT NULL DEFAULT 120, -- 寬度
+  height INTEGER NOT NULL DEFAULT 80, -- 高度
   planted_beans INTEGER NOT NULL DEFAULT 0, -- 種植的句豆數量
   planted_at TIMESTAMP WITH TIME ZONE, -- 種植時間
   harvest_at TIMESTAMP WITH TIME ZONE, -- 收穫時間
   status TEXT NOT NULL CHECK (status IN ('idle', 'planting', 'ready')), -- 狀態：空閒/種植中/可收穫
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  UNIQUE(user_id, plot_number)
+  UNIQUE(user_id, plot_number),
+  UNIQUE(user_id, x, y)
 );
 
 -- 索引
 CREATE INDEX idx_user_farms_user_id ON user_farms(user_id);
 CREATE INDEX idx_user_farms_status ON user_farms(status, harvest_at);
+CREATE INDEX idx_user_farms_position ON user_farms(user_id, x, y);
 ```
 
 ### 1.2 成就系統表
@@ -103,20 +109,42 @@ CREATE INDEX idx_user_inventory_user_id ON user_inventory(user_id);
 ### 1.4 建設系統表
 
 ```sql
--- 用戶建設表
+-- 用戶建設表（支持位置和旋轉）
 CREATE TABLE user_buildings (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   building_type TEXT NOT NULL CHECK (building_type IN (
-    '豆田', '書房', '茶室', '詩社', '菊花', '竹子', '梅花', '小池塘', '大池塘'
+    '園田居', '書房', '茶室', '詩社', 
+    '桃樹', '李樹', '榆樹', '柳樹', '菊花', '竹子', '梅花',
+    '小池塘', '大池塘', '小徑', '籬笆'
   )),
-  level INTEGER NOT NULL DEFAULT 1, -- 等級（如豆田 1, 2, 3...）
+  x INTEGER NOT NULL, -- X 座標（地圖位置）
+  y INTEGER NOT NULL, -- Y 座標（地圖位置）
+  rotation INTEGER DEFAULT 0, -- 旋轉角度（0, 90, 180, 270）
   built_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  UNIQUE(user_id, building_type, level)
+  UNIQUE(user_id, building_type, x, y)
 );
 
 -- 索引
 CREATE INDEX idx_user_buildings_user_id ON user_buildings(user_id);
+CREATE INDEX idx_user_buildings_position ON user_buildings(user_id, x, y);
+
+-- 荒草區域表（可開荒的區域）
+CREATE TABLE wild_grass_areas (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  x INTEGER NOT NULL, -- X 座標
+  y INTEGER NOT NULL, -- Y 座標
+  width INTEGER NOT NULL DEFAULT 120, -- 寬度
+  height INTEGER NOT NULL DEFAULT 80, -- 高度
+  cleared_at TIMESTAMP WITH TIME ZONE, -- 開荒時間（null 表示未開荒）
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE(user_id, x, y)
+);
+
+-- 索引
+CREATE INDEX idx_wild_grass_user_id ON wild_grass_areas(user_id);
+CREATE INDEX idx_wild_grass_cleared ON wild_grass_areas(user_id, cleared_at);
 ```
 
 ### 1.5 用戶資料擴展
@@ -363,33 +391,118 @@ const SELLING_PRICES = {
 
 ### 6.1 建設項目
 
-| 建設類型 | 名稱 | 成本 | 功能 |
-|---------|------|------|------|
-| 豆田 | 擴展豆田 | 第 2 塊：100 錢<br>第 3 塊：300 錢<br>第 4 塊：600 錢<br>... | 增加種植容量 |
-| 房間 | 書房 | 200 錢 | 增加收穫數量 +10% |
-| 房間 | 茶室 | 300 錢 | 減少種植時間 -10% |
-| 房間 | 詩社 | 500 錢 | 增加加工效率 +10% |
-| 植物 | 菊花 | 100 錢 | 裝飾（《歸園田居》主題） |
-| 植物 | 竹子 | 150 錢 | 裝飾 |
-| 植物 | 梅花 | 200 錢 | 裝飾 |
-| 池塘 | 小池塘 | 400 錢 | 裝飾 |
-| 池塘 | 大池塘 | 800 錢 | 裝飾 |
+#### 6.1.1 豆田擴展（開荒系統）
+
+| 類型 | 名稱 | 成本 | 功能 |
+|------|------|------|------|
+| 開荒 | 開荒南野際 | 第 1 塊：100 錢<br>第 2 塊：200 錢<br>第 3 塊：300 錢<br>... | 將荒草區域開荒成新豆田 |
+
+**開荒機制**：
+- 點擊荒草區域 → 顯示開荒界面
+- 確認開荒 → 消耗金錢 → 荒草區域變成新豆田
+- 新豆田可以立即種植
+
+#### 6.1.2 房屋建設
+
+| 類型 | 名稱 | 成本 | 功能 | 詩句來源 |
+|------|------|------|------|---------|
+| 主屋 | 園田居 | 500 錢 | 農莊主屋，標誌性建築 | 「園田居」 |
+| 房間 | 書房 | 200 錢 | 增加收穫數量 +10% | 「時還讀我書」 |
+| 房間 | 茶室 | 300 錢 | 減少種植時間 -10% | 「有茶共品之」 |
+| 房間 | 詩社 | 500 錢 | 增加加工效率 +10% | 「過門更相呼」 |
+
+**房屋特性**：
+- 可以旋轉（4 個方向）
+- 可以移動位置
+- 佔用一定空間（需要預留位置）
+
+#### 6.1.3 植物裝飾
+
+| 類型 | 名稱 | 成本 | 功能 | 詩句來源 |
+|------|------|------|------|---------|
+| 桃樹 | 桃李羅堂前 | 150 錢 | 裝飾，每週收穫「桃花」 | 「桃李羅堂前」 |
+| 李樹 | 桃李羅堂前 | 150 錢 | 裝飾，每週收穫「李子」 | 「桃李羅堂前」 |
+| 榆樹 | 榆柳蔭後簷 | 200 錢 | 裝飾，減少種植時間 5% | 「榆柳蔭後簷」 |
+| 柳樹 | 榆柳蔭後簷 | 200 錢 | 裝飾，減少種植時間 5% | 「榆柳蔭後簷」 |
+| 菊花 | 採菊東籬下 | 100 錢 | 裝飾，可採集「菊花」 | 「採菊東籬下」 |
+| 竹子 | - | 150 錢 | 裝飾 | - |
+| 梅花 | - | 200 錢 | 裝飾 | - |
+
+**植物特性**：
+- 根據季節有不同的視覺效果
+- 某些植物有功能性（如減少種植時間）
+- 可以收穫物品（如桃花、李子、菊花）
+
+#### 6.1.4 裝飾項目
+
+| 類型 | 名稱 | 成本 | 功能 |
+|------|------|------|------|
+| 池塘 | 小池塘 | 400 錢 | 裝飾，增加農莊美感 |
+| 池塘 | 大池塘 | 800 錢 | 裝飾，增加農莊美感 |
+| 小徑 | 道狹草木長 | 100 錢 | 裝飾，連接不同區域 | 「道狹草木長」 |
+| 籬笆 | 採菊東籬下 | 150 錢 | 裝飾，劃分區域 | 「採菊東籬下」 |
 
 ### 6.2 建設流程
 
+#### 6.2.1 開荒流程
+
 ```typescript
-// 建設項目
+// 開荒荒草區域
+async function clearWildGrass(
+  userId: string,
+  areaId: string
+): Promise<boolean> {
+  // 1. 檢查開荒成本
+  // 2. 檢查用戶是否有足夠的金錢
+  // 3. 檢查區域是否可開荒
+  // 4. 扣除金錢，創建新豆田
+  // 5. 更新地圖數據
+  // 6. 返回成功/失敗
+}
+```
+
+#### 6.2.2 建設項目流程
+
+```typescript
+// 建設項目（支持位置和旋轉）
 async function buildItem(
   userId: string,
   buildingType: string,
-  level?: number
+  x: number,
+  y: number,
+  rotation?: number
 ): Promise<boolean> {
   // 1. 檢查建設成本
   // 2. 檢查用戶是否有足夠的金錢
-  // 3. 檢查是否已建設（避免重複）
-  // 4. 扣除金錢，創建建設記錄
+  // 3. 檢查位置是否可用（不與其他項目重疊）
+  // 4. 扣除金錢，創建建設記錄（包含位置和旋轉）
   // 5. 如果是有功能的建設，更新相關配置
-  // 6. 返回成功/失敗
+  // 6. 更新地圖數據
+  // 7. 返回成功/失敗
+}
+
+// 移動建設項目
+async function moveBuilding(
+  userId: string,
+  buildingId: string,
+  newX: number,
+  newY: number
+): Promise<boolean> {
+  // 1. 檢查新位置是否可用
+  // 2. 更新建設記錄的位置
+  // 3. 更新地圖數據
+  // 4. 返回成功/失敗
+}
+
+// 移除建設項目
+async function removeBuilding(
+  userId: string,
+  buildingId: string
+): Promise<boolean> {
+  // 1. 檢查是否可以移除（某些項目可能不可移除）
+  // 2. 刪除建設記錄
+  // 3. 更新地圖數據
+  // 4. 返回成功/失敗
 }
 ```
 
@@ -420,19 +533,81 @@ async function buildItem(
 - **未解鎖**：灰色背景，顯示進度條（如「7/10」）
 - **已解鎖**：彩色背景，顯示「已解鎖」標記，顯示效率提升說明
 
-### 7.2 豆田頁面視覺化
+### 7.2 豆田頁面視覺化（「動物森友會」風格）
 
-**豆田頁面組件**：
-- 豆田網格（顯示所有已解鎖的田地）
-- 田地卡片：
-  - 田地編號
-  - 種植狀態（空閒/種植中/可收穫）
-  - 種植進度（種植中時顯示倒計時）
-  - 操作按鈕（種植/收穫）
+**核心設計理念**：
+- **可拖動的地圖視圖**：類似地圖系統，可以拖動和縮放查看整個農莊
+- **2D 田園風格**：有山有水，南山在背景，山下是豆田
+- **高度自定義**：用戶可以自由規劃佈局，創造不同的組合效果
+- **社交訪問**：可以訪問其他用戶的農莊，欣賞不同的設計
 
-**種植動畫**：
-- 種下句豆 → 豆苗生長動畫
-- 根據收穫時間，顯示不同的生長階段
+**視覺層級設計**：
+
+1. **背景層**（最遠）：
+   - 南山（「種豆南山下」）
+   - 天空（根據時間/季節變化）
+   - 雲朵（動態效果）
+
+2. **中景層**：
+   - 豆田區域（可種植的田地）
+   - 荒草區域（可開荒的區域）
+   - 池塘（建設項目）
+
+3. **前景層**（最近）：
+   - 建設項目（房屋、植物）
+   - 互動元素（按鈕、提示）
+
+**地圖系統設計**：
+
+- **拖動功能**：可以拖動查看整個農莊
+- **縮放功能**：可以縮放查看細節或全貌
+- **網格系統**：隱藏網格，幫助對齊物品
+- **視圖範圍**：初始視圖顯示核心區域，可以拖動查看邊緣
+
+**豆田區域設計**：
+
+- **已開荒的豆田**：顯示為整齊的田地，可以種植
+- **未開荒的荒草**：顯示為雜草區域，需要「開荒南野際」解鎖
+- **開荒機制**：點擊荒草區域 → 消耗金錢 → 開荒成新豆田
+- **豆田狀態**：
+  - 空閒：顯示為空田地
+  - 種植中：顯示豆苗生長動畫
+  - 可收穫：顯示成熟的豆子，有收穫提示
+
+**建設系統設計**：
+
+- **建設項目類型**：
+  - 房屋：園田居（主屋）、書房、茶室、詩社
+  - 植物：桃樹、李樹、榆樹、柳樹、菊花、竹子、梅花
+  - 裝飾：池塘、小徑、籬笆
+
+- **放置機制**：
+  - 點擊建設按鈕 → 進入「建設模式」
+  - 選擇建設項目 → 在地圖上點擊位置放置
+  - 可以旋轉（某些項目）
+  - 可以移動（已建設的項目）
+  - 可以移除（已建設的項目）
+
+- **佈局規劃**：
+  - 用戶可以自由規劃佈局
+  - 不同組合產生不同的視覺效果
+  - 鼓勵創造性和個性化
+
+**視覺元素設計**：
+
+- **南山**：背景中的山脈，使用漸變和陰影營造深度
+- **豆田**：整齊的田地，使用網格佈局
+- **荒草**：未開荒區域，使用雜草圖案
+- **房屋**：簡約的 2D 風格，符合田園主題
+- **植物**：根據季節有不同的視覺效果
+
+**互動設計**：
+
+- **點擊豆田**：顯示種植/收穫界面
+- **點擊荒草**：顯示開荒界面
+- **點擊建設項目**：顯示建設詳情/移動/移除選項
+- **拖動地圖**：可以查看整個農莊
+- **縮放**：可以查看細節或全貌
 
 ### 7.3 加工頁面視覺化
 
@@ -618,7 +793,233 @@ function animatePlanting() {
 
 ### 8.3 具體實現方案
 
-#### 8.3.1 農莊視圖（SVG + CSS）
+#### 8.3.1 豆田地圖系統（可拖動地圖視圖）
+
+**核心功能**：
+- 可拖動的地圖視圖（pan）
+- 可縮放（zoom）
+- 網格系統（對齊物品）
+- 多層級渲染（背景、中景、前景）
+
+**技術實現**：
+
+```vue
+<template>
+  <div class="farm-map-container" ref="mapContainer">
+    <!-- 地圖視圖（可拖動、可縮放） -->
+    <div 
+      class="farm-map-viewport"
+      :style="viewportStyle"
+      @mousedown="startDrag"
+      @mousemove="onDrag"
+      @mouseup="endDrag"
+      @wheel="onWheel"
+    >
+      <!-- SVG 地圖 -->
+      <svg 
+        class="farm-map"
+        :viewBox="viewBox"
+        :style="mapStyle"
+      >
+        <!-- 背景層：南山、天空 -->
+        <g class="background-layer">
+          <!-- 南山 -->
+          <path 
+            d="M0,400 Q200,300 400,350 T800,400 L800,600 L0,600 Z" 
+            class="mountain"
+          />
+          <!-- 天空漸變 -->
+          <defs>
+            <linearGradient id="skyGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" :style="`stop-color:${skyColorTop}`" />
+              <stop offset="100%" :style="`stop-color:${skyColorBottom}`" />
+            </linearGradient>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#skyGradient)" />
+        </g>
+        
+        <!-- 中景層：豆田、荒草、池塘 -->
+        <g class="middle-layer">
+          <!-- 已開荒的豆田 -->
+          <g class="farm-plots">
+            <FarmPlot
+              v-for="plot in farmPlots"
+              :key="plot.id"
+              :plot="plot"
+              :x="plot.x"
+              :y="plot.y"
+              @click="onPlotClick(plot)"
+            />
+          </g>
+          
+          <!-- 未開荒的荒草區域 -->
+          <g class="wild-grass-areas">
+            <WildGrassArea
+              v-for="area in wildGrassAreas"
+              :key="area.id"
+              :area="area"
+              :x="area.x"
+              :y="area.y"
+              @click="onWildGrassClick(area)"
+            />
+          </g>
+          
+          <!-- 池塘等建設項目 -->
+          <g class="water-features">
+            <WaterFeature
+              v-for="feature in waterFeatures"
+              :key="feature.id"
+              :feature="feature"
+              :x="feature.x"
+              :y="feature.y"
+            />
+          </g>
+        </g>
+        
+        <!-- 前景層：房屋、植物 -->
+        <g class="foreground-layer">
+          <Building
+            v-for="building in buildings"
+            :key="building.id"
+            :building="building"
+            :x="building.x"
+            :y="building.y"
+            :rotation="building.rotation"
+            @click="onBuildingClick(building)"
+          />
+          
+          <Plant
+            v-for="plant in plants"
+            :key="plant.id"
+            :plant="plant"
+            :x="plant.x"
+            :y="plant.y"
+            @click="onPlantClick(plant)"
+          />
+        </g>
+        
+        <!-- 網格（可選，建設模式時顯示） -->
+        <g v-if="isBuildMode" class="grid-overlay">
+          <GridPattern :cellSize="gridSize" />
+        </g>
+      </svg>
+    </div>
+    
+    <!-- 控制面板 -->
+    <div class="farm-controls">
+      <button @click="resetView">重置視圖</button>
+      <button @click="toggleGrid">切換網格</button>
+      <button @click="toggleBuildMode">建設模式</button>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, computed, onMounted } from 'vue'
+import { useMouse, useElementSize } from '@vueuse/core'
+
+// 地圖狀態
+const mapContainer = ref<HTMLElement>()
+const { width, height } = useElementSize(mapContainer)
+
+// 視圖狀態
+const panX = ref(0)
+const panY = ref(0)
+const zoom = ref(1)
+const isDragging = ref(false)
+const dragStart = ref({ x: 0, y: 0 })
+
+// 計算視圖
+const viewBox = computed(() => {
+  const baseWidth = 2000
+  const baseHeight = 1500
+  return `${-panX.value} ${-panY.value} ${baseWidth / zoom.value} ${baseHeight / zoom.value}`
+})
+
+const viewportStyle = computed(() => ({
+  transform: `scale(${zoom.value})`,
+  transformOrigin: '0 0'
+}))
+
+// 拖動功能
+function startDrag(e: MouseEvent) {
+  if (e.button !== 0) return // 只處理左鍵
+  isDragging.value = true
+  dragStart.value = { x: e.clientX - panX.value, y: e.clientY - panY.value }
+}
+
+function onDrag(e: MouseEvent) {
+  if (!isDragging.value) return
+  panX.value = e.clientX - dragStart.value.x
+  panY.value = e.clientY - dragStart.value.y
+}
+
+function endDrag() {
+  isDragging.value = false
+}
+
+// 縮放功能
+function onWheel(e: WheelEvent) {
+  e.preventDefault()
+  const delta = e.deltaY > 0 ? 0.9 : 1.1
+  zoom.value = Math.max(0.5, Math.min(2, zoom.value * delta))
+}
+
+// 重置視圖
+function resetView() {
+  panX.value = 0
+  panY.value = 0
+  zoom.value = 1
+}
+</script>
+
+<style>
+.farm-map-container {
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+  position: relative;
+  cursor: grab;
+}
+
+.farm-map-container:active {
+  cursor: grabbing;
+}
+
+.farm-map-viewport {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.farm-map {
+  width: 100%;
+  height: 100%;
+}
+
+/* 圖層樣式 */
+.background-layer {
+  opacity: 0.9;
+}
+
+.middle-layer {
+  opacity: 1;
+}
+
+.foreground-layer {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* 南山樣式 */
+.mountain {
+  fill: linear-gradient(to bottom, #6b8e6b, #4a6b4a);
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
+}
+</style>
+```
+
+#### 8.3.2 農莊視圖（舊版，保留作為參考）
 
 ```vue
 <template>
@@ -902,7 +1303,7 @@ lucide-vue-next（圖標）
 - FarmPlotCard.vue
 - 種植/收穫邏輯
 
-### Phase 4: 加工與售賣系統（1 週）
+### Phase 6: 加工與售賣系統（1 週）
 
 **目標**：完成加工和售賣的前端實現
 
@@ -919,33 +1320,35 @@ lucide-vue-next（圖標）
 - SellingPage.vue
 - 加工/售賣邏輯
 
-### Phase 5: 建設系統（1 週）
 
-**目標**：完成建設系統的前端實現
+### Phase 7: 社交訪問功能（1 週）
+
+**目標**：完成訪問其他用戶農莊的功能
 
 **任務**：
-- [ ] 創建建設頁面組件（BuildingPage.vue）
-- [ ] 創建農莊視圖組件（FarmView.vue）
-- [ ] 實現建設列表（顯示所有可建設項目）
-- [ ] 實現建設界面（選擇項目、確認建設）
-- [ ] 實現農莊視圖（2D 視圖，顯示已建設項目）
-- [ ] 實現建設效果（擴展豆田、功能加成）
-- [ ] 添加建設系統到路由
+- [ ] 創建訪問模式組件（VisitMode.vue）
+- [ ] 實現訪問界面（輸入用戶 ID 或從班級列表選擇）
+- [ ] 實現只讀模式（訪問時不能修改，只能查看）
+- [ ] 實現農莊信息顯示（顯示農莊名稱、建設統計）
+- [ ] 實現返回功能（返回自己的農莊）
+- [ ] 添加訪問功能到路由
 
 **交付物**：
-- BuildingPage.vue
-- FarmView.vue
-- 建設邏輯
+- VisitMode.vue
+- 訪問邏輯
+- 只讀模式邏輯
 
-### Phase 6: 整合與優化（1 週）
+### Phase 8: 整合與優化（1 週）
 
 **目標**：整合所有功能，優化用戶體驗
 
 **任務**：
 - [ ] 整合成就系統到練習/閱讀/對戰流程
 - [ ] 添加豆田入口到側邊欄
-- [ ] 實現通知系統（成就解鎖、收穫提醒）
+- [ ] 實現通知系統（成就解鎖、收穫提醒、開荒完成）
+- [ ] 優化地圖拖動和縮放性能
 - [ ] 優化動畫和過渡效果
+- [ ] 實現季節/時間視覺效果
 - [ ] 添加幫助文檔
 - [ ] 測試所有功能
 - [ ] 修復 bug 和優化性能
@@ -954,6 +1357,8 @@ lucide-vue-next（圖標）
 - 完整整合的豆田系統
 - 用戶文檔
 - 測試報告
+
+**總開發時間**：約 10 週（Phase 1-8）
 
 ---
 

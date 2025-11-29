@@ -522,6 +522,16 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.stat-icon img {
+  display: block;
+  margin: 0;
+  padding: 0;
 }
 
 .stat-content {
