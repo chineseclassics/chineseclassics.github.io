@@ -201,18 +201,33 @@ router.afterEach((to) => {
 
 // 全局路由錯誤處理 - 處理懶加載 chunk 失敗
 router.onError((error, to) => {
+  console.error('[Router] 路由錯誤:', error, '目標:', to.fullPath)
+  
   // 檢查是否是 chunk 加載失敗（通常是 "Loading chunk xxx failed"）
   if (
     error.message.includes('Loading chunk') ||
     error.message.includes('Failed to fetch') ||
     error.message.includes('Loading CSS chunk') ||
-    error.name === 'ChunkLoadError'
+    error.message.includes('network') ||
+    error.message.includes('timeout') ||
+    error.name === 'ChunkLoadError' ||
+    error.name === 'TypeError'
   ) {
-    console.error('[Router] Chunk 加載失敗，正在重新加載頁面...', error.message)
+    console.error('[Router] Chunk 加載失敗，正在清除緩存並重新加載頁面...', error.message)
+    
+    // 清除版本標記，觸發緩存清除
+    localStorage.removeItem('judou_app_version')
+    
     // 保存目標路徑，重新加載後恢復
     sessionStorage.setItem('redirect', to.fullPath)
+    
+    // 強制重新加載
     window.location.reload()
+    return
   }
+  
+  // 其他路由錯誤：記錄但不阻止
+  console.warn('[Router] 路由錯誤（非 chunk 加載問題）:', error.message)
 })
 
 export default router

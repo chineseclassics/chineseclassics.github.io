@@ -79,10 +79,20 @@ const visibleSuperAdminNav = computed(() => {
 
 const route = useRoute()
 
+// 路由就緒狀態
+const isRouterReady = ref(false)
+
+// 監聽路由就緒狀態
+router.isReady().then(() => {
+  isRouterReady.value = true
+  console.log('[Sidebar] 路由已就緒')
+})
+
 const isActive = (item: NavItem) => {
   if (!item.to) return false
   return route.name === item.to.name
 }
+
 
 // 用戶顯示名稱
 const displayName = computed(() => {
@@ -259,8 +269,9 @@ const logoUrl = `${import.meta.env.BASE_URL}images/judou-logo.jpg`
           <router-link
             v-if="item.to && !item.disabled"
             class="edamame-sidebar-item"
-            :class="{ active: isActive(item) }"
+            :class="{ active: isActive(item), 'router-ready': isRouterReady }"
             :to="item.to"
+            @click="(e) => { if (!isRouterReady) { e.preventDefault(); router.isReady().then(() => router.push(item.to!)) } }"
           >
             <span v-if="item.icon" class="item-icon">
               <BeanIcon v-if="item.iconType === 'bean'" :size="18" />
@@ -294,8 +305,9 @@ const logoUrl = `${import.meta.env.BASE_URL}images/judou-logo.jpg`
           <router-link
             v-if="item.to && !item.disabled"
             class="edamame-sidebar-item"
-            :class="{ active: isActive(item) }"
+            :class="{ active: isActive(item), 'router-ready': isRouterReady }"
             :to="item.to"
+            @click="(e) => { if (!isRouterReady) { e.preventDefault(); router.isReady().then(() => router.push(item.to!)) } }"
           >
             <span v-if="item.icon" class="item-icon">
               <component v-if="item.iconType === 'lucide'" :is="item.icon" :size="16" :stroke-width="1.5" class="lucide-icon" />
@@ -322,8 +334,9 @@ const logoUrl = `${import.meta.env.BASE_URL}images/judou-logo.jpg`
           <router-link
             v-if="item.to && !item.disabled"
             class="edamame-sidebar-item super-admin-item"
-            :class="{ active: isActive(item) }"
+            :class="{ active: isActive(item), 'router-ready': isRouterReady }"
             :to="item.to"
+            @click="(e) => { if (!isRouterReady) { e.preventDefault(); router.isReady().then(() => router.push(item.to!)) } }"
           >
             <span v-if="item.icon" class="item-icon">
               <component v-if="item.iconType === 'lucide'" :is="item.icon" :size="16" :stroke-width="1.5" class="lucide-icon" />
