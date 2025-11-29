@@ -156,12 +156,14 @@ const pureContent = computed(() => {
   return text.content.replace(/\|/g, '')
 })
 
-// 文章段落（按 || 分段）
+// 文章段落（按 \n\n 或 || 分段，向後兼容）
 const paragraphs = computed(() => {
   // 優先使用 currentText（包含完整數據），否則使用 selectedText
   const text = readingStore.currentText || selectedText.value
   if (!text) return []
-  return text.content.split('||').map(p => p.replace(/\|/g, ''))
+  // 支持新的 \n\n 格式和舊的 || 格式
+  const separator = text.content.includes('||') ? '||' : /\n\n+/
+  return text.content.split(separator).map(p => p.replace(/\|/g, ''))
 })
 
 // 當前文章的註釋
@@ -212,7 +214,17 @@ function openEditForm() {
   textForm.author = text.author || ''
   textForm.source = text.source || ''
   textForm.summary = text.summary || ''
-  textForm.content = text.content
+  
+  // 處理內容：確保 \n\n 被正確顯示為分段
+  // 如果內容包含 ||（舊格式），先轉換為 \n\n
+  let content = text.content
+  if (content.includes('||')) {
+    content = content.replace(/\|\|/g, '\n\n')
+  }
+  // 確保 \n\n 是實際的換行符（不是字面量字符串）
+  // textarea 會自動將 \n\n 顯示為兩個換行（分段）
+  textForm.content = content
+  
   // 獲取現有文集 IDs
   textForm.reading_category_ids = text.reading_categories?.map(c => c.id) || []
   feedback.value = null
@@ -469,15 +481,8 @@ function convertPunctuationToBreaks(rawContent: string): string {
   const punctuationRegex = /[。，、；：！？,.;:!?]/g
   const removeRegex = /[「」『』""''（）()【】\[\]《》<>·—…～\-]/g
   
-  // 如果內容已經是內部格式（包含 ||），先按 || 分割處理每一段
-  let lines: string[]
-  if (rawContent.includes('||')) {
-    // 已經是內部格式，按 || 分割
-    lines = rawContent.split('||')
-  } else {
-    // 新內容，按換行符分割
-    lines = rawContent.split(/\n+/)
-  }
+  // 按換行符分割段落（支持 \n\n 或單個 \n）
+  const lines = rawContent.split(/\n+/)
   
   const processedLines = lines
     .map(line => {
@@ -493,7 +498,8 @@ function convertPunctuationToBreaks(rawContent: string): string {
     })
     .filter(line => line.length > 0)
   
-  return processedLines.join('||')
+  // 使用 \n\n 作為段落分隔符
+  return processedLines.join('\n\n')
 }
 
 // 格式化日期

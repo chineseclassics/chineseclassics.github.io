@@ -40,14 +40,15 @@ const activeTooltip = ref<{
 const isPlaying = ref(false)
 
 // 解析文章內容
-// 將原文按 || 分段，並記錄每個字符的全局位置和斷句信息
+// 將原文按 \n\n 或 || 分段，並記錄每個字符的全局位置和斷句信息（向後兼容）
 const parsedContent = computed(() => {
   if (!readingStore.currentText) return { paragraphs: [], allChars: [], allBreaks: new Set<number>() }
   
   const content = readingStore.currentText.content
   
-  // 先按段落分隔符 || 分割
-  const rawParagraphs = content.split('||')
+  // 支持新的 \n\n 格式和舊的 || 格式
+  const separator = content.includes('||') ? '||' : /\n\n+/
+  const rawParagraphs = content.split(separator)
   
   const paragraphs: { chars: string[]; breaks: Set<number>; startIdx: number; endIdx: number }[] = []
   const allChars: string[] = []
@@ -89,7 +90,7 @@ const parsedContent = computed(() => {
   return { paragraphs, allChars, allBreaks }
 })
 
-// 文章段落（基於 || 分隔符）
+// 文章段落（基於 \n\n 分隔符）
 const paragraphs = computed(() => {
   return parsedContent.value.paragraphs
 })
