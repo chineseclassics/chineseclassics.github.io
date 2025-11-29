@@ -25,9 +25,10 @@ const LEVEL_THRESHOLDS = [
 ]
 
 // 速度獎勵配置
-// 基準時間 = 字數 × 3 秒
+// 基準時間 = 字數 × 1.5 秒
 // 速度獎勵 = (基準時間 - 用時) ÷ 10（只有全對時才計算）
 const SPEED_BONUS_DIVISOR = 10  // 每節省 10 秒 = 1 豆速度獎勵
+const BASE_TIME_PER_CHAR = 1.5  // 每個字 1.5 秒基準時間
 
 // 每日獎勵
 const DAILY_LOGIN_REWARD = 5
@@ -122,7 +123,7 @@ export const useUserStatsStore = defineStore('userStats', () => {
    * 公式：得分 = 基礎分 + 速度獎勵
    * - 基礎分 = 正確斷句數（對幾個得幾豆，非常直觀）
    * - 速度獎勵 = 只有全對時才計算：(基準時間 - 用時) ÷ 10
-   * - 基準時間 = 字數 × 3 秒
+   * - 基準時間 = 字數 × 1.5 秒
    */
   function calculateScore(params: {
     correctCount: number     // 正確斷句數
@@ -141,8 +142,8 @@ export const useUserStatsStore = defineStore('userStats', () => {
     // 速度獎勵（只有全對時才計算）
     let speedBonus = 0
     if (isAllCorrect && correctCount > 0) {
-      // 基準時間 = 字數 × 3 秒
-      const baseTime = charCount * 3
+      // 基準時間 = 字數 × 1.5 秒
+      const baseTime = charCount * BASE_TIME_PER_CHAR
       // 節省的秒數
       const savedSeconds = Math.max(0, baseTime - elapsedSeconds)
       // 速度獎勵 = 節省秒數 ÷ 10
@@ -159,7 +160,7 @@ export const useUserStatsStore = defineStore('userStats', () => {
         speedBonus,
         isAllCorrect,
         elapsedSeconds,
-        baseTime: charCount * 3
+        baseTime: charCount * BASE_TIME_PER_CHAR
       }
     }
   }
@@ -708,5 +709,5 @@ export interface ScoreBreakdown {
   speedBonus: number     // 速度獎勵（全對時才有）
   isAllCorrect: boolean  // 是否全對
   elapsedSeconds: number // 實際用時
-  baseTime: number       // 基準時間（字數 × 3）
+  baseTime: number       // 基準時間（字數 × 1.5）
 }
