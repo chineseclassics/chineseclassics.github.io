@@ -14,7 +14,7 @@ import { useAuthStore } from '../../stores/authStore'
 import { useGameStore } from '../../stores/gameStore'
 import { useUserStatsStore } from '../../stores/userStatsStore'
 import { supabase } from '../../lib/supabaseClient'
-import { ENTRY_FEE_OPTIONS, SAFETY_LIMITS, getRankTitle, type GameRoom } from '../../types/game'
+import { ENTRY_FEE_OPTIONS, getRankTitle, type GameRoom } from '../../types/game'
 import BeanIcon from '../../components/common/BeanIcon.vue'
 
 const router = useRouter()
@@ -507,17 +507,6 @@ onUnmounted(() => {
                 </div>
               </div>
 
-              <div class="safety-info">
-                <div class="safety-icon">🛡️</div>
-                <div class="safety-text">
-                  <p>安全機制</p>
-                  <ul>
-                    <li>賬戶保留餘額：{{ SAFETY_LIMITS.MIN_BALANCE }} 豆</li>
-                    <li>房間取消自動退款</li>
-                  </ul>
-                </div>
-              </div>
-
               <button class="btn-primary btn-large" @click="goToCreate">
                 <span class="btn-icon">➕</span>
                 創建鬥豆場
@@ -585,7 +574,29 @@ onUnmounted(() => {
 .stat-icon {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   font-size: 1.5rem;
+  width: 1.5rem;
+  height: 1.5rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.stat-icon-img {
+  width: 1.5rem;
+  height: 1.5rem;
+  margin: 0;
+  padding: 0;
+  display: block;
+  flex-shrink: 0;
+}
+
+.stat-icon-img img {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  display: block;
 }
 
 .stat-value {
@@ -985,37 +996,6 @@ onUnmounted(() => {
   background: var(--color-neutral-100);
   border-radius: 20px;
   font-size: 0.875rem;
-}
-
-.safety-info {
-  display: flex;
-  gap: 1rem;
-  padding: 1rem;
-  background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(34, 197, 94, 0.05));
-  border-radius: 12px;
-  text-align: left;
-  margin-bottom: 1.5rem;
-}
-
-.safety-icon {
-  font-size: 2rem;
-}
-
-.safety-text p {
-  margin: 0 0 0.5rem 0;
-  font-weight: 600;
-  color: var(--color-success);
-}
-
-.safety-text ul {
-  margin: 0;
-  padding-left: 1.25rem;
-  font-size: 0.875rem;
-  color: var(--color-neutral-600);
-}
-
-.safety-text li {
-  margin-bottom: 0.25rem;
 }
 
 /* 空狀態和載入 */

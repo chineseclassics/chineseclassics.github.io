@@ -511,6 +511,24 @@ defineExpose({
   max-height: 280px;
 }
 
+.category-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.category-list::-webkit-scrollbar-track {
+  background: rgba(139, 178, 79, 0.05);
+  border-radius: 3px;
+}
+
+.category-list::-webkit-scrollbar-thumb {
+  background: rgba(139, 178, 79, 0.3);
+  border-radius: 3px;
+}
+
+.category-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(139, 178, 79, 0.5);
+}
+
 .category-item {
   display: flex;
   align-items: center;
@@ -558,6 +576,24 @@ defineExpose({
   padding: 1rem;
   overflow-y: auto;
   max-height: 360px;
+}
+
+.selector-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.selector-content::-webkit-scrollbar-track {
+  background: rgba(139, 178, 79, 0.05);
+  border-radius: 3px;
+}
+
+.selector-content::-webkit-scrollbar-thumb {
+  background: rgba(139, 178, 79, 0.3);
+  border-radius: 3px;
+}
+
+.selector-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(139, 178, 79, 0.5);
 }
 
 /* 文本網格 */
