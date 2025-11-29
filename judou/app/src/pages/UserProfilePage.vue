@@ -1,14 +1,19 @@
 <script setup lang="ts">
-import { onMounted, computed } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useAuthStore } from '../stores/authStore'
 import { useUserStatsStore } from '../stores/userStatsStore'
+import { useAvatarStore } from '../stores/avatarStore'
+import AvatarSelector from '../components/avatar/AvatarSelector.vue'
 
 const authStore = useAuthStore()
 const userStatsStore = useUserStatsStore()
+const avatarStore = useAvatarStore()
+
+// 頭像選擇器 ref
+const avatarSelectorRef = ref<InstanceType<typeof AvatarSelector> | null>(null)
 
 // 用戶信息
 const displayName = computed(() => authStore.displayName || '訪客')
-const avatarUrl = computed(() => authStore.avatarUrl)
 const email = computed(() => authStore.user?.email || '')
 const roleLabel = computed(() => authStore.isTeacher ? '老師' : '學生')
 
@@ -22,11 +27,25 @@ const beansToNextLevel = computed(() => userStatsStore.beansToNextLevel)
 async function handleLogout() {
   await authStore.logout()
   userStatsStore.reset()
+  avatarStore.reset()
 }
 
-onMounted(() => {
-  if (authStore.isAuthenticated && !profile.value) {
-    userStatsStore.fetchProfile()
+onMounted(async () => {
+  if (authStore.isAuthenticated) {
+    // 獲取用戶數據
+    if (!profile.value) {
+      userStatsStore.fetchProfile()
+    }
+    
+    // 初始化頭像系統並檢查解鎖
+    await avatarStore.initialize()
+    
+    // 檢查是否有新頭像可以解鎖（根據當前等級）
+    const newlyUnlocked = await avatarStore.checkAndUnlockAvatars(level.value)
+    if (newlyUnlocked.length > 0 && newlyUnlocked[0]) {
+      // 顯示第一個新解鎖的頭像提示
+      avatarSelectorRef.value?.showUnlockToast(newlyUnlocked[0])
+    }
   }
 })
 </script>
@@ -35,11 +54,9 @@ onMounted(() => {
   <main class="profile-container">
     <!-- 用戶基本信息卡片 -->
     <section class="profile-header edamame-glass">
+      <!-- 頭像選擇器區域 -->
       <div class="avatar-section">
-        <div class="avatar-wrapper">
-          <img v-if="avatarUrl" :src="avatarUrl" :alt="displayName" class="avatar-img" />
-          <div v-else class="avatar-placeholder">{{ displayName.charAt(0) }}</div>
-        </div>
+        <AvatarSelector ref="avatarSelectorRef" />
         <div class="level-badge">Lv.{{ level }}</div>
       </div>
       

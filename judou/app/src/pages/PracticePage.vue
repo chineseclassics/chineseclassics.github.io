@@ -7,6 +7,7 @@ import { useAssignmentStore } from '@/stores/assignmentStore'
 import { useAuthStore } from '@/stores/authStore'
 import { useUserStatsStore, type ScoreBreakdown } from '@/stores/userStatsStore'
 import { useClassStore } from '@/stores/classStore'
+import { useAvatarStore } from '@/stores/avatarStore'
 import { classicalSpeak, classicalPreload, classicalStopSpeak } from '@/composables/useClassicalTTS'
 import type { PracticeText } from '@/types/text'
 
@@ -22,6 +23,7 @@ const assignmentStore = useAssignmentStore()
 const authStore = useAuthStore()
 const userStatsStore = useUserStatsStore()
 const classStore = useClassStore()
+const avatarStore = useAvatarStore()
 
 // 學生所屬班級的老師 ID 列表（用於過濾可見的私有文章）
 const myTeacherIds = ref<Set<string>>(new Set())
@@ -552,6 +554,15 @@ async function submitResult() {
         if (result.beansEarned > 0) {
           const bonusMsg = result.isNewRecord ? ' (新紀錄!)' : ''
         toast.value = `${toast.value}${bonusMsg} 實得 +${result.beansEarned} 豆`
+        
+        // 檢查是否有新頭像解鎖
+        const newlyUnlocked = await avatarStore.checkAndUnlockAvatars(userStatsStore.level)
+        if (newlyUnlocked.length > 0) {
+          // 延遲顯示頭像解鎖提示
+          setTimeout(() => {
+            toast.value = `🎉 解鎖新頭像：${newlyUnlocked.map(a => a.name).join('、')}`
+          }, 2000)
+        }
       } else if (result.beansEarned === 0 && !result.isNewRecord) {
         toast.value = `${toast.value}（未超過個人最高記錄，不加分）`
         }

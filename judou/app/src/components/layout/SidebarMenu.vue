@@ -4,7 +4,9 @@ import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/authStore'
 import { useUserStatsStore } from '../../stores/userStatsStore'
 import { useAssignmentStore } from '../../stores/assignmentStore'
+import { useAvatarStore } from '../../stores/avatarStore'
 import BeanIcon from '../common/BeanIcon.vue'
+import UserAvatar from '../avatar/UserAvatar.vue'
 
 // 豆子圖標標識
 const BEAN_ICON = 'bean'
@@ -21,6 +23,7 @@ interface NavItem {
 const authStore = useAuthStore()
 const userStatsStore = useUserStatsStore()
 const assignmentStore = useAssignmentStore()
+const avatarStore = useAvatarStore()
 const router = useRouter()
 
 const primaryNav: NavItem[] = [
@@ -73,10 +76,6 @@ const displayName = computed(() => {
   return authStore.displayName || '豆友'
 })
 
-// 用戶頭像首字母
-const initials = computed(() => {
-  return displayName.value.charAt(0)
-})
 
 // 用戶統計（使用新的 profile 系統）
 const beans = computed(() => userStatsStore.profile?.total_beans ?? 0)
@@ -138,8 +137,9 @@ watch(
   () => authStore.isAuthenticated,
   (isAuth) => {
     if (isAuth) {
-      console.log('[Sidebar] 用戶已登入，載入 Profile')
+      console.log('[Sidebar] 用戶已登入，載入 Profile 和頭像')
       userStatsStore.fetchProfile()
+      avatarStore.initialize()  // 初始化頭像系統
       if (authStore.isStudent) {
         assignmentStore.fetchStudentAssignments().then(() => {
           assignmentStore.getPendingCount().then(count => {
@@ -149,6 +149,7 @@ watch(
       }
     } else {
       pendingCount.value = 0
+      avatarStore.reset()
     }
   },
   { immediate: true }
@@ -173,9 +174,13 @@ const logoUrl = `${import.meta.env.BASE_URL}images/judou-logo.jpg`
   <aside class="sidebar-shell edamame-glass">
     <!-- 已登入：用戶區域（只顯示頭像和統計） -->
     <div v-if="authStore.isAuthenticated" class="sidebar-brand" @click="handleUserClick">
-      <div class="brand-avatar" :class="{ 'has-avatar': authStore.avatarUrl }">
-        <img v-if="authStore.avatarUrl" :src="authStore.avatarUrl" :alt="displayName" />
-        <span v-else>{{ initials }}</span>
+      <div class="brand-avatar">
+        <!-- 使用自定義頭像系統，優先顯示句豆頭像，否則顯示 Google 頭像 -->
+        <UserAvatar 
+          :src="avatarStore.currentAvatarUrl || authStore.avatarUrl" 
+          :size="52"
+          :alt="displayName"
+        />
         <!-- 等級徽章 -->
         <div class="level-badge">{{ level }}</div>
       </div>
