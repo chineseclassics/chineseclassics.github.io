@@ -9,6 +9,10 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- 預加載關鍵圖片資源，避免阻塞渲染 -->
+    <link rel="preload" href="/judou/images/judou-logo.jpg" as="image" type="image/jpeg" fetchpriority="high">
+    <link rel="preload" href="/judou/images/bean-icon.png" as="image" type="image/png" fetchpriority="high">
   </head>
   <body>
     <div id="app"></div>
