@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useReadingStore } from '@/stores/readingStore'
+import { usePracticeLibraryStore } from '@/stores/practiceLibraryStore'
 import { useAuthStore } from '@/stores/authStore'
 import type { ReadingText, TextAnnotation } from '@/types/text'
 
 const readingStore = useReadingStore()
+const libraryStore = usePracticeLibraryStore()
 const authStore = useAuthStore()
 
 // ============ 視圖狀態 ============
@@ -61,6 +63,13 @@ const annotationForm = reactive({
 
 // 閱讀分類選項（文集）
 const categoryOptions = computed(() => readingStore.readingCategories)
+
+// 練習分類選項（用於提取練習素材）
+const practiceCategoryOptions = computed(() => {
+  return libraryStore.state.categories
+    .filter(c => c.level === 1) // 只顯示頂級分類
+    .sort((a, b) => a.order_index - b.order_index)
+})
 
 // 當前選中的文集
 const selectedCategory = computed(() => {
@@ -506,10 +515,11 @@ async function handleAddCategory() {
 }
 
 onMounted(async () => {
-  // 同時獲取閱讀分類和文章列表
+  // 同時獲取閱讀分類、文章列表和練習分類
   await Promise.all([
     readingStore.fetchReadingCategories(),
-    readingStore.fetchReadingTexts()
+    readingStore.fetchReadingTexts(),
+    libraryStore.fetchLibrary()
   ])
   
   // 預設選中第一個文集
@@ -891,7 +901,7 @@ onMounted(async () => {
                   <select v-model="extractForm.category_id">
                     <option :value="null">不分類</option>
                     <option 
-                      v-for="cat in categoryOptions" 
+                      v-for="cat in practiceCategoryOptions" 
                       :key="cat.id" 
                       :value="cat.id"
                     >
