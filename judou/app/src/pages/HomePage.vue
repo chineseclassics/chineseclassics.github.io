@@ -230,11 +230,12 @@ onMounted(async () => {
   margin: 0 auto;
 }
 
-/* 右側卡片容器（移動端和桌面端都應用） */
+/* 左側和右側卡片容器（移動端和桌面端都應用） */
+.home-left,
 .home-right {
   display: flex;
   flex-direction: column;
-  gap: clamp(2rem, 3vw, 2.5rem);
+  gap: clamp(0.75rem, 1.25vw, 1rem);
 }
 
 /* 桌面端：兩欄佈局 */
@@ -248,6 +249,11 @@ onMounted(async () => {
     position: sticky;
     top: 2rem;
     align-self: start;
+    height: fit-content;
+  }
+  
+  .home-right {
+    height: 100%;
   }
 }
 
