@@ -11,6 +11,7 @@ import { useAuthStore } from '../../../stores/authStore'
 import { useGameStore } from '../../../stores/gameStore'
 import { TIME_MODE_OPTIONS } from '../../../types/game'
 import BeanIcon from '../../../components/common/BeanIcon.vue'
+import { Clock } from 'lucide-vue-next'
 
 const router = useRouter()
 const route = useRoute()
@@ -160,7 +161,8 @@ onUnmounted(async () => {
           👥 {{ room?.max_players ? `${room.max_players} 人對戰` : '多人對戰' }}
         </span>
         <span class="meta-item">
-          ⏱️ {{ timeModeText }}
+          <Clock :size="14" :stroke-width="1.5" />
+          <span>{{ timeModeText }}</span>
         </span>
         <span v-if="room?.entry_fee" class="meta-item fee">
           <BeanIcon :size="14" /> {{ room.entry_fee }} 豆入場
@@ -325,6 +327,9 @@ onUnmounted(async () => {
 }
 
 .meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
   padding: 0.25rem 0.75rem;
   background: var(--color-neutral-100);
   border-radius: 20px;

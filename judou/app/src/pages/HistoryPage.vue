@@ -13,6 +13,7 @@ import { onMounted, ref, watch, computed } from 'vue'
 import { useHistoryStore, type RecordType, type TimeRange, type HistoryEntry } from '@/stores/historyStore'
 import { getTransactionTypeLabel } from '@/types/history'
 import BeanIcon from '@/components/common/BeanIcon.vue'
+import { Clock } from 'lucide-vue-next'
 
 // 豆子圖標標識（用於判斷是否渲染 BeanIcon 組件）
 const BEAN_ICON = 'bean'
@@ -278,7 +279,9 @@ const statsCards = computed(() => {
                 {{ formatAccuracy(entry.accuracy) }}
               </span>
               <span class="detail-item time">
-                <span class="detail-icon">⏱️</span>
+                <span class="detail-icon">
+                  <Clock :size="14" :stroke-width="1.5" />
+                </span>
                 {{ entry.elapsed_seconds }} 秒
               </span>
               <span v-if="entry.text?.category_name" class="detail-item category">

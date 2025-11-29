@@ -346,6 +346,9 @@ onMounted(async () => {
 }
 
 .section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
   margin: 0 0 1rem;
   font-size: 1rem;
   font-weight: 600;

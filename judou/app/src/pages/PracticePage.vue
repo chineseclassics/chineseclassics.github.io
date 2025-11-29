@@ -10,6 +10,7 @@ import { useClassStore } from '@/stores/classStore'
 import { useAvatarStore } from '@/stores/avatarStore'
 import { classicalSpeak, classicalPreload, classicalStopSpeak } from '@/composables/useClassicalTTS'
 import type { PracticeText } from '@/types/text'
+import { RefreshCw, Clock, Volume2, Square } from 'lucide-vue-next'
 
 interface SlotStatus {
   index: number
@@ -858,7 +859,8 @@ onBeforeUnmount(() => {
               :class="{ playing: isPlayingTTS }"
               @click="toggleReadText"
             >
-              {{ isPlayingTTS ? '⏹ 停止' : '🔊 朗讀' }}
+              <component :is="isPlayingTTS ? Square : Volume2" :size="16" :stroke-width="1.5" />
+              <span>{{ isPlayingTTS ? ' 停止' : ' 朗讀' }}</span>
             </button>
             <!-- 橫向豆列 -->
             <div class="bean-inventory" :class="{ shake: beanShake, empty: !hasBeansLeft }">
@@ -869,7 +871,10 @@ onBeforeUnmount(() => {
                 :class="{ used: i > remainingBeans }"
               ></span>
             </div>
-            <span v-if="userBreaks.size > 0 || evaluation" class="timer-badge">⏱ {{ timer }} 秒</span>
+            <span v-if="userBreaks.size > 0 || evaluation" class="timer-badge">
+              <Clock :size="14" :stroke-width="1.5" />
+              <span>{{ timer }} 秒</span>
+            </span>
           </div>
         </div>
         <div class="practice-line" v-if="characters.length">
@@ -917,7 +922,8 @@ onBeforeUnmount(() => {
             class="edamame-btn edamame-btn-lg edamame-btn-secondary"
             @click="retryChallenge"
           >
-            🔄 重新挑戰
+            <RefreshCw :size="18" :stroke-width="1.5" />
+            <span> 重新挑戰</span>
           </button>
         </div>
         <p v-if="toast" class="toast" :class="{ success: evaluation?.isComplete }">{{ toast }}</p>
@@ -1289,6 +1295,9 @@ onBeforeUnmount(() => {
 
 /* 朗讀小按鈕 */
 .tts-btn-small {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
   padding: 0.25rem 0.5rem;
   border: none;
   background: rgba(139, 178, 79, 0.15);
@@ -1363,6 +1372,9 @@ onBeforeUnmount(() => {
 }
 
 .timer-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
   padding: 0.25rem 0.6rem;
   border-radius: var(--radius-full);
   background: rgba(139, 178, 79, 0.12);

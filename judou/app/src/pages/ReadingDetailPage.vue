@@ -5,6 +5,7 @@ import { useReadingStore } from '@/stores/readingStore'
 import { useAuthStore } from '@/stores/authStore'
 import { classicalSpeak, classicalPreload, classicalStopSpeak } from '@/composables/useClassicalTTS'
 import type { TextAnnotation } from '@/types/text'
+import { Volume2, Square } from 'lucide-vue-next'
 
 const route = useRoute()
 const router = useRouter()
@@ -469,7 +470,8 @@ watch(showPunctuation, (newVal) => {
         :class="{ playing: isPlaying }"
         @click="toggleReadFullText"
       >
-        {{ isPlaying ? '⏹ 停止朗讀' : '🔊 朗讀全文' }}
+        <component :is="isPlaying ? Square : Volume2" :size="18" :stroke-width="1.5" />
+        <span>{{ isPlaying ? ' 停止朗讀' : ' 朗讀全文' }}</span>
       </button>
     </section>
     
@@ -723,6 +725,9 @@ watch(showPunctuation, (newVal) => {
 }
 
 .tts-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
   padding: 0.5rem 1rem;
   border: none;
   background: rgba(0, 0, 0, 0.04);

@@ -1548,6 +1548,9 @@ onMounted(async () => {
 }
 
 .streak-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
   background: rgba(234, 88, 12, 0.1);
   color: #ea580c;
   padding: 0.25rem 0.5rem;

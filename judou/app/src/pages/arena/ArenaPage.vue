@@ -583,6 +583,8 @@ onUnmounted(() => {
 }
 
 .stat-icon {
+  display: inline-flex;
+  align-items: center;
   font-size: 1.5rem;
 }
 
