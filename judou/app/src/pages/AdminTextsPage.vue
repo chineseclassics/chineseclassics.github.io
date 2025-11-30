@@ -461,10 +461,10 @@ onMounted(async () => {
             <table v-else>
               <thead>
                 <tr>
-                  <th>標題</th>
-                  <th>作者</th>
-                  <th>難度</th>
-                  <th>建立日期</th>
+                  <th style="width: auto; min-width: 200px">標題</th>
+                  <th style="width: 80px">作者</th>
+                  <th style="width: 60px">難度</th>
+                  <th style="width: 100px">建立日期</th>
                   <th style="width: 120px">操作</th>
                 </tr>
               </thead>
@@ -1100,6 +1100,19 @@ th, td {
   border-bottom: 1px solid rgba(0, 0, 0, 0.04);
 }
 
+/* 作者欄和難度欄固定寬度，防止換行 */
+td:nth-child(2) {
+  width: 80px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+td:nth-child(3) {
+  width: 60px;
+  white-space: nowrap;
+}
+
 .text-title {
   margin: 0;
   font-weight: var(--font-medium);
@@ -1134,24 +1147,20 @@ th, td {
 
 .difficulty-badge {
   display: inline-block;
-  padding: 0.15rem 0.5rem;
-  border-radius: var(--radius-full);
   font-size: var(--text-xs);
   font-weight: var(--font-medium);
+  /* 移除背景色和圓角 */
 }
 
 .diff-1 {
-  background: rgba(34, 197, 94, 0.15);
   color: #15803d;
 }
 
 .diff-2 {
-  background: rgba(234, 179, 8, 0.15);
   color: #a16207;
 }
 
 .diff-3 {
-  background: rgba(239, 68, 68, 0.15);
   color: #b91c1c;
 }
 
