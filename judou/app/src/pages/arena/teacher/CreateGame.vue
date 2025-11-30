@@ -151,7 +151,6 @@ onMounted(async () => {
         <span v-if="currentStep > step">✓</span>
         <span v-else>{{ step }}</span>
       </div>
-      <div class="step-line" :style="{ width: `${((currentStep - 1) / (totalSteps - 1)) * 100}%` }"></div>
     </div>
 
     <!-- 步驟內容 -->
@@ -390,16 +389,6 @@ onMounted(async () => {
 .step-dot.completed {
   background: var(--color-success);
   color: white;
-}
-
-.step-line {
-  position: absolute;
-  left: calc(50% - 100px);
-  height: 3px;
-  background: var(--color-primary-500);
-  border-radius: 2px;
-  transition: width 0.3s ease;
-  z-index: 0;
 }
 
 /* 步驟內容 */
