@@ -126,7 +126,7 @@ const menuCenterY = computed(() => {
       :items="allMenuItems"
       :center-x="menuCenterX"
       :center-y="menuCenterY"
-      :radius="100"
+      :radius="120"
       @close="closeMenu"
     />
   </div>

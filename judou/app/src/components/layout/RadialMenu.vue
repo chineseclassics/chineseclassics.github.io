@@ -55,17 +55,18 @@ const menuItemsWithPosition = computed(() => {
   if (count === 0) return []
   
   // 扇形角度範圍：從右下角向左上方展開（90度象限）
-  // 起始角度：-90度（正下方）
-  // 結束角度：-180度（正左方）
-  // 總角度：90度（四分之一圓，從下到左）
-  // 注意：totalAngle 不再需要，因為我們分兩層計算
+  // 起始角度：0度（正右方）
+  // 結束角度：-90度（正上方）
+  // 總角度：90度（四分之一圓，從右到上，向左上方展開）
+  const startAngle = 0 // 0度（正右方）
+  const endAngle = -Math.PI / 2 // -90度（正上方）
+  const totalAngle = Math.abs(endAngle - startAngle) // 90度
   
-  // 如果只有一個項目，放在左上方（-135度）
+  // 如果只有一個項目，放在中間位置（-45度）
   if (count === 1) {
     const item = items[0]
     if (!item) return []
-    const angle = -Math.PI * 3 / 4 // -135度（左上方）
-    const itemRadius = radius.value * 0.7 // 內層半徑
+    const angle = -Math.PI / 4 // -45度（左上方）
     return [{
       label: item.label,
       icon: item.icon,
@@ -75,50 +76,58 @@ const menuItemsWithPosition = computed(() => {
       description: item.description,
       teacherOnly: item.teacherOnly,
       superAdminOnly: item.superAdminOnly,
-      x: Math.cos(angle) * itemRadius,
-      y: Math.sin(angle) * itemRadius,
+      x: Math.cos(angle) * radius.value,
+      y: Math.sin(angle) * radius.value,
       angle: (angle * 180) / Math.PI,
       index: 0,
       total: 1,
-      layer: 0 // 內層
+      layer: 0
     }]
   }
   
-  // 多個項目：分兩層排列
-  // 內層：前一半項目，半徑較小
-  // 外層：後一半項目，半徑較大
-  const innerLayerCount = Math.ceil(count / 2)
-  const outerLayerCount = count - innerLayerCount
-  const innerRadius = radius.value * 0.7 // 內層半徑（70%）
-  const outerRadius = radius.value * 1.0 // 外層半徑（100%）
+  // 多個項目：根據數量決定是否分兩層
+  // 如果項目 <= 5 個，單層排列；如果 > 5 個，分兩層
+  const shouldUseTwoLayers = count > 5
+  const innerLayerCount = shouldUseTwoLayers ? Math.ceil(count / 2) : count
+  const outerLayerCount = shouldUseTwoLayers ? count - innerLayerCount : 0
+  
+  // 半徑設置：兩層時內層70%，外層100%；單層時100%
+  // 增加內層半徑，確保按鈕之間有足夠間距（按鈕大小56px，需要至少60px間距）
+  const innerRadius = shouldUseTwoLayers ? radius.value * 0.7 : radius.value
+  const outerRadius = radius.value * 1.0
   
   return items.map((item, index) => {
-    // 判斷屬於哪一層
-    const isInnerLayer = index < innerLayerCount
-    const layerIndex = isInnerLayer ? index : index - innerLayerCount
-    const layerCount = isInnerLayer ? innerLayerCount : outerLayerCount
-    const itemRadius = isInnerLayer ? innerRadius : outerRadius
-    
-    // 計算角度
-    // 內層：從 -90度（下）到 -135度（左上方）
-    // 外層：從 -135度（左上方）到 -180度（左）
     let angle: number
-    if (isInnerLayer) {
-      // 內層：從下到左上方
-      const innerStartAngle = -Math.PI / 2 // -90度
-      const innerEndAngle = -Math.PI * 3 / 4 // -135度
-      const innerAngleStep = layerCount > 1 
-        ? (innerEndAngle - innerStartAngle) / (layerCount - 1)
-        : 0
-      angle = innerStartAngle + (layerIndex * innerAngleStep)
+    let itemRadius: number
+    let layer: number
+    
+    if (shouldUseTwoLayers) {
+      // 兩層排列
+      const isInnerLayer = index < innerLayerCount
+      const layerIndex = isInnerLayer ? index : index - innerLayerCount
+      const layerCount = isInnerLayer ? innerLayerCount : outerLayerCount
+      
+      itemRadius = isInnerLayer ? innerRadius : outerRadius
+      layer = isInnerLayer ? 0 : 1
+      
+      // 每層都均勻分佈在90度圓弧上
+      // 內層：從 0度（右）到 -90度（上）
+      // 外層：從 0度（右）到 -90度（上），但角度稍微偏移以避免重疊
+      if (layerCount > 1) {
+        const angleStep = totalAngle / (layerCount - 1)
+        // 外層角度稍微偏移，讓圖標錯開，避免與內層重疊
+        // 偏移量根據層數動態調整，確保視覺上美觀
+        const angleOffset = isInnerLayer ? 0 : (angleStep / (layerCount + 1))
+        angle = startAngle - (layerIndex * angleStep) - angleOffset
+      } else {
+        angle = startAngle - (totalAngle / 2) // 單個項目放在中間
+      }
     } else {
-      // 外層：從左上方到左
-      const outerStartAngle = -Math.PI * 3 / 4 // -135度
-      const outerEndAngle = -Math.PI // -180度
-      const outerAngleStep = layerCount > 1
-        ? (outerEndAngle - outerStartAngle) / (layerCount - 1)
-        : 0
-      angle = outerStartAngle + (layerIndex * outerAngleStep)
+      // 單層排列：所有項目均勻分佈在90度圓弧上
+      itemRadius = innerRadius
+      layer = 0
+      const angleStep = count > 1 ? totalAngle / (count - 1) : 0
+      angle = startAngle - (index * angleStep)
     }
     
     const x = Math.cos(angle) * itemRadius
@@ -130,8 +139,8 @@ const menuItemsWithPosition = computed(() => {
       y,
       angle: (angle * 180) / Math.PI, // 轉換為度數（用於動畫）
       index,
-      total: count, // 用於動畫延遲計算
-      layer: isInnerLayer ? 0 : 1 // 層級：0=內層，1=外層
+      total: count,
+      layer
     }
   })
 })
