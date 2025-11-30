@@ -11,8 +11,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// DeepSeek 代理 URL（使用 Vercel 代理，不暴露 API Key）
-const DEEPSEEK_PROXY_URL = 'https://deepseek-proxy-chi.vercel.app/api/deepseek'
+// DeepSeek API 端點（直接調用，使用環境變量中的 API Key）
+const DEEPSEEK_API_URL = 'https://api.deepseek.com/v1/chat/completions'
 
 interface AnnotationResult {
   term: string
@@ -144,11 +144,18 @@ ${content}
 
 請直接返回 JSON 數組，不要包含其他文字說明。`
 
-  // 調用 DeepSeek API（通過 Vercel 代理）
-  const response = await fetch(DEEPSEEK_PROXY_URL, {
+  // 獲取 DeepSeek API Key（從環境變量）
+  const deepseekApiKey = Deno.env.get('DEEPSEEK_API_KEY')
+  if (!deepseekApiKey) {
+    throw new Error('DEEPSEEK_API_KEY 環境變量未設置，請在 Supabase Dashboard 中配置')
+  }
+
+  // 調用 DeepSeek API（直接調用）
+  const response = await fetch(DEEPSEEK_API_URL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      'Authorization': `Bearer ${deepseekApiKey}`,
     },
     body: JSON.stringify({
       model: 'deepseek-chat',
