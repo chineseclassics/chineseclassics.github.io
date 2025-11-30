@@ -4,7 +4,12 @@
 // =====================================================
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { corsHeaders } from '../_shared/cors.ts'
+
+// CORS 標頭配置
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
 
 // DeepSeek 代理 URL（使用 Vercel 代理，不暴露 API Key）
 const DEEPSEEK_PROXY_URL = 'https://deepseek-proxy-chi.vercel.app/api/deepseek'
