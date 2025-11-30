@@ -32,6 +32,7 @@ interface NavItem {
   to?: { name: string }
   disabled?: boolean
   teacherOnly?: boolean
+  superAdminOnly?: boolean  // 僅超級管理員可見
 }
 
 const authStore = useAuthStore()
@@ -53,11 +54,7 @@ const primaryNav: NavItem[] = [
 const adminNav: NavItem[] = [
   { label: '練習文庫', icon: Library, iconType: 'lucide', to: { name: 'admin-texts' } },
   { label: '閱讀文庫', icon: BookMarked, iconType: 'lucide', to: { name: 'admin-reading' } },
-]
-
-// 超級管理員導航
-const superAdminNav: NavItem[] = [
-  { label: '用戶管理', icon: UserCog, iconType: 'lucide', to: { name: 'admin-users' } },
+  { label: '用戶管理', icon: UserCog, iconType: 'lucide', to: { name: 'admin-users' }, superAdminOnly: true },
 ]
 
 // 過濾常用功能導航（老師專屬項目）
@@ -65,16 +62,16 @@ const visiblePrimaryNav = computed(() => {
   return primaryNav.filter(item => !item.teacherOnly || authStore.isTeacher)
 })
 
-// 過濾管理導航（只有管理員可見）
+// 過濾管理導航（管理員可見，超級管理員專屬項目僅超級管理員可見）
 const visibleAdminNav = computed(() => {
   if (!authStore.isAuthenticated || !authStore.isAdmin) return []
-  return adminNav
-})
-
-// 過濾超級管理員導航（只有超級管理員可見）
-const visibleSuperAdminNav = computed(() => {
-  if (!authStore.isAuthenticated || !authStore.isSuperAdmin) return []
-  return superAdminNav
+  return adminNav.filter(item => {
+    // 如果是超級管理員專屬項目，只有超級管理員可見
+    if (item.superAdminOnly) {
+      return authStore.isSuperAdmin
+    }
+    return true
+  })
 })
 
 const route = useRoute()
@@ -253,7 +250,6 @@ const logoUrl = `${import.meta.env.BASE_URL}images/judou-logo.jpg`
     </div>
 
     <nav class="sidebar-section">
-      <p class="section-label">常用功能</p>
       <ul>
         <li v-for="item in visiblePrimaryNav" :key="item.label">
           <router-link
@@ -286,7 +282,7 @@ const logoUrl = `${import.meta.env.BASE_URL}images/judou-logo.jpg`
       </ul>
     </nav>
 
-    <!-- 管理區域（僅管理員可見） -->
+    <!-- 管理區域（僅管理員可見，超級管理員專屬項目僅超級管理員可見） -->
     <nav v-if="visibleAdminNav.length > 0" class="sidebar-section">
       <p class="section-label">管理</p>
       <ul>
@@ -294,35 +290,10 @@ const logoUrl = `${import.meta.env.BASE_URL}images/judou-logo.jpg`
           <router-link
             v-if="item.to && !item.disabled"
             class="edamame-sidebar-item"
-            :class="{ active: isActive(item) }"
-            :to="item.to"
-          >
-            <span v-if="item.icon" class="item-icon">
-              <component v-if="item.iconType === 'lucide'" :is="item.icon" :size="16" :stroke-width="1.5" class="lucide-icon" />
-              <template v-else>{{ item.icon }}</template>
-            </span>
-            <p class="item-title">{{ item.label }}</p>
-          </router-link>
-          <div v-else class="edamame-sidebar-item disabled">
-            <span v-if="item.icon" class="item-icon">
-              <component v-if="item.iconType === 'lucide'" :is="item.icon" :size="16" :stroke-width="1.5" class="lucide-icon" />
-              <template v-else>{{ item.icon }}</template>
-            </span>
-            <p class="item-title">{{ item.label }}</p>
-          </div>
-        </li>
-      </ul>
-    </nav>
-
-    <!-- 超級管理員區域（僅超級管理員可見） -->
-    <nav v-if="visibleSuperAdminNav.length > 0" class="sidebar-section super-admin-section">
-      <p class="section-label">超級管理</p>
-      <ul>
-        <li v-for="item in visibleSuperAdminNav" :key="item.label">
-          <router-link
-            v-if="item.to && !item.disabled"
-            class="edamame-sidebar-item super-admin-item"
-            :class="{ active: isActive(item) }"
+            :class="{ 
+              active: isActive(item),
+              'super-admin-item': item.superAdminOnly
+            }"
             :to="item.to"
           >
             <span v-if="item.icon" class="item-icon">
@@ -715,11 +686,7 @@ const logoUrl = `${import.meta.env.BASE_URL}images/judou-logo.jpg`
   pointer-events: none;
 }
 
-/* 超級管理員區域特殊樣式 */
-.super-admin-section .section-label {
-  color: #d97706;
-}
-
+/* 超級管理員專屬項目樣式（用戶管理等） */
 .super-admin-item {
   border-left: 2px solid transparent;
 }

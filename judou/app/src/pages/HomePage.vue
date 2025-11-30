@@ -244,18 +244,40 @@ onMounted(async () => {
 @media (min-width: 1024px) {
   .home-layout {
     grid-template-columns: 1fr 1fr;
-    align-items: start;
+    align-items: stretch;
   }
   
   .home-left {
     position: sticky;
     top: 2rem;
     align-self: start;
-    height: fit-content;
+    display: flex;
+    flex-direction: column;
+    gap: clamp(0.75rem, 1.25vw, 1rem);
+    height: 100%;
+    min-height: 0;
   }
   
   .home-right {
     height: 100%;
+  }
+  
+  /* 確保左側兩個卡片的高度加上 gap 等於右側卡片高度 */
+  .home-left .stats-card {
+    flex: 0 0 auto;
+  }
+  
+  .home-left .latest-card {
+    flex: 1 1 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  /* 最新卡片內容不滾動，自動適應高度 */
+  .home-left .latest-card .latest-list {
+    flex: 1;
+    overflow: visible;
   }
 }
 
@@ -403,7 +425,8 @@ onMounted(async () => {
   align-items: baseline;
   justify-content: space-between;
   gap: 1rem;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.375rem;
+  flex-shrink: 0;
 }
 
 .latest-header .edamame-text-level-subtitle {
@@ -416,19 +439,20 @@ onMounted(async () => {
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.375rem;
 }
 
 .latest-item {
   display: flex;
   align-items: flex-start;
-  gap: 0.75rem;
-  padding: 0.75rem;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
   border-radius: var(--radius-lg);
   border: 1px solid rgba(0, 0, 0, 0.04);
   background: rgba(255, 255, 255, 0.5);
   cursor: pointer;
   transition: all 0.2s ease;
+  flex-shrink: 0;
 }
 
 .latest-item:hover {
@@ -484,7 +508,8 @@ onMounted(async () => {
 }
 
 .item-author {
-  margin: 0.125rem 0 0;
+  margin: 0.1rem 0 0;
+  font-size: var(--text-xs);
 }
 
 .latest-error {
