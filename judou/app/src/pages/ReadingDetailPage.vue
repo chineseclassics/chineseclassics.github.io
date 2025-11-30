@@ -569,7 +569,11 @@ watch(showPunctuation, (newVal) => {
           top: (activeTooltip.y + 16) + 'px' 
         }"
       >
-        {{ activeTooltip.annotation.annotation }}
+        <div class="tooltip-term">
+          {{ activeTooltip.annotation.term }}
+          <span v-if="activeTooltip.annotation.pinyin" class="tooltip-pinyin">（{{ activeTooltip.annotation.pinyin }}）</span>
+        </div>
+        <div class="tooltip-content">{{ activeTooltip.annotation.annotation }}</div>
       </div>
     </Teleport>
   </div>
@@ -996,12 +1000,29 @@ watch(showPunctuation, (newVal) => {
   border: 1px solid rgba(139, 178, 79, 0.25);
   border-radius: 4px;
   box-shadow: 0 3px 12px rgba(85, 139, 47, 0.15), 0 1px 4px rgba(0, 0, 0, 0.05);
-  padding: 0.375rem 0.625rem;
+  padding: 0.5rem 0.75rem;
   max-width: 280px;
   animation: tooltip-in 0.12s ease-out;
   font-size: var(--text-sm);
   color: var(--color-neutral-700);
   line-height: 1.5;
+}
+
+.tooltip-term {
+  font-weight: var(--font-medium);
+  margin-bottom: 0.25rem;
+  color: var(--color-primary-600);
+}
+
+.tooltip-pinyin {
+  font-size: 0.9em;
+  color: var(--color-primary-500);
+  margin-left: 0.25rem;
+  font-weight: var(--font-normal);
+}
+
+.tooltip-content {
+  color: var(--color-neutral-700);
 }
 
 @keyframes tooltip-in {

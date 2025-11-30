@@ -79,6 +79,7 @@ export interface TextAnnotation {
   end_index: number    // 註釋結束字符位置
   term: string         // 被註釋的字/詞
   annotation: string   // 註釋內容
+  pinyin?: string | null  // 拼音（可選，主要用於難讀字）
   created_by?: string | null
   created_at?: string
   updated_at?: string
@@ -90,6 +91,7 @@ export interface AnnotationInput {
   end_index: number
   term: string
   annotation: string
+  pinyin?: string | null  // 拼音（可選）
 }
 
 // 閱讀進度

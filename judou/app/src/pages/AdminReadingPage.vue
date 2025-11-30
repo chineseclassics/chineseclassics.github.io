@@ -3,6 +3,7 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { useReadingStore } from '@/stores/readingStore'
 import { usePracticeLibraryStore } from '@/stores/practiceLibraryStore'
 import { useAuthStore } from '@/stores/authStore'
+import { useSupabase } from '@/composables/useSupabase'
 import type { ReadingText, TextAnnotation } from '@/types/text'
 
 const readingStore = useReadingStore()
@@ -57,7 +58,19 @@ const annotationForm = reactive({
   startIndex: 0,
   endIndex: 0,
   annotation: '',
+  pinyin: '',
 })
+
+// AI 生成註釋相關狀態
+const isGeneratingAnnotations = ref(false)
+const generatedAnnotations = ref<Array<{
+  term: string
+  start_index: number
+  end_index: number
+  annotation: string
+  pinyin?: string | null
+}>>([])
+const isPreviewOpen = ref(false)
 
 // ============ 計算屬性 ============
 
@@ -463,6 +476,7 @@ async function handleAddAnnotation() {
       end_index: annotationForm.endIndex,
       term: annotationForm.selectedText,
       annotation: annotationForm.annotation.trim(),
+      pinyin: annotationForm.pinyin.trim() || null,
     })
     
     isAnnotationOpen.value = false
@@ -473,6 +487,99 @@ async function handleAddAnnotation() {
     
   } catch (err: any) {
     feedback.value = err?.message || '添加註釋失敗'
+  } finally {
+    isSubmitting.value = false
+  }
+}
+
+// AI 生成註釋
+async function handleGenerateAnnotations() {
+  if (!selectedText.value) {
+    feedback.value = '請先選擇一篇文章'
+    return
+  }
+  
+  try {
+    isGeneratingAnnotations.value = true
+    feedback.value = null
+    
+    // 獲取文章純文字內容（不含斷句符）
+    const pureContent = selectedText.value.content.replace(/\|/g, '')
+    
+    // 調用 Edge Function
+    const supabase = useSupabase()
+    const { data, error } = await supabase.functions.invoke('generate-annotations', {
+      body: {
+        content: pureContent,
+        title: selectedText.value.title,
+        author: selectedText.value.author
+      }
+    })
+    
+    if (error) throw error
+    
+    if (data.success && data.data) {
+      generatedAnnotations.value = data.data
+      isPreviewOpen.value = true
+      feedback.value = `成功生成 ${data.count || 0} 個註釋，請預覽並確認`
+    } else {
+      throw new Error(data.error || '生成註釋失敗')
+    }
+    
+  } catch (err: any) {
+    console.error('生成註釋失敗:', err)
+    feedback.value = err?.message || '生成註釋時發生錯誤'
+  } finally {
+    isGeneratingAnnotations.value = false
+  }
+}
+
+// 批量保存生成的註釋
+async function handleSaveGeneratedAnnotations() {
+  if (!selectedText.value || generatedAnnotations.value.length === 0) {
+    return
+  }
+  
+  try {
+    isSubmitting.value = true
+    feedback.value = null
+    
+    // 逐個保存註釋
+    let successCount = 0
+    let errorCount = 0
+    
+    for (const ann of generatedAnnotations.value) {
+      try {
+        await readingStore.addAnnotation({
+          text_id: selectedText.value.id,
+          start_index: ann.start_index,
+          end_index: ann.end_index,
+          term: ann.term,
+          annotation: ann.annotation,
+          pinyin: ann.pinyin || null,
+        })
+        successCount++
+      } catch (err) {
+        console.error('保存註釋失敗:', ann.term, err)
+        errorCount++
+      }
+    }
+    
+    // 重新獲取文章詳情
+    await readingStore.fetchTextDetail(selectedText.value.id)
+    
+    // 關閉預覽
+    isPreviewOpen.value = false
+    generatedAnnotations.value = []
+    
+    if (errorCount > 0) {
+      alert(`已保存 ${successCount} 個註釋，${errorCount} 個失敗`)
+    } else {
+      alert(`成功保存 ${successCount} 個註釋！`)
+    }
+    
+  } catch (err: any) {
+    feedback.value = err?.message || '保存註釋失敗'
   } finally {
     isSubmitting.value = false
   }
@@ -815,6 +922,18 @@ onMounted(async () => {
         </div>
       </div>
       
+      <!-- AI 生成註釋按鈕 -->
+      <div class="ai-actions-section edamame-glass">
+        <button 
+          class="edamame-btn edamame-btn-primary"
+          @click="handleGenerateAnnotations"
+          :disabled="isGeneratingAnnotations || !selectedText"
+        >
+          {{ isGeneratingAnnotations ? '🤖 AI 生成中...' : '🤖 AI 生成註釋' }}
+        </button>
+        <p class="action-hint">點擊按鈕，AI 會自動識別需要註釋的字詞並生成註釋（含拼音）</p>
+      </div>
+      
       <!-- 註釋列表 -->
       <div v-if="currentAnnotations.length > 0" class="annotations-section edamame-glass">
         <h3 class="section-title">📝 已添加的註釋 ({{ currentAnnotations.length }})</h3>
@@ -1004,6 +1123,56 @@ onMounted(async () => {
       </transition>
     </Teleport>
     
+    <!-- ========== AI 生成註釋預覽 Modal ========== -->
+    <Teleport to="body">
+      <transition name="fade">
+        <div v-if="isPreviewOpen" class="modal-backdrop" @click.self="isPreviewOpen = false">
+          <div class="modal-card edamame-glass" style="max-width: 800px; max-height: 80vh; overflow-y: auto;">
+            <header>
+              <h3>🤖 AI 生成的註釋預覽 ({{ generatedAnnotations.length }} 個)</h3>
+              <button class="close-btn" @click="isPreviewOpen = false">×</button>
+            </header>
+            
+            <div class="modal-body">
+              <p class="preview-hint">請檢查以下註釋，確認無誤後點擊「全部保存」</p>
+              
+              <div class="generated-annotations-list">
+                <div 
+                  v-for="(ann, idx) in generatedAnnotations" 
+                  :key="idx" 
+                  class="generated-annotation-item"
+                >
+                  <div class="annotation-header">
+                    <span class="annotation-term">
+                      {{ ann.term }}
+                      <span v-if="ann.pinyin" class="annotation-pinyin">（{{ ann.pinyin }}）</span>
+                    </span>
+                    <span class="annotation-position">位置：{{ ann.start_index }}-{{ ann.end_index }}</span>
+                  </div>
+                  <div class="annotation-content">{{ ann.annotation }}</div>
+                </div>
+              </div>
+              
+              <p v-if="feedback" class="feedback">{{ feedback }}</p>
+            </div>
+            
+            <footer>
+              <button class="edamame-btn edamame-btn-secondary" @click="isPreviewOpen = false">
+                取消
+              </button>
+              <button 
+                class="edamame-btn edamame-btn-primary" 
+                :disabled="isSubmitting || generatedAnnotations.length === 0"
+                @click="handleSaveGeneratedAnnotations"
+              >
+                {{ isSubmitting ? '保存中...' : `全部保存 (${generatedAnnotations.length})` }}
+              </button>
+            </footer>
+          </div>
+        </div>
+      </transition>
+    </Teleport>
+    
     <!-- ========== 添加註釋 Modal ========== -->
     <Teleport to="body">
       <transition name="fade">
@@ -1027,6 +1196,15 @@ onMounted(async () => {
                   rows="4" 
                   placeholder="輸入對這個字詞的解釋..."
                 ></textarea>
+              </label>
+              
+              <label>
+                <span>拼音（可選，用於難讀字）</span>
+                <input 
+                  v-model="annotationForm.pinyin" 
+                  type="text" 
+                  placeholder="例如：zhì"
+                />
               </label>
               
               <p v-if="feedback" class="feedback">{{ feedback }}</p>
@@ -1651,6 +1829,13 @@ td:nth-child(2) {
   font-size: var(--text-sm);
   font-weight: var(--font-medium);
   color: #1e40af;
+}
+
+.annotation-pinyin {
+  font-size: 0.9em;
+  color: var(--color-primary-500);
+  font-weight: var(--font-normal);
+  margin-left: 0.25rem;
 }
 
 .annotation-content {
