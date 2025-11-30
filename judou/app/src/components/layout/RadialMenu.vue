@@ -44,7 +44,7 @@ const route = useRoute()
 // 默認半徑
 const radius = computed(() => props.radius || 100)
 
-// 計算每個按鈕的位置（扇形排列，從右下角向上和左側展開）
+// 計算每個按鈕的位置（扇形排列，從右下角向左上方展開）
 const menuItemsWithPosition = computed(() => {
   const items = props.items
   const count = items.length
@@ -54,18 +54,18 @@ const menuItemsWithPosition = computed(() => {
   // 如果沒有項目，返回空數組
   if (count === 0) return []
   
-  // 扇形角度範圍：從右下角向上和左側展開（90度象限）
-  // 起始角度：0度（正右方）
-  // 結束角度：-90度/270度（正上方）
-  // 總角度：90度（四分之一圓）
-  const startAngle = 0 // 0度（正右方）
-  const endAngle = -Math.PI / 2 // -90度（正上方）
-  const totalAngle = Math.abs(endAngle - startAngle) // 90度
+  // 扇形角度範圍：從右下角向左上方展開（90度象限）
+  // 起始角度：-90度（正下方）
+  // 結束角度：-180度（正左方）
+  // 總角度：90度（四分之一圓，從下到左）
+  // 注意：totalAngle 不再需要，因為我們分兩層計算
   
-  // 如果只有一個項目，放在正上方
+  // 如果只有一個項目，放在左上方（-135度）
   if (count === 1) {
     const item = items[0]
     if (!item) return []
+    const angle = -Math.PI * 3 / 4 // -135度（左上方）
+    const itemRadius = radius.value * 0.7 // 內層半徑
     return [{
       label: item.label,
       icon: item.icon,
@@ -75,23 +75,54 @@ const menuItemsWithPosition = computed(() => {
       description: item.description,
       teacherOnly: item.teacherOnly,
       superAdminOnly: item.superAdminOnly,
-      x: 0,
-      y: -radius.value,
-      angle: -90,
+      x: Math.cos(angle) * itemRadius,
+      y: Math.sin(angle) * itemRadius,
+      angle: (angle * 180) / Math.PI,
       index: 0,
-      total: 1
+      total: 1,
+      layer: 0 // 內層
     }]
   }
   
-  // 多個項目：均勻分佈在扇形區域
-  const angleStep = totalAngle / (count - 1)
+  // 多個項目：分兩層排列
+  // 內層：前一半項目，半徑較小
+  // 外層：後一半項目，半徑較大
+  const innerLayerCount = Math.ceil(count / 2)
+  const outerLayerCount = count - innerLayerCount
+  const innerRadius = radius.value * 0.7 // 內層半徑（70%）
+  const outerRadius = radius.value * 1.0 // 外層半徑（100%）
   
   return items.map((item, index) => {
-    // 從右下角開始，向上和左側展開
-    // 從 0 度（右）向 -90 度（上）展開
-    const angle = startAngle - (index * angleStep)
-    const x = Math.cos(angle) * radius.value
-    const y = Math.sin(angle) * radius.value
+    // 判斷屬於哪一層
+    const isInnerLayer = index < innerLayerCount
+    const layerIndex = isInnerLayer ? index : index - innerLayerCount
+    const layerCount = isInnerLayer ? innerLayerCount : outerLayerCount
+    const itemRadius = isInnerLayer ? innerRadius : outerRadius
+    
+    // 計算角度
+    // 內層：從 -90度（下）到 -135度（左上方）
+    // 外層：從 -135度（左上方）到 -180度（左）
+    let angle: number
+    if (isInnerLayer) {
+      // 內層：從下到左上方
+      const innerStartAngle = -Math.PI / 2 // -90度
+      const innerEndAngle = -Math.PI * 3 / 4 // -135度
+      const innerAngleStep = layerCount > 1 
+        ? (innerEndAngle - innerStartAngle) / (layerCount - 1)
+        : 0
+      angle = innerStartAngle + (layerIndex * innerAngleStep)
+    } else {
+      // 外層：從左上方到左
+      const outerStartAngle = -Math.PI * 3 / 4 // -135度
+      const outerEndAngle = -Math.PI // -180度
+      const outerAngleStep = layerCount > 1
+        ? (outerEndAngle - outerStartAngle) / (layerCount - 1)
+        : 0
+      angle = outerStartAngle + (layerIndex * outerAngleStep)
+    }
+    
+    const x = Math.cos(angle) * itemRadius
+    const y = Math.sin(angle) * itemRadius
     
     return {
       ...item,
@@ -99,7 +130,8 @@ const menuItemsWithPosition = computed(() => {
       y,
       angle: (angle * 180) / Math.PI, // 轉換為度數（用於動畫）
       index,
-      total: count // 用於動畫延遲計算
+      total: count, // 用於動畫延遲計算
+      layer: isInnerLayer ? 0 : 1 // 層級：0=內層，1=外層
     }
   })
 })
@@ -188,7 +220,8 @@ const menuStyle = computed(() => ({
           '--x': `${item.x}px`,
           '--y': `${item.y}px`,
           '--index': item.index,
-          '--total': item.total
+          '--total': item.total,
+          '--layer': item.layer || 0
         }"
         :disabled="item.disabled"
         @click="handleItemClick(item)"
@@ -354,7 +387,8 @@ const menuStyle = computed(() => ({
 /* 展開動畫 */
 .radial-item-enter-active {
   transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-  transition-delay: calc(var(--index) * 0.05s);
+  /* 內層先出現，外層後出現，每層內按順序 */
+  transition-delay: calc(var(--layer) * 0.1s + var(--index) * 0.05s);
 }
 
 .radial-item-enter-from {
@@ -370,7 +404,8 @@ const menuStyle = computed(() => ({
 /* 收合動畫 */
 .radial-item-leave-active {
   transition: all 0.3s cubic-bezier(0.55, 0.055, 0.675, 0.19);
-  transition-delay: calc((var(--total) - var(--index)) * 0.03s);
+  /* 外層先消失，內層後消失，每層內按倒序 */
+  transition-delay: calc((1 - var(--layer)) * 0.1s + (var(--total) - var(--index)) * 0.03s);
 }
 
 .radial-item-leave-from {
