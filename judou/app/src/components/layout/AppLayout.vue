@@ -1,10 +1,16 @@
 <script setup lang="ts">
 import SidebarMenu from './SidebarMenu.vue'
+import MobileRadialMenu from './MobileRadialMenu.vue'
 </script>
 
 <template>
   <div class="app-layout">
+    <!-- 桌面端：固定側邊欄 -->
     <SidebarMenu />
+    
+    <!-- 移動端：放射狀菜單 -->
+    <MobileRadialMenu />
+    
     <section class="app-main">
       <div class="app-content">
         <router-view />

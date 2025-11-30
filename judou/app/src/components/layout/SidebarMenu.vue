@@ -753,27 +753,10 @@ const logoUrl = `${import.meta.env.BASE_URL}images/judou-logo.jpg`
   margin-left: 0.5rem;
 }
 
+/* 移動端：隱藏側邊欄（使用放射狀菜單代替） */
 @media (max-width: 960px) {
   .sidebar-shell {
-    width: 100%;
-    height: auto;
-    position: static;
-    flex-direction: row;
-    flex-wrap: wrap;
-    gap: 1rem;
-  }
-
-  .sidebar-brand {
-    width: 100%;
-  }
-
-  .sidebar-section {
-    flex: 1 1 220px;
-  }
-
-  .sidebar-footer {
-    width: 100%;
-    margin-top: 0;
+    display: none;
   }
 }
 </style>

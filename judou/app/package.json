@@ -15,6 +15,7 @@
     "@remixicon/vue": "^4.7.0",
     "@supabase/supabase-js": "^2.84.0",
     "@tabler/icons-vue": "^3.35.0",
+    "@vueuse/core": "^14.1.0",
     "lucide-vue-next": "^0.555.0",
     "phosphor-icons": "^1.4.2",
     "pinia": "^3.0.4",
