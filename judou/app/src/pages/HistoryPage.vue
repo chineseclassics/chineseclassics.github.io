@@ -147,7 +147,7 @@ const statsCards = computed(() => {
       color: 'warning'
     },
     { 
-      label: '獲得豆子', 
+      label: '獲得句豆', 
       value: stats.totalBeansEarned, 
       icon: '💰',
       subLabel: `消耗 ${stats.totalBeansSpent}`,
@@ -300,10 +300,10 @@ const statsCards = computed(() => {
             <!-- 豆子交易詳情 -->
             <div v-else-if="entry.type === 'bean'" class="entry-details bean-details">
               <span class="detail-item amount" :class="entry.amount > 0 ? 'positive' : 'negative'">
-                {{ formatBeanAmount(entry.amount) }} 豆
+                {{ formatBeanAmount(entry.amount) }} 句豆
               </span>
               <span v-if="entry.balance_after !== null" class="detail-item balance">
-                餘額 {{ entry.balance_after }} 豆
+                餘額 {{ entry.balance_after }} 句豆
               </span>
               <span v-if="entry.description" class="detail-item desc">
                 {{ entry.description }}

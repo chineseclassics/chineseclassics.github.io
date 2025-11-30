@@ -136,6 +136,7 @@ const menuStyle = computed(() => ({
     class="radial-menu-container"
   >
     <TransitionGroup
+      v-if="isOpen"
       name="radial-item"
       tag="div"
       class="radial-menu-items"
@@ -230,13 +231,8 @@ const menuStyle = computed(() => ({
   justify-content: center;
   gap: 2px;
   cursor: pointer;
-  transition: all 0.2s ease;
   user-select: none;
   -webkit-user-select: none;
-  
-  /* 初始狀態：縮小並在中心 */
-  opacity: 0;
-  transform: translate(-50%, -50%) scale(0);
 }
 
 .radial-menu-item:hover {

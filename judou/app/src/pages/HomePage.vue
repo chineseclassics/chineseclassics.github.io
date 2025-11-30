@@ -101,7 +101,7 @@ onMounted(async () => {
               </div>
               <div class="stat-content">
                 <p class="stat-value">{{ formatBeans(todayStats.beans) }}</p>
-                <p class="stat-label">本週豆子</p>
+                <p class="stat-label">本週句豆</p>
               </div>
             </div>
             <div class="stat-item">

@@ -82,7 +82,7 @@ async function createRoom() {
   }
 
   if (!canAffordFee.value) {
-    error.value = `豆子不足，賬戶需保留至少 ${SAFETY_LIMITS.MIN_BALANCE} 豆`
+    error.value = `句豆不足，賬戶需保留至少 ${SAFETY_LIMITS.MIN_BALANCE} 句豆`
     return
   }
 
@@ -115,11 +115,11 @@ async function createRoom() {
       ← 返回鬥豆
     </button>
 
-    <!-- 豆子餘額 -->
+    <!-- 句豆餘額 -->
     <div class="balance-card">
       <BeanIcon :size="24" class="balance-icon" />
       <span class="balance-value">{{ beans }}</span>
-      <span class="balance-label">我的豆子</span>
+      <span class="balance-label">我的句豆</span>
     </div>
 
     <!-- 步驟指示器 -->

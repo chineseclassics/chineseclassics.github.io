@@ -1,11 +1,10 @@
 <!--
   移動端放射狀菜單整合組件
-  整合可拖動頭像按鈕和放射狀菜單
+  整合浮動頭像按鈕和放射狀菜單
 -->
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { useLocalStorage } from '@vueuse/core'
 import { useAuthStore } from '@/stores/authStore'
 import FloatingAvatarButton from './FloatingAvatarButton.vue'
 import RadialMenu, { type RadialMenuItem } from './RadialMenu.vue'
@@ -28,21 +27,6 @@ const route = useRoute()
 
 // 菜單展開狀態
 const isMenuOpen = ref(false)
-
-// 頭像按鈕位置（用於計算菜單中心點）
-// 從 localStorage 恢復位置，或使用默認位置
-const getDefaultPosition = () => {
-  if (typeof window === 'undefined') return { x: 300, y: 600 }
-  return {
-    x: window.innerWidth - 80,
-    y: window.innerHeight - 80
-  }
-}
-const savedPosition = useLocalStorage('judou-floating-avatar-position', getDefaultPosition())
-const avatarPosition = ref({ 
-  x: savedPosition.value?.x ?? getDefaultPosition().x, 
-  y: savedPosition.value?.y ?? getDefaultPosition().y 
-})
 
 // 主要導航項目
 const primaryNav: RadialMenuItem[] = [
@@ -108,35 +92,27 @@ watch(() => route.name, () => {
   }
 })
 
-// 更新頭像按鈕位置（從 FloatingAvatarButton 獲取）
-function updateAvatarPosition(x: number, y: number) {
-  avatarPosition.value = { x, y }
-}
+// 計算菜單中心點（固定右下角位置）
+// 按鈕位置：right: 20px, bottom: 20px, 大小：64px
+// 中心點：從右邊緣 20px + 32px = 52px，從底邊緣 20px + 32px = 52px
+const menuCenterX = computed(() => {
+  if (typeof window === 'undefined') return 300
+  return window.innerWidth - 52
+})
 
-// 計算菜單中心點（頭像按鈕中心）
-// 頭像按鈕大小是 64px，所以中心點是位置 + 32
-const menuCenterX = computed(() => avatarPosition.value.x + 32)
-const menuCenterY = computed(() => avatarPosition.value.y + 32)
-
-// 初始化時從 localStorage 恢復位置
-onMounted(() => {
-  if (savedPosition.value) {
-    avatarPosition.value = { 
-      x: savedPosition.value.x ?? getDefaultPosition().x, 
-      y: savedPosition.value.y ?? getDefaultPosition().y 
-    }
-  }
+const menuCenterY = computed(() => {
+  if (typeof window === 'undefined') return 600
+  return window.innerHeight - 52
 })
 </script>
 
 <template>
   <div class="mobile-radial-menu">
-    <!-- 可拖動頭像按鈕 -->
+    <!-- 浮動頭像按鈕 -->
     <FloatingAvatarButton
       :is-menu-open="isMenuOpen"
       @toggle-menu="toggleMenu"
       @avatar-click="handleAvatarClick"
-      @update:position="(x, y) => updateAvatarPosition(x, y)"
     />
     
     <!-- 放射狀菜單 -->
@@ -170,4 +146,3 @@ onMounted(() => {
   }
 }
 </style>
-

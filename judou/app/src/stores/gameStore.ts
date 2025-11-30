@@ -295,7 +295,7 @@ export const useGameStore = defineStore('game', () => {
 
     // 檢查餘額是否足夠
     if (beans < amount) {
-      error.value = `豆子不足，需要 ${amount} 豆，當前只有 ${beans} 豆`
+      error.value = `句豆不足，需要 ${amount} 句豆，當前只有 ${beans} 句豆`
       return false
     }
 

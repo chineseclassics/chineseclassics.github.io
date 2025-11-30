@@ -665,7 +665,7 @@ onMounted(async () => {
             <span class="col-rank">#</span>
             <span class="col-student">學生</span>
             <span class="col-level">等級</span>
-            <span class="col-beans"><BeanIcon :size="14" /> 豆子</span>
+            <span class="col-beans"><BeanIcon :size="14" /> 句豆</span>
             <span class="col-exp">經驗</span>
             <span class="col-practice">練習次數</span>
             <span class="col-accuracy">正確率</span>

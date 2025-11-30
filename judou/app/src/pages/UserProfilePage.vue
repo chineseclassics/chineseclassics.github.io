@@ -82,7 +82,7 @@ onMounted(async () => {
           <BeanIcon :size="48" />
         </div>
         <div class="stat-content">
-          <p class="stat-label">我的豆子</p>
+          <p class="stat-label">我的句豆</p>
           <p class="stat-value">{{ profile?.total_beans ?? 0 }}</p>
         </div>
       </div>
@@ -101,7 +101,7 @@ onMounted(async () => {
           <div class="level-progress-bar">
             <div class="level-progress-fill" :style="{ width: levelProgress + '%', background: rankTitle.color }"></div>
           </div>
-          <p class="stat-detail">距離下一級還需 {{ beansToNextLevel }} 豆</p>
+          <p class="stat-detail">距離下一級還需 {{ beansToNextLevel }} 句豆</p>
         </div>
       </div>
     </section>
@@ -113,7 +113,7 @@ onMounted(async () => {
       <div class="stats-grid">
         <div class="mini-stat">
           <p class="mini-stat-value">{{ profile?.total_beans ?? 0 }}</p>
-          <p class="mini-stat-label">總豆子數</p>
+          <p class="mini-stat-label">總句豆數</p>
         </div>
         
         <div class="mini-stat">

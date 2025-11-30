@@ -294,7 +294,7 @@ onUnmounted(() => {
         <div class="stat-item">
           <BeanIcon :size="24" class="stat-icon-img" />
           <span class="stat-value">{{ beans }}</span>
-          <span class="stat-label">豆子</span>
+          <span class="stat-label">句豆</span>
         </div>
         <div class="stat-item">
           <span class="stat-icon" :style="{ color: rankTitle.color }">🎓</span>

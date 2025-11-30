@@ -350,7 +350,7 @@ function toggleBreak(index: number) {
   if (!isRemoving && !hasBeansLeft.value) {
     // 豆子用完了，觸發抖動動畫和提示
     triggerBeanShake()
-    toast.value = '豆子用完了！請先移除多餘的斷句。'
+    toast.value = '句豆用完了！請先移除多餘的斷句。'
     return
   }
   
@@ -991,7 +991,7 @@ onBeforeUnmount(() => {
         </p>
       </article>
       <article class="result-card edamame-glass">
-        <p class="result-label">實得豆子</p>
+        <p class="result-label">實得句豆</p>
         <p class="result-value" :class="{ placeholder: !evaluation || evaluation.beansEarned === undefined }">
           {{ evaluation?.beansEarned !== undefined ? `+${evaluation.beansEarned}` : '--' }}
         </p>
