@@ -69,7 +69,9 @@ const allMenuItems = computed(() => {
 
 // 切換菜單
 function toggleMenu() {
+  console.log('[MobileRadialMenu] toggleMenu 被調用，當前狀態:', isMenuOpen.value)
   isMenuOpen.value = !isMenuOpen.value
+  console.log('[MobileRadialMenu] 新狀態:', isMenuOpen.value)
 }
 
 // 關閉菜單
@@ -137,6 +139,13 @@ const menuCenterY = computed(() => {
   height: 100vh;
   pointer-events: none;
   z-index: 1000;
+}
+
+/* 允許按鈕和菜單接收點擊事件 */
+.mobile-radial-menu :deep(.floating-avatar-button),
+.mobile-radial-menu :deep(.radial-menu-container),
+.mobile-radial-menu :deep(.radial-menu-overlay) {
+  pointer-events: auto;
 }
 
 /* 只在移動端顯示 */

@@ -3,7 +3,7 @@
   移動端使用，點擊後展開放射狀菜單
 -->
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useAuthStore } from '@/stores/authStore'
 import { useAvatarStore } from '@/stores/avatarStore'
 import UserAvatar from '@/components/avatar/UserAvatar.vue'
@@ -21,16 +21,24 @@ const emit = defineEmits<{
 const authStore = useAuthStore()
 const avatarStore = useAvatarStore()
 
+// 防止重複觸發
+const lastTouchTime = ref(0)
+const TOUCH_DELAY = 300 // 300ms 內不重複觸發
+
 // 處理點擊（切換菜單）
 function handleClick(e: Event) {
   e.stopPropagation()
+  e.preventDefault()
+  
+  // 防止快速重複點擊
+  const now = Date.now()
+  if (now - lastTouchTime.value < TOUCH_DELAY) {
+    return
+  }
+  lastTouchTime.value = now
+  
+  console.log('[FloatingAvatarButton] 點擊觸發，當前 isMenuOpen:', props.isMenuOpen)
   emit('toggle-menu')
-}
-
-// 處理頭像點擊（跳轉到個人頁面）
-function handleAvatarClick(e: Event) {
-  e.stopPropagation()
-  emit('avatar-click')
 }
 
 // 按鈕樣式（固定右下角位置）
@@ -59,12 +67,12 @@ const buttonStyle = computed(() => {
       'is-menu-open': isMenuOpen
     }"
     @click="handleClick"
+    @touchstart.prevent="handleClick"
   >
     <!-- 已登入：顯示用戶頭像 -->
     <div
       v-if="authStore.isAuthenticated"
       class="avatar-wrapper"
-      @click="handleAvatarClick"
     >
       <UserAvatar
         :src="avatarStore.currentAvatarUrl || authStore.avatarUrl"
@@ -95,6 +103,8 @@ const buttonStyle = computed(() => {
   -webkit-backdrop-filter: blur(10px);
   user-select: none;
   -webkit-user-select: none;
+  pointer-events: auto;
+  touch-action: auto;
 }
 
 .floating-avatar-button:active {
