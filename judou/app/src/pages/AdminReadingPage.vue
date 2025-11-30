@@ -499,17 +499,17 @@ async function handleAddAnnotation() {
       alert('註釋更新成功！')
     } else {
       // 添加新註釋
-      await readingStore.addAnnotation({
-        text_id: selectedText.value.id,
-        start_index: annotationForm.startIndex,
-        end_index: annotationForm.endIndex,
-        term: annotationForm.selectedText,
-        annotation: annotationForm.annotation.trim(),
+    await readingStore.addAnnotation({
+      text_id: selectedText.value.id,
+      start_index: annotationForm.startIndex,
+      end_index: annotationForm.endIndex,
+      term: annotationForm.selectedText,
+      annotation: annotationForm.annotation.trim(),
         pinyin: annotationForm.pinyin.trim() || null,
-      })
-      
-      isAnnotationOpen.value = false
-      alert('註釋添加成功！')
+    })
+    
+    isAnnotationOpen.value = false
+    alert('註釋添加成功！')
     }
     
     // 重新獲取文章詳情以更新註釋列表
@@ -534,19 +534,29 @@ async function handleGenerateAnnotations() {
     isGeneratingAnnotations.value = true
     feedback.value = null
     
-    // 獲取文章純文字內容（不含斷句符和換行符，與 ReadingDetailPage 的計算方式一致）
-    // ReadingDetailPage 的 parsedContent 會：
-    // 1. 按 \n\n 或 || 分割段落
-    // 2. 對每個段落，跳過 |、\n、\r，只計算實際字符
-    // 3. 位置是連續的（段落之間不插入字符）
+    // 準備兩份內容：
+    // 1. contentForAI：保留斷句符號，幫助 AI 理解句子結構
+    // 2. pureContent：純文字（不含 |、\n、\r），用於位置索引計算
+    
     const content = selectedText.value.content
     const separator = content.includes('||') ? '||' : /\n\n+/
     const rawParagraphs = content.split(separator)
     
-    // 模擬 ReadingDetailPage 的計算方式
+    // 給 AI 的內容：保留斷句符號，移除換行符
+    let contentForAI = ''
+    // 位置計算用的純文字：移除所有 |、\n、\r
     let pureContent = ''
+    
     for (const rawPara of rawParagraphs) {
       const trimmedPara = rawPara.replace(/[\|\s]+$/, '')  // 移除段落末尾的 | 和空白
+      
+      // 構建給 AI 的內容（保留 |）
+      const aiPara = trimmedPara.replace(/[\n\r]/g, '')  // 只移除換行
+      if (aiPara) {
+        contentForAI += (contentForAI ? '\n\n' : '') + aiPara
+      }
+      
+      // 構建純文字（用於位置計算）
       for (const char of trimmedPara) {
         if (char !== '|' && char !== '\n' && char !== '\r') {
           pureContent += char
@@ -554,11 +564,12 @@ async function handleGenerateAnnotations() {
       }
     }
     
-    // 調用 Edge Function
+    // 調用 Edge Function（傳入帶斷句符的內容）
     const supabase = useSupabase()
     const { data, error } = await supabase.functions.invoke('generate-annotations', {
       body: {
-        content: pureContent,
+        content: contentForAI,  // 傳入帶斷句符的內容，幫助 AI 理解
+        pureContent: pureContent,  // 同時傳入純文字，用於位置驗證
         title: selectedText.value.title,
         author: selectedText.value.author
       }
@@ -592,12 +603,30 @@ async function handleSaveGeneratedAnnotations() {
     isSubmitting.value = true
     feedback.value = null
     
-    // 逐個保存註釋
+    // 1. 先刪除舊的 AI 生成的未編輯註釋
+    await readingStore.deleteAIGeneratedAnnotations(selectedText.value.id)
+    
+    // 2. 逐個保存新註釋（跳過與用戶註釋重疊的）
     let successCount = 0
+    let skippedCount = 0
     let errorCount = 0
     
     for (const ann of generatedAnnotations.value) {
       try {
+        // 檢查是否與用戶註釋重疊
+        const hasOverlap = await readingStore.checkAnnotationOverlap(
+          selectedText.value.id,
+          ann.start_index,
+          ann.end_index
+        )
+        
+        if (hasOverlap) {
+          // 跳過與用戶註釋重疊的新註釋
+          skippedCount++
+          continue
+        }
+        
+        // 保存新註釋（標記為 AI 生成）
         await readingStore.addAnnotation({
           text_id: selectedText.value.id,
           start_index: ann.start_index,
@@ -605,6 +634,7 @@ async function handleSaveGeneratedAnnotations() {
           term: ann.term,
           annotation: ann.annotation,
           pinyin: ann.pinyin || null,
+          source: 'ai',  // 標記為 AI 生成
         })
         successCount++
       } catch (err) {
@@ -620,11 +650,15 @@ async function handleSaveGeneratedAnnotations() {
     isPreviewOpen.value = false
     generatedAnnotations.value = []
     
-    if (errorCount > 0) {
-      alert(`已保存 ${successCount} 個註釋，${errorCount} 個失敗`)
-    } else {
-      alert(`成功保存 ${successCount} 個註釋！`)
+    // 顯示結果
+    let message = `成功保存 ${successCount} 個註釋`
+    if (skippedCount > 0) {
+      message += `，跳過 ${skippedCount} 個（與用戶註釋重疊）`
     }
+    if (errorCount > 0) {
+      message += `，${errorCount} 個失敗`
+    }
+    alert(message)
     
   } catch (err: any) {
     feedback.value = err?.message || '保存註釋失敗'
@@ -996,9 +1030,9 @@ onMounted(async () => {
               <button class="edit-btn" @click="openEditAnnotationDialog(ann)" title="編輯">
                 ✏️
               </button>
-              <button class="delete-btn" @click="handleDeleteAnnotation(ann)" title="刪除">
-                ✕
-              </button>
+            <button class="delete-btn" @click="handleDeleteAnnotation(ann)" title="刪除">
+              ✕
+            </button>
             </div>
           </div>
         </div>

@@ -266,6 +266,8 @@ export const useReadingStore = defineStore('reading', () => {
       .from('text_annotations')
       .insert({
         ...input,
+        source: input.source || 'manual',  // 默認用戶手動添加
+        is_edited: false,  // 新添加的註釋默認未編輯
         created_by: authStore.user.id
       })
       .select()
@@ -292,7 +294,14 @@ export const useReadingStore = defineStore('reading', () => {
   ) {
     if (!supabase) throw new Error('Supabase 尚未配置')
     
-    const updateData: { annotation: string; pinyin?: string | null } = { annotation }
+    const updateData: { 
+      annotation: string
+      pinyin?: string | null
+      is_edited: boolean  // 標記為已編輯
+    } = { 
+      annotation,
+      is_edited: true  // 用戶編輯後，標記為已編輯
+    }
     if (pinyin !== undefined) {
       updateData.pinyin = pinyin || null
     }
@@ -315,6 +324,56 @@ export const useReadingStore = defineStore('reading', () => {
     }
     
     return data
+  }
+  
+  // 刪除 AI 生成的未編輯註釋（用於替換）
+  async function deleteAIGeneratedAnnotations(textId: string) {
+    if (!supabase) throw new Error('Supabase 尚未配置')
+    
+    const { error: deleteError } = await supabase
+      .from('text_annotations')
+      .delete()
+      .eq('text_id', textId)
+      .eq('source', 'ai')
+      .eq('is_edited', false)
+    
+    if (deleteError) throw deleteError
+    
+    // 更新當前文章的註釋列表（移除已刪除的註釋）
+    if (currentText.value?.id === textId && currentText.value.annotations) {
+      currentText.value.annotations = currentText.value.annotations.filter(
+        ann => !(ann.source === 'ai' && ann.is_edited === false)
+      )
+    }
+  }
+  
+  // 檢查註釋位置是否與現有註釋重疊（用於避免覆蓋用戶註釋）
+  async function checkAnnotationOverlap(
+    textId: string,
+    startIndex: number,
+    endIndex: number
+  ): Promise<boolean> {
+    if (!supabase) return false
+    
+    // 查詢所有用戶手動添加或已編輯的註釋
+    const { data, error } = await supabase
+      .from('text_annotations')
+      .select('start_index, end_index')
+      .eq('text_id', textId)
+      .or('source.eq.manual,is_edited.eq.true')  // 用戶手動添加或已編輯的
+    
+    if (error) {
+      console.error('檢查註釋重疊失敗:', error)
+      return false
+    }
+    
+    if (!data || data.length === 0) return false
+    
+    // 檢查是否有位置重疊
+    // 重疊條件：新註釋的開始 < 舊註釋的結束 且 新註釋的結束 > 舊註釋的開始
+    return data.some(ann => 
+      startIndex < ann.end_index && endIndex > ann.start_index
+    )
   }
   
   // 刪除註釋
@@ -862,6 +921,8 @@ export const useReadingStore = defineStore('reading', () => {
     addAnnotation,
     updateAnnotation,
     deleteAnnotation,
+    deleteAIGeneratedAnnotations,
+    checkAnnotationOverlap,
     // 閱讀分類（文集）
     fetchReadingCategories,
     createReadingCategory,

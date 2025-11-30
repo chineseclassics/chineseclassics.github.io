@@ -48,7 +48,7 @@ def apply_crop_config(config_path, source_image_path, output_dir):
     avatar_names = [
         "書法豆", "仙子豆", "墨池豆", "夫子豆", "儒袍豆", "招財豆",
         "竹食豆", "卷靈豆", "鳳鳴豆", "月兔豆", "文龜豆", "禪定豆",
-        "冥想豆", "瓶靈豆", "劍客豆", "狐仙豆", "面譜豆", "星際豆"
+        "瓶靈豆", "劍客豆", "狐仙豆", "面譜豆", "星際豆", "冥想豆"
     ]
     
     print(f"開始處理 {len(config['cropConfigs'])} 個頭像...")

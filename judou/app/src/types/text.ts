@@ -80,6 +80,8 @@ export interface TextAnnotation {
   term: string         // 被註釋的字/詞
   annotation: string   // 註釋內容
   pinyin?: string | null  // 拼音（可選，主要用於難讀字）
+  source?: 'ai' | 'manual'  // 註釋來源：ai=AI 生成，manual=用戶手動添加
+  is_edited?: boolean  // 是否被用戶編輯過
   created_by?: string | null
   created_at?: string
   updated_at?: string
@@ -92,6 +94,7 @@ export interface AnnotationInput {
   term: string
   annotation: string
   pinyin?: string | null  // 拼音（可選）
+  source?: 'ai' | 'manual'  // 註釋來源（可選，默認 'manual'）
 }
 
 // 閱讀進度
