@@ -61,6 +61,9 @@ const annotationForm = reactive({
   pinyin: '',
 })
 
+// 編輯註釋相關狀態
+const editingAnnotationId = ref<string | null>(null)
+
 // AI 生成註釋相關狀態
 const isGeneratingAnnotations = ref(false)
 const generatedAnnotations = ref<Array<{
@@ -387,13 +390,28 @@ function openExtractDialog() {
 
 // 打開添加註釋對話框
 function openAnnotationDialog() {
+  editingAnnotationId.value = null
   annotationForm.selectedText = selectionActions.text
   annotationForm.startIndex = selectionActions.startIndex
   annotationForm.endIndex = selectionActions.endIndex
   annotationForm.annotation = ''
+  annotationForm.pinyin = ''
   feedback.value = null
   
   hideSelectionActions()
+  isAnnotationOpen.value = true
+}
+
+// 打開編輯註釋對話框
+function openEditAnnotationDialog(annotation: TextAnnotation) {
+  editingAnnotationId.value = annotation.id
+  annotationForm.selectedText = annotation.term
+  annotationForm.startIndex = annotation.start_index
+  annotationForm.endIndex = annotation.end_index
+  annotationForm.annotation = annotation.annotation
+  annotationForm.pinyin = annotation.pinyin || ''
+  feedback.value = null
+  
   isAnnotationOpen.value = true
 }
 
@@ -455,7 +473,7 @@ async function handleExtract() {
   }
 }
 
-// 添加註釋
+// 添加或更新註釋
 async function handleAddAnnotation() {
   if (!selectedText.value || !annotationForm.selectedText) {
     feedback.value = '請選取要註釋的文字'
@@ -470,25 +488,38 @@ async function handleAddAnnotation() {
   try {
     isSubmitting.value = true
     
-    await readingStore.addAnnotation({
-      text_id: selectedText.value.id,
-      start_index: annotationForm.startIndex,
-      end_index: annotationForm.endIndex,
-      term: annotationForm.selectedText,
-      annotation: annotationForm.annotation.trim(),
-      pinyin: annotationForm.pinyin.trim() || null,
-    })
-    
-    isAnnotationOpen.value = false
-    alert('註釋添加成功！')
+    if (editingAnnotationId.value) {
+      // 更新現有註釋
+      await readingStore.updateAnnotation(
+        editingAnnotationId.value,
+        annotationForm.annotation.trim(),
+        annotationForm.pinyin.trim() || null
+      )
+      isAnnotationOpen.value = false
+      alert('註釋更新成功！')
+    } else {
+      // 添加新註釋
+      await readingStore.addAnnotation({
+        text_id: selectedText.value.id,
+        start_index: annotationForm.startIndex,
+        end_index: annotationForm.endIndex,
+        term: annotationForm.selectedText,
+        annotation: annotationForm.annotation.trim(),
+        pinyin: annotationForm.pinyin.trim() || null,
+      })
+      
+      isAnnotationOpen.value = false
+      alert('註釋添加成功！')
+    }
     
     // 重新獲取文章詳情以更新註釋列表
     await readingStore.fetchTextDetail(selectedText.value.id)
     
   } catch (err: any) {
-    feedback.value = err?.message || '添加註釋失敗'
+    feedback.value = err?.message || (editingAnnotationId.value ? '更新註釋失敗' : '添加註釋失敗')
   } finally {
     isSubmitting.value = false
+    editingAnnotationId.value = null
   }
 }
 
@@ -503,8 +534,25 @@ async function handleGenerateAnnotations() {
     isGeneratingAnnotations.value = true
     feedback.value = null
     
-    // 獲取文章純文字內容（不含斷句符）
-    const pureContent = selectedText.value.content.replace(/\|/g, '')
+    // 獲取文章純文字內容（不含斷句符和換行符，與 ReadingDetailPage 的計算方式一致）
+    // ReadingDetailPage 的 parsedContent 會：
+    // 1. 按 \n\n 或 || 分割段落
+    // 2. 對每個段落，跳過 |、\n、\r，只計算實際字符
+    // 3. 位置是連續的（段落之間不插入字符）
+    const content = selectedText.value.content
+    const separator = content.includes('||') ? '||' : /\n\n+/
+    const rawParagraphs = content.split(separator)
+    
+    // 模擬 ReadingDetailPage 的計算方式
+    let pureContent = ''
+    for (const rawPara of rawParagraphs) {
+      const trimmedPara = rawPara.replace(/[\|\s]+$/, '')  // 移除段落末尾的 | 和空白
+      for (const char of trimmedPara) {
+        if (char !== '|' && char !== '\n' && char !== '\r') {
+          pureContent += char
+        }
+      }
+    }
     
     // 調用 Edge Function
     const supabase = useSupabase()
@@ -943,11 +991,19 @@ onMounted(async () => {
             :key="ann.id" 
             class="annotation-item"
           >
-            <div class="annotation-term">{{ ann.term }}</div>
+            <div class="annotation-term">
+              {{ ann.term }}
+              <span v-if="ann.pinyin" class="annotation-pinyin">（{{ ann.pinyin }}）</span>
+            </div>
             <div class="annotation-content">{{ ann.annotation }}</div>
-            <button class="delete-btn" @click="handleDeleteAnnotation(ann)" title="刪除">
-              ✕
-            </button>
+            <div class="annotation-actions">
+              <button class="edit-btn" @click="openEditAnnotationDialog(ann)" title="編輯">
+                ✏️
+              </button>
+              <button class="delete-btn" @click="handleDeleteAnnotation(ann)" title="刪除">
+                ✕
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -1176,11 +1232,11 @@ onMounted(async () => {
     <!-- ========== 添加註釋 Modal ========== -->
     <Teleport to="body">
       <transition name="fade">
-        <div v-if="isAnnotationOpen" class="modal-backdrop" @click.self="isAnnotationOpen = false">
+        <div v-if="isAnnotationOpen" class="modal-backdrop" @click.self="isAnnotationOpen = false; editingAnnotationId = null">
           <div class="modal-card edamame-glass">
             <header>
-              <h3>📝 添加註釋</h3>
-              <button class="close-btn" @click="isAnnotationOpen = false">×</button>
+              <h3>{{ editingAnnotationId ? '✏️ 編輯註釋' : '📝 添加註釋' }}</h3>
+              <button class="close-btn" @click="isAnnotationOpen = false; editingAnnotationId = null">×</button>
             </header>
             
             <div class="modal-body">
@@ -1211,7 +1267,7 @@ onMounted(async () => {
             </div>
             
             <footer>
-              <button class="edamame-btn edamame-btn-secondary" @click="isAnnotationOpen = false">
+              <button class="edamame-btn edamame-btn-secondary" @click="isAnnotationOpen = false; editingAnnotationId = null">
                 取消
               </button>
               <button 
@@ -1219,7 +1275,7 @@ onMounted(async () => {
                 :disabled="isSubmitting"
                 @click="handleAddAnnotation"
               >
-                {{ isSubmitting ? '添加中...' : '確認添加' }}
+                {{ isSubmitting ? (editingAnnotationId ? '更新中...' : '添加中...') : (editingAnnotationId ? '確認更新' : '確認添加') }}
               </button>
             </footer>
           </div>
@@ -1845,6 +1901,33 @@ td:nth-child(2) {
   line-height: 1.5;
 }
 
+.annotation-actions {
+  flex-shrink: 0;
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.edit-btn {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: rgba(59, 130, 246, 0.1);
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  font-size: 12px;
+  color: #1e40af;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.edit-btn:hover {
+  background: rgba(59, 130, 246, 0.2);
+}
+
 .delete-btn {
   flex-shrink: 0;
   width: 24px;
@@ -1856,6 +1939,9 @@ td:nth-child(2) {
   font-size: 12px;
   color: #dc2626;
   transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .delete-btn:hover {

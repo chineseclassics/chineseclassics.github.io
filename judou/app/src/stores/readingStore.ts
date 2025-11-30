@@ -285,12 +285,21 @@ export const useReadingStore = defineStore('reading', () => {
   }
   
   // 更新註釋
-  async function updateAnnotation(id: string, annotation: string) {
+  async function updateAnnotation(
+    id: string, 
+    annotation: string, 
+    pinyin?: string | null
+  ) {
     if (!supabase) throw new Error('Supabase 尚未配置')
+    
+    const updateData: { annotation: string; pinyin?: string | null } = { annotation }
+    if (pinyin !== undefined) {
+      updateData.pinyin = pinyin || null
+    }
     
     const { data, error: updateError } = await supabase
       .from('text_annotations')
-      .update({ annotation })
+      .update(updateData)
       .eq('id', id)
       .select()
       .single()

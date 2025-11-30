@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>句豆頭像裁剪編輯器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft JhengHei', sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 24px;
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+
+        .file-input-wrapper input[type="file"] {
+            position: absolute;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        button, .file-input-wrapper {
+            padding: 10px 20px;
+            background: #8bb24f;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        button:hover, .file-input-wrapper:hover {
+            background: #6f9638;
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background: #666;
+        }
+
+        .btn-secondary:hover {
+            background: #555;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 24px;
+        }
+
+        .canvas-container {
+            position: relative;
+            background: #fafafa;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            overflow: auto;
+            max-height: 80vh;
+        }
+
+        #sourceCanvas {
+            display: block;
+            cursor: crosshair;
+        }
+
+        .preview-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .preview-section {
+            background: #fafafa;
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .preview-section h3 {
+            margin-bottom: 12px;
+            color: #333;
+            font-size: 16px;
+        }
+
+        .avatar-preview {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            overflow: hidden;
+            margin: 0 auto;
+            background: linear-gradient(135deg, #f8faf5, #eff6e5);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            border: 3px solid #8bb24f;
+        }
+
+        .avatar-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .control-group label {
+            font-size: 13px;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .control-group input[type="range"] {
+            width: 100%;
+        }
+
+        .control-group input[type="number"] {
+            padding: 6px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 100%;
+        }
+
+        .avatar-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .avatar-thumb {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            overflow: hidden;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s;
+            background: #f0f0f0;
+        }
+
+        .avatar-thumb:hover {
+            border-color: #8bb24f;
+            transform: scale(1.05);
+        }
+
+        .avatar-thumb.active {
+            border-color: #8bb24f;
+            border-width: 3px;
+            box-shadow: 0 0 0 2px rgba(139, 178, 79, 0.3);
+        }
+
+        .avatar-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .info {
+            font-size: 12px;
+            color: #999;
+            margin-top: 8px;
+        }
+
+        .status {
+            padding: 12px;
+            background: #e8f5e9;
+            border-radius: 6px;
+            margin-top: 16px;
+            font-size: 14px;
+            color: #2e7d32;
+        }
+
+        .status.error {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        .crop-box {
+            position: absolute;
+            border: 2px solid #8bb24f;
+            background: rgba(139, 178, 79, 0.1);
+            cursor: move;
+            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.3);
+        }
+
+        .crop-handle {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: #8bb24f;
+            border: 2px solid white;
+            border-radius: 50%;
+            cursor: nwse-resize;
+        }
+
+        .crop-handle.nw { top: -6px; left: -6px; }
+        .crop-handle.ne { top: -6px; right: -6px; }
+        .crop-handle.sw { bottom: -6px; left: -6px; }
+        .crop-handle.se { bottom: -6px; right: -6px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>句豆頭像裁剪編輯器</h1>
+        <p class="subtitle">手動調整每個頭像的裁剪區域，確保完美對齊圓心</p>
+
+        <div class="toolbar">
+            <div class="file-input-wrapper">
+                <input type="file" id="fileInput" accept="image/png,image/jpeg">
+                <button>選擇圖片</button>
+            </div>
+            <button id="loadDefaultBtn" class="btn-secondary">載入預設配置</button>
+            <button id="exportAllBtn" disabled>導出所有頭像</button>
+            <button id="saveConfigBtn" disabled>保存配置</button>
+            <button id="loadConfigBtn" class="btn-secondary">載入配置</button>
+        </div>
+
+        <div class="main-content">
+            <div class="canvas-container">
+                <canvas id="sourceCanvas"></canvas>
+            </div>
+
+            <div class="preview-panel">
+                <div class="preview-section">
+                    <h3>當前頭像預覽</h3>
+                    <div class="avatar-preview">
+                        <img id="previewImg" src="" alt="預覽">
+                    </div>
+                    <div class="info" id="previewInfo">請選擇圖片開始編輯</div>
+                </div>
+
+                <div class="preview-section">
+                    <h3>調整裁剪區域</h3>
+                    <div class="controls">
+                        <div class="control-group">
+                            <label>X 位置</label>
+                            <input type="number" id="cropX" step="1">
+                        </div>
+                        <div class="control-group">
+                            <label>Y 位置</label>
+                            <input type="number" id="cropY" step="1">
+                        </div>
+                        <div class="control-group">
+                            <label>尺寸（正方形）</label>
+                            <input type="number" id="cropSize" step="1" min="50">
+                        </div>
+                        <div class="control-group">
+                            <label>縮放</label>
+                            <input type="range" id="cropScale" min="0.5" max="2" step="0.01" value="1">
+                            <span id="scaleValue">100%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="preview-section">
+                    <h3>頭像列表</h3>
+                    <div class="avatar-list" id="avatarList"></div>
+                </div>
+
+                <div class="status" id="status">就緒</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 配置
+        const COLS = 6;
+        const ROWS = 3;
+        const TOTAL_AVATARS = COLS * ROWS;
+
+        // 頭像名稱（根據新頭像命名）
+        const avatarNames = [
+            "書法豆", "仙子豆", "墨池豆", "夫子豆", "儒袍豆", "招財豆",
+            "竹食豆", "卷靈豆", "鳳鳴豆", "月兔豆", "文龜豆", "禪定豆",
+            "瓶靈豆", "劍客豆", "狐仙豆", "面譜豆", "星際豆", "冥想豆"
+        ];
+
+        // 狀態
+        let sourceImage = null;
+        let sourceCanvas = null;
+        let sourceCtx = null;
+        let currentAvatarIndex = 0;
+        let cropConfigs = [];
+        let isDragging = false;
+        let isResizing = false;
+        let dragStart = { x: 0, y: 0 };
+        let currentCropBox = null;
+
+        // 初始化
+        const fileInput = document.getElementById('fileInput');
+        const loadDefaultBtn = document.getElementById('loadDefaultBtn');
+        const exportAllBtn = document.getElementById('exportAllBtn');
+        const saveConfigBtn = document.getElementById('saveConfigBtn');
+        const loadConfigBtn = document.getElementById('loadConfigBtn');
+        const sourceCanvasEl = document.getElementById('sourceCanvas');
+        const previewImg = document.getElementById('previewImg');
+        const previewInfo = document.getElementById('previewInfo');
+        const statusEl = document.getElementById('status');
+        const avatarList = document.getElementById('avatarList');
+        const cropX = document.getElementById('cropX');
+        const cropY = document.getElementById('cropY');
+        const cropSize = document.getElementById('cropSize');
+        const cropScale = document.getElementById('cropScale');
+        const scaleValue = document.getElementById('scaleValue');
+
+        // 初始化裁剪配置
+        function initCropConfigs() {
+            cropConfigs = [];
+            for (let i = 0; i < TOTAL_AVATARS; i++) {
+                cropConfigs.push({
+                    x: 0,
+                    y: 0,
+                    size: 400,
+                    scale: 1
+            });
+            }
+        }
+
+        initCropConfigs();
+
+        // 載入圖片
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const img = new Image();
+                img.onload = () => {
+                    sourceImage = img;
+                    setupCanvas();
+                    updatePreview();
+                    updateAvatarList();
+                    exportAllBtn.disabled = false;
+                    saveConfigBtn.disabled = false;
+                    showStatus('圖片載入成功');
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        // 設置 Canvas
+        function setupCanvas() {
+            if (!sourceImage) return;
+
+            const container = sourceCanvasEl.parentElement;
+            const maxWidth = container.clientWidth - 40;
+            const maxHeight = container.clientHeight - 40;
+            
+            let scale = Math.min(maxWidth / sourceImage.width, maxHeight / sourceImage.height, 1);
+            if (scale > 1) scale = 1;
+
+            sourceCanvasEl.width = sourceImage.width * scale;
+            sourceCanvasEl.height = sourceImage.height * scale;
+            sourceCanvas = { width: sourceImage.width, height: sourceImage.height };
+            sourceCtx = sourceCanvasEl.getContext('2d');
+            sourceCtx.imageSmoothingEnabled = true;
+            sourceCtx.imageSmoothingQuality = 'high';
+            sourceCtx.drawImage(sourceImage, 0, 0, sourceCanvasEl.width, sourceCanvasEl.height);
+
+            // 計算默認裁剪區域
+            const cellWidth = sourceImage.width / COLS;
+            const cellHeight = sourceImage.height / ROWS;
+            const defaultSize = Math.min(cellWidth, cellHeight) * 0.84;
+
+            for (let i = 0; i < TOTAL_AVATARS; i++) {
+                const row = Math.floor(i / COLS);
+                const col = i % COLS;
+                const config = cropConfigs[i];
+                config.x = col * cellWidth + (cellWidth - defaultSize) / 2;
+                config.y = row * cellHeight + (cellHeight - defaultSize) / 2;
+                config.size = defaultSize;
+                config.scale = 1;
+            }
+
+            drawCropBox();
+            updateControls();
+        }
+
+        // 繪製裁剪框
+        function drawCropBox() {
+            if (!sourceImage || !sourceCtx) return;
+
+            const config = cropConfigs[currentAvatarIndex];
+            const scale = sourceCanvasEl.width / sourceImage.width;
+            
+            const x = config.x * scale;
+            const y = config.y * scale;
+            const size = config.size * scale;
+
+            // 清除並重繪
+            sourceCtx.clearRect(0, 0, sourceCanvasEl.width, sourceCanvasEl.height);
+            sourceCtx.drawImage(sourceImage, 0, 0, sourceCanvasEl.width, sourceCanvasEl.height);
+
+            // 繪製網格
+            sourceCtx.strokeStyle = 'rgba(200, 200, 200, 0.3)';
+            sourceCtx.lineWidth = 1;
+            for (let i = 1; i < COLS; i++) {
+                const x = (sourceImage.width / COLS) * i * scale;
+                sourceCtx.beginPath();
+                sourceCtx.moveTo(x, 0);
+                sourceCtx.lineTo(x, sourceCanvasEl.height);
+                sourceCtx.stroke();
+            }
+            for (let i = 1; i < ROWS; i++) {
+                const y = (sourceImage.height / ROWS) * i * scale;
+                sourceCtx.beginPath();
+                sourceCtx.moveTo(0, y);
+                sourceCtx.lineTo(sourceCanvasEl.width, y);
+                sourceCtx.stroke();
+            }
+
+            // 繪製當前裁剪框
+            sourceCtx.strokeStyle = '#8bb24f';
+            sourceCtx.lineWidth = 3;
+            sourceCtx.setLineDash([]);
+            sourceCtx.strokeRect(x, y, size, size);
+
+            // 繪製中心點
+            const centerX = x + size / 2;
+            const centerY = y + size / 2;
+            sourceCtx.fillStyle = '#8bb24f';
+            sourceCtx.beginPath();
+            sourceCtx.arc(centerX, centerY, 4, 0, Math.PI * 2);
+            sourceCtx.fill();
+        }
+
+        // 更新預覽
+        function updatePreview() {
+            if (!sourceImage) return;
+
+            const config = cropConfigs[currentAvatarIndex];
+            const previewCanvas = document.createElement('canvas');
+            previewCanvas.width = 400;
+            previewCanvas.height = 400;
+            const ctx = previewCanvas.getContext('2d');
+
+            // 計算實際裁剪區域
+            const actualSize = config.size * config.scale;
+            const offsetX = (config.size - actualSize) / 2;
+            const offsetY = (config.size - actualSize) / 2;
+
+            ctx.drawImage(
+                sourceImage,
+                config.x + offsetX, config.y + offsetY, actualSize, actualSize,
+                0, 0, 400, 400
+            );
+
+            previewImg.src = previewCanvas.toDataURL();
+            previewInfo.textContent = `${avatarNames[currentAvatarIndex] || `頭像 ${currentAvatarIndex + 1}`} (${Math.round(config.x)}, ${Math.round(config.y)}, ${Math.round(config.size)})`;
+        }
+
+        // 更新控制項
+        function updateControls() {
+            const config = cropConfigs[currentAvatarIndex];
+            cropX.value = Math.round(config.x);
+            cropY.value = Math.round(config.y);
+            cropSize.value = Math.round(config.size);
+            cropScale.value = config.scale;
+            scaleValue.textContent = `${Math.round(config.scale * 100)}%`;
+        }
+
+        // 更新頭像列表
+        function updateAvatarList() {
+            if (!sourceImage) return;
+
+            avatarList.innerHTML = '';
+            for (let i = 0; i < TOTAL_AVATARS; i++) {
+                const config = cropConfigs[i];
+                const thumbCanvas = document.createElement('canvas');
+                thumbCanvas.width = 80;
+                thumbCanvas.height = 80;
+                const ctx = thumbCanvas.getContext('2d');
+
+                const actualSize = config.size * config.scale;
+                const offsetX = (config.size - actualSize) / 2;
+                const offsetY = (config.size - actualSize) / 2;
+
+                ctx.drawImage(
+                    sourceImage,
+                    config.x + offsetX, config.y + offsetY, actualSize, actualSize,
+                    0, 0, 80, 80
+                );
+
+                const thumb = document.createElement('div');
+                thumb.className = `avatar-thumb ${i === currentAvatarIndex ? 'active' : ''}`;
+                thumb.innerHTML = `<img src="${thumbCanvas.toDataURL()}" alt="${avatarNames[i] || i}">`;
+                thumb.onclick = () => {
+                    currentAvatarIndex = i;
+                    drawCropBox();
+                    updatePreview();
+                    updateControls();
+                    updateAvatarList();
+                };
+                avatarList.appendChild(thumb);
+            }
+        }
+
+        // 控制項事件
+        cropX.addEventListener('input', () => {
+            cropConfigs[currentAvatarIndex].x = parseFloat(cropX.value);
+            drawCropBox();
+            updatePreview();
+            updateAvatarList();
+        });
+
+        cropY.addEventListener('input', () => {
+            cropConfigs[currentAvatarIndex].y = parseFloat(cropY.value);
+            drawCropBox();
+            updatePreview();
+            updateAvatarList();
+        });
+
+        cropSize.addEventListener('input', () => {
+            cropConfigs[currentAvatarIndex].size = parseFloat(cropSize.value);
+            drawCropBox();
+            updatePreview();
+            updateAvatarList();
+        });
+
+        cropScale.addEventListener('input', () => {
+            cropConfigs[currentAvatarIndex].scale = parseFloat(cropScale.value);
+            scaleValue.textContent = `${Math.round(cropConfigs[currentAvatarIndex].scale * 100)}%`;
+            updatePreview();
+            updateAvatarList();
+        });
+
+        // Canvas 拖動和縮放
+        sourceCanvasEl.addEventListener('mousedown', (e) => {
+            if (!sourceImage) return;
+
+            const rect = sourceCanvasEl.getBoundingClientRect();
+            const scale = sourceCanvasEl.width / sourceImage.width;
+            const config = cropConfigs[currentAvatarIndex];
+            
+            const x = config.x * scale;
+            const y = config.y * scale;
+            const size = config.size * scale;
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+
+            // 檢查是否在裁剪框內
+            if (mouseX >= x && mouseX <= x + size && mouseY >= y && mouseY <= y + size) {
+                isDragging = true;
+                dragStart.x = mouseX - x;
+                dragStart.y = mouseY - y;
+            }
+        });
+
+        sourceCanvasEl.addEventListener('mousemove', (e) => {
+            if (!sourceImage || !isDragging) return;
+
+            const rect = sourceCanvasEl.getBoundingClientRect();
+            const scale = sourceCanvasEl.width / sourceImage.width;
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+
+            const config = cropConfigs[currentAvatarIndex];
+            config.x = (mouseX - dragStart.x) / scale;
+            config.y = (mouseY - dragStart.y) / scale;
+
+            // 限制在圖片範圍內
+            config.x = Math.max(0, Math.min(config.x, sourceImage.width - config.size));
+            config.y = Math.max(0, Math.min(config.y, sourceImage.height - config.size));
+
+            drawCropBox();
+            updatePreview();
+            updateControls();
+            updateAvatarList();
+        });
+
+        sourceCanvasEl.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+
+        sourceCanvasEl.addEventListener('mouseleave', () => {
+            isDragging = false;
+        });
+
+        // 導出所有頭像（逐個下載）
+        exportAllBtn.addEventListener('click', async () => {
+            if (!sourceImage) return;
+
+            exportAllBtn.disabled = true;
+            exportAllBtn.textContent = '導出中...';
+
+            for (let i = 0; i < TOTAL_AVATARS; i++) {
+                const config = cropConfigs[i];
+                const canvas = document.createElement('canvas');
+                canvas.width = 512;
+                canvas.height = 512;
+                const ctx = canvas.getContext('2d');
+
+                const actualSize = config.size * config.scale;
+                const offsetX = (config.size - actualSize) / 2;
+                const offsetY = (config.size - actualSize) / 2;
+
+                ctx.drawImage(
+                    sourceImage,
+                    config.x + offsetX, config.y + offsetY, actualSize, actualSize,
+                    0, 0, 512, 512
+                );
+
+                const name = avatarNames[i] || `avatar_${i + 1}`;
+                
+                await new Promise((resolve) => {
+                    canvas.toBlob((blob) => {
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `${name}.png`;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                        setTimeout(resolve, 100);
+                    }, 'image/png');
+                });
+            }
+
+            exportAllBtn.disabled = false;
+            exportAllBtn.textContent = '導出所有頭像';
+            showStatus(`已導出 ${TOTAL_AVATARS} 個頭像`);
+        });
+
+        // 保存配置
+        saveConfigBtn.addEventListener('click', () => {
+            const config = {
+                imageWidth: sourceImage.width,
+                imageHeight: sourceImage.height,
+                cropConfigs: cropConfigs
+            };
+            const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'avatar-crop-config.json';
+            a.click();
+            URL.revokeObjectURL(url);
+            showStatus('配置已保存');
+        });
+
+        // 載入配置
+        loadConfigBtn.addEventListener('click', () => {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'application/json';
+            input.onchange = (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    try {
+                        const config = JSON.parse(event.target.result);
+                        cropConfigs = config.cropConfigs;
+                        drawCropBox();
+                        updatePreview();
+                        updateControls();
+                        updateAvatarList();
+                        showStatus('配置已載入');
+                    } catch (err) {
+                        showStatus('載入配置失敗: ' + err.message, true);
+                    }
+                };
+                reader.readAsText(file);
+            };
+            input.click();
+        });
+
+        // 顯示狀態
+        function showStatus(message, isError = false) {
+            statusEl.textContent = message;
+            statusEl.className = `status ${isError ? 'error' : ''}`;
+            setTimeout(() => {
+                statusEl.textContent = '就緒';
+                statusEl.className = 'status';
+            }, 3000);
+        }
+
+        // 載入預設配置（如果圖片尺寸匹配）
+        loadDefaultBtn.addEventListener('click', () => {
+            if (!sourceImage) {
+                showStatus('請先載入圖片', true);
+                return;
+            }
+            // 重新初始化配置
+            setupCanvas();
+            updatePreview();
+            updateAvatarList();
+            showStatus('已載入預設配置');
+        });
+    </script>
+</body>
+</html>
+
