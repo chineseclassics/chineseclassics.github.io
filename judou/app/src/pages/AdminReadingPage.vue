@@ -165,12 +165,30 @@ async function handleDeleteCategory(category: { id: string; name: string }) {
   }
 }
 
-// 純文字內容（移除斷句符號）
+// 純文字內容（移除斷句符號，與 ReadingDetailPage 的計算方式一致）
 const pureContent = computed(() => {
   // 優先使用 currentText（包含完整數據），否則使用 selectedText
   const text = readingStore.currentText || selectedText.value
   if (!text) return ''
-  return text.content.replace(/\|/g, '')
+  
+  const content = text.content
+  // 支持新的 \n\n 格式和舊的 || 格式
+  const separator = content.includes('||') ? '||' : /\n\n+/
+  const rawParagraphs = content.split(separator)
+  
+  let pureContent = ''
+  for (const rawPara of rawParagraphs) {
+    // 先去除段落末尾的 | 和空白字符（與 ReadingDetailPage 一致）
+    const trimmedPara = rawPara.replace(/[\|\s]+$/, '')
+    // 只保留非 |、\n、\r 的字符
+    for (const char of trimmedPara) {
+      if (char !== '|' && char !== '\n' && char !== '\r') {
+        pureContent += char
+      }
+    }
+  }
+  
+  return pureContent
 })
 
 // 文章段落（按 \n\n 或 || 分段，向後兼容）
