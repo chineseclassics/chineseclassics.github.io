@@ -49,6 +49,8 @@ const menuItemsWithPosition = computed(() => {
   const items = props.items
   const count = items.length
   
+  console.log('[RadialMenu] menuItemsWithPosition 計算，count:', count, 'isOpen:', props.isOpen)
+  
   // 如果沒有項目，返回空數組
   if (count === 0) return []
   
@@ -86,7 +88,8 @@ const menuItemsWithPosition = computed(() => {
   
   return items.map((item, index) => {
     // 從右下角開始，向上和左側展開
-    const angle = startAngle + (index * angleStep)
+    // 從 0 度（右）向 -90 度（上）展開
+    const angle = startAngle - (index * angleStep)
     const x = Math.cos(angle) * radius.value
     const y = Math.sin(angle) * radius.value
     
@@ -162,11 +165,11 @@ const menuStyle = computed(() => ({
   
   <!-- 菜單容器 -->
   <div
+    v-if="isOpen"
     :style="menuStyle"
     class="radial-menu-container"
   >
     <TransitionGroup
-      v-if="isOpen"
       name="radial-item"
       tag="div"
       class="radial-menu-items"
@@ -226,6 +229,7 @@ const menuStyle = computed(() => ({
 .radial-menu-container {
   position: fixed;
   z-index: 1000;
+  pointer-events: none; /* 容器本身不攔截點擊，但子元素可以 */
 }
 
 .radial-menu-items {
@@ -263,6 +267,11 @@ const menuStyle = computed(() => ({
   cursor: pointer;
   user-select: none;
   -webkit-user-select: none;
+  
+  /* 確保按鈕可見（動畫會覆蓋這個） */
+  opacity: 1;
+  pointer-events: auto;
+  z-index: 1001; /* 確保按鈕在遮罩層之上 */
 }
 
 .radial-menu-item:hover {

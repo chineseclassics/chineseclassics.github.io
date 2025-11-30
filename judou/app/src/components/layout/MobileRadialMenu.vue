@@ -64,7 +64,9 @@ const visibleAdminNav = computed(() => {
 
 // 合併所有導航項目（主要功能在前，管理功能在後）
 const allMenuItems = computed(() => {
-  return [...visiblePrimaryNav.value, ...visibleAdminNav.value]
+  const items = [...visiblePrimaryNav.value, ...visibleAdminNav.value]
+  console.log('[MobileRadialMenu] allMenuItems:', items.length, items)
+  return items
 })
 
 // 切換菜單
