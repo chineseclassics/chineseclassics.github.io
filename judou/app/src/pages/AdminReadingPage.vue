@@ -259,6 +259,12 @@ async function handleFormSubmit() {
     return
   }
   
+  // 檢查是否選擇了文集（必填）
+  if (!textForm.reading_category_ids || textForm.reading_category_ids.length === 0) {
+    feedback.value = '請至少選擇一個文集'
+    return
+  }
+  
   try {
     isSubmitting.value = true
     
@@ -859,7 +865,7 @@ onMounted(async () => {
               
               <!-- 文集選擇 -->
               <label>
-                <span>文集（點擊選擇）</span>
+                <span>文集（點擊選擇）*</span>
                 <div class="category-picker">
                   <!-- 所有文集標籤 -->
                   <button 
