@@ -169,11 +169,46 @@ function handleCharClick(globalIdx: number, event: MouseEvent | TouchEvent) {
   // 顯示 tooltip
   hoveredAnnotationId.value = ann.id
   
-  // 獲取點擊位置（支持觸摸事件）
-  const clientX = 'touches' in event ? event.touches[0]?.clientX ?? 0 : event.clientX
-  const clientY = 'touches' in event ? event.touches[0]?.clientY ?? 0 : event.clientY
-  
-  showTooltip(ann, { clientX, clientY } as MouseEvent)
+  // 等待 DOM 更新後計算位置（確保高亮狀態已更新）
+  nextTick(() => {
+    // 找到該註釋的第一個字符元素（使用 data-global-index 屬性）
+    const firstCharElement = document.querySelector(
+      `.char[data-global-index="${ann.start_index}"]`
+    ) as HTMLElement
+    
+    // 找到該註釋的最後一個字符元素
+    const lastCharElement = document.querySelector(
+      `.char[data-global-index="${ann.end_index - 1}"]`
+    ) as HTMLElement
+    
+    let clientX = 0
+    let clientY = 0
+    
+    if (firstCharElement && lastCharElement) {
+      // 計算整個註釋詞組的 bounding box
+      const firstRect = firstCharElement.getBoundingClientRect()
+      const lastRect = lastCharElement.getBoundingClientRect()
+      
+      // 使用詞組的水平中心位置
+      clientX = (firstRect.left + lastRect.right) / 2
+      clientY = firstRect.top
+    } else if (firstCharElement) {
+      // 如果只有第一個元素（單字符註釋）
+      const rect = firstCharElement.getBoundingClientRect()
+      clientX = rect.left + rect.width / 2
+      clientY = rect.top
+    } else {
+      // 後備方案：使用被點擊元素的位置
+      const target = event.target as HTMLElement
+      if (target) {
+        const rect = target.getBoundingClientRect()
+        clientX = rect.left + rect.width / 2
+        clientY = rect.top
+      }
+    }
+    
+    showTooltip(ann, { clientX, clientY } as MouseEvent)
+  })
 }
 
 // 切換用戶斷句（使用全局索引）
@@ -574,6 +609,7 @@ watch(showPunctuation, (newVal) => {
                 'annotation-start': isAnnotationStart(paragraph.startIdx + localIdx),
                 'annotation-end': isAnnotationEnd(paragraph.startIdx + localIdx)
               }"
+              :data-global-index="paragraph.startIdx + localIdx"
               @mouseenter="(e) => handleCharMouseEnter(paragraph.startIdx + localIdx, e)"
               @mouseleave="handleCharMouseLeave"
               @click="(e) => handleCharClick(paragraph.startIdx + localIdx, e)"
