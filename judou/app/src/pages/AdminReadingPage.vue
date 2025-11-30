@@ -903,6 +903,14 @@ onMounted(async () => {
           返回列表
         </button>
         <div class="detail-actions">
+          <button 
+            class="edamame-btn edamame-btn-primary"
+            @click="handleGenerateAnnotations"
+            :disabled="isGeneratingAnnotations || !selectedText"
+            title="使用 AI 自動生成註釋（含拼音）"
+          >
+            {{ isGeneratingAnnotations ? '🤖 AI 生成中...' : '🤖 AI 生成註釋' }}
+          </button>
           <button class="edamame-btn edamame-btn-secondary" @click="openEditForm">
             編輯文章
           </button>
@@ -968,18 +976,6 @@ onMounted(async () => {
         >
           {{ para }}
         </div>
-      </div>
-      
-      <!-- AI 生成註釋按鈕 -->
-      <div class="ai-actions-section edamame-glass">
-        <button 
-          class="edamame-btn edamame-btn-primary"
-          @click="handleGenerateAnnotations"
-          :disabled="isGeneratingAnnotations || !selectedText"
-        >
-          {{ isGeneratingAnnotations ? '🤖 AI 生成中...' : '🤖 AI 生成註釋' }}
-        </button>
-        <p class="action-hint">點擊按鈕，AI 會自動識別需要註釋的字詞並生成註釋（含拼音）</p>
       </div>
       
       <!-- 註釋列表 -->
