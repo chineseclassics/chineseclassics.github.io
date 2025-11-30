@@ -95,7 +95,7 @@
   --glow-strong: 0 0 40px rgba(168, 200, 112, 0.4);
   
   /* 字體 */
-  --font-main: 'Noto Serif TC', serif;  /* 思源宋體繁體版：用於斷句練習和遊戲界面 */
+  --font-main: 'LXGW WenKai TC', serif;  /* LXGW 文楷繁體版：用於斷句練習和遊戲界面 */
   --font-ui: 'Gen Jyuu Gothic', -apple-system, BlinkMacSystemFont, sans-serif;  /* 思源柔黑：用於 UI 界面 */
   
   /* 字重 */

@@ -807,7 +807,7 @@ onMounted(() => {
   align-items: center;
   font-size: 1.25rem;
   line-height: 2.4;
-  font-family: var(--font-main, 'Noto Serif TC', serif);
+  font-family: var(--font-main, 'LXGW WenKai TC', serif);
 }
 
 .char-unit {

@@ -25,6 +25,23 @@
     font-display: swap;
 }
 
+/* LXGW 文楷繁體版 - 本地字體 */
+@font-face {
+    font-family: 'LXGW WenKai TC';
+    src: url(/judou/font/LXGWWenKaiTC-Regular.ttf) format('truetype');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'LXGW WenKai TC';
+    src: url(/judou/font/LXGWWenKaiTC-Medium.ttf) format('truetype');
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+}
+
 * {
     box-sizing: border-box;
 }

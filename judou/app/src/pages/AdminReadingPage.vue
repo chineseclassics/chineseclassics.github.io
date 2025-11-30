@@ -2377,7 +2377,7 @@ td:nth-child(2) {
 /* 文章內容 */
 .text-content {
   padding: 2rem;
-  font-family: var(--font-main, 'Noto Serif TC', serif);
+  font-family: var(--font-main, 'LXGW WenKai TC', serif);
   font-size: 1.25rem;
   line-height: 2;
   color: var(--color-neutral-800);
@@ -2410,7 +2410,7 @@ td:nth-child(2) {
 
 .char {
   font-size: var(--text-xl);
-  font-family: var(--font-main, 'Noto Serif TC', serif);
+  font-family: var(--font-main, 'LXGW WenKai TC', serif);
   color: var(--color-neutral-800);
   transition: all 0.2s ease;
   letter-spacing: 0.12em;
@@ -2639,7 +2639,7 @@ td:nth-child(2) {
 
 .preview-content {
   margin: 0;
-  font-family: var(--font-main, 'Noto Serif TC', serif);
+  font-family: var(--font-main, 'LXGW WenKai TC', serif);
   font-size: var(--text-lg);
   color: var(--color-neutral-800);
   line-height: 1.8;
@@ -2941,7 +2941,7 @@ td:nth-child(2) {
 .modal-card .modal-body textarea {
   resize: vertical;
   min-height: 120px;
-  font-family: var(--font-main, 'Noto Serif TC', serif);
+  font-family: var(--font-main, 'LXGW WenKai TC', serif);
 }
 
 .modal-card footer {

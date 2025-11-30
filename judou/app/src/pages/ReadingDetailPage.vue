@@ -790,7 +790,7 @@ watch(showPunctuation, (newVal) => {
 
 .char {
   font-size: var(--text-xl);
-  font-family: var(--font-main, 'Noto Serif TC', serif);
+  font-family: var(--font-main, 'LXGW WenKai TC', serif);
   color: var(--color-neutral-800);
   transition: all 0.2s ease;
   letter-spacing: 0.12em;

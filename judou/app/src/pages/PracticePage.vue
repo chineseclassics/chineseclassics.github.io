@@ -1484,7 +1484,7 @@ onBeforeUnmount(() => {
 /* 文字樣式 */
 .char {
   font-size: var(--text-2xl, 24px);
-  font-family: var(--font-main, 'Noto Serif TC', serif);
+  font-family: var(--font-main, 'LXGW WenKai TC', serif);
   color: var(--color-neutral-800);
   transition: transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1);
   display: inline-block;

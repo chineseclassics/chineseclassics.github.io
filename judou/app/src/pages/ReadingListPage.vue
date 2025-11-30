@@ -681,7 +681,7 @@ onMounted(async () => {
   color: var(--color-neutral-600);
   line-height: 1.6;
   margin: 0 0 1rem;
-  font-family: var(--font-main, 'Noto Serif TC', serif);
+  font-family: var(--font-main, 'LXGW WenKai TC', serif);
 }
 
 .card-footer {
