@@ -63,6 +63,7 @@ const annotationForm = reactive({
 
 // 編輯註釋相關狀態
 const editingAnnotationId = ref<string | null>(null)
+const isFetchingMoedict = ref(false)  // moedict 查詢加載狀態
 
 // AI 生成註釋相關狀態
 const isGeneratingAnnotations = ref(false)
@@ -388,8 +389,143 @@ function openExtractDialog() {
   isExtractOpen.value = true
 }
 
+// ============ Moedict API 查詢工具 ============
+
+interface MoedictResult {
+  pinyin: string | null
+  definition: string | null
+}
+
+// 清理 moedict 文本（移除標記符號）
+function cleanMoedictText(text: string): string {
+  return text
+    .replace(/[\[\]{}（）]/g, '')
+    .replace(/[｜]/g, '')
+    .trim()
+}
+
+// 緩存管理（使用 localStorage）
+const moedictCache = {
+  get(key: string): MoedictResult | null {
+    try {
+      const cached = localStorage.getItem(`moedict:${key}`)
+      if (cached) {
+        const parsed = JSON.parse(cached)
+        // 檢查是否過期（7天）
+        if (parsed.timestamp && Date.now() - parsed.timestamp < 7 * 24 * 60 * 60 * 1000) {
+          return parsed.data
+        }
+      }
+    } catch (e) {
+      console.error('讀取 moedict 緩存失敗:', e)
+    }
+    return null
+  },
+  
+  set(key: string, data: MoedictResult) {
+    try {
+      localStorage.setItem(`moedict:${key}`, JSON.stringify({
+        data,
+        timestamp: Date.now()
+      }))
+    } catch (e) {
+      console.error('保存 moedict 緩存失敗:', e)
+    }
+  }
+}
+
+// 查詢 moedict（單字或詞語）
+async function fetchMoedictWord(word: string): Promise<MoedictResult | null> {
+  // 檢查緩存
+  const cached = moedictCache.get(word)
+  if (cached) {
+    return cached
+  }
+  
+  try {
+    const response = await fetch(`https://www.moedict.tw/uni/${encodeURIComponent(word)}`)
+    if (!response.ok) {
+      // 緩存失敗結果（避免重複請求）
+      moedictCache.set(word, { pinyin: null, definition: null })
+      return null
+    }
+    
+    const data = await response.json()
+    
+    // 判斷是單字還是詞語
+    const isWord = word.length > 1
+    
+    let pinyin: string | null = null
+    let definition: string | null = null
+    
+    if (isWord) {
+      // 詞語：使用 h[0].p 和 h[0].d[0].f
+      if (data.h && data.h[0]) {
+        pinyin = data.h[0].p || null
+        if (data.h[0].d && data.h[0].d[0]) {
+          definition = cleanMoedictText(data.h[0].d[0].f || '')
+        }
+      }
+    } else {
+      // 單字：使用 heteronyms[0].pinyin 和 heteronyms[0].definitions[0].def
+      if (data.heteronyms && data.heteronyms[0]) {
+        pinyin = data.heteronyms[0].pinyin || 
+                 data.heteronyms[0].bopomofo2 || 
+                 data.heteronyms[0].bopomofo || 
+                 null
+        if (data.heteronyms[0].definitions && data.heteronyms[0].definitions[0]) {
+          definition = cleanMoedictText(data.heteronyms[0].definitions[0].def || '')
+        }
+      }
+    }
+    
+    const result: MoedictResult = { pinyin, definition }
+    
+    // 保存到緩存
+    moedictCache.set(word, result)
+    
+    return result
+  } catch (error) {
+    console.error('查詢 moedict 失敗:', error)
+    // 緩存失敗結果
+    moedictCache.set(word, { pinyin: null, definition: null })
+    return null
+  }
+}
+
+// 降級策略：詞語查詢 → 逐字查詢
+async function fetchMoedictWithFallback(term: string): Promise<MoedictResult> {
+  // 1. 先查詢詞語（如果是多字）
+  if (term.length > 1) {
+    const wordResult = await fetchMoedictWord(term)
+    if (wordResult && (wordResult.pinyin || wordResult.definition)) {
+      return wordResult
+    }
+  }
+  
+  // 2. 逐字查詢
+  const charResults = await Promise.all(
+    term.split('').map(char => fetchMoedictWord(char))
+  )
+  
+  // 組合拼音（過濾 null，用空格分隔）
+  const pinyins = charResults
+    .map(r => r?.pinyin)
+    .filter((p): p is string => p !== null && p !== undefined)
+  
+  // 合併多個釋義（用分號分隔，讓用戶自己組合編輯）
+  const definitions = charResults
+    .map(r => r?.definition)
+    .filter((d): d is string => d !== null && d !== undefined)
+  
+  return {
+    pinyin: pinyins.length > 0 ? pinyins.join(' ') : null,
+    definition: definitions.length > 0 ? definitions.join('；') : null  // 用中文分號分隔
+  }
+}
+
 // 打開添加註釋對話框
-function openAnnotationDialog() {
+async function openAnnotationDialog() {
   editingAnnotationId.value = null
   annotationForm.selectedText = selectionActions.text
   annotationForm.startIndex = selectionActions.startIndex
@@ -400,6 +536,35 @@ function openAnnotationDialog() {
   
   hideSelectionActions()
   isAnnotationOpen.value = true
+  
+  // 自動查詢 moedict
+  const term = selectionActions.text.trim()
+  if (term) {
+    isFetchingMoedict.value = true
+    feedback.value = '正在查詢拼音和釋義...'
+    
+    try {
+      const result = await fetchMoedictWithFallback(term)
+      
+      if (result.pinyin) {
+        annotationForm.pinyin = result.pinyin
+      }
+      if (result.definition) {
+        annotationForm.annotation = result.definition
+      }
+      
+      if (result.pinyin || result.definition) {
+        feedback.value = '已自動填充拼音和釋義，您可以編輯修改'
+      } else {
+        feedback.value = '未找到拼音和釋義，請手動輸入'
+      }
+    } catch (error) {
+      console.error('自動填充拼音和釋義失敗:', error)
+      feedback.value = '查詢拼音和釋義失敗，請手動輸入'
+    } finally {
+      isFetchingMoedict.value = false
+    }
+  }
 }
 
 // 打開編輯註釋對話框
@@ -1290,10 +1455,16 @@ onMounted(async () => {
                   v-model="annotationForm.pinyin" 
                   type="text" 
                   placeholder="例如：zhì"
+                  :disabled="isFetchingMoedict"
                 />
               </label>
               
-              <p v-if="feedback" class="feedback">{{ feedback }}</p>
+              <div v-if="isFetchingMoedict" class="loading-hint">
+                <span class="loading-spinner">⏳</span>
+                正在查詢拼音和釋義...
+              </div>
+              
+              <p v-if="feedback && !isFetchingMoedict" class="feedback">{{ feedback }}</p>
             </div>
             
             <footer>
@@ -2037,6 +2208,28 @@ td:nth-child(2) {
   border-radius: var(--radius-md);
   color: var(--color-error);
   font-size: var(--text-sm);
+}
+
+.loading-hint {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: rgba(59, 130, 246, 0.1);
+  border-radius: var(--radius-md);
+  color: var(--color-primary-600);
+  font-size: var(--text-sm);
+  margin-top: 0.5rem;
+}
+
+.loading-spinner {
+  display: inline-block;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 .form-row {
