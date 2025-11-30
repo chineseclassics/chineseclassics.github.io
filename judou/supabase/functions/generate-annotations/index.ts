@@ -61,10 +61,16 @@ serve(async (req) => {
 
   } catch (error: any) {
     console.error('❌ 生成註釋失敗:', error)
+    console.error('錯誤詳情:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    })
     return new Response(
       JSON.stringify({
         success: false,
-        error: error.message || '生成註釋時發生錯誤'
+        error: error.message || '生成註釋時發生錯誤',
+        details: error.stack ? error.stack.substring(0, 200) : undefined
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -166,8 +172,8 @@ ${content}
         { role: 'user', content: userPrompt }
       ],
       temperature: 0.3,  // 降低隨機性，確保輸出穩定
-      max_tokens: 2000,
-      response_format: { type: 'json_object' }  // 強制 JSON 格式
+      max_tokens: 6000  // 統一設置為 6000，支持更長文章生成更多註釋
+      // 注意：不使用 response_format，因為我們需要返回數組，不是對象
     })
   })
 
@@ -183,28 +189,30 @@ ${content}
   let annotations: AnnotationResult[] = []
   
   try {
-    // 嘗試直接解析 JSON
-    const parsed = JSON.parse(aiContent)
-    
-    // 如果返回的是對象，嘗試提取數組
-    if (Array.isArray(parsed)) {
-      annotations = parsed
-    } else if (parsed.annotations && Array.isArray(parsed.annotations)) {
-      annotations = parsed.annotations
-    } else if (parsed.data && Array.isArray(parsed.data)) {
-      annotations = parsed.data
+    // 先嘗試從文本中提取 JSON 數組（AI 可能返回帶有說明文字的內容）
+    const jsonMatch = aiContent.match(/\[[\s\S]*\]/)
+    if (jsonMatch) {
+      annotations = JSON.parse(jsonMatch[0])
     } else {
-      // 如果 AI 返回的不是數組格式，嘗試從文本中提取 JSON
-      const jsonMatch = aiContent.match(/\[[\s\S]*\]/)
-      if (jsonMatch) {
-        annotations = JSON.parse(jsonMatch[0])
+      // 如果沒有找到數組，嘗試直接解析整個內容
+      const parsed = JSON.parse(aiContent)
+      
+      // 如果返回的是數組
+      if (Array.isArray(parsed)) {
+        annotations = parsed
+      } else if (parsed.annotations && Array.isArray(parsed.annotations)) {
+        // 如果返回的是對象，包含 annotations 字段
+        annotations = parsed.annotations
+      } else if (parsed.data && Array.isArray(parsed.data)) {
+        // 如果返回的是對象，包含 data 字段
+        annotations = parsed.data
       } else {
-        throw new Error('無法從 AI 回應中提取註釋數組')
+        throw new Error('AI 返回的格式不符合預期，無法提取註釋數組')
       }
     }
   } catch (parseError: any) {
     console.error('解析 AI 回應失敗:', parseError)
-    console.error('AI 回應內容:', aiContent)
+    console.error('AI 回應內容:', aiContent.substring(0, 500))  // 只記錄前 500 字符
     throw new Error(`解析註釋失敗: ${parseError.message}`)
   }
 

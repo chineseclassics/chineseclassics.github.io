@@ -282,6 +282,16 @@ const currentAnnotations = computed(() => {
   return readingStore.currentText?.annotations || []
 })
 
+// 當前顯示的 tooltip
+const activeTooltip = ref<{
+  annotation: TextAnnotation
+  x: number
+  y: number
+} | null>(null)
+
+// 當前懸停的註釋 ID
+const hoveredAnnotationId = ref<string | null>(null)
+
 // 獲取字符的註釋（如果有）
 function getAnnotationForChar(globalIdx: number): TextAnnotation | null {
   if (!readingStore.currentText?.annotations) return null
@@ -300,6 +310,42 @@ function isAnnotationStart(globalIdx: number): boolean {
 function isAnnotationEnd(globalIdx: number): boolean {
   const ann = getAnnotationForChar(globalIdx)
   return ann ? (ann.end_index - 1 === globalIdx) : false
+}
+
+// 檢查字符是否屬於當前懸停的註釋
+function isCharInHoveredAnnotation(globalIdx: number): boolean {
+  if (!hoveredAnnotationId.value) return false
+  const ann = getAnnotationForChar(globalIdx)
+  return ann?.id === hoveredAnnotationId.value
+}
+
+// 處理滑鼠進入字符
+function handleCharMouseEnter(globalIdx: number, event: MouseEvent) {
+  const ann = getAnnotationForChar(globalIdx)
+  if (ann) {
+    hoveredAnnotationId.value = ann.id
+    showTooltip(ann, event)
+  }
+}
+
+// 處理滑鼠離開字符
+function handleCharMouseLeave() {
+  hoveredAnnotationId.value = null
+  hideTooltip()
+}
+
+// 顯示註釋 tooltip
+function showTooltip(annotation: TextAnnotation, event: MouseEvent) {
+  activeTooltip.value = {
+    annotation,
+    x: event.clientX,
+    y: event.clientY
+  }
+}
+
+// 隱藏 tooltip
+function hideTooltip() {
+  activeTooltip.value = null
 }
 
 // ============ 視圖切換 ============
@@ -451,21 +497,91 @@ async function handleFormSubmit() {
 // ============ 文字選取與操作 ============
 
 // 處理文字選取
-function handleTextSelection() {
+function handleTextSelection(event: MouseEvent) {
+  // 延遲執行，確保選取已完成
+  setTimeout(() => {
   const selection = window.getSelection()
-  if (!selection || selection.isCollapsed) return
+    if (!selection || selection.isCollapsed) {
+      hideSelectionActions()
+      return
+    }
   
   const text = selection.toString().trim()
-  if (!text || text.length === 0) return
+    if (!text || text.length === 0) {
+      hideSelectionActions()
+      return
+    }
+    
+    // 檢查選取是否在文章內容區域內
+    const target = event.target as HTMLElement
+    const textContentEl = target.closest('.text-content')
+    if (!textContentEl) {
+      hideSelectionActions()
+      return
+    }
+    
+    // 獲取選取範圍
+    const range = selection.getRangeAt(0)
   
   // 計算選取範圍在純文字中的位置
+    // 通過遍歷所有字符元素來計算位置
+    const allCharElements = textContentEl.querySelectorAll('.char')
+    let startIdx = -1
+    let endIdx = -1
+    let currentIdx = 0
+    
+    for (let i = 0; i < allCharElements.length; i++) {
+      const charEl = allCharElements[i] as HTMLElement
+      const charText = charEl.textContent || ''
+      
+      if (!charText) continue
+      
+      // 檢查這個字符元素是否與選取範圍相交
+      try {
+        const charRange = document.createRange()
+        charRange.selectNodeContents(charEl)
+        
+        // 檢查選取範圍是否與字符元素相交
+        const intersects = range.intersectsNode(charEl) || 
+                          range.compareBoundaryPoints(Range.START_TO_START, charRange) <= 0 && 
+                          range.compareBoundaryPoints(Range.END_TO_END, charRange) >= 0
+        
+        if (intersects) {
+          if (startIdx === -1) {
+            startIdx = currentIdx
+          }
+          endIdx = currentIdx + charText.length
+        }
+      } catch (e) {
+        // 如果範圍操作失敗，使用簡單的 contains 檢查
+        if (range.commonAncestorContainer.contains(charEl) || charEl.contains(range.commonAncestorContainer)) {
+          if (startIdx === -1) {
+            startIdx = currentIdx
+          }
+          endIdx = currentIdx + charText.length
+        }
+      }
+      
+      currentIdx += charText.length
+    }
+    
+    // 如果無法從 DOM 計算，使用 fallback 方法
+    if (startIdx === -1 || endIdx <= startIdx) {
   const content = pureContent.value
-  const startIdx = content.indexOf(text)
+      const firstMatch = content.indexOf(text)
+      if (firstMatch >= 0) {
+        startIdx = firstMatch
+        endIdx = firstMatch + text.length
+      }
+    }
   
-  if (startIdx >= 0) {
+    if (startIdx >= 0 && endIdx > startIdx) {
     // 顯示操作選單
-    showSelectionActions(text, startIdx, startIdx + text.length)
+      showSelectionActions(text, startIdx, endIdx)
+    } else {
+      hideSelectionActions()
   }
+  }, 10)
 }
 
 // 選取操作狀態
@@ -859,16 +975,84 @@ async function handleGenerateAnnotations() {
       // AI 返回的註釋不含位置，需要前端匹配
       const aiAnnotations: AIAnnotation[] = data.data
       const matched = matchAnnotationsWithContext(aiAnnotations, pureContent)
-      generatedAnnotations.value = matched
-      isPreviewOpen.value = true
-      feedback.value = `成功生成 ${matched.length} 個註釋（${aiAnnotations.length - matched.length} 個無法匹配已跳過），請預覽並確認`
+      
+      // 直接保存，不預覽
+      if (matched.length > 0) {
+        // 1. 先刪除舊的 AI 生成的未編輯註釋
+        await readingStore.deleteAIGeneratedAnnotations(selectedText.value.id)
+        
+        // 2. 逐個保存新註釋（跳過與用戶註釋重疊的）
+        let successCount = 0
+        let skippedCount = 0
+        let errorCount = 0
+        
+        for (const ann of matched) {
+          try {
+            // 檢查是否與用戶註釋重疊
+            const hasOverlap = await readingStore.checkAnnotationOverlap(
+              selectedText.value.id,
+              ann.start_index,
+              ann.end_index
+            )
+            
+            if (hasOverlap) {
+              // 跳過與用戶註釋重疊的新註釋
+              skippedCount++
+              continue
+            }
+            
+            // 保存新註釋（標記為 AI 生成）
+            await readingStore.addAnnotation({
+              text_id: selectedText.value.id,
+              start_index: ann.start_index,
+              end_index: ann.end_index,
+              term: ann.term,
+              annotation: ann.annotation,
+              pinyin: ann.pinyin || null,
+              source: 'ai',  // 標記為 AI 生成
+            })
+            successCount++
+          } catch (err) {
+            console.error('保存註釋失敗:', ann.term, err)
+            errorCount++
+          }
+        }
+        
+        // 重新獲取文章詳情
+        await readingStore.fetchTextDetail(selectedText.value.id)
+        
+        // 顯示結果
+        let message = `成功生成並保存 ${successCount} 個註釋`
+        if (aiAnnotations.length - matched.length > 0) {
+          message += `（${aiAnnotations.length - matched.length} 個無法匹配已跳過）`
+        }
+        if (skippedCount > 0) {
+          message += `，跳過 ${skippedCount} 個（與用戶註釋重疊）`
+        }
+        if (errorCount > 0) {
+          message += `，${errorCount} 個失敗`
+        }
+        feedback.value = message
+      } else {
+        feedback.value = `未生成有效註釋（${aiAnnotations.length} 個無法匹配）`
+      }
     } else {
       throw new Error(data.error || '生成註釋失敗')
     }
     
   } catch (err: any) {
     console.error('生成註釋失敗:', err)
-    feedback.value = err?.message || '生成註釋時發生錯誤'
+    // 嘗試從錯誤中提取更詳細的信息
+    let errorMessage = '生成註釋時發生錯誤'
+    if (err?.message) {
+      errorMessage = err.message
+    } else if (err?.error) {
+      errorMessage = err.error
+    } else if (typeof err === 'string') {
+      errorMessage = err
+    }
+    feedback.value = errorMessage
+    alert(`生成註釋失敗：${errorMessage}`)
   } finally {
     isGeneratingAnnotations.value = false
   }
@@ -1268,10 +1452,20 @@ onMounted(async () => {
       <!-- 選取操作浮層 -->
       <div v-if="selectionActions.show" class="selection-toolbar">
         <span class="selected-text">「{{ selectionActions.text.slice(0, 20) }}{{ selectionActions.text.length > 20 ? '...' : '' }}」</span>
-        <button class="toolbar-btn extract" @click="openExtractDialog">
-          📤 提取為練習
+        <!-- 選取 >= 10 個字：只顯示提取為練習 -->
+        <button 
+          v-if="selectionActions.text.length >= 10" 
+          class="toolbar-btn extract" 
+          @click="openExtractDialog"
+        >
+          📤 提取為斷句練習
         </button>
-        <button class="toolbar-btn annotate" @click="openAnnotationDialog">
+        <!-- 選取 < 10 個字：只顯示添加註釋 -->
+        <button 
+          v-else 
+          class="toolbar-btn annotate" 
+          @click="openAnnotationDialog"
+        >
           📝 添加註釋
         </button>
         <button class="toolbar-btn cancel" @click="hideSelectionActions">
@@ -1300,9 +1494,12 @@ onMounted(async () => {
                 class="char"
                 :class="{ 
                   'has-annotation': getAnnotationForChar(paragraph.startIdx + localIdx),
+                  'annotation-hovered': isCharInHoveredAnnotation(paragraph.startIdx + localIdx),
                   'annotation-start': isAnnotationStart(paragraph.startIdx + localIdx),
                   'annotation-end': isAnnotationEnd(paragraph.startIdx + localIdx)
                 }"
+                @mouseenter="(e) => handleCharMouseEnter(paragraph.startIdx + localIdx, e)"
+                @mouseleave="handleCharMouseLeave"
               >{{ char }}</span>
             </span>
           </div>
@@ -1614,6 +1811,24 @@ onMounted(async () => {
           </div>
         </div>
       </transition>
+    </Teleport>
+    
+    <!-- 註釋 Tooltip -->
+    <Teleport to="body">
+      <div 
+        v-if="activeTooltip"
+        class="annotation-tooltip"
+        :style="{ 
+          left: activeTooltip.x + 'px', 
+          top: (activeTooltip.y + 16) + 'px' 
+        }"
+      >
+        <div class="tooltip-term">
+          {{ activeTooltip.annotation.term }}
+          <span v-if="activeTooltip.annotation.pinyin" class="tooltip-pinyin">（{{ activeTooltip.annotation.pinyin }}）</span>
+        </div>
+        <div class="tooltip-content">{{ activeTooltip.annotation.annotation }}</div>
+      </div>
     </Teleport>
     
   </div>
@@ -2229,6 +2444,69 @@ td:nth-child(2) {
 /* 最後一個字的底線不延伸 */
 .char.has-annotation.annotation-end::after {
   right: 0;
+}
+
+/* 整個詞組懸停時高亮 */
+.char.has-annotation.annotation-hovered {
+  color: var(--color-primary-800);
+  background: rgba(139, 178, 79, 0.15);
+}
+
+/* 詞組首尾字的圓角 */
+.char.has-annotation.annotation-hovered.annotation-start {
+  border-radius: 3px 0 0 3px;
+}
+
+.char.has-annotation.annotation-hovered.annotation-end {
+  border-radius: 0 3px 3px 0;
+}
+
+/* 單字註釋的圓角 */
+.char.has-annotation.annotation-hovered.annotation-start.annotation-end {
+  border-radius: 3px;
+}
+
+/* 註釋 Tooltip */
+.annotation-tooltip {
+  position: fixed;
+  z-index: 1000;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(139, 178, 79, 0.25);
+  border-radius: 4px;
+  box-shadow: 0 3px 12px rgba(85, 139, 47, 0.15), 0 1px 4px rgba(0, 0, 0, 0.05);
+  padding: 0.5rem 0.75rem;
+  max-width: 280px;
+  animation: tooltip-in 0.12s ease-out;
+  font-size: var(--text-sm);
+  pointer-events: none;
+}
+
+.tooltip-term {
+  font-weight: var(--font-medium);
+  margin-bottom: 0.25rem;
+  color: var(--color-primary-600);
+}
+
+.tooltip-pinyin {
+  font-size: 0.9em;
+  color: var(--color-primary-500);
+  margin-left: 0.25rem;
+  font-weight: var(--font-normal);
+}
+
+.tooltip-content {
+  color: var(--color-neutral-700);
+}
+
+@keyframes tooltip-in {
+  from {
+    opacity: 0;
+    transform: translateY(-3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .paragraph:last-child {
