@@ -76,6 +76,68 @@ const generatedAnnotations = ref<Array<{
 }>>([])
 const isPreviewOpen = ref(false)
 
+// AI 返回的原始註釋（不含位置）
+interface AIAnnotation {
+  term: string
+  annotation: string
+  pinyin?: string | null
+}
+
+// 利用上下文匹配註釋位置（按順序匹配，利用前一個註釋的位置）
+function matchAnnotationsWithContext(
+  aiAnnotations: AIAnnotation[],
+  pureContent: string
+): Array<{
+  term: string
+  start_index: number
+  end_index: number
+  annotation: string
+  pinyin?: string | null
+}> {
+  const matched: Array<{
+    term: string
+    start_index: number
+    end_index: number
+    annotation: string
+    pinyin?: string | null
+  }> = []
+  
+  let searchStart = 0  // 從這裡開始搜索
+  
+  for (const ann of aiAnnotations) {
+    // 從 searchStart 開始搜索 term
+    const index = pureContent.indexOf(ann.term, searchStart)
+    
+    if (index === -1) {
+      // 找不到匹配，跳過
+      console.warn(`⚠️ 無法找到註釋 "${ann.term}" 在原文中的位置，跳過`)
+      continue
+    }
+    
+    // 驗證是否與前一個註釋重疊
+    if (matched.length > 0) {
+      const lastMatch = matched[matched.length - 1]
+      if (lastMatch && index < lastMatch.end_index) {
+        console.warn(`⚠️ 註釋 "${ann.term}" 與前一個註釋 "${lastMatch.term}" 重疊，跳過`)
+        continue
+      }
+    }
+    
+    // 更新 searchStart 為這個位置之後（確保下一個註釋在當前之後）
+    searchStart = index + ann.term.length
+    
+    matched.push({
+      term: ann.term,
+      start_index: index,
+      end_index: index + ann.term.length,
+      annotation: ann.annotation,
+      pinyin: ann.pinyin || null
+    })
+  }
+  
+  return matched
+}
+
 // ============ 計算屬性 ============
 
 // 閱讀分類選項（文集）
@@ -165,46 +227,80 @@ async function handleDeleteCategory(category: { id: string; name: string }) {
   }
 }
 
-// 純文字內容（移除斷句符號，與 ReadingDetailPage 的計算方式一致）
-const pureContent = computed(() => {
-  // 優先使用 currentText（包含完整數據），否則使用 selectedText
+// 解析文章內容（與 ReadingDetailPage 一致，用於顯示註釋）
+const parsedContent = computed(() => {
   const text = readingStore.currentText || selectedText.value
-  if (!text) return ''
+  if (!text) return { paragraphs: [], allChars: [] }
   
   const content = text.content
-  // 支持新的 \n\n 格式和舊的 || 格式
   const separator = content.includes('||') ? '||' : /\n\n+/
   const rawParagraphs = content.split(separator)
   
-  let pureContent = ''
+  const paragraphs: { chars: string[]; startIdx: number; endIdx: number }[] = []
+  const allChars: string[] = []
+  let globalPointer = 0
+  
   for (const rawPara of rawParagraphs) {
-    // 先去除段落末尾的 | 和空白字符（與 ReadingDetailPage 一致）
+    const paraChars: string[] = []
+    const paraStartIdx = globalPointer
     const trimmedPara = rawPara.replace(/[\|\s]+$/, '')
-    // 只保留非 |、\n、\r 的字符
+    
     for (const char of trimmedPara) {
-      if (char !== '|' && char !== '\n' && char !== '\r') {
-        pureContent += char
+      if (char === '|') {
+        // 跳過斷句符
+      } else if (char !== '\n' && char !== '\r') {
+        allChars.push(char)
+        paraChars.push(char)
+        globalPointer++
       }
+    }
+    
+    if (paraChars.length > 0) {
+      paragraphs.push({
+        chars: paraChars,
+        startIdx: paraStartIdx,
+        endIdx: globalPointer - 1
+      })
     }
   }
   
-  return pureContent
+  return { paragraphs, allChars }
 })
 
-// 文章段落（按 \n\n 或 || 分段，向後兼容）
-const paragraphs = computed(() => {
-  // 優先使用 currentText（包含完整數據），否則使用 selectedText
-  const text = readingStore.currentText || selectedText.value
-  if (!text) return []
-  // 支持新的 \n\n 格式和舊的 || 格式
-  const separator = text.content.includes('||') ? '||' : /\n\n+/
-  return text.content.split(separator).map(p => p.replace(/\|/g, ''))
+// 純文字內容（移除斷句符號，與 ReadingDetailPage 的計算方式一致）
+const pureContent = computed(() => {
+  return parsedContent.value.allChars.join('')
+})
+
+// 文章段落（用於顯示，返回解析後的段落）
+const displayParagraphs = computed(() => {
+  return parsedContent.value.paragraphs
 })
 
 // 當前文章的註釋
 const currentAnnotations = computed(() => {
   return readingStore.currentText?.annotations || []
 })
+
+// 獲取字符的註釋（如果有）
+function getAnnotationForChar(globalIdx: number): TextAnnotation | null {
+  if (!readingStore.currentText?.annotations) return null
+  return readingStore.currentText.annotations.find(
+    a => globalIdx >= a.start_index && globalIdx < a.end_index
+  ) || null
+}
+
+// 檢查字符是否是註釋的第一個字
+function isAnnotationStart(globalIdx: number): boolean {
+  const ann = getAnnotationForChar(globalIdx)
+  return ann?.start_index === globalIdx
+}
+
+// 檢查字符是否是註釋的最後一個字
+function isAnnotationEnd(globalIdx: number): boolean {
+  const ann = getAnnotationForChar(globalIdx)
+  return ann ? (ann.end_index - 1 === globalIdx) : false
+}
 
 // ============ 視圖切換 ============
 
@@ -752,7 +848,6 @@ async function handleGenerateAnnotations() {
     const { data, error } = await supabase.functions.invoke('generate-annotations', {
       body: {
         content: contentForAI,  // 傳入帶斷句符的內容，幫助 AI 理解
-        pureContent: pureContent,  // 同時傳入純文字，用於位置驗證
         title: selectedText.value.title,
         author: selectedText.value.author
       }
@@ -761,9 +856,12 @@ async function handleGenerateAnnotations() {
     if (error) throw error
     
     if (data.success && data.data) {
-      generatedAnnotations.value = data.data
+      // AI 返回的註釋不含位置，需要前端匹配
+      const aiAnnotations: AIAnnotation[] = data.data
+      const matched = matchAnnotationsWithContext(aiAnnotations, pureContent)
+      generatedAnnotations.value = matched
       isPreviewOpen.value = true
-      feedback.value = `成功生成 ${data.count || 0} 個註釋，請預覽並確認`
+      feedback.value = `成功生成 ${matched.length} 個註釋（${aiAnnotations.length - matched.length} 個無法匹配已跳過），請預覽並確認`
     } else {
       throw new Error(data.error || '生成註釋失敗')
     }
@@ -1187,11 +1285,27 @@ onMounted(async () => {
         @mouseup="handleTextSelection"
       >
         <div 
-          v-for="(para, idx) in paragraphs" 
-          :key="idx" 
-          class="paragraph"
+          v-for="(paragraph, paraIdx) in displayParagraphs" 
+          :key="paraIdx" 
+          class="paragraph-block"
         >
-          {{ para }}
+          <div class="reading-line">
+            <span
+              v-for="(char, localIdx) in paragraph.chars"
+              :key="localIdx"
+              class="char-unit"
+            >
+              <!-- 字符 -->
+              <span 
+                class="char"
+                :class="{ 
+                  'has-annotation': getAnnotationForChar(paragraph.startIdx + localIdx),
+                  'annotation-start': isAnnotationStart(paragraph.startIdx + localIdx),
+                  'annotation-end': isAnnotationEnd(paragraph.startIdx + localIdx)
+                }"
+              >{{ char }}</span>
+            </span>
+          </div>
         </div>
       </div>
       
@@ -2060,6 +2174,61 @@ td:nth-child(2) {
   text-indent: 2em;
   padding-bottom: 1.5rem;
   border-bottom: 1px dashed rgba(0, 0, 0, 0.08);
+}
+
+/* 段落區塊（用於顯示註釋） */
+.paragraph-block {
+  margin-bottom: 1.5rem;
+}
+
+.reading-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.12em;
+  line-height: 2;
+}
+
+.char-unit {
+  display: inline-block;
+  position: relative;
+}
+
+.char {
+  font-size: var(--text-xl);
+  font-family: var(--font-main, 'Noto Serif TC', serif);
+  color: var(--color-neutral-800);
+  transition: all 0.2s ease;
+  letter-spacing: 0.12em;
+}
+
+/* 帶註釋的字符 */
+.char.has-annotation {
+  color: var(--color-primary-700);
+  cursor: help;
+  transition: all 0.15s ease;
+  position: relative;
+}
+
+/* 使用偽元素創建連續底線 */
+.char.has-annotation::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: -0.12em; /* 延伸到字間距區域 */
+  height: 1.5px;
+  background: repeating-linear-gradient(
+    to right,
+    var(--color-primary-400) 0,
+    var(--color-primary-400) 3px,
+    transparent 3px,
+    transparent 5px
+  );
+}
+
+/* 最後一個字的底線不延伸 */
+.char.has-annotation.annotation-end::after {
+  right: 0;
 }
 
 .paragraph:last-child {

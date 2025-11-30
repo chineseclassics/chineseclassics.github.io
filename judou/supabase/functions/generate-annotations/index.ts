@@ -16,8 +16,6 @@ const DEEPSEEK_API_URL = 'https://api.deepseek.com/v1/chat/completions'
 
 interface AnnotationResult {
   term: string
-  start_index: number
-  end_index: number
   annotation: string
   pinyin?: string | null
 }
@@ -31,7 +29,6 @@ serve(async (req) => {
   try {
     const { 
       content,      // 文章內容（帶斷句符，用於 AI 理解）
-      pureContent, // 純文字內容（不含斷句符，用於位置驗證，可選）
       title,        // 文章標題（可選，用於上下文）
       author        // 作者（可選，用於上下文）
     } = await req.json()
@@ -46,7 +43,6 @@ serve(async (req) => {
     // 調用 DeepSeek API 生成註釋
     const annotations = await generateAnnotationsWithAI({
       content,  // 帶斷句符的內容，幫助 AI 理解
-      pureContent: pureContent || null,  // 純文字，用於位置驗證
       title: title || null,
       author: author || null
     })
@@ -83,18 +79,13 @@ serve(async (req) => {
 // =====================================================
 async function generateAnnotationsWithAI({
   content,
-  pureContent,
   title,
   author
 }: {
   content: string  // 帶斷句符的內容
-  pureContent: string | null  // 純文字內容（用於位置驗證）
   title: string | null
   author: string | null
 }): Promise<AnnotationResult[]> {
-  
-  // 計算純文字內容（用於位置索引驗證）
-  const textForPosition = pureContent || content.replace(/\|/g, '').replace(/[\n\r]/g, '')
 
   // 構建系統提示詞
   const systemPrompt = `你是一位專業的中文古文教學助手，擅長為古文文章生成準確的註釋。
@@ -107,8 +98,7 @@ async function generateAnnotationsWithAI({
 
 輸出格式要求：
 - 必須返回有效的 JSON 數組
-- 每個註釋對象包含：term（字詞）、start_index（起始位置）、end_index（結束位置）、annotation（註釋內容）、pinyin（拼音，可選）
-- start_index 和 end_index 是字詞在文章中的字符位置（從0開始，**不計算斷句符 |**，只計算實際字符）
+- 每個註釋對象包含：term（字詞）、annotation（註釋內容）、pinyin（拼音，可選）
 - 如果字詞是常見字，pinyin 可以為 null 或省略
 - 如果字詞是難讀字或多音字，必須提供 pinyin
 
@@ -116,7 +106,7 @@ async function generateAnnotationsWithAI({
 - 只註釋真正需要解釋的字詞，不要過度註釋
 - 拼音使用標準格式，如：zhì、yú、shèng
 - 註釋要簡潔，通常不超過20字
-- **位置索引必須基於純文字（不含 | 符號）計算**`
+- **term 必須與原文中的字詞完全一致**（包括標點符號，如果有）`
 
   // 構建用戶提示詞
   const userPrompt = `請為以下古文文章生成註釋：
@@ -125,32 +115,30 @@ ${title ? `標題：${title}\n` : ''}${author ? `作者：${author}\n` : ''}
 文章內容（| 表示斷句位置）：
 ${content}
 
+**重要要求**：
+1. **嚴格按照原文順序**：必須按照字詞在原文中出現的順序返回註釋
+2. **term 必須與原文完全一致**：被註釋的字詞（term）必須是原文中的完整片段，包括標點符號（如果有）
+3. **只註釋連續的字詞**：不要註釋跨段落的詞組
+
 請分析文章，識別需要註釋的字詞，並返回 JSON 數組。每個註釋必須包含：
-- term: 被註釋的字詞原文
-- start_index: 在文章中的起始位置（從0開始，**不計算斷句符 |**，只計算實際字符）
-- end_index: 在文章中的結束位置（不包含該位置，**不計算斷句符 |**）
+- term: 被註釋的字詞原文（**必須與原文中的字詞完全一致，包括標點符號**）
 - annotation: 註釋內容（繁體中文，簡潔易懂）
 - pinyin: 拼音（僅難讀字需要，格式如 "zhì"，常見字可為 null）
 
-**重要**：位置索引必須基於純文字（不含 | 符號）計算。例如：
-- 如果文章是 "晉|太原|中"，那麼：
-  - "晉" 的位置是 0-1
-  - "太原" 的位置是 1-3（跳過 |）
-  - "中" 的位置是 3-4
+**注意**：
+- 返回的註釋必須按照在原文中出現的順序排列
+- term 必須是原文中的連續字符，不能修改、不能省略標點
+- 如果一個字詞在原文中出現多次，每個出現都要單獨列出
 
 返回格式示例：
 [
   {
     "term": "智",
-    "start_index": 0,
-    "end_index": 1,
     "annotation": "智慧，聰明",
     "pinyin": "zhì"
   },
   {
     "term": "於",
-    "start_index": 5,
-    "end_index": 6,
     "annotation": "在，介詞",
     "pinyin": null
   }
@@ -224,32 +212,17 @@ ${content}
   const validatedAnnotations: AnnotationResult[] = annotations
     .filter((ann: any) => {
       // 驗證必需字段
-      return ann.term && 
-             typeof ann.start_index === 'number' && 
-             typeof ann.end_index === 'number' && 
-             ann.annotation
+      return ann.term && ann.annotation
     })
     .map((ann: any) => ({
       term: String(ann.term).trim(),
-      start_index: Math.max(0, parseInt(ann.start_index) || 0),
-      end_index: Math.max(parseInt(ann.start_index) + 1, parseInt(ann.end_index) || 0),
       annotation: String(ann.annotation).trim(),
       pinyin: ann.pinyin ? String(ann.pinyin).trim() : null
     }))
     .filter((ann: AnnotationResult) => {
-      // 確保位置有效，且不超出純文字長度
-      const isValid = ann.start_index >= 0 && 
-                      ann.end_index > ann.start_index && 
-                      ann.term.length > 0 &&
-                      ann.end_index <= textForPosition.length
-      
-      if (!isValid) {
-        console.warn(`註釋位置無效或超出範圍: ${ann.term} (${ann.start_index}-${ann.end_index}), 純文字長度: ${textForPosition.length}`)
-      }
-      
-      return isValid
+      // 確保 term 不為空
+      return ann.term.length > 0 && ann.annotation.length > 0
     })
-    .sort((a, b) => a.start_index - b.start_index)  // 按位置排序
 
   console.log(`✅ 成功生成 ${validatedAnnotations.length} 個註釋`)
   
