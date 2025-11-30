@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
 import { useReadingStore } from '@/stores/readingStore'
 import { usePracticeLibraryStore } from '@/stores/practiceLibraryStore'
 import { useAuthStore } from '@/stores/authStore'
@@ -292,6 +292,9 @@ const activeTooltip = ref<{
 // 當前懸停的註釋 ID
 const hoveredAnnotationId = ref<string | null>(null)
 
+// 檢測是否為移動設備
+const isMobile = ref(false)
+
 // 獲取字符的註釋（如果有）
 function getAnnotationForChar(globalIdx: number): TextAnnotation | null {
   if (!readingStore.currentText?.annotations) return null
@@ -319,8 +322,11 @@ function isCharInHoveredAnnotation(globalIdx: number): boolean {
   return ann?.id === hoveredAnnotationId.value
 }
 
-// 處理滑鼠進入字符
+// 處理滑鼠進入字符（桌面版）
 function handleCharMouseEnter(globalIdx: number, event: MouseEvent) {
+  // 移動設備不使用滑鼠懸停
+  if (isMobile.value) return
+  
   const ann = getAnnotationForChar(globalIdx)
   if (ann) {
     hoveredAnnotationId.value = ann.id
@@ -328,10 +334,37 @@ function handleCharMouseEnter(globalIdx: number, event: MouseEvent) {
   }
 }
 
-// 處理滑鼠離開字符
+// 處理滑鼠離開字符（桌面版）
 function handleCharMouseLeave() {
+  // 移動設備不使用滑鼠懸停
+  if (isMobile.value) return
+  
   hoveredAnnotationId.value = null
   hideTooltip()
+}
+
+// 處理字符點擊（移動版）
+function handleCharClick(globalIdx: number, event: MouseEvent | TouchEvent) {
+  const ann = getAnnotationForChar(globalIdx)
+  if (!ann) return
+  
+  // 防止事件冒泡
+  event.stopPropagation()
+  
+  // 如果點擊的是當前已顯示的註釋，則關閉
+  if (activeTooltip.value && activeTooltip.value.annotation.id === ann.id) {
+    hideTooltip()
+    return
+  }
+  
+  // 顯示 tooltip
+  hoveredAnnotationId.value = ann.id
+  
+  // 獲取點擊位置（支持觸摸事件）
+  const clientX = 'touches' in event ? event.touches[0]?.clientX ?? 0 : event.clientX
+  const clientY = 'touches' in event ? event.touches[0]?.clientY ?? 0 : event.clientY
+  
+  showTooltip(ann, { clientX, clientY } as MouseEvent)
 }
 
 // 顯示註釋 tooltip
@@ -345,7 +378,20 @@ function showTooltip(annotation: TextAnnotation, event: MouseEvent) {
 
 // 隱藏 tooltip
 function hideTooltip() {
+  hoveredAnnotationId.value = null
   activeTooltip.value = null
+}
+
+// 處理點擊外部區域關閉 tooltip（僅移動設備）
+function handleClickOutside(event: MouseEvent | TouchEvent) {
+  if (!isMobile.value || !activeTooltip.value) return
+  
+  const target = event.target as HTMLElement
+  
+  // 如果點擊的不是帶註釋的文字或 tooltip 本身，則關閉
+  if (!target.closest('.char.has-annotation') && !target.closest('.annotation-tooltip')) {
+    hideTooltip()
+  }
 }
 
 // ============ 視圖切換 ============
@@ -1225,7 +1271,26 @@ async function handleAddCategory() {
   }
 }
 
+// 檢測移動設備
+function detectMobile() {
+  isMobile.value = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
+                   window.innerWidth <= 768 ||
+                   ('ontouchstart' in window || navigator.maxTouchPoints > 0)
+}
+
 onMounted(async () => {
+  // 檢測移動設備
+  detectMobile()
+  
+  // 監聽窗口大小變化
+  window.addEventListener('resize', detectMobile)
+  
+  // 移動設備：添加點擊外部關閉功能
+  if (isMobile.value) {
+    document.addEventListener('click', handleClickOutside)
+    document.addEventListener('touchend', handleClickOutside)
+  }
+  
   // 同時獲取閱讀分類、文章列表和練習分類
   await Promise.all([
     readingStore.fetchReadingCategories(),
@@ -1236,6 +1301,16 @@ onMounted(async () => {
   // 預設選中第一個文集
   if (categoryOptions.value.length > 0 && !selectedCategoryId.value && categoryOptions.value[0]) {
     selectedCategoryId.value = categoryOptions.value[0].id
+  }
+})
+
+// 清理
+onUnmounted(() => {
+  // 移除事件監聽器
+  window.removeEventListener('resize', detectMobile)
+  if (isMobile.value) {
+    document.removeEventListener('click', handleClickOutside)
+    document.removeEventListener('touchend', handleClickOutside)
   }
 })
 </script>
@@ -1500,6 +1575,8 @@ onMounted(async () => {
                 }"
                 @mouseenter="(e) => handleCharMouseEnter(paragraph.startIdx + localIdx, e)"
                 @mouseleave="handleCharMouseLeave"
+                @click="(e) => handleCharClick(paragraph.startIdx + localIdx, e)"
+                @touchend="(e) => handleCharClick(paragraph.startIdx + localIdx, e)"
               >{{ char }}</span>
             </span>
           </div>
@@ -1818,11 +1895,21 @@ onMounted(async () => {
       <div 
         v-if="activeTooltip"
         class="annotation-tooltip"
+        :class="{ 'mobile-tooltip': isMobile }"
         :style="{ 
           left: activeTooltip.x + 'px', 
           top: (activeTooltip.y + 16) + 'px' 
         }"
+        @click.stop
       >
+        <button 
+          v-if="isMobile" 
+          class="tooltip-close-btn"
+          @click="hideTooltip"
+          aria-label="關閉註釋"
+        >
+          ✕
+        </button>
         <div class="tooltip-term">
           {{ activeTooltip.annotation.term }}
           <span v-if="activeTooltip.annotation.pinyin" class="tooltip-pinyin">（{{ activeTooltip.annotation.pinyin }}）</span>
@@ -2422,6 +2509,16 @@ td:nth-child(2) {
   cursor: help;
   transition: all 0.15s ease;
   position: relative;
+  user-select: none; /* 防止移動設備上選中文字 */
+  -webkit-tap-highlight-color: transparent; /* 移除移動設備點擊高亮 */
+}
+
+/* 移動設備上的註釋字符 */
+@media (max-width: 768px) {
+  .char.has-annotation {
+    cursor: pointer;
+    touch-action: manipulation; /* 優化觸摸響應 */
+  }
 }
 
 /* 使用偽元素創建連續底線 */
@@ -2478,7 +2575,51 @@ td:nth-child(2) {
   max-width: 280px;
   animation: tooltip-in 0.12s ease-out;
   font-size: var(--text-sm);
-  pointer-events: none;
+  pointer-events: auto; /* 移動設備上允許交互 */
+}
+
+/* 移動設備上的 Tooltip */
+.annotation-tooltip.mobile-tooltip {
+  position: fixed;
+  max-width: calc(100vw - 2rem);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(139, 178, 79, 0.4);
+}
+
+/* Tooltip 關閉按鈕 */
+.tooltip-close-btn {
+  position: absolute;
+  top: 0.25rem;
+  right: 0.25rem;
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-neutral-600);
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.tooltip-close-btn:hover {
+  background: rgba(0, 0, 0, 0.1);
+  transform: scale(1.1);
+}
+
+.tooltip-close-btn:active {
+  transform: scale(0.95);
+}
+
+/* 移動設備上 tooltip 內容需要右側留出關閉按鈕空間 */
+.annotation-tooltip.mobile-tooltip .tooltip-term,
+.annotation-tooltip.mobile-tooltip .tooltip-content {
+  padding-right: 1.5rem;
 }
 
 .tooltip-term {
