@@ -44,7 +44,7 @@ const route = useRoute()
 // 默認半徑
 const radius = computed(() => props.radius || 100)
 
-// 計算每個按鈕的位置（圓形排列）
+// 計算每個按鈕的位置（扇形排列，從右下角向上和左側展開）
 const menuItemsWithPosition = computed(() => {
   const items = props.items
   const count = items.length
@@ -52,11 +52,41 @@ const menuItemsWithPosition = computed(() => {
   // 如果沒有項目，返回空數組
   if (count === 0) return []
   
-  const angleStep = (2 * Math.PI) / count // 每個按鈕的角度間隔
+  // 扇形角度範圍：從右下角向上和左側展開（90度象限）
+  // 起始角度：0度（正右方）
+  // 結束角度：-90度/270度（正上方）
+  // 總角度：90度（四分之一圓）
+  const startAngle = 0 // 0度（正右方）
+  const endAngle = -Math.PI / 2 // -90度（正上方）
+  const totalAngle = Math.abs(endAngle - startAngle) // 90度
+  
+  // 如果只有一個項目，放在正上方
+  if (count === 1) {
+    const item = items[0]
+    if (!item) return []
+    return [{
+      label: item.label,
+      icon: item.icon,
+      iconType: item.iconType,
+      to: item.to,
+      disabled: item.disabled,
+      description: item.description,
+      teacherOnly: item.teacherOnly,
+      superAdminOnly: item.superAdminOnly,
+      x: 0,
+      y: -radius.value,
+      angle: -90,
+      index: 0,
+      total: 1
+    }]
+  }
+  
+  // 多個項目：均勻分佈在扇形區域
+  const angleStep = totalAngle / (count - 1)
   
   return items.map((item, index) => {
-    // 從上方開始（-90度），順時針排列
-    const angle = (index * angleStep) - (Math.PI / 2)
+    // 從右下角開始，向上和左側展開
+    const angle = startAngle + (index * angleStep)
     const x = Math.cos(angle) * radius.value
     const y = Math.sin(angle) * radius.value
     
