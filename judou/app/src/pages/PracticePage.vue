@@ -799,15 +799,18 @@ onBeforeUnmount(() => {
 
         <!-- 年級選擇器 -->
         <div v-else class="picker-cascade">
-          <div class="cascade-row">
-            <div class="cascade-select full-width">
-              <label>年級</label>
-              <select v-model="selectedGradeId">
-                <option :value="null" disabled>選擇年級</option>
-                <option v-for="grade in gradeOptions" :key="grade.id" :value="grade.id">
-                  {{ grade.name }}
-                </option>
-              </select>
+          <div class="grade-filter-section">
+            <label class="grade-filter-label">年級</label>
+            <div class="grade-tags">
+              <button
+                v-for="grade in gradeOptions"
+                :key="grade.id"
+                class="grade-tag"
+                :class="{ active: selectedGradeId === grade.id }"
+                @click="selectedGradeId = grade.id"
+              >
+                {{ grade.name }}
+              </button>
             </div>
           </div>
 
@@ -1137,6 +1140,65 @@ onBeforeUnmount(() => {
   gap: 1rem;
 }
 
+/* 年級標籤過濾器 */
+.grade-filter-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.grade-filter-label {
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+  color: var(--color-neutral-500);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.grade-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.grade-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  background: rgba(255, 255, 255, 0.8);
+  border: 1.5px solid rgba(0, 0, 0, 0.1);
+  border-radius: var(--radius-full);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--color-neutral-700);
+  cursor: pointer;
+  transition: all var(--duration-base) ease;
+  white-space: nowrap;
+}
+
+.grade-tag:hover {
+  background: var(--color-primary-50);
+  border-color: var(--color-primary-300);
+  color: var(--color-primary-700);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(139, 178, 79, 0.15);
+}
+
+.grade-tag.active {
+  background: var(--color-primary-500);
+  border-color: var(--color-primary-500);
+  color: white;
+  box-shadow: 0 2px 6px rgba(139, 178, 79, 0.25);
+}
+
+.grade-tag.active:hover {
+  background: var(--color-primary-600);
+  border-color: var(--color-primary-600);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(139, 178, 79, 0.3);
+}
+
+/* 保留舊樣式以備後用 */
 .cascade-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1695,6 +1757,15 @@ onBeforeUnmount(() => {
 @media (max-width: 768px) {
   .cascade-row {
     grid-template-columns: 1fr;
+  }
+
+  .grade-tags {
+    gap: 0.375rem;
+  }
+
+  .grade-tag {
+    padding: 0.4rem 0.85rem;
+    font-size: var(--text-xs);
   }
 
   .results-grid {
