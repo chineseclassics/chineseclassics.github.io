@@ -40,6 +40,25 @@ const gameStore = useGameStore()
 
 const roomId = computed(() => route.params.roomId as string)
 const room = computed(() => gameStore.currentRoom)
+const myParticipant = computed(() => gameStore.myParticipant)
+
+// 個人與團隊分數
+const myScore = computed(() => myParticipant.value?.score || 0)
+const myTeam = computed(() => {
+  if (!room.value?.teams || !myParticipant.value?.team_id) return null
+  return room.value.teams.find(t => t.id === myParticipant.value!.team_id) || null
+})
+const teamAverage = computed(() => myTeam.value ? (myTeam.value.total_score || 0) / 100 : null)
+const teamRanking = computed(() => {
+  if (!room.value?.teams) return []
+  return [...room.value.teams]
+    .map(t => ({
+      id: t.id,
+      name: t.team_name,
+      score: (t.total_score || 0) / 100,
+    }))
+    .sort((a, b) => b.score - a.score)
+})
 
 // =====================================================
 // 多篇文章管理
@@ -493,14 +512,24 @@ onUnmounted(() => {
       <!-- 做題區域 -->
       <main class="play-main">
         <!-- 豆子提示欄 -->
-        <div class="board-header">
-          <p class="board-hint">點擊字間空隙種下句豆來斷句</p>
-          <div class="board-header-right">
-            <div class="bean-inventory" :class="{ shake: beanShake, empty: !hasBeansLeft }">
-              <span
-                v-for="i in totalBeans"
-                :key="i"
-                class="inventory-bean"
+      <div class="board-header">
+        <p class="board-hint">點擊字間空隙種下句豆來斷句</p>
+        <div class="board-header-right">
+          <div class="scoreboard">
+            <div class="score-chip">
+              <span class="chip-label">個人分數</span>
+              <span class="chip-value">{{ myScore }}</span>
+            </div>
+            <div v-if="teamAverage !== null" class="score-chip team">
+              <span class="chip-label">團隊平均</span>
+              <span class="chip-value">{{ teamAverage?.toFixed(2) }}</span>
+            </div>
+          </div>
+          <div class="bean-inventory" :class="{ shake: beanShake, empty: !hasBeansLeft }">
+            <span
+              v-for="i in totalBeans"
+              :key="i"
+              class="inventory-bean"
                 :class="{ used: i > remainingBeans }"
               ></span>
             </div>
@@ -530,10 +559,18 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <!-- 進度提示 -->
-        <div class="progress-hint">
-          <span>已標記 {{ userBreaks.size }} / {{ correctBreaks.size }} 處</span>
+      <!-- 進度提示 -->
+      <div class="progress-hint">
+        <span>已標記 {{ userBreaks.size }} / {{ correctBreaks.size }} 處</span>
+      </div>
+
+      <!-- 團隊排名 -->
+      <div v-if="teamRanking.length" class="team-board">
+        <div class="team-row" v-for="team in teamRanking" :key="team.id" :class="{ me: team.id === myTeam?.id }">
+          <span class="team-name">{{ team.name }}</span>
+          <span class="team-score">{{ team.score.toFixed(2) }}</span>
         </div>
+      </div>
 
         <!-- 多篇導航按鈕 -->
         <div v-if="texts.length > 1" class="text-nav">
@@ -831,6 +868,40 @@ onUnmounted(() => {
   color: var(--color-neutral-500);
 }
 
+.scoreboard {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.score-chip {
+  min-width: 96px;
+  padding: 0.35rem 0.75rem;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.score-chip.team {
+  background: linear-gradient(135deg, #eef2ff, #e0e7ff);
+  border-color: rgba(79, 70, 229, 0.2);
+}
+
+.chip-label {
+  font-size: 0.7rem;
+  color: var(--color-neutral-500);
+}
+
+.chip-value {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--color-neutral-800);
+}
+
 .board-header-right {
   display: flex;
   align-items: center;
@@ -978,11 +1049,75 @@ onUnmounted(() => {
   opacity: 0;
 }
 
+.bean-slot.correct .bean {
+  background: linear-gradient(145deg, #6dd400 0%, #43a047 50%, #2e7d32 100%);
+  box-shadow: 
+    0 0 8px rgba(67, 160, 71, 0.6),
+    0 2px 4px rgba(46, 125, 50, 0.4),
+    inset 0 1px 2px rgba(255, 255, 255, 0.5);
+  animation: bean-correct 400ms ease forwards;
+}
+
+@keyframes bean-correct {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+}
+
+.bean-slot.extra .bean {
+  background: linear-gradient(145deg, #ff6b6b 0%, #e53935 50%, #c62828 100%);
+  box-shadow: 
+    0 0 8px rgba(229, 57, 53, 0.5),
+    0 2px 4px rgba(198, 40, 40, 0.4),
+    inset 0 1px 2px rgba(255, 255, 255, 0.4);
+  animation: bean-shake 400ms ease-in-out;
+}
+
+@keyframes bean-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-3px); }
+  40% { transform: translateX(3px); }
+  60% { transform: translateX(-2px); }
+  80% { transform: translateX(2px); }
+}
+
 /* 進度提示 */
 .progress-hint {
   margin-top: 1rem;
   font-size: 0.875rem;
   color: var(--color-neutral-500);
+}
+
+.team-board {
+  margin-top: 0.75rem;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+  max-width: 800px;
+  width: 100%;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
+.team-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.4rem 0;
+  font-size: 0.9rem;
+  color: var(--color-neutral-700);
+  border-bottom: 1px dashed rgba(0, 0, 0, 0.05);
+}
+
+.team-row:last-child {
+  border-bottom: none;
+}
+
+.team-row.me {
+  color: #065f46;
+  font-weight: 700;
+}
+
+.team-score {
+  font-variant-numeric: tabular-nums;
 }
 
 /* 多篇導航 */
