@@ -57,21 +57,22 @@ const menuItemsWithStyle = computed(() => {
   if (count === 0) return []
   
   // 扇形角度範圍：從右下角向左上方展開（90度象限）
-  // 起始角度：0度（正右方，3點鐘方向）
-  // 結束角度：-90度（正上方，12點鐘方向）
+  // 起始角度：-90度（正上方，12點鐘方向）
+  // 結束角度：-180度（正左方，9點鐘方向）
   // 總角度：90度
-  const startAngleDeg = 0 // 0度（正右方）
-  const endAngleDeg = -90 // -90度（正上方）
+  // 這樣會從上方開始，逆時針向左方展開，形成向左上方的扇形
+  const startAngleDeg = -90 // -90度（正上方）
+  const endAngleDeg = -180 // -180度（正左方）
   const totalAngleDeg = Math.abs(endAngleDeg - startAngleDeg) // 90度
   
   // 按鈕大小
   const itemSize = 56
   
-  // 如果只有一個項目，放在中間位置（-45度）
+  // 如果只有一個項目，放在中間位置（-135度，左上方向）
   if (count === 1) {
     const item = items[0]
     if (!item) return []
-    const angleDeg = -45 // -45度（左上方）
+    const angleDeg = -135 // -135度（左上方）
     const angleRad = (angleDeg * Math.PI) / 180
     // 計算位置：從中心點 (0, 0) 開始
     const left = Math.cos(angleRad) * radius.value - itemSize / 2
@@ -91,9 +92,9 @@ const menuItemsWithStyle = computed(() => {
   // 計算每個項目的樣式（參考 vue-radial-menu 的計算方式）
   const result = items.map((item, index) => {
     // 均勻分佈在90度圓弧上
-    // 第一個項目在右（0度），最後一個項目在上（-90度）
+    // 第一個項目在上（-90度），最後一個項目在左（-180度）
     const angleStepDeg = count > 1 ? totalAngleDeg / (count - 1) : 0
-    const angleDeg = startAngleDeg - (index * angleStepDeg) // 從 0 度開始，向負方向（逆時針）展開
+    const angleDeg = startAngleDeg - (index * angleStepDeg) // 從 -90 度開始，向負方向（逆時針）展開到 -180 度
     const angleRad = (angleDeg * Math.PI) / 180
     
     // 使用 Math.cos() 和 Math.sin() 計算位置（參考 vue-radial-menu）
