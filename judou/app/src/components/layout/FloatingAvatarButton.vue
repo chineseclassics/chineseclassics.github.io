@@ -53,7 +53,8 @@ const buttonStyle = computed(() => {
     borderRadius: '50%',
     cursor: 'pointer',
     transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-    transform: props.isMenuOpen ? 'scale(1.1) rotate(45deg)' : 'scale(1)',
+    // 只改變大小，不旋轉頭像
+    transform: props.isMenuOpen ? 'scale(1.1)' : 'scale(1)',
     boxShadow: '0 4px 16px rgba(0, 0, 0, 0.2)'
   }
 })
