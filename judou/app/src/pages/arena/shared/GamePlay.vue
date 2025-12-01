@@ -41,23 +41,43 @@ const gameStore = useGameStore()
 const roomId = computed(() => route.params.roomId as string)
 const room = computed(() => gameStore.currentRoom)
 const myParticipant = computed(() => gameStore.myParticipant)
+const participants = computed(() => room.value?.participants || [])
+const teams = computed(() => room.value?.teams || [])
 
 // 個人與團隊分數
 const myScore = computed(() => myParticipant.value?.score || 0)
 const myTeam = computed(() => {
-  if (!room.value?.teams || !myParticipant.value?.team_id) return null
-  return room.value.teams.find(t => t.id === myParticipant.value!.team_id) || null
+  if (!teams.value.length || !myParticipant.value?.team_id) return null
+  return teams.value.find(t => t.id === myParticipant.value!.team_id) || null
 })
-const teamAverage = computed(() => myTeam.value ? (myTeam.value.total_score || 0) / 100 : null)
+
+const teamStats = computed(() => {
+  const byTeam = new Map<string, { id: string; name: string; total: number; count: number }>()
+  teams.value.forEach(t => {
+    byTeam.set(t.id, { id: t.id, name: t.team_name, total: 0, count: 0 })
+  })
+  participants.value.forEach(p => {
+    if (p.team_id && byTeam.has(p.team_id)) {
+      const s = byTeam.get(p.team_id)!
+      s.total += p.score || 0
+      s.count += 1
+    }
+  })
+  return Array.from(byTeam.values()).map(s => ({
+    ...s,
+    average: s.count > 0 ? s.total / s.count : 0,
+  }))
+})
+
+const teamAverage = computed(() => {
+  const t = myTeam.value
+  if (!t) return null
+  const stats = teamStats.value.find(s => s.id === t.id)
+  return stats ? stats.average : null
+})
+
 const teamRanking = computed(() => {
-  if (!room.value?.teams) return []
-  return [...room.value.teams]
-    .map(t => ({
-      id: t.id,
-      name: t.team_name,
-      score: (t.total_score || 0) / 100,
-    }))
-    .sort((a, b) => b.score - a.score)
+  return [...teamStats.value].sort((a, b) => b.average - a.average)
 })
 
 // =====================================================
@@ -568,7 +588,7 @@ onUnmounted(() => {
       <div v-if="teamRanking.length" class="team-board">
         <div class="team-row" v-for="team in teamRanking" :key="team.id" :class="{ me: team.id === myTeam?.id }">
           <span class="team-name">{{ team.name }}</span>
-          <span class="team-score">{{ team.score.toFixed(2) }}</span>
+          <span class="team-score">{{ team.average.toFixed(2) }}</span>
         </div>
       </div>
 
