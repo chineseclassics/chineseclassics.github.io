@@ -482,6 +482,16 @@ onUnmounted(() => {
         </div>
         
         <div class="header-right">
+          <div class="scoreboard">
+            <div class="score-chip">
+              <span class="chip-label">個人分數</span>
+              <span class="chip-value">{{ myScore }}</span>
+            </div>
+            <div v-if="teamAverage !== null" class="score-chip team">
+              <span class="chip-label">團隊平均</span>
+              <span class="chip-value">{{ teamAverage?.toFixed(2) }}</span>
+            </div>
+          </div>
           <div class="live-pill">
             <span class="live-dot"></span>
             <span>實時計分</span>
@@ -512,24 +522,14 @@ onUnmounted(() => {
       <!-- 做題區域 -->
       <main class="play-main">
         <!-- 豆子提示欄 -->
-      <div class="board-header">
-        <p class="board-hint">點擊字間空隙種下句豆來斷句</p>
-        <div class="board-header-right">
-          <div class="scoreboard">
-            <div class="score-chip">
-              <span class="chip-label">個人分數</span>
-              <span class="chip-value">{{ myScore }}</span>
-            </div>
-            <div v-if="teamAverage !== null" class="score-chip team">
-              <span class="chip-label">團隊平均</span>
-              <span class="chip-value">{{ teamAverage?.toFixed(2) }}</span>
-            </div>
-          </div>
-          <div class="bean-inventory" :class="{ shake: beanShake, empty: !hasBeansLeft }">
-            <span
-              v-for="i in totalBeans"
-              :key="i"
-              class="inventory-bean"
+        <div class="board-header">
+          <p class="board-hint">點擊字間空隙種下句豆來斷句</p>
+          <div class="board-header-right">
+            <div class="bean-inventory" :class="{ shake: beanShake, empty: !hasBeansLeft }">
+              <span
+                v-for="i in totalBeans"
+                :key="i"
+                class="inventory-bean"
                 :class="{ used: i > remainingBeans }"
               ></span>
             </div>

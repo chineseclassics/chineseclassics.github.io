@@ -552,6 +552,8 @@ export const useGameStore = defineStore('game', () => {
     // 團隊模式即時計算平均分
     if (myParticipant.value.team_id) {
       await updateTeamScore(myParticipant.value.team_id)
+      // 立即刷新團隊列表，避免 Realtime 未及時推送時 UI 顯示 0
+      await refreshTeams(currentRoom.value.id)
     }
 
     return true
