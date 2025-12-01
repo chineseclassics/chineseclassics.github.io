@@ -214,13 +214,15 @@ const menuStyle = computed(() => {
           }
         ]"
         :style="{
-          transform: `translate(-50%, -50%) ${item.transform}`,
-          '--base-transform': `translate(-50%, -50%) ${item.transform}`,
+          transform: item.transform,
+          '--base-transform': item.transform,
           '--index': item.index,
           '--total': item.total,
           '--angle': `${item.angle}deg`,
-          left: 0,
-          top: 0
+          left: '50%',
+          top: '50%',
+          marginLeft: `-${item.itemSize / 2}px`,
+          marginTop: `-${item.itemSize / 2}px`
         }"
         :disabled="item.disabled"
         @click="handleItemClick(item)"
@@ -274,7 +276,9 @@ const menuStyle = computed(() => {
   /* 確保容器可見 */
   visibility: visible;
   /* 調試：添加背景以便查看容器位置 */
-  /* background: rgba(255, 0, 0, 0.1); */
+  background: rgba(255, 0, 0, 0.1);
+  /* 調試：添加邊框以便查看容器位置 */
+  border: 2px dashed red;
 }
 
 .radial-menu-item {
@@ -321,7 +325,7 @@ const menuStyle = computed(() => {
 .radial-menu-item:hover {
   /* 懸停時放大，但保持原有的 transform（在 :style 中設置） */
   /* 使用 scale 在現有 transform 基礎上放大 */
-  transform: var(--base-transform, translate(-50%, -50%)) scale(1.1);
+  transform: var(--base-transform, rotate(0deg) translate(0px) rotate(0deg)) scale(1.1);
   background: linear-gradient(
     135deg,
     rgba(255, 255, 255, 1) 0%,
@@ -335,7 +339,7 @@ const menuStyle = computed(() => {
 
 .radial-menu-item:active {
   /* 點擊時縮小，但保持原有的 transform */
-  transform: var(--base-transform, translate(-50%, -50%)) scale(0.95);
+  transform: var(--base-transform, rotate(0deg) translate(0px) rotate(0deg)) scale(0.95);
 }
 
 .radial-menu-item.is-active {
@@ -408,7 +412,7 @@ const menuStyle = computed(() => {
 .radial-item-enter-from {
   opacity: 0;
   /* 初始狀態：縮小並在中心點，使用與最終狀態相同的 transform 結構 */
-  transform: translate(-50%, -50%) rotate(0deg) translate(0px) rotate(0deg) scale(0);
+  transform: rotate(0deg) translate(0px) rotate(0deg) scale(0);
 }
 
 .radial-item-enter-to {
@@ -432,7 +436,7 @@ const menuStyle = computed(() => {
 .radial-item-leave-to {
   opacity: 0;
   /* 收合時：縮小並回到中心點，使用與最終狀態相同的 transform 結構 */
-  transform: translate(-50%, -50%) rotate(var(--angle, 0deg)) translate(0px) rotate(calc(-1 * var(--angle, 0deg))) scale(0);
+  transform: rotate(var(--angle, 0deg)) translate(0px) rotate(calc(-1 * var(--angle, 0deg))) scale(0);
 }
 
 /* 減少動畫（用戶偏好） */
