@@ -239,6 +239,22 @@ export interface SubmitTextProgressParams {
   timeSpent: number
 }
 
+/**
+ * 即時更新文章進度與個人分數的參數（取代最終提交）
+ */
+export interface UpdateProgressParams {
+  roomId: string
+  textId: string
+  textIndex: number
+  correctCount: number       // 當前文章累計正確數
+  wrongCount: number         // 當前文章累計錯誤數
+  totalCorrect: number       // 所有文章累計正確數（= score）
+  totalBeans: number         // 所有文章總豆子數（正確斷句總數）
+  usedBeans: number          // 所有文章已放置豆子數
+  lastInteraction: number    // 時戳（毫秒）
+  isFinished: boolean        // 是否已用完所有豆子
+}
+
 // =====================================================
 // 前端狀態類型
 // =====================================================
@@ -424,4 +440,3 @@ export function calculateStreakBonus(streak: number): number {
   }
   return bonus
 }
-

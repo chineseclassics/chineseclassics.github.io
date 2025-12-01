@@ -4,14 +4,15 @@
  * 
  * 核心邏輯：
  * - 多篇文章自由切換（不自動跳轉）
- * - 手動提交或時間到提交整局成績
- * - 提交前可隨時修改任何一篇
+ * - 每次放豆即時計分、不可撤回
+ * - 時間到或豆子用完即結束
  * - UI 與練習界面保持一致
  */
 
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useGameStore } from '../../../stores/gameStore'
+import type { UpdateProgressParams } from '../../../types/game'
 
 interface TextItem {
   id: string
@@ -20,11 +21,17 @@ interface TextItem {
   content: string
 }
 
+interface BeanPlacement {
+  index: number
+  isCorrect: boolean
+  placedAt: number
+}
+
 // 每篇文章的答題狀態
 interface TextState {
   characters: string[]
   correctBreaks: Set<number>
-  userBreaks: Set<number>
+  userBreaks: Map<number, BeanPlacement>
 }
 
 const router = useRouter()
@@ -52,7 +59,7 @@ const currentState = computed(() => {
 const characters = computed(() => currentState.value?.characters || [])
 const correctBreaks = computed(() => currentState.value?.correctBreaks || new Set<number>())
 const userBreaks = computed({
-  get: () => currentState.value?.userBreaks || new Set<number>(),
+  get: () => currentState.value?.userBreaks || new Map<number, BeanPlacement>(),
   set: (val) => {
     if (currentText.value && textStates.value.has(currentText.value.id)) {
       const state = textStates.value.get(currentText.value.id)!
@@ -71,18 +78,15 @@ const usedBeans = computed(() => userBreaks.value.size)
 const remainingBeans = computed(() => Math.max(0, totalBeans.value - usedBeans.value))
 const hasBeansLeft = computed(() => remainingBeans.value > 0)
 const beanShake = ref(false)
+const lastInteraction = ref<number | null>(null)
+const UPDATE_DELAY = 250
+let progressTimer: ReturnType<typeof setTimeout> | null = null
+let pendingForceFinish = false
+let sendingProgress = false
 
-// 提交狀態
-const isSubmitted = ref(false)
 const isLoading = ref(true)
-let startTime = 0
 
 // 提交後的狀態檢查（備用機制）
-let statusCheckInterval: ReturnType<typeof setInterval> | null = null
-let statusCheckTimeout: ReturnType<typeof setTimeout> | null = null
-const STATUS_CHECK_INTERVAL = 3000  // 每 3 秒檢查一次
-const STATUS_CHECK_TIMEOUT = 60000  // 最多等待 60 秒後強制跳轉
-
 // =====================================================
 // 解析內容（使用 | 作為斷點標記，和練習頁面一致）
 // =====================================================
@@ -121,7 +125,7 @@ function initAllTexts() {
     textStates.value.set(text.id, {
       characters: parsed.chars,
       correctBreaks: parsed.breaks,
-      userBreaks: new Set(),
+      userBreaks: new Map(),
     })
   }
 }
@@ -204,17 +208,18 @@ function vibrate(duration: number = 10) {
 // =====================================================
 
 function toggleBreak(index: number) {
-  if (isSubmitted.value) return
   if (!currentText.value) return
   
   const state = textStates.value.get(currentText.value.id)
   if (!state) return
   
-  const newSet = new Set(state.userBreaks)
-  const isRemoving = newSet.has(index)
+  // 已放豆不可點
+  if (state.userBreaks.has(index)) {
+    return
+  }
   
-  // 如果是添加新斷句，檢查是否還有豆子
-  if (!isRemoving && newSet.size >= state.correctBreaks.size) {
+  // 檢查是否還有豆子（錯放也佔名額）
+  if (state.userBreaks.size >= state.correctBreaks.size) {
     playSound('error')
     beanShake.value = true
     setTimeout(() => { beanShake.value = false }, 300)
@@ -222,26 +227,133 @@ function toggleBreak(index: number) {
     return
   }
   
-  if (isRemoving) {
-    newSet.delete(index)
-    playSound('remove')
-    vibrate(5)
-  } else {
-    newSet.add(index)
+  const placement: BeanPlacement = {
+    index,
+    isCorrect: state.correctBreaks.has(index),
+    placedAt: Date.now(),
+  }
+
+  const nextBreaks = new Map(state.userBreaks)
+  nextBreaks.set(index, placement)
+  state.userBreaks = nextBreaks
+  textStates.value = new Map(textStates.value)  // 觸發響應式
+
+  lastInteraction.value = placement.placedAt
+
+  if (placement.isCorrect) {
     playSound('add')
     vibrate(10)
+  } else {
+    playSound('error')
+    vibrate(50)
   }
-  
-  state.userBreaks = newSet
-  // 觸發響應式更新
-  textStates.value = new Map(textStates.value)
+
+  scheduleProgressUpdate()
+
+  const totals = getTotals()
+  if (totals.usedBeansAll >= totals.totalBeansAll) {
+    scheduleProgressUpdate(true)
+  }
 }
 
 // 獲取豆子槽的樣式類
 function getBeanClass(index: number) {
-  const hasBreak = userBreaks.value.has(index)
+  const placement = userBreaks.value.get(index)
+  const hasBreak = !!placement
   return {
     'has-bean': hasBreak,
+    correct: placement?.isCorrect,
+    extra: placement && !placement.isCorrect,
+  }
+}
+
+function getTextCounts(state: TextState) {
+  let correct = 0
+  let wrong = 0
+  state.userBreaks.forEach(p => {
+    if (p.isCorrect) correct++
+    else wrong++
+  })
+  return { correct, wrong }
+}
+
+function getTotals() {
+  let totalCorrect = 0
+  let totalBeansAll = 0
+  let usedBeansAll = 0
+
+  textStates.value.forEach((state) => {
+    const counts = getTextCounts(state)
+    totalCorrect += counts.correct
+    totalBeansAll += state.correctBreaks.size
+    usedBeansAll += state.userBreaks.size
+  })
+
+  return { totalCorrect, totalBeansAll, usedBeansAll }
+}
+
+function buildProgressPayload(forceFinish = false): UpdateProgressParams | null {
+  if (!currentText.value || !currentState.value) return null
+
+  const { correct, wrong } = getTextCounts(currentState.value)
+  const { totalCorrect, totalBeansAll, usedBeansAll } = getTotals()
+  const lastAt = lastInteraction.value || Date.now()
+  const isFinished = forceFinish || usedBeansAll >= totalBeansAll
+
+  return {
+    roomId: roomId.value,
+    textId: currentText.value.id,
+    textIndex: currentTextIndex.value,
+    correctCount: correct,
+    wrongCount: wrong,
+    totalCorrect,
+    totalBeans: totalBeansAll,
+    usedBeans: usedBeansAll,
+    lastInteraction: lastAt,
+    isFinished,
+  }
+}
+
+async function sendProgressUpdate(forceFinish = false) {
+  if (progressTimer) {
+    clearTimeout(progressTimer)
+    progressTimer = null
+  }
+
+  const payload = buildProgressPayload(forceFinish)
+  if (!payload) return
+
+  if (sendingProgress) return  // 避免併發
+  sendingProgress = true
+  try {
+    await gameStore.updateProgress(payload)
+  } catch (e) {
+    console.error('[GamePlay] 更新進度失敗', e)
+  } finally {
+    sendingProgress = false
+  }
+}
+
+function scheduleProgressUpdate(forceFinish = false) {
+  if (forceFinish) {
+    pendingForceFinish = true
+  }
+  if (progressTimer) {
+    clearTimeout(progressTimer)
+  }
+  progressTimer = setTimeout(() => {
+    sendProgressUpdate(pendingForceFinish)
+    pendingForceFinish = false
+  }, UPDATE_DELAY)
+}
+
+async function finalizeProgress(forceFinish = false) {
+  await sendProgressUpdate(forceFinish)
+  // 時間到或豆子用完時嘗試結束（備用，Realtime 仍為主）
+  try {
+    await gameStore.endGame()
+  } catch (e) {
+    console.error('[GamePlay] 結束遊戲失敗', e)
   }
 }
 
@@ -258,168 +370,6 @@ function getTextStatus(textId: string): 'empty' | 'partial' | 'complete' {
     return 'complete'
   }
   return 'partial'
-}
-
-// =====================================================
-// 提交整局成績
-// =====================================================
-
-async function submitGame() {
-  if (isSubmitted.value) return
-  isSubmitted.value = true
-  
-  const timeSpent = Math.round((Date.now() - startTime) / 1000)
-  
-  // 計算總分和詳細結果
-  let totalCorrect = 0
-  let totalBreaks = 0
-  const resultsData: Array<{
-    textId: string
-    userBreaks: number[]
-    correctBreaks: number[]
-    correctCount: number
-    wrongCount: number
-    missedCount: number
-  }> = []
-  
-  for (const text of texts.value) {
-    const state = textStates.value.get(text.id)
-    if (!state) continue
-    
-    const correct = state.correctBreaks
-    const user = state.userBreaks
-    
-    let correctCount = 0
-    let wrongCount = 0
-    
-    for (const b of user) {
-      if (correct.has(b)) {
-        correctCount++
-      } else {
-        wrongCount++
-      }
-    }
-    
-    const missedCount = correct.size - correctCount
-    
-    totalCorrect += correctCount
-    totalBreaks += correct.size
-    
-    resultsData.push({
-      textId: text.id,
-      userBreaks: [...user],
-      correctBreaks: [...correct],
-      correctCount,
-      wrongCount,
-      missedCount,
-    })
-  }
-  
-  const accuracy = totalBreaks > 0 ? (totalCorrect / totalBreaks) * 100 : 0
-  
-  // 保存詳細結果到 sessionStorage，供結果頁使用
-  sessionStorage.setItem(`game-result-${roomId.value}`, JSON.stringify({
-    texts: texts.value,
-    results: resultsData,
-    totalCorrect,
-    totalBreaks,
-    accuracy,
-    timeSpent,
-  }))
-  
-  // 提交成績（gameStore 會檢查是否所有人都完成）
-  await gameStore.submitScore({
-    roomId: roomId.value,
-    score: totalCorrect,
-    accuracy,
-    timeSpent,
-    firstAccuracy: accuracy,
-    attemptCount: 1,
-  })
-  
-  // 啟動備用狀態檢查（防止 Realtime 失敗時無法跳轉）
-  startStatusCheck()
-}
-
-// =====================================================
-// 備用狀態檢查機制
-// =====================================================
-
-/**
- * 啟動狀態檢查（提交後調用）
- * 每隔 3 秒主動檢查房間狀態，防止 Realtime 失敗時卡住
- */
-function startStatusCheck() {
-  console.log('[GamePlay] 啟動備用狀態檢查機制')
-  
-  // 清理之前的檢查（如果有）
-  stopStatusCheck()
-  
-  // 定期檢查房間狀態
-  statusCheckInterval = setInterval(async () => {
-    await checkRoomStatusAndNavigate()
-  }, STATUS_CHECK_INTERVAL)
-  
-  // 設置超時：超過 60 秒後強制跳轉
-  statusCheckTimeout = setTimeout(() => {
-    console.log('[GamePlay] 狀態檢查超時，強制跳轉到結果頁')
-    stopStatusCheck()
-    router.push({ name: 'arena-result', params: { roomId: roomId.value } })
-  }, STATUS_CHECK_TIMEOUT)
-  
-  // 立即執行一次檢查
-  checkRoomStatusAndNavigate()
-}
-
-/**
- * 停止狀態檢查
- */
-function stopStatusCheck() {
-  if (statusCheckInterval) {
-    clearInterval(statusCheckInterval)
-    statusCheckInterval = null
-  }
-  if (statusCheckTimeout) {
-    clearTimeout(statusCheckTimeout)
-    statusCheckTimeout = null
-  }
-}
-
-/**
- * 檢查房間狀態並在需要時跳轉
- */
-async function checkRoomStatusAndNavigate() {
-  if (!gameStore.currentRoom) return
-  
-  // 如果本地狀態已經是 finished，立即跳轉
-  if (gameStore.currentRoom.status === 'finished') {
-    console.log('[GamePlay] 本地狀態為 finished，跳轉到結果頁')
-    stopStatusCheck()
-    router.push({ name: 'arena-result', params: { roomId: roomId.value } })
-    return
-  }
-  
-  // 主動從數據庫查詢最新狀態
-  try {
-    const { supabase } = await import('../../../lib/supabaseClient')
-    if (!supabase) return
-    
-    const { data: latestRoom } = await supabase
-      .from('game_rooms')
-      .select('status')
-      .eq('id', roomId.value)
-      .single()
-    
-    if (latestRoom?.status === 'finished') {
-      console.log('[GamePlay] 數據庫狀態為 finished，跳轉到結果頁')
-      stopStatusCheck()
-      router.push({ name: 'arena-result', params: { roomId: roomId.value } })
-    } else {
-      console.log('[GamePlay] 狀態檢查: 當前狀態為', latestRoom?.status)
-    }
-  } catch (e) {
-    console.error('[GamePlay] 狀態檢查錯誤:', e)
-  }
 }
 
 // =====================================================
@@ -440,8 +390,8 @@ function startCountdown() {
     const elapsed = Math.floor((Date.now() - startedAt) / 1000)
     remainingTime.value = Math.max(0, room.value!.time_limit - elapsed)
     
-    if (remainingTime.value === 0 && !isSubmitted.value) {
-      submitGame()
+    if (remainingTime.value === 0) {
+      finalizeProgress(true)
     }
   }
   
@@ -456,7 +406,6 @@ function startCountdown() {
 watch(() => room.value?.status, (status) => {
   if (status === 'finished') {
     console.log('[GamePlay] watch 檢測到 finished 狀態，跳轉到結果頁')
-    stopStatusCheck()  // 停止備用檢查
     router.push({ name: 'arena-result', params: { roomId: roomId.value } })
   }
 })
@@ -475,7 +424,6 @@ onMounted(async () => {
   
   if (texts.value.length > 0) {
     initAllTexts()
-    startTime = Date.now()
     startCountdown()
   }
 })
@@ -484,8 +432,10 @@ onUnmounted(() => {
   if (countdownInterval) {
     clearInterval(countdownInterval)
   }
-  // 停止狀態檢查
-  stopStatusCheck()
+  if (progressTimer) {
+    clearTimeout(progressTimer)
+  }
+  sendProgressUpdate(pendingForceFinish)
 })
 </script>
 
@@ -513,19 +463,10 @@ onUnmounted(() => {
         </div>
         
         <div class="header-right">
-          <button 
-            class="submit-btn"
-            :class="{ waiting: isSubmitted }"
-            :disabled="isSubmitted"
-            @click="submitGame"
-          >
-            <template v-if="isSubmitted">
-              <span class="waiting-spinner">⏳</span> 等待其他玩家...
-            </template>
-            <template v-else>
-              提交答案
-            </template>
-          </button>
+          <div class="live-pill">
+            <span class="live-dot"></span>
+            <span>實時計分</span>
+          </div>
         </div>
       </header>
 
@@ -580,7 +521,7 @@ onUnmounted(() => {
                 class="bean-slot"
                 :class="getBeanClass(index)"
                 @click="toggleBreak(index)"
-                :aria-label="`在「${char}」後${userBreaks.has(index) ? '移除' : '添加'}斷句`"
+                :aria-label="`在「${char}」後放置斷句`"
               >
                 <span class="bean" v-if="userBreaks.has(index)"></span>
                 <span class="bean-hint"></span>
@@ -616,11 +557,8 @@ onUnmounted(() => {
 
       <!-- 底部提示 -->
       <footer class="play-footer">
-        <p v-if="isSubmitted" class="footer-hint submitted">
-          ✅ 已提交答案，等待其他玩家完成或時間結束...
-        </p>
-        <p v-else class="footer-hint">
-          完成所有文章後點擊「提交答案」，或等待時間結束自動提交
+        <p class="footer-hint">
+          每次放豆即時計分；豆子用完即完成，時間到會自動結束
         </p>
       </footer>
     </template>
@@ -763,6 +701,34 @@ onUnmounted(() => {
 .footer-hint.submitted {
   color: #10b981;
   font-weight: 500;
+}
+
+.live-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.5rem 0.75rem;
+  background: linear-gradient(135deg, #ecfdf3, #d1fae5);
+  border: 1px solid #bbf7d0;
+  border-radius: 999px;
+  color: #047857;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #16a34a;
+  box-shadow: 0 0 0 6px rgba(22, 163, 74, 0.2);
+  animation: live-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes live-pulse {
+  0% { box-shadow: 0 0 0 4px rgba(22, 163, 74, 0.25); }
+  50% { box-shadow: 0 0 0 7px rgba(22, 163, 74, 0.12); }
+  100% { box-shadow: 0 0 0 4px rgba(22, 163, 74, 0.25); }
 }
 
 /* 多篇切換標籤 */

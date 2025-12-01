@@ -18,6 +18,7 @@ import type {
   JoinRoomResult,
   SubmitScoreParams,
   SubmitTextProgressParams,
+  UpdateProgressParams,
   GameResult,
 } from '../types/game'
 import {
@@ -477,44 +478,61 @@ export const useGameStore = defineStore('game', () => {
   }
 
   /**
-   * 提交單篇文章進度（多篇模式）
-   * 做完一篇調用一次，累計正確斷句數
+   * 即時更新文章進度與個人分數（取代最終提交）
    */
-  async function submitTextProgress(params: SubmitTextProgressParams): Promise<boolean> {
-    if (!supabase || !authStore.user || !myParticipant.value) {
-      error.value = '無法提交進度'
+  async function updateProgress(params: UpdateProgressParams): Promise<boolean> {
+    if (!supabase || !authStore.user || !myParticipant.value || !currentRoom.value) {
+      error.value = '無法更新進度'
       return false
     }
 
-    // 1. 記錄這篇文章的詳細進度
-    await supabase
+    const participantId = myParticipant.value.id
+    const startedAtMs = currentRoom.value.started_at ? new Date(currentRoom.value.started_at).getTime() : null
+    const timeSpent = startedAtMs
+      ? Math.max(0, Math.round((params.lastInteraction - startedAtMs) / 1000))
+      : 0
+    const totalWrong = Math.max(0, params.usedBeans - params.totalCorrect)
+
+    // 1) Upsert 單篇進度
+    const { error: progressError } = await supabase
       .from('game_text_progress')
       .upsert({
-        participant_id: myParticipant.value.id,
+        participant_id: participantId,
         text_id: params.textId,
         text_index: params.textIndex,
         correct_count: params.correctCount,
         wrong_count: params.wrongCount,
-        time_spent: params.timeSpent,
-        completed_at: new Date().toISOString(),
+        time_spent: timeSpent,
+        last_interaction: new Date(params.lastInteraction).toISOString(),
+        completed_at: params.isFinished ? new Date(params.lastInteraction).toISOString() : null,
       }, {
         onConflict: 'participant_id,text_id'
       })
 
-    // 2. 更新參與者的累計數據
-    const newCorrectBreaks = (myParticipant.value.correct_breaks || 0) + params.correctCount
-    const newCompletedTexts = (myParticipant.value.completed_texts || 0) + 1
-    const newTextIndex = params.textIndex + 1
+    if (progressError) {
+      error.value = progressError.message
+      return false
+    }
+
+    // 2) 更新參與者累計分數與狀態
+    const participantUpdate: Record<string, any> = {
+      score: params.totalCorrect,
+      correct_breaks: params.totalCorrect,
+      wrong_breaks: totalWrong,
+      current_text_index: params.textIndex,
+      time_spent: timeSpent,
+      last_interaction: new Date(params.lastInteraction).toISOString(),
+    }
+
+    if (params.isFinished) {
+      participantUpdate.status = 'completed'
+      participantUpdate.completed_at = new Date(params.lastInteraction).toISOString()
+    }
 
     const { error: updateError } = await supabase
       .from('game_participants')
-      .update({
-        correct_breaks: newCorrectBreaks,
-        completed_texts: newCompletedTexts,
-        current_text_index: newTextIndex,
-        score: newCorrectBreaks,  // 分數 = 正確斷句總數
-      })
-      .eq('id', myParticipant.value.id)
+      .update(participantUpdate)
+      .eq('id', participantId)
 
     if (updateError) {
       error.value = updateError.message
@@ -522,17 +540,39 @@ export const useGameStore = defineStore('game', () => {
     }
 
     // 更新本地狀態
-    myParticipant.value.correct_breaks = newCorrectBreaks
-    myParticipant.value.completed_texts = newCompletedTexts
-    myParticipant.value.current_text_index = newTextIndex
-    myParticipant.value.score = newCorrectBreaks
+    myParticipant.value.score = params.totalCorrect
+    myParticipant.value.correct_breaks = params.totalCorrect
+    myParticipant.value.current_text_index = params.textIndex
+    myParticipant.value.time_spent = timeSpent
+    if (params.isFinished) {
+      myParticipant.value.status = 'completed'
+      myParticipant.value.completed_at = new Date(params.lastInteraction).toISOString()
+    }
 
-    // 更新團隊分數（如果是團隊模式）
+    // 團隊模式即時計算平均分
     if (myParticipant.value.team_id) {
       await updateTeamScore(myParticipant.value.team_id)
     }
 
     return true
+  }
+
+  /**
+   * 兼容舊接口：轉調至 updateProgress
+   */
+  async function submitTextProgress(params: SubmitTextProgressParams): Promise<boolean> {
+    return updateProgress({
+      roomId: params.roomId,
+      textId: params.textId,
+      textIndex: params.textIndex,
+      correctCount: params.correctCount,
+      wrongCount: params.wrongCount,
+      totalCorrect: params.correctCount,
+      totalBeans: params.correctCount,
+      usedBeans: params.correctCount + params.wrongCount,
+      lastInteraction: Date.now(),
+      isFinished: true,
+    })
   }
 
   /**
@@ -561,12 +601,11 @@ export const useGameStore = defineStore('game', () => {
   async function updateTeamScore(teamId: string): Promise<void> {
     if (!supabase || !currentRoom.value) return
 
-    // 獲取該隊伍所有已完成成員的分數
+    // 獲取該隊伍所有成員的當前分數（不再限定 completed）
     const { data: participants } = await supabase
       .from('game_participants')
       .select('score')
       .eq('team_id', teamId)
-      .eq('status', 'completed')
 
     // 計算平均分（乘以 100 存儲以保留精度，顯示時除以 100）
     const completedCount = participants?.length || 0
@@ -1519,6 +1558,7 @@ export const useGameStore = defineStore('game', () => {
     // 遊戲進行
     startGame,
     submitScore,
+    updateProgress,
     submitTextProgress,
     fetchTexts,
     endGame,
@@ -1535,4 +1575,3 @@ export const useGameStore = defineStore('game', () => {
     reset,
   }
 })
-
