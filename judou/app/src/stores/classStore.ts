@@ -77,6 +77,9 @@ export const useClassStore = defineStore('class', () => {
 
   // 學生郵箱驗證模式（ISF 學生郵箱）
   const STUDENT_EMAIL_PATTERN = /^[a-zA-Z0-9._-]+@student\.isf\.edu\.hk$/i
+  
+  // 測試賬號例外（允許特定測試郵箱作為學生）
+  const TEST_EMAIL_EXCEPTIONS = ['gnoluy@gmail.com']
 
   // 計算屬性
   const myClasses = computed(() => classes.value)
@@ -311,7 +314,10 @@ export const useClassStore = defineStore('class', () => {
     const invalidEmails: string[] = []
 
     emails.forEach(email => {
-      if (STUDENT_EMAIL_PATTERN.test(email)) {
+      // 檢查是否為測試賬號例外
+      const isTestException = TEST_EMAIL_EXCEPTIONS.includes(email.toLowerCase())
+      
+      if (STUDENT_EMAIL_PATTERN.test(email) || isTestException) {
         validEmails.push(email)
       } else {
         invalidEmails.push(email)
