@@ -45,8 +45,8 @@ const route = useRoute()
 // 默認半徑
 const radius = computed(() => props.radius || 100)
 
-// 計算每個按鈕的樣式（參考 vue3-radial-list 的實現方式）
-// 使用 left: 50%, top: 50% + margin 來居中，然後用 transform: rotate() translate() rotate(-angle) 來定位
+// 計算每個按鈕的樣式（參考 vue-radial-menu 的實現方式）
+// 使用 Math.cos() 和 Math.sin() 計算 left 和 top 位置，更簡單直接
 const menuItemsWithStyle = computed(() => {
   const items = props.items
   const count = items.length
@@ -57,59 +57,64 @@ const menuItemsWithStyle = computed(() => {
   if (count === 0) return []
   
   // 扇形角度範圍：從右下角向左上方展開（90度象限）
-  // 起始角度：0度（正右方）
-  // 結束角度：-90度（正上方）
+  // 起始角度：0度（正右方，3點鐘方向）
+  // 結束角度：-90度（正上方，12點鐘方向）
   // 總角度：90度
-  const startAngle = 0 // 0度（正右方）
-  const endAngle = -90 // -90度（正上方）
-  const totalAngle = Math.abs(endAngle - startAngle) // 90度
+  const startAngleDeg = 0 // 0度（正右方）
+  const endAngleDeg = -90 // -90度（正上方）
+  const totalAngleDeg = Math.abs(endAngleDeg - startAngleDeg) // 90度
   
-  // 按鈕大小（用於 margin 計算）
+  // 按鈕大小
   const itemSize = 56
   
   // 如果只有一個項目，放在中間位置（-45度）
   if (count === 1) {
     const item = items[0]
     if (!item) return []
-    const angle = -45 // -45度（左上方）
-    const reverseAngle = -angle // 45度，用於保持圖標正立
+    const angleDeg = -45 // -45度（左上方）
+    const angleRad = (angleDeg * Math.PI) / 180
+    // 計算位置：從中心點 (0, 0) 開始
+    const left = Math.cos(angleRad) * radius.value - itemSize / 2
+    const top = Math.sin(angleRad) * radius.value - itemSize / 2
+    
     return [{
       ...item,
-      transform: `rotate(${angle}deg) translate(${radius.value}px) rotate(${reverseAngle}deg)`,
-      angle,
+      left,
+      top,
+      angle: angleDeg,
       index: 0,
       total: 1,
       itemSize
     }]
   }
   
-  // 計算每個項目的樣式
+  // 計算每個項目的樣式（參考 vue-radial-menu 的計算方式）
   const result = items.map((item, index) => {
     // 均勻分佈在90度圓弧上
     // 第一個項目在右（0度），最後一個項目在上（-90度）
-    const angleStep = count > 1 ? totalAngle / (count - 1) : 0
-    const angle = startAngle - (index * angleStep) // 從 0 度開始，向負方向（逆時針）展開
+    const angleStepDeg = count > 1 ? totalAngleDeg / (count - 1) : 0
+    const angleDeg = startAngleDeg - (index * angleStepDeg) // 從 0 度開始，向負方向（逆時針）展開
+    const angleRad = (angleDeg * Math.PI) / 180
     
-    // 使用 transform: rotate() translate() rotate(-angle)
-    // 第一個 rotate：將按鈕旋轉到目標角度
-    // translate：沿著旋轉後的方向移動半徑距離
-    // 第二個 rotate(-angle)：反向旋轉按鈕本身，保持圖標/文字正立
-    const reverseAngle = -angle // 反向角度，用於保持圖標正立
-    const transform = `rotate(${angle}deg) translate(${radius.value}px) rotate(${reverseAngle}deg)`
+    // 使用 Math.cos() 和 Math.sin() 計算位置（參考 vue-radial-menu）
+    // 從中心點 (0, 0) 開始計算，然後減去 itemSize/2 來居中按鈕
+    const left = Math.cos(angleRad) * radius.value - itemSize / 2
+    const top = Math.sin(angleRad) * radius.value - itemSize / 2
     
-    console.log(`[RadialMenu] 項目 ${index} (${item.label}): angle=${angle.toFixed(1)}°, transform=${transform}`)
+    console.log(`[RadialMenu] 項目 ${index} (${item.label}): angle=${angleDeg.toFixed(1)}°, left=${left.toFixed(1)}px, top=${top.toFixed(1)}px`)
     
     return {
       ...item,
-      transform,
-      angle,
+      left,
+      top,
+      angle: angleDeg,
       index,
       total: count,
       itemSize
     }
   })
   
-  console.log('[RadialMenu] 計算完成，結果:', result.map(r => ({ label: r.label, angle: r.angle.toFixed(1) })))
+  console.log('[RadialMenu] 計算完成，結果:', result.map(r => ({ label: r.label, angle: r.angle.toFixed(1), left: r.left.toFixed(1), top: r.top.toFixed(1) })))
   console.log('[RadialMenu] 中心點:', { centerX: props.centerX, centerY: props.centerY })
   
   return result
@@ -214,15 +219,13 @@ const menuStyle = computed(() => {
           }
         ]"
         :style="{
-          transform: item.transform,
-          '--base-transform': item.transform,
+          left: `${item.left}px`,
+          top: `${item.top}px`,
+          width: `${item.itemSize}px`,
+          height: `${item.itemSize}px`,
           '--index': item.index,
           '--total': item.total,
-          '--angle': `${item.angle}deg`,
-          left: '50%',
-          top: '50%',
-          marginLeft: `-${item.itemSize / 2}px`,
-          marginTop: `-${item.itemSize / 2}px`
+          '--angle': `${item.angle}deg`
         }"
         :disabled="item.disabled"
         @click="handleItemClick(item)"
@@ -271,28 +274,32 @@ const menuStyle = computed(() => {
 
 .radial-menu-items {
   position: relative;
+  /* 容器本身在中心點，按鈕的 left 和 top 是相對於這個容器的 */
+  /* width 和 height 為 0，但按鈕可以超出容器範圍 */
   width: 0;
   height: 0;
   /* 確保容器可見 */
   visibility: visible;
-  /* 調試：添加背景以便查看容器位置 */
+  /* 調試：顯示容器位置（臨時啟用以檢查定位） */
   background: rgba(255, 0, 0, 0.1);
-  /* 調試：添加邊框以便查看容器位置 */
   border: 2px dashed red;
 }
 
 .radial-menu-item {
   position: absolute;
-  /* 按鈕位置：使用 left: 50%, top: 50% + margin 來居中（參考 vue3-radial-list） */
-  /* 然後使用 transform: rotate() translate() rotate(-angle) 來定位到圓弧上 */
-  /* left, top, margin 在 :style 中動態設置 */
-  transform-origin: center center;
+  /* 按鈕位置：使用 left 和 top 直接定位（參考 vue-radial-menu） */
+  /* left 和 top 在 :style 中動態設置，已經計算好居中位置 */
   /* 確保按鈕可見 */
-  visibility: visible;
-  opacity: 1;
+  visibility: visible !important;
   
+  /* width 和 height 在 :style 中動態設置 */
+  /* 默認值，會被 :style 覆蓋 */
   width: 56px;
   height: 56px;
+  
+  /* 注意：left 和 top 在 :style 中動態設置，不要在這裡設置，避免覆蓋 */
+  /* 調試：添加邊框以便查看實際位置 */
+  border: 2px solid blue;
   border-radius: 50%;
   border: 2px solid rgba(111, 150, 56, 0.3);
   background: linear-gradient(
@@ -323,9 +330,8 @@ const menuStyle = computed(() => {
 }
 
 .radial-menu-item:hover {
-  /* 懸停時放大，但保持原有的 transform（在 :style 中設置） */
-  /* 使用 scale 在現有 transform 基礎上放大 */
-  transform: var(--base-transform, rotate(0deg) translate(0px) rotate(0deg)) scale(1.1);
+  /* 懸停時放大 */
+  transform: scale(1.1);
   background: linear-gradient(
     135deg,
     rgba(255, 255, 255, 1) 0%,
@@ -338,8 +344,8 @@ const menuStyle = computed(() => {
 }
 
 .radial-menu-item:active {
-  /* 點擊時縮小，但保持原有的 transform */
-  transform: var(--base-transform, rotate(0deg) translate(0px) rotate(0deg)) scale(0.95);
+  /* 點擊時縮小 */
+  transform: scale(0.95);
 }
 
 .radial-menu-item.is-active {
@@ -404,25 +410,31 @@ const menuStyle = computed(() => {
 
 /* 展開動畫 */
 .radial-item-enter-active {
-  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  /* 只過渡 opacity 和 transform，不過渡 left 和 top（位置應該立即生效） */
+  transition: opacity 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
   /* 單層排列，按順序出現 */
   transition-delay: calc(var(--index) * 0.05s);
 }
 
 .radial-item-enter-from {
   opacity: 0;
-  /* 初始狀態：縮小並在中心點，使用與最終狀態相同的 transform 結構 */
-  transform: rotate(0deg) translate(0px) rotate(0deg) scale(0);
+  /* 初始狀態：縮小（只影響 scale，不影響位置） */
+  transform: scale(0);
+  /* 注意：不設置 left 和 top，讓 :style 中的值生效 */
+  /* 內聯樣式的優先級已經最高，不需要 !important */
 }
 
 .radial-item-enter-to {
   opacity: 1;
-  /* 結束狀態：使用實際的 transform（在 :style 中設置） */
-  /* 注意：這裡不設置 transform，讓 :style 中的 transform 生效 */
+  /* 結束狀態：恢復正常大小（只影響 scale，不影響位置） */
+  transform: scale(1);
+  /* 注意：不設置 left 和 top，讓 :style 中的值生效 */
+  /* 內聯樣式的優先級已經最高，不需要 !important */
 }
 
 /* 收合動畫 */
 .radial-item-leave-active {
+  /* 只過渡 opacity 和 transform，不過渡 left 和 top（位置保持不變直到消失） */
   transition: opacity 0.3s cubic-bezier(0.55, 0.055, 0.675, 0.19), transform 0.3s cubic-bezier(0.55, 0.055, 0.675, 0.19);
   /* 按倒序消失 */
   transition-delay: calc((var(--total) - var(--index)) * 0.03s);
@@ -435,8 +447,10 @@ const menuStyle = computed(() => {
 
 .radial-item-leave-to {
   opacity: 0;
-  /* 收合時：縮小並回到中心點，使用與最終狀態相同的 transform 結構 */
-  transform: rotate(var(--angle, 0deg)) translate(0px) rotate(calc(-1 * var(--angle, 0deg))) scale(0);
+  /* 收合時：縮小（只影響 scale，不影響位置） */
+  transform: scale(0);
+  /* 注意：不設置 left 和 top，保持原有位置直到消失 */
+  /* 內聯樣式的優先級已經最高，不需要 !important */
 }
 
 /* 減少動畫（用戶偏好） */
@@ -449,7 +463,8 @@ const menuStyle = computed(() => {
   
   .radial-menu-item {
     opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
+    transform: scale(1);
+    /* 注意：不設置 left 和 top，讓 :style 中的值生效 */
   }
 }
 </style>
