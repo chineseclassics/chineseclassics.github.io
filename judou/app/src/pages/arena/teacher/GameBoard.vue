@@ -34,16 +34,15 @@ interface TeamStats {
   team: GameTeam
   memberCount: number
   completedCount: number
-  averageScore: number  // 平均分（顯示用）
+  averageScore: number  // 平均分（顯示用，依 participants 即時計算）
 }
 
 const teamStats = computed((): TeamStats[] => {
   return teams.value.map(team => {
     const teamMembers = participants.value.filter(p => p.team_id === team.id)
     const completedMembers = teamMembers.filter(p => p.status === 'completed')
-    
-    // 計算平均分（從數據庫獲取的 total_score 已經是 平均分×100）
-    const averageScore = team.total_score / 100
+    const totalScore = teamMembers.reduce((sum, p) => sum + (p.score || 0), 0)
+    const averageScore = teamMembers.length > 0 ? totalScore / teamMembers.length : 0
     
     return {
       team,
@@ -699,4 +698,3 @@ onUnmounted(() => {
   font-size: 1.25rem;
 }
 </style>
-

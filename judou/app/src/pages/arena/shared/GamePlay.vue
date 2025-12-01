@@ -45,11 +45,13 @@ const participants = computed(() => room.value?.participants || [])
 const teams = computed(() => room.value?.teams || [])
 
 // 個人與團隊分數
-const myScore = computed(() => myParticipant.value?.score || 0)
 const myTeam = computed(() => {
   if (!teams.value.length || !myParticipant.value?.team_id) return null
   return teams.value.find(t => t.id === myParticipant.value!.team_id) || null
 })
+
+const localTotals = computed(() => getTotals())
+const localScore = computed(() => localTotals.value.totalCorrect)
 
 const teamStats = computed(() => {
   const byTeam = new Map<string, { id: string; name: string; total: number; count: number }>()
@@ -59,7 +61,11 @@ const teamStats = computed(() => {
   participants.value.forEach(p => {
     if (p.team_id && byTeam.has(p.team_id)) {
       const s = byTeam.get(p.team_id)!
-      s.total += p.score || 0
+      const score =
+        p.user_id === myParticipant.value?.user_id
+          ? Math.max(localScore.value, p.score || 0)
+          : p.score || 0
+      s.total += score
       s.count += 1
     }
   })
@@ -118,7 +124,7 @@ const remainingBeans = computed(() => Math.max(0, totalBeans.value - usedBeans.v
 const hasBeansLeft = computed(() => remainingBeans.value > 0)
 const beanShake = ref(false)
 const lastInteraction = ref<number | null>(null)
-const UPDATE_DELAY = 250
+const UPDATE_DELAY = 80  // UI 立即更新，對後端送資料做輕節流
 let progressTimer: ReturnType<typeof setTimeout> | null = null
 let pendingForceFinish = false
 let sendingProgress = false
@@ -290,6 +296,7 @@ function toggleBreak(index: number) {
   scheduleProgressUpdate()
 
   const totals = getTotals()
+  updateLocalParticipantScore(totals.totalCorrect)
   if (totals.usedBeansAll >= totals.totalBeansAll) {
     scheduleProgressUpdate(true)
   }
@@ -476,6 +483,20 @@ onUnmounted(() => {
   }
   sendProgressUpdate(pendingForceFinish)
 })
+
+function updateLocalParticipantScore(score: number) {
+  if (myParticipant.value) {
+    myParticipant.value.score = score
+  }
+  if (room.value?.participants) {
+    const updated = room.value.participants.map(p =>
+      p.user_id === myParticipant.value?.user_id
+        ? { ...p, score }
+        : p
+    )
+    room.value.participants = updated as any
+  }
+}
 </script>
 
 <template>
@@ -505,7 +526,7 @@ onUnmounted(() => {
           <div class="scoreboard">
             <div class="score-chip">
               <span class="chip-label">個人分數</span>
-              <span class="chip-value">{{ myScore }}</span>
+              <span class="chip-value">{{ localScore }}</span>
             </div>
             <div v-if="teamAverage !== null" class="score-chip team">
               <span class="chip-label">團隊平均</span>

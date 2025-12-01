@@ -325,7 +325,7 @@
 - **配色**：低調的配色方案（灰色系、米色、淺色調），避免過於鮮豔
 - **圖標**：簡約的手繪風格圖標，線條細緻
 - **元素**：極簡設計，減少裝飾，柔和的邊界
-- **動畫**：極少動畫，保持靜謐感
+- **動畫**：適量的、優雅的、微妙的動畫，突出高級感
 
 **繪畫實現**：
 - 參考 `sealdesgin.html` 的 Canvas 繪圖實現
@@ -477,6 +477,11 @@ draw-guess/
 **任務清單**：
 - [ ] 創建項目文件結構
 - [ ] 設計數據庫架構並實施遷移
+- [ ] 實現用戶系統（匿名 + Google 登入）
+  - [ ] Supabase 認證配置
+  - [ ] 匿名遊玩模式
+  - [ ] Google OAuth 登入
+  - [ ] 用戶資料管理
 - [ ] 實現房間系統（創建/加入/離開）
 - [ ] 實現基礎繪畫功能（Canvas）
 - [ ] 實現猜詞系統（輸入/匹配）
@@ -485,6 +490,7 @@ draw-guess/
 - [ ] 基礎 UI（房間列表、遊戲界面）
 
 **驗收標準**：
+- 可以匿名遊玩或登入遊玩
 - 可以創建房間並加入
 - 可以輪流畫畫和猜詞
 - 分數正確計算
@@ -528,24 +534,63 @@ draw-guess/
 - 詞語數量驗證（最少 6 個）正常工作
 - 詞語列表正確保存到房間
 
-### 階段 3：優化和增強（1-2週）
+### 階段 3：分數累積和基礎粘性功能（1-2週）
 
-**目標**：優化體驗，增加教育功能
+**目標**：實現分數累積和基礎的遊戲粘性功能
 
 **任務清單**：
+- [ ] 分數累積系統
+  - [ ] 個人統計表設計和實施
+  - [ ] 分數計算和累積邏輯
+  - [ ] 個人統計面板 UI
+- [ ] 基礎成就系統
+  - [ ] 成就數據表設計
+  - [ ] 成就解鎖邏輯
+  - [ ] 成就展示 UI
+- [ ] 排行榜系統
+  - [ ] 全球排行榜（總分數、勝場數）
+  - [ ] 排行榜 UI
+- [ ] 遊戲歷史記錄
+  - [ ] 歷史記錄保存
+  - [ ] 歷史記錄查看 UI
+
+**驗收標準**：
+- 登入用戶可以累積分數和統計
+- 可以查看個人統計和成就
+- 可以查看排行榜
+- 可以查看遊戲歷史記錄
+
+### 階段 4：社交和進階粘性功能（1-2週）
+
+**目標**：增加社交功能和進階粘性功能
+
+**任務清單**：
+- [ ] 好友系統
+  - [ ] 添加好友功能
+  - [ ] 好友列表和狀態
+  - [ ] 邀請好友加入房間
+  - [ ] 好友排行榜
+- [ ] 詞彙掌握度系統
+  - [ ] 詞彙掌握度追蹤
+  - [ ] 個人詞彙庫展示
+  - [ ] 詞彙統計
+- [ ] 每日挑戰
+  - [ ] 每日挑戰生成
+  - [ ] 挑戰完成和獎勵
+  - [ ] 連續完成獎勵
 - [ ] 繪畫實時同步優化（節流、壓縮）
 - [ ] 提示系統（逐步顯示提示）
-- [ ] 遊戲統計（哪些詞容易/難猜）
-- [ ] 歷史記錄（查看過往遊戲）
 - [ ] 移動端優化（觸摸繪畫）
 - [ ] 性能優化（減少延遲）
 
 **驗收標準**：
+- 可以添加好友並互相挑戰
+- 可以查看詞彙掌握度
+- 可以參與每日挑戰
 - 繪畫同步流暢
 - 移動端體驗良好
-- 統計功能可用
 
-### 階段 4：教育功能增強（可選）
+### 階段 5：教育功能增強（可選）
 
 **目標**：增加更多教育價值
 
@@ -615,20 +660,329 @@ draw-guess/
 
 ---
 
+## 用戶系統設計
+
+### 是否需要登入？
+
+**建議：支持雙模式**
+
+#### 模式 1：匿名遊玩（無需登入）
+- ✅ 一鍵開始，無需註冊
+- ✅ 可以創建房間、加入房間、參與遊戲
+- ❌ 不累積分數和統計
+- ❌ 不保存遊戲歷史
+- **適用**：快速試玩、臨時遊戲
+
+#### 模式 2：登入遊玩（推薦）
+- ✅ 累積分數和統計
+- ✅ 保存遊戲歷史
+- ✅ 查看個人成就和排行榜
+- ✅ 好友系統（互相挑戰）
+- ✅ 詞彙掌握度追蹤
+- **適用**：長期使用、與同學挑戰
+
+**設計理念**：
+- 降低試用門檻（支持匿名）
+- 鼓勵長期使用（登入後有更多功能）
+- 平衡體驗和粘性
+
+### 認證方式
+
+**參考 story-vocab 的設計**：
+- **Google 登入**（主要）：學校學生使用 Google Workspace 賬號
+- **匿名試用**（次要）：訪客無需註冊即可試玩
+- **未來擴展**：可預留其他登入方式（Apple、微信等）
+
+**數據庫設計**（UUID 主鍵 + 多重身份系統）：
+```sql
+-- 用戶主表
+CREATE TABLE users (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email TEXT UNIQUE,                -- Google 用戶有，匿名為 NULL
+  display_name TEXT NOT NULL,
+  avatar_url TEXT,
+  user_type TEXT DEFAULT 'registered', -- 'registered' | 'anonymous'
+  created_at TIMESTAMP DEFAULT NOW(),
+  last_login_at TIMESTAMP
+);
+
+-- 身份關聯表（支持多種登入方式）
+CREATE TABLE user_identities (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  provider TEXT NOT NULL,           -- 'google' | 'anonymous'
+  provider_id TEXT NOT NULL,
+  provider_data JSONB,
+  created_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE(provider, provider_id)
+);
+```
+
+---
+
+## 分數累積系統
+
+### 分數統計
+
+**個人統計表**：
+```sql
+CREATE TABLE user_stats (
+  user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  
+  -- 總體統計
+  total_games_played INT DEFAULT 0,        -- 總遊戲場數
+  total_games_won INT DEFAULT 0,            -- 總勝場數
+  total_score INT DEFAULT 0,                -- 總分數
+  best_single_game_score INT DEFAULT 0,    -- 最佳單局分數
+  
+  -- 繪畫統計
+  total_drawings INT DEFAULT 0,             -- 總繪畫次數
+  drawings_guessed INT DEFAULT 0,           -- 被猜中次數
+  drawing_success_rate DECIMAL(5,2),       -- 繪畫成功率
+  
+  -- 猜詞統計
+  total_guesses INT DEFAULT 0,             -- 總猜詞次數
+  correct_guesses INT DEFAULT 0,            -- 猜中次數
+  guess_accuracy DECIMAL(5,2),              -- 猜詞準確率
+  
+  -- 連勝記錄
+  current_win_streak INT DEFAULT 0,         -- 當前連勝
+  best_win_streak INT DEFAULT 0,            -- 最佳連勝
+  
+  -- 時間統計
+  total_play_time_minutes INT DEFAULT 0,    -- 總遊戲時長（分鐘）
+  last_played_at TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+### 分數計算規則
+
+**單局分數**：
+- 猜中得分：根據猜中順序（第一個 100%，第二個 80%，依此類推）
+- 繪畫得分：根據猜中玩家數量計算
+- 獲勝獎勵：每局獲勝額外加分
+
+**累積分數**：
+- 所有遊戲的分數累積
+- 用於排行榜和成就解鎖
+
+---
+
+## 增進遊戲粘性功能
+
+### 1. 個人統計和成就系統
+
+**個人統計面板**：
+- 總遊戲場數、勝場數
+- 總分數、最佳單局分數
+- 繪畫成功率、猜詞準確率
+- 連勝記錄
+- 總遊戲時長
+
+**成就系統**：
+```sql
+CREATE TABLE achievements (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  code TEXT UNIQUE NOT NULL,        -- 成就代碼
+  name TEXT NOT NULL,                -- 成就名稱
+  description TEXT,                  -- 成就描述
+  icon TEXT,                         -- 成就圖標
+  condition_type TEXT NOT NULL,      -- 條件類型
+  condition_value INT,              -- 條件數值
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE user_achievements (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  achievement_id UUID REFERENCES achievements(id),
+  unlocked_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE(user_id, achievement_id)
+);
+```
+
+**成就示例**：
+- 🎯 「神射手」：猜中 100 次
+- 🎨 「畫家」：繪畫 50 次
+- 🏆 「常勝將軍」：連勝 10 場
+- ⚡ 「閃電俠」：單局得分超過 500
+- 📚 「詞彙大師」：猜中 500 個不同詞語
+
+### 2. 排行榜系統
+
+**全球排行榜**：
+- 總分數排行榜
+- 勝場數排行榜
+- 猜詞準確率排行榜
+- 連勝記錄排行榜
+
+**好友排行榜**：
+- 僅顯示好友的排名
+- 互相挑戰的動力
+
+**排行榜表**：
+```sql
+CREATE TABLE leaderboards (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  rank_type TEXT NOT NULL,           -- 'total_score' | 'wins' | 'accuracy' | 'streak'
+  rank_value INT NOT NULL,           -- 排名數值
+  rank_position INT,                 -- 排名位置（定期更新）
+  updated_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE(user_id, rank_type)
+);
+```
+
+### 3. 好友系統
+
+**好友功能**：
+- 添加好友（通過用戶名或房間碼）
+- 查看好友在線狀態
+- 邀請好友加入房間
+- 查看好友統計和成就
+- 好友排行榜
+
+**好友表**：
+```sql
+CREATE TABLE friendships (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  friend_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  status TEXT DEFAULT 'pending',    -- 'pending' | 'accepted' | 'blocked'
+  created_at TIMESTAMP DEFAULT NOW(),
+  accepted_at TIMESTAMP,
+  UNIQUE(user_id, friend_id),
+  CHECK (user_id != friend_id)
+);
+```
+
+### 4. 詞彙掌握度系統
+
+**特色功能**：追蹤用戶猜中過的詞語
+
+**詞彙掌握表**：
+```sql
+CREATE TABLE user_word_mastery (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  word_text TEXT NOT NULL,           -- 詞語文本
+  times_guessed INT DEFAULT 1,       -- 猜中次數
+  times_drawn INT DEFAULT 0,        -- 繪畫次數
+  first_guessed_at TIMESTAMP DEFAULT NOW(),
+  last_guessed_at TIMESTAMP DEFAULT NOW(),
+  mastery_level INT DEFAULT 1,      -- 掌握度等級（1-5）
+  UNIQUE(user_id, word_text)
+);
+```
+
+**功能**：
+- 查看已掌握的詞語列表
+- 詞語掌握度等級（根據猜中次數）
+- 詞彙統計（掌握多少個詞語）
+- 個人詞彙庫
+
+### 5. 遊戲歷史記錄
+
+**歷史記錄**：
+- 查看過往遊戲記錄
+- 重溫精彩畫作（保存畫作截圖）
+- 查看每局詳細統計
+
+**遊戲記錄表**：
+```sql
+CREATE TABLE game_history (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  room_id UUID REFERENCES game_rooms(id),
+  user_id UUID REFERENCES users(id),
+  game_date TIMESTAMP DEFAULT NOW(),
+  final_score INT,
+  final_rank INT,
+  rounds_played INT,
+  words_guessed INT,
+  drawings_made INT,
+  game_duration_minutes INT,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE round_history (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  game_history_id UUID REFERENCES game_history(id),
+  round_number INT,
+  was_drawer BOOLEAN,
+  word_text TEXT,
+  score_earned INT,
+  drawing_snapshot TEXT,            -- 畫作截圖（Base64 或 URL）
+  created_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+### 6. 每日挑戰
+
+**每日挑戰功能**：
+- 每日特殊詞庫挑戰
+- 完成挑戰獲得額外獎勵
+- 連續完成挑戰的額外獎勵
+
+**挑戰表**：
+```sql
+CREATE TABLE daily_challenges (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  challenge_date DATE NOT NULL,
+  wordlist_id UUID REFERENCES wordlists(id),
+  description TEXT,
+  reward_score INT DEFAULT 0,
+  created_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE(challenge_date)
+);
+
+CREATE TABLE user_challenge_completions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  challenge_id UUID REFERENCES daily_challenges(id),
+  completed_at TIMESTAMP DEFAULT NOW(),
+  reward_earned INT,
+  UNIQUE(user_id, challenge_id)
+);
+```
+
+### 7. 徽章系統
+
+**徽章類型**：
+- 遊戲徽章（參與、獲勝、連勝）
+- 繪畫徽章（繪畫次數、成功率）
+- 猜詞徽章（猜中次數、準確率）
+- 社交徽章（好友數量、邀請次數）
+- 特殊徽章（節日活動、特殊成就）
+
+---
+
 ## 權限設計
 
 ### 用戶角色
 
-**所有人**：
+**匿名用戶**：
 - ✅ 創建房間
 - ✅ 加入房間
 - ✅ 選擇系統詞庫或自定義詞語
 - ✅ 參與遊戲
+- ❌ 不累積分數和統計
+- ❌ 不保存遊戲歷史
+
+**登入用戶**：
+- ✅ 所有匿名用戶的功能
+- ✅ 累積分數和統計
+- ✅ 查看個人成就和排行榜
+- ✅ 好友系統
+- ✅ 詞彙掌握度追蹤
+- ✅ 遊戲歷史記錄
+- ✅ 每日挑戰
 
 **管理員**（只有你）：
 - ✅ 管理系統預設詞庫（創建/編輯/刪除）
 - ✅ 批量導入詞彙
 - ✅ 管理詞庫分類和標籤
+- ✅ 查看全局統計數據
 
 ### 管理員後台訪問方式
 
@@ -741,7 +1095,13 @@ draw-guess/
 - **按鈕**：極簡設計，細邊框，極少或無陰影，低調的懸停效果
 - **輸入框**：細線條邊框，低調的焦點效果（淺灰色邊框變深灰色）
 - **卡片**：極簡設計，細邊框，無裝飾
-- **動畫**：極少動畫，保持靜謐感
+- **動畫**：適量的、優雅的、微妙的動畫，突出高級感
+  - 淡入淡出效果（fade in/out）
+  - 平滑的過渡動畫（smooth transitions）
+  - 輕微的懸停效果（subtle hover effects）
+  - 優雅的加載動畫（elegant loading animations）
+  - 微妙的彈性效果（subtle spring effects）
+  - 原則：動畫要優雅、不過分、突出高級感
 
 ### 色彩建議
 
