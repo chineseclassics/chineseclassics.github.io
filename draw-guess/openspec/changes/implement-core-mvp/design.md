@@ -158,35 +158,23 @@ js/
 
 ### 核心模組職責
 
-**room-manager.js**：
-- 房間 CRUD 操作
-- 房間碼生成和驗證
-- 玩家加入/離開管理
+**Stores (Pinia)**：
+- `auth.ts`：認證狀態管理（登入/登出、用戶信息）
+- `room.ts`：房間狀態管理（當前房間、玩家列表、房間設置）
+- `game.ts`：遊戲狀態管理（當前輪次、當前畫家、遊戲進度）
+- `drawing.ts`：繪畫狀態管理（畫筆設置、繪畫歷史）
 
-**game-state.js**：
-- 遊戲狀態機管理
-- 輪次管理
-- 詞語選擇邏輯
+**Composables**：
+- `useRoom.ts`：房間邏輯（創建、加入、離開、狀態管理）
+- `useDrawing.ts`：繪畫邏輯（Canvas 操作、工具管理、數據序列化）
+- `useGuessing.ts`：猜詞邏輯（輸入處理、匹配判斷、提示管理）
+- `useRealtime.ts`：實時同步邏輯（Channel 管理、消息發送接收）
 
-**realtime-sync.js**：
-- Realtime Channel 管理
-- 連接狀態管理
-- 消息發送和接收
-
-**drawing-canvas.js**：
-- Canvas 繪圖邏輯
-- 繪畫工具管理
-- 繪畫數據序列化
-
-**guessing-system.js**：
-- 猜詞輸入處理
-- 匹配判斷
-- 提示管理
-
-**scoring-system.js**：
-- 分數計算邏輯
-- 分數更新
-- 排行榜管理
+**Components**：
+- `DrawingCanvas.vue`：Canvas 繪畫組件
+- `GuessingPanel.vue`：猜詞輸入和顯示組件
+- `PlayerList.vue`：玩家列表和排行榜組件
+- `RoomCreate.vue`：創建房間表單組件
 
 ## UI Design Principles
 

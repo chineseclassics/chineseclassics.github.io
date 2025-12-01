@@ -1,0 +1,33 @@
+import { fileURLToPath, URL } from 'node:url'
+import { defineConfig } from 'vite'
+import vue from '@vitejs/plugin-vue'
+import path from 'node:path'
+
+// https://vite.dev/config/
+export default defineConfig({
+  // GitHub Pages 部署路徑
+  base: '/draw-guess/',
+  
+  // 輸出到上層目錄的 assets 文件夾
+  build: {
+    outDir: '../assets',
+    emptyOutDir: true,
+  },
+  
+  plugins: [vue()],
+  resolve: {
+    alias: {
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
+      // 開發環境中映射 /assets 到根目錄的 assets
+      '/assets': path.resolve(__dirname, '../../assets'),
+    },
+  },
+  server: {
+    port: 5174,        // 固定端口（5173 被句豆使用）
+    strictPort: true,  // 如果端口被佔用則報錯，而不是換端口
+    fs: {
+      // 允許訪問父目錄
+      allow: ['..', '../..'],
+    },
+  },
+})

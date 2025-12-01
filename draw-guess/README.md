@@ -8,16 +8,28 @@
 
 ## 🎮 快速開始
 
-### 1️⃣ 啟動本地服務器
+### 1️⃣ 安裝依賴
 
 ```bash
-cd draw-guess
-python3 -m http.server 8000
+cd draw-guess/app
+npm install
 ```
 
-### 2️⃣ 開始遊戲
+### 2️⃣ 啟動開發服務器
 
-打開瀏覽器訪問：**http://localhost:8000/index.html**
+```bash
+npm run dev
+```
+
+開發服務器將在 `http://localhost:5174` 運行（5173 被句豆使用）。
+
+### 3️⃣ 構建生產版本
+
+```bash
+npm run build
+```
+
+構建後的文件將輸出到 `assets/` 目錄，用於 GitHub Pages 部署。
 
 ---
 
@@ -52,53 +64,61 @@ python3 -m http.server 8000
 
 ```
 draw-guess/
-├── index.html              # 主入口（房間列表/創建）
-├── room.html               # 遊戲房間頁面
-├── README.md               # 本文件
+├── app/                    # Vue 應用源代碼
+│   ├── src/
+│   │   ├── main.ts         # 應用入口
+│   │   ├── App.vue          # 根組件
+│   │   ├── components/      # Vue 組件
+│   │   │   ├── RoomList.vue
+│   │   │   ├── RoomCreate.vue
+│   │   │   ├── DrawingCanvas.vue
+│   │   │   ├── DrawingToolbar.vue
+│   │   │   ├── GuessingPanel.vue
+│   │   │   └── PlayerList.vue
+│   │   ├── views/           # 頁面組件
+│   │   │   ├── HomeView.vue
+│   │   │   └── RoomView.vue
+│   │   ├── stores/          # Pinia 狀態管理
+│   │   │   ├── auth.ts
+│   │   │   ├── room.ts
+│   │   │   ├── game.ts
+│   │   │   └── drawing.ts
+│   │   ├── composables/     # 可復用邏輯
+│   │   │   ├── useRoom.ts
+│   │   │   ├── useDrawing.ts
+│   │   │   ├── useGuessing.ts
+│   │   │   └── useRealtime.ts
+│   │   ├── router/          # Vue Router
+│   │   │   └── index.ts
+│   │   ├── lib/             # 核心類庫
+│   │   │   ├── supabase.ts
+│   │   │   └── canvas-utils.ts
+│   │   └── assets/           # 資源文件
+│   ├── public/              # 靜態資源
+│   ├── package.json          # 依賴管理
+│   └── vite.config.ts        # Vite 配置
 │
-├── js/                     # JavaScript 模塊
-│   ├── config.js           # Supabase 配置
-│   ├── app.js              # 應用入口
-│   ├── core/               # 核心功能
-│   │   ├── room-manager.js      # 房間管理
-│   │   ├── game-state.js        # 遊戲狀態
-│   │   └── realtime-sync.js     # 實時同步
-│   ├── features/          # 特定功能
-│   │   ├── drawing-canvas.js   # 繪畫功能
-│   │   ├── guessing-system.js  # 猜詞系統
-│   │   ├── scoring-system.js    # 計分系統
-│   │   ├── wordlist-manager.js  # 系統詞庫管理
-│   │   ├── wordlist-selector.js # 詞庫選擇器
-│   │   ├── custom-words.js      # 自定義詞語
-│   │   └── word-list-builder.js # 詞語列表構建器
-│   └── ui/                 # UI 相關
-│       ├── screens.js           # 界面顯示
-│       ├── modals.js            # 彈窗管理
-│       └── leaderboard.js       # 排行榜
+├── assets/                  # 構建後的靜態文件（GitHub Pages）
+│   ├── *.js                 # 構建後的 JS 文件
+│   ├── *.css                # 構建後的 CSS 文件
+│   └── index.html           # 構建後的 HTML
 │
-├── css/                    # 樣式文件
-│   ├── main.css           # 主樣式
-│   └── canvas.css         # 畫布樣式
+├── admin/                   # 管理員後台（Vue 組件）
+│   └── WordlistManager.vue  # 系統詞庫管理
 │
-├── assets/                 # 資源文件
-│   └── images/            # 圖標、背景等
+├── supabase/                # Supabase 相關
+│   ├── migrations/          # 數據庫遷移
+│   └── functions/           # Edge Functions（如需要）
 │
-├── admin/                  # 管理員後台
-│   └── wordlist-manager.html  # 系統詞庫管理
-│
-├── supabase/               # Supabase 相關
-│   ├── migrations/        # 數據庫遷移
-│   └── functions/         # Edge Functions（如需要）
-│
-├── docs/                   # 文檔
-│   ├── DEVELOPMENT_PLAN.md    # 開發計劃
+├── docs/                    # 文檔
+│   ├── DEVELOPMENT_PLAN.md   # 開發計劃
 │   └── ...
 │
-└── openspec/               # OpenSpec 規範
-    ├── project.md         # 項目描述
-    ├── AGENTS.md          # AI 助手指南
-    ├── changes/           # 變更提案
-    └── specs/             # 能力規範
+└── openspec/                # OpenSpec 規範
+    ├── project.md           # 項目描述
+    ├── AGENTS.md            # AI 助手指南
+    ├── changes/             # 變更提案
+    └── specs/               # 能力規範
 ```
 
 ---
@@ -126,18 +146,33 @@ draw-guess/
 
 #### 步驟 2: 配置前端
 
-編輯 `js/config.js`：
+編輯 `app/src/lib/supabase.ts`：
 
-```javascript
-export const SUPABASE_CONFIG = {
-  url: 'https://your-project.supabase.co',
-  anonKey: 'your-anon-key'
-};
+```typescript
+import { createClient } from '@supabase/supabase-js'
+
+const supabaseUrl = 'https://your-project.supabase.co'
+const supabaseAnonKey = 'your-anon-key'
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 ```
 
-#### 步驟 3: 測試應用
+#### 步驟 3: 啟動開發服務器
 
-訪問 http://localhost:8000/index.html，開始遊戲！
+```bash
+cd app
+npm run dev
+```
+
+訪問 http://localhost:5174，開始遊戲！
+
+#### 步驟 4: 構建生產版本
+
+```bash
+npm run build
+```
+
+構建後的文件在 `assets/` 目錄，可以部署到 GitHub Pages。
 
 ---
 
@@ -159,7 +194,17 @@ export const SUPABASE_CONFIG = {
 
 ---
 
+## 🛠️ 技術棧
+
+- **Vue 3** + **Vite** + **TypeScript**
+- **Pinia** - 狀態管理
+- **Vue Router** - 路由管理
+- **Tailwind CSS** - 樣式系統
+- **Supabase** - 後端服務（數據庫、認證、實時同步）
+- **HTML5 Canvas** - 繪畫功能
+
+---
+
 **最後更新**: 2025-01-XX  
 **版本**: 0.1.0  
 **狀態**: 🚧 開發中
-

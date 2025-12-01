@@ -53,25 +53,43 @@ const myTeam = computed(() => {
 const localTotals = computed(() => getTotals())
 const localScore = computed(() => localTotals.value.totalCorrect)
 
+// 權威 total_score / 100，後備用本地聚合
 const teamStats = computed(() => {
-  const byTeam = new Map<string, { id: string; name: string; total: number; count: number }>()
+  const byTeam = new Map<string, { id: string; name: string; authAvg: number; localAvg: number }>()
+
   teams.value.forEach(t => {
-    byTeam.set(t.id, { id: t.id, name: t.team_name, total: 0, count: 0 })
+    byTeam.set(t.id, {
+      id: t.id,
+      name: t.team_name,
+      authAvg: typeof t.total_score === 'number' ? t.total_score / 100 : 0,
+      localAvg: 0,
+    })
   })
+
+  const localAgg = new Map<string, { total: number; count: number }>()
   participants.value.forEach(p => {
-    if (p.team_id && byTeam.has(p.team_id)) {
-      const s = byTeam.get(p.team_id)!
-      const score =
-        p.user_id === myParticipant.value?.user_id
-          ? Math.max(localScore.value, p.score || 0)
-          : p.score || 0
-      s.total += score
-      s.count += 1
+    if (!p.team_id) return
+    if (!localAgg.has(p.team_id)) {
+      localAgg.set(p.team_id, { total: 0, count: 0 })
     }
+    const agg = localAgg.get(p.team_id)!
+    const score =
+      p.user_id === myParticipant.value?.user_id
+        ? Math.max(localScore.value, p.score || 0)
+        : p.score || 0
+    agg.total += score
+    agg.count += 1
   })
+
+  byTeam.forEach((stat, teamId) => {
+    const agg = localAgg.get(teamId)
+    const localAvg = agg && agg.count > 0 ? agg.total / agg.count : 0
+    stat.localAvg = localAvg
+  })
+
   return Array.from(byTeam.values()).map(s => ({
     ...s,
-    average: s.count > 0 ? s.total / s.count : 0,
+    displayAvg: s.authAvg || s.localAvg || 0,
   }))
 })
 
@@ -79,11 +97,11 @@ const teamAverage = computed(() => {
   const t = myTeam.value
   if (!t) return null
   const stats = teamStats.value.find(s => s.id === t.id)
-  return stats ? stats.average : null
+  return stats ? stats.displayAvg : null
 })
 
 const teamRanking = computed(() => {
-  return [...teamStats.value].sort((a, b) => b.average - a.average)
+  return [...teamStats.value].sort((a, b) => b.displayAvg - a.displayAvg)
 })
 
 // =====================================================
@@ -609,7 +627,7 @@ function updateLocalParticipantScore(score: number) {
       <div v-if="teamRanking.length" class="team-board">
         <div class="team-row" v-for="team in teamRanking" :key="team.id" :class="{ me: team.id === myTeam?.id }">
           <span class="team-name">{{ team.name }}</span>
-          <span class="team-score">{{ team.average.toFixed(2) }}</span>
+          <span class="team-score">{{ team.displayAvg.toFixed(2) }}</span>
         </div>
       </div>
 

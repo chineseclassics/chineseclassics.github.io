@@ -53,6 +53,8 @@ const userStatsStore = useUserStatsStore()
 const roomId = computed(() => route.params.roomId as string)
 const room = computed(() => gameStore.currentRoom)
 const myParticipant = computed(() => gameStore.myParticipant)
+const participants = computed(() => room.value?.participants || [])
+const teams = computed(() => room.value?.teams || [])
 
 // 答案詳情數據
 const gameResultData = ref<GameResultData | null>(null)
@@ -134,8 +136,17 @@ const ranking = computed(() => {
 
 // 按團隊分組排名（團隊模式）
 const teamRanking = computed(() => {
-  if (!room.value?.teams) return []
-  return [...room.value.teams].sort((a, b) => b.total_score - a.total_score)
+  if (!teams.value.length) return []
+  return teams.value
+    .map(team => {
+      const teamMembers = participants.value.filter(p => p.team_id === team.id)
+      const totalScore = teamMembers.reduce((sum, p) => sum + (p.score || 0), 0)
+      const localAvg = teamMembers.length > 0 ? totalScore / teamMembers.length : 0
+      const authAvg = typeof team.total_score === 'number' ? team.total_score / 100 : 0
+      const displayAvg = authAvg || localAvg
+      return { ...team, averageScore: displayAvg }
+    })
+    .sort((a, b) => b.averageScore - a.averageScore)
 })
 
 
@@ -437,7 +448,7 @@ onMounted(() => {
         >
           <span class="rank">{{ index === 0 ? '🏆' : index + 1 }}</span>
           <span class="team-name">{{ team.team_name }}</span>
-          <span class="team-score">{{ team.total_score }} 分</span>
+          <span class="team-score">{{ team.averageScore.toFixed(2) }} 分</span>
         </div>
       </div>
     </section>

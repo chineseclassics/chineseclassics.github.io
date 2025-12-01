@@ -148,14 +148,35 @@
 ## External Dependencies
 
 ### NPM 依賴
+
+**核心框架**：
 - **Vue 3**：`^3.5.0`
 - **Vite**：`^7.0.0`
 - **Pinia**：`^3.0.0`
 - **Vue Router**：`^4.6.0`
 - **TypeScript**：`^5.9.0`
-- **@supabase/supabase-js**：`^2.84.0`
-- **Tailwind CSS**：通過 npm 安裝
 - **@vitejs/plugin-vue**：`^6.0.0`
+
+**後端服務**：
+- **@supabase/supabase-js**：`^2.84.0`
+
+**UI 和工具**：
+- **Tailwind CSS**：`^3.4.0`
+- **@headlessui/vue**：`^1.7.0` - 無樣式組件（符合極簡設計）
+- **@heroicons/vue**：`^2.2.0` - 細線條圖標（符合極簡設計）
+- **@vueuse/core**：`^14.1.0` - Vue 3 工具庫（Composables）
+
+**表單驗證**：
+- **zod**：`^3.22.0` - TypeScript 優先的驗證庫
+- **@vee-validate/zod**：`^4.12.0` - Vue 表單驗證
+
+**Canvas 繪畫**：
+- 使用原生 Canvas API，不引入第三方庫（保持極簡和輕量）
+
+**動畫**：
+- 使用 Vue 3 內建 Transition，不引入額外動畫庫（保持極簡）
+
+詳細說明請參見：[Vue 生態系統推薦](./docs/VUE_ECOSYSTEM.md)
 
 ### 平台組件
 - **太虛幻境應用切換器**：`/assets/js/taixu-app-switcher.js`

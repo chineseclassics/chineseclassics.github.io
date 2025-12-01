@@ -1,0 +1,58 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 極簡設計全局樣式 */
+@layer base {
+  body {
+    @apply bg-bg-primary text-text-primary;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+      'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+      sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* 極簡設計組件樣式 */
+@layer components {
+  /* 按鈕：極簡設計，細邊框，低調懸停效果 */
+  .btn-minimal {
+    @apply px-4 py-2 rounded-minimal border-thin border-border-light;
+    @apply bg-bg-primary text-text-primary;
+    @apply transition-all duration-200;
+    @apply hover:border-border-medium hover:bg-bg-secondary;
+  }
+
+  /* 輸入框：細線條邊框，低調焦點效果 */
+  .input-minimal {
+    @apply px-3 py-2 rounded-minimal border-thin border-border-light;
+    @apply bg-bg-primary text-text-primary;
+    @apply focus:outline-none focus:border-border-medium;
+    @apply transition-all duration-200;
+  }
+
+  /* 卡片：極簡設計，細邊框，無裝飾 */
+  .card-minimal {
+    @apply p-4 rounded-minimal border-thin border-border-light;
+    @apply bg-bg-primary;
+  }
+}
+
+/* 優雅的、微妙的動畫 */
+@layer utilities {
+  /* 淡入淡出效果 */
+  .fade-enter-active,
+  .fade-leave-active {
+    transition: opacity 0.3s ease;
+  }
+  .fade-enter-from,
+  .fade-leave-to {
+    opacity: 0;
+  }
+
+  /* 平滑的過渡 */
+  .transition-smooth {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+}
