@@ -617,6 +617,44 @@ export const useGameStore = defineStore('game', () => {
   async function endGame(): Promise<GameResult | null> {
     if (!supabase || !currentRoom.value) return null
 
+    // 檢查時間是否到了
+    const startedAt = currentRoom.value.started_at ? new Date(currentRoom.value.started_at) : null
+    const timeLimit = currentRoom.value.time_limit * 1000
+    const isTimeUp = startedAt && (Date.now() - startedAt.getTime() >= timeLimit)
+
+    // 如果時間到了，強制將所有有分數的參與者設為已完成
+    if (isTimeUp) {
+      // 獲取所有未完成但已有分數的參與者
+      const { data: incompleteParticipants } = await supabase
+        .from('game_participants')
+        .select('id, score')
+        .eq('room_id', currentRoom.value.id)
+        .neq('status', 'completed')
+        .gt('score', 0)
+
+      if (incompleteParticipants && incompleteParticipants.length > 0) {
+        // 計算總用時（從開始時間到現在）
+        const totalTimeSpent = Math.round((Date.now() - startedAt!.getTime()) / 1000)
+        
+        // 將這些參與者設為已完成
+        await supabase
+          .from('game_participants')
+          .update({
+            status: 'completed',
+            completed_at: new Date().toISOString(),
+            time_spent: totalTimeSpent, // 設置總用時
+          })
+          .in('id', incompleteParticipants.map(p => p.id))
+
+        // 如果是團隊模式，重新計算所有團隊的分數
+        if (currentRoom.value.game_mode === 'team_battle' && currentRoom.value.teams) {
+          for (const team of currentRoom.value.teams) {
+            await updateTeamScore(team.id)
+          }
+        }
+      }
+    }
+
     // 刷新房間數據
     const { data: room } = await supabase
       .from('game_rooms')
