@@ -37,7 +37,6 @@ function handleClick(e: Event) {
   }
   lastTouchTime.value = now
   
-  console.log('[FloatingAvatarButton] 點擊觸發，當前 isMenuOpen:', props.isMenuOpen)
   emit('toggle-menu')
 }
 

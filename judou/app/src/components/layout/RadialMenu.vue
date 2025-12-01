@@ -51,8 +51,6 @@ const menuItemsWithStyle = computed(() => {
   const items = props.items
   const count = items.length
   
-  console.log('[RadialMenu] menuItemsWithStyle 計算，count:', count, 'isOpen:', props.isOpen)
-  
   // 如果沒有項目，返回空數組
   if (count === 0) return []
   
@@ -102,8 +100,6 @@ const menuItemsWithStyle = computed(() => {
     const left = Math.cos(angleRad) * radius.value - itemSize / 2
     const top = Math.sin(angleRad) * radius.value - itemSize / 2
     
-    console.log(`[RadialMenu] 項目 ${index} (${item.label}): angle=${angleDeg.toFixed(1)}°, left=${left.toFixed(1)}px, top=${top.toFixed(1)}px`)
-    
     return {
       ...item,
       left,
@@ -114,9 +110,6 @@ const menuItemsWithStyle = computed(() => {
       itemSize
     }
   })
-  
-  console.log('[RadialMenu] 計算完成，結果:', result.map(r => ({ label: r.label, angle: r.angle.toFixed(1), left: r.left.toFixed(1), top: r.top.toFixed(1) })))
-  console.log('[RadialMenu] 中心點:', { centerX: props.centerX, centerY: props.centerY })
   
   return result
 })
@@ -174,16 +167,6 @@ const menuStyle = computed(() => {
     transform: 'translate(-50%, -50%)',
     zIndex: 1000,
     pointerEvents: (props.isOpen ? 'auto' : 'none') as 'auto' | 'none'
-  }
-  if (props.isOpen) {
-    console.log('[RadialMenu] menuStyle:', { 
-      centerX: props.centerX, 
-      centerY: props.centerY, 
-      left: style.left, 
-      top: style.top,
-      windowWidth: typeof window !== 'undefined' ? window.innerWidth : 0,
-      windowHeight: typeof window !== 'undefined' ? window.innerHeight : 0
-    })
   }
   return style
 })
@@ -281,9 +264,6 @@ const menuStyle = computed(() => {
   height: 0;
   /* 確保容器可見 */
   visibility: visible;
-  /* 調試：顯示容器位置（臨時啟用以檢查定位） */
-  background: rgba(255, 0, 0, 0.1);
-  border: 2px dashed red;
 }
 
 .radial-menu-item {
@@ -299,8 +279,6 @@ const menuStyle = computed(() => {
   height: 56px;
   
   /* 注意：left 和 top 在 :style 中動態設置，不要在這裡設置，避免覆蓋 */
-  /* 調試：添加邊框以便查看實際位置 */
-  border: 2px solid blue;
   border-radius: 50%;
   border: 2px solid rgba(111, 150, 56, 0.3);
   background: linear-gradient(

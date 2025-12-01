@@ -109,25 +109,17 @@ const morePageItems = computed(() => {
 })
 
 // 當前顯示的菜單項目
-const currentMenuItems = computed(() => {
-  const items = currentPage.value === 'main' ? mainPageItems.value : morePageItems.value
-  console.log('[MobileRadialMenu] currentMenuItems:', {
-    page: currentPage.value,
-    count: items.length,
-    items: items.map(i => i.label)
+  const currentMenuItems = computed(() => {
+    return currentPage.value === 'main' ? mainPageItems.value : morePageItems.value
   })
-  return items
-})
 
 // 切換菜單
 function toggleMenu() {
-  console.log('[MobileRadialMenu] toggleMenu 被調用，當前狀態:', isMenuOpen.value)
   isMenuOpen.value = !isMenuOpen.value
   // 打開菜單時重置到主頁面
   if (isMenuOpen.value) {
     currentPage.value = 'main'
   }
-  console.log('[MobileRadialMenu] 新狀態:', isMenuOpen.value)
 }
 
 // 關閉菜單
@@ -203,19 +195,10 @@ const menuCenterY = computed(() => {
       :items="currentMenuItems"
       :center-x="menuCenterX"
       :center-y="menuCenterY"
-      :radius="120"
+      :radius="160"
       @close="closeMenu"
       @item-click="handleMenuItemClick"
     />
-    
-    <!-- 調試信息 -->
-    <div v-if="false" style="position: fixed; top: 10px; left: 10px; background: rgba(0,0,0,0.8); color: white; padding: 10px; z-index: 9999; font-size: 12px;">
-      <div>isMenuOpen: {{ isMenuOpen }}</div>
-      <div>currentPage: {{ currentPage }}</div>
-      <div>currentMenuItems.length: {{ currentMenuItems.length }}</div>
-      <div>menuCenterX: {{ menuCenterX }}</div>
-      <div>menuCenterY: {{ menuCenterY }}</div>
-    </div>
   </div>
 </template>
 
