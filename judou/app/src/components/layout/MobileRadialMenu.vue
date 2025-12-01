@@ -17,7 +17,8 @@ import {
   PenLine,
   Library,
   BookMarked,
-  UserCog
+  UserCog,
+  MoreHorizontal
 } from 'lucide-vue-next'
 import BeanIcon from '@/components/common/BeanIcon.vue'
 
@@ -27,6 +28,8 @@ const route = useRoute()
 
 // 菜單展開狀態
 const isMenuOpen = ref(false)
+// 當前顯示的頁面：'main' 或 'more'
+const currentPage = ref<'main' | 'more'>('main')
 
 // 主要導航項目
 const primaryNav: RadialMenuItem[] = [
@@ -62,23 +65,91 @@ const visibleAdminNav = computed(() => {
   })
 })
 
-// 合併所有導航項目（主要功能在前，管理功能在後）
-const allMenuItems = computed(() => {
-  const items = [...visiblePrimaryNav.value, ...visibleAdminNav.value]
-  console.log('[MobileRadialMenu] allMenuItems:', items.length, items)
-  return items
+// 主頁面顯示的項目：首頁、句豆、品豆、鬥豆、更多
+const mainPageItems = computed(() => {
+  const items = visiblePrimaryNav.value
+  const mainItems = [
+    items.find(item => item.label === '首頁'),
+    items.find(item => item.label === '句豆'),
+    items.find(item => item.label === '品豆'),
+    items.find(item => item.label === '鬥豆'),
+  ].filter(Boolean) as RadialMenuItem[]
+  
+  // 添加"更多"按鈕
+  mainItems.push({
+    label: '更多',
+    icon: MoreHorizontal,
+    iconType: 'lucide',
+    to: undefined, // 沒有路由，點擊時切換頁面
+    disabled: false
+  })
+  
+  return mainItems
+})
+
+// 更多頁面顯示的項目：剩下的所有項目
+const morePageItems = computed(() => {
+  const items = visiblePrimaryNav.value
+  const mainLabels = ['首頁', '句豆', '品豆', '鬥豆']
+  const moreItems = items.filter(item => !mainLabels.includes(item.label))
+  
+  // 添加管理員項目
+  moreItems.push(...visibleAdminNav.value)
+  
+  // 添加"返回"按鈕（使用首頁圖標，但標籤為"返回"）
+  moreItems.unshift({
+    label: '返回',
+    icon: Home,
+    iconType: 'lucide',
+    to: undefined, // 沒有路由，點擊時切換回主頁面
+    disabled: false
+  })
+  
+  return moreItems
+})
+
+// 當前顯示的菜單項目
+const currentMenuItems = computed(() => {
+  return currentPage.value === 'main' ? mainPageItems.value : morePageItems.value
 })
 
 // 切換菜單
 function toggleMenu() {
   console.log('[MobileRadialMenu] toggleMenu 被調用，當前狀態:', isMenuOpen.value)
   isMenuOpen.value = !isMenuOpen.value
+  // 打開菜單時重置到主頁面
+  if (isMenuOpen.value) {
+    currentPage.value = 'main'
+  }
   console.log('[MobileRadialMenu] 新狀態:', isMenuOpen.value)
 }
 
 // 關閉菜單
 function closeMenu() {
   isMenuOpen.value = false
+  // 關閉時重置到主頁面
+  currentPage.value = 'main'
+}
+
+// 處理菜單項點擊（在 RadialMenu 中處理，這裡只是為了類型）
+function handleMenuItemClick(item: RadialMenuItem) {
+  // 如果是"更多"按鈕，切換到更多頁面
+  if (item.label === '更多' && !item.to) {
+    currentPage.value = 'more'
+    return
+  }
+  
+  // 如果是"返回"按鈕，切換回主頁面
+  if (item.label === '返回' && !item.to) {
+    currentPage.value = 'main'
+    return
+  }
+  
+  // 其他項目正常跳轉
+  if (item.to) {
+    router.push(item.to)
+    closeMenu()
+  }
 }
 
 // 處理頭像點擊（跳轉到個人頁面）
@@ -121,13 +192,14 @@ const menuCenterY = computed(() => {
     
     <!-- 放射狀菜單 -->
     <RadialMenu
-      v-if="allMenuItems.length > 0"
+      v-if="currentMenuItems.length > 0"
       :is-open="isMenuOpen"
-      :items="allMenuItems"
+      :items="currentMenuItems"
       :center-x="menuCenterX"
       :center-y="menuCenterY"
       :radius="120"
       @close="closeMenu"
+      @item-click="handleMenuItemClick"
     />
   </div>
 </template>

@@ -36,6 +36,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'close': []
+  'item-click': [item: RadialMenuItem]
 }>()
 
 const router = useRouter()
@@ -85,50 +86,14 @@ const menuItemsWithPosition = computed(() => {
     }]
   }
   
-  // 多個項目：根據數量決定是否分兩層
-  // 如果項目 <= 5 個，單層排列；如果 > 5 個，分兩層
-  const shouldUseTwoLayers = count > 5
-  const innerLayerCount = shouldUseTwoLayers ? Math.ceil(count / 2) : count
-  const outerLayerCount = shouldUseTwoLayers ? count - innerLayerCount : 0
-  
-  // 半徑設置：兩層時內層70%，外層100%；單層時100%
-  // 增加內層半徑，確保按鈕之間有足夠間距（按鈕大小56px，需要至少60px間距）
-  const innerRadius = shouldUseTwoLayers ? radius.value * 0.7 : radius.value
-  const outerRadius = radius.value * 1.0
+  // 單層排列：所有項目均勻分佈在90度圓弧上
+  // 從右（0度）到上（-90度），90度圓弧，向左上方展開
+  const itemRadius = radius.value
   
   return items.map((item, index) => {
-    let angle: number
-    let itemRadius: number
-    let layer: number
-    
-    if (shouldUseTwoLayers) {
-      // 兩層排列
-      const isInnerLayer = index < innerLayerCount
-      const layerIndex = isInnerLayer ? index : index - innerLayerCount
-      const layerCount = isInnerLayer ? innerLayerCount : outerLayerCount
-      
-      itemRadius = isInnerLayer ? innerRadius : outerRadius
-      layer = isInnerLayer ? 0 : 1
-      
-      // 每層都均勻分佈在90度圓弧上
-      // 內層：從 0度（右）到 -90度（上）
-      // 外層：從 0度（右）到 -90度（上），但角度稍微偏移以避免重疊
-      if (layerCount > 1) {
-        const angleStep = totalAngle / (layerCount - 1)
-        // 外層角度稍微偏移，讓圖標錯開，避免與內層重疊
-        // 偏移量根據層數動態調整，確保視覺上美觀
-        const angleOffset = isInnerLayer ? 0 : (angleStep / (layerCount + 1))
-        angle = startAngle - (layerIndex * angleStep) - angleOffset
-      } else {
-        angle = startAngle - (totalAngle / 2) // 單個項目放在中間
-      }
-    } else {
-      // 單層排列：所有項目均勻分佈在90度圓弧上
-      itemRadius = innerRadius
-      layer = 0
-      const angleStep = count > 1 ? totalAngle / (count - 1) : 0
-      angle = startAngle - (index * angleStep)
-    }
+    // 均勻分佈在90度圓弧上
+    const angleStep = count > 1 ? totalAngle / (count - 1) : 0
+    const angle = startAngle - (index * angleStep)
     
     const x = Math.cos(angle) * itemRadius
     const y = Math.sin(angle) * itemRadius
@@ -140,7 +105,7 @@ const menuItemsWithPosition = computed(() => {
       angle: (angle * 180) / Math.PI, // 轉換為度數（用於動畫）
       index,
       total: count,
-      layer
+      layer: 0 // 單層，統一為0
     }
   })
 })
@@ -153,15 +118,19 @@ const isActive = (item: RadialMenuItem) => {
 
 // 處理菜單項點擊
 function handleItemClick(item: RadialMenuItem) {
-  if (item.disabled || !item.to) return
+  if (item.disabled) return
   
-  // 關閉菜單
-  emit('close')
+  // 先觸發 item-click 事件，讓父組件處理（如"更多"、"返回"按鈕）
+  emit('item-click', item)
   
-  // 延遲跳轉，讓關閉動畫先執行
-  setTimeout(() => {
-    router.push(item.to!)
-  }, 200)
+  // 如果有路由，跳轉並關閉菜單
+  if (item.to) {
+    emit('close')
+    setTimeout(() => {
+      router.push(item.to!)
+    }, 200)
+  }
+  // 如果沒有路由（如"更多"、"返回"），不關閉菜單，只切換頁面
 }
 
 // 處理遮罩點擊（關閉菜單）
