@@ -14,7 +14,7 @@ import { useAuthStore } from '../../stores/authStore'
 import { useGameStore } from '../../stores/gameStore'
 import { useUserStatsStore } from '../../stores/userStatsStore'
 import { supabase } from '../../lib/supabaseClient'
-import { ENTRY_FEE_OPTIONS, getRankTitle, type GameRoom } from '../../types/game'
+import { getRankTitle, type GameRoom } from '../../types/game'
 import BeanIcon from '../../components/common/BeanIcon.vue'
 
 const router = useRouter()
@@ -494,19 +494,6 @@ onUnmounted(() => {
                 邀請同學加入，贏取豆子！
               </p>
 
-              <div class="fee-info">
-                <div class="fee-label">入場費選項</div>
-                <div class="fee-options">
-                  <span 
-                    v-for="fee in ENTRY_FEE_OPTIONS" 
-                    :key="fee"
-                    class="fee-tag"
-                  >
-                    {{ fee === 0 ? '免費' : `${fee} 豆` }}
-                  </span>
-                </div>
-              </div>
-
               <button class="btn-primary btn-large" @click="goToCreate">
                 <span class="btn-icon">➕</span>
                 創建鬥豆場
@@ -974,29 +961,6 @@ onUnmounted(() => {
   color: var(--color-primary-700);
 }
 
-.fee-info {
-  margin-bottom: 1.5rem;
-  text-align: left;
-}
-
-.fee-label {
-  font-size: 0.875rem;
-  font-weight: 500;
-  margin-bottom: 0.5rem;
-}
-
-.fee-options {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-
-.fee-tag {
-  padding: 0.25rem 0.75rem;
-  background: var(--color-neutral-100);
-  border-radius: 20px;
-  font-size: 0.875rem;
-}
 
 /* 空狀態和載入 */
 .loading-state,

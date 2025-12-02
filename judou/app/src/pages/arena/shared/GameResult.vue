@@ -16,7 +16,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { useGameStore } from '../../../stores/gameStore'
 import { useAuthStore } from '../../../stores/authStore'
 import { useUserStatsStore } from '../../../stores/userStatsStore'
-import { TEAM_COLORS, type TeamColor, getTeamBeanProduct } from '../../../types/game'
+import { getTeamBeanProduct } from '../../../types/game'
 import BeanIcon from '../../../components/common/BeanIcon.vue'
 import TeamBadge from '../../../components/arena/TeamBadge.vue'
 
@@ -446,10 +446,6 @@ onMounted(() => {
           :key="team.id"
           class="team-ranking-item"
           :class="{ winner: index === 0 }"
-          :style="{ 
-            '--team-primary': TEAM_COLORS[team.team_color as TeamColor].primary,
-            '--team-secondary': TEAM_COLORS[team.team_color as TeamColor].secondary,
-          }"
         >
           <span class="rank">{{ index === 0 ? '🏆' : index + 1 }}</span>
           <TeamBadge
@@ -487,20 +483,20 @@ onMounted(() => {
 .game-result {
   min-height: 100vh;
   padding: 2rem;
-  background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+  background: linear-gradient(135deg, var(--color-primary-50, #f8faf5), var(--color-primary-100, #eff6e5));
 }
 
 .game-result.winner {
-  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  background: linear-gradient(135deg, var(--color-secondary-100, #fbf5e3), var(--color-secondary-200, #f6eac4));
 }
 
 .game-result.tie {
-  background: linear-gradient(135deg, #e0f2fe, #bae6fd);
+  background: linear-gradient(135deg, var(--color-neutral-50, #fafaf9), var(--color-neutral-100, #f5f5f4));
 }
 
 .tie-text {
   font-size: 1.1rem;
-  color: #0369a1;
+  color: var(--color-neutral-600, #57534e);
 }
 
 /* 結果標題 */
@@ -523,6 +519,8 @@ onMounted(() => {
 .result-header h1 {
   font-size: 2rem;
   margin: 0 0 0.5rem 0;
+  color: var(--color-neutral-800, #292524);
+  font-weight: 700;
 }
 
 .prize-text {
@@ -533,7 +531,7 @@ onMounted(() => {
 .prize-value {
   font-size: 1.75rem;
   font-weight: 700;
-  color: #d97706;
+  color: var(--color-harvest, #e3a63d);
 }
 
 .encourage-text {
@@ -566,18 +564,18 @@ onMounted(() => {
 }
 
 .bean-change-display.win {
-  background: linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(34, 197, 94, 0.25));
-  border: 2px solid rgba(34, 197, 94, 0.3);
+  background: linear-gradient(135deg, var(--color-primary-100, #eff6e5), var(--color-primary-200, #deedc4));
+  border: 2px solid var(--color-primary-400, #a8c870);
 }
 
 .bean-change-display.lose {
-  background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(239, 68, 68, 0.25));
-  border: 2px solid rgba(239, 68, 68, 0.3);
+  background: linear-gradient(135deg, rgba(220, 107, 107, 0.15), rgba(220, 107, 107, 0.25));
+  border: 2px solid rgba(220, 107, 107, 0.3);
 }
 
 .bean-change-display.tie {
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(59, 130, 246, 0.25));
-  border: 2px solid rgba(59, 130, 246, 0.3);
+  background: linear-gradient(135deg, var(--color-neutral-50, #fafaf9), var(--color-neutral-100, #f5f5f4));
+  border: 2px solid var(--color-neutral-300, #d6d3d1);
 }
 
 .bean-sign {
@@ -587,11 +585,11 @@ onMounted(() => {
 }
 
 .bean-change-display.win .bean-sign {
-  color: #16a34a;
+  color: var(--color-success, #8bb24f);
 }
 
 .bean-change-display.lose .bean-sign {
-  color: #dc2626;
+  color: var(--color-error, #dc6b6b);
 }
 
 .bean-number {
@@ -604,15 +602,15 @@ onMounted(() => {
 }
 
 .bean-change-display.win .bean-number {
-  color: #16a34a;
+  color: var(--color-success, #8bb24f);
 }
 
 .bean-change-display.lose .bean-number {
-  color: #dc2626;
+  color: var(--color-error, #dc6b6b);
 }
 
 .bean-change-display.tie .bean-number {
-  color: #2563eb;
+  color: var(--color-neutral-700, #44403c);
 }
 
 /* 滾動中的模糊效果 */
@@ -644,8 +642,8 @@ onMounted(() => {
 }
 
 @keyframes winGlow {
-  0%, 100% { box-shadow: 0 0 0 rgba(34, 197, 94, 0); }
-  50% { box-shadow: 0 0 30px rgba(34, 197, 94, 0.4); }
+  0%, 100% { box-shadow: 0 0 0 rgba(139, 178, 79, 0); }
+  50% { box-shadow: 0 0 30px rgba(139, 178, 79, 0.4); }
 }
 
 .bean-icon {
@@ -659,7 +657,7 @@ onMounted(() => {
   left: 50%;
   transform: translateX(-50%);
   font-size: 0.875rem;
-  color: #2563eb;
+  color: var(--color-neutral-600, #57534e);
   white-space: nowrap;
 }
 
@@ -738,7 +736,7 @@ onMounted(() => {
 }
 
 .tab-stats {
-  color: #10b981;
+  color: var(--color-success, #8bb24f);
   font-weight: 600;
 }
 
@@ -778,15 +776,15 @@ onMounted(() => {
 }
 
 .stat.correct {
-  color: #10b981;
+  color: var(--color-success, #8bb24f);
 }
 
 .stat.wrong {
-  color: #ef4444;
+  color: var(--color-error, #dc6b6b);
 }
 
 .stat.missed {
-  color: #f59e0b;
+  color: var(--color-warning, #e3a63d);
 }
 
 /* 豆子圖例 */
@@ -920,9 +918,10 @@ onMounted(() => {
   justify-content: center;
   gap: 0.5rem;
   padding: 1rem;
-  background: linear-gradient(135deg, #fef2f2, #fee2e2);
+  background: linear-gradient(135deg, var(--color-secondary-100, #fbf5e3), var(--color-secondary-200, #f6eac4));
   border-radius: 12px;
   margin-bottom: 1.5rem;
+  border: 2px solid var(--color-harvest, #e3a63d);
 }
 
 .streak-icon {
@@ -933,7 +932,8 @@ onMounted(() => {
 
 .streak-text {
   font-size: 1.1rem;
-  color: #dc2626;
+  color: var(--color-harvest, #e3a63d);
+  font-weight: 600;
 }
 
 /* 排行榜 */
@@ -973,7 +973,8 @@ onMounted(() => {
 }
 
 .ranking-item.top {
-  background: linear-gradient(135deg, #fef3c7, #fef9c3);
+  background: linear-gradient(135deg, var(--color-secondary-100, #fbf5e3), var(--color-secondary-50, #fdfaf3));
+  border: 2px solid var(--color-harvest, #e3a63d);
 }
 
 .rank {
@@ -983,9 +984,9 @@ onMounted(() => {
   text-align: center;
 }
 
-.rank-1 { color: #d97706; }
-.rank-2 { color: #6b7280; }
-.rank-3 { color: #b45309; }
+.rank-1 { color: var(--color-harvest, #e3a63d); }
+.rank-2 { color: var(--color-neutral-600, #57534e); }
+.rank-3 { color: var(--color-secondary-600, #b88d36); }
 
 .avatar {
   width: 36px;
@@ -1036,14 +1037,23 @@ onMounted(() => {
   align-items: center;
   gap: 0.75rem;
   padding: 1rem 1.25rem;
-  background: var(--team-secondary);
-  border-left: 4px solid var(--team-primary);
+  background: var(--color-neutral-50, #fafaf9);
+  border-left: 4px solid var(--color-primary-500, #8bb24f);
   border-radius: 10px;
+  transition: all 0.3s ease;
+}
+
+.team-ranking-item:hover {
+  background: var(--color-neutral-100, #f5f5f4);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .team-ranking-item.winner {
+  background: linear-gradient(135deg, var(--color-secondary-100, #fbf5e3), var(--color-secondary-50, #fdfaf3));
+  border-left-color: var(--color-harvest, #e3a63d);
   transform: scale(1.02);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(227, 166, 61, 0.2);
 }
 
 .team-badge-in-ranking {

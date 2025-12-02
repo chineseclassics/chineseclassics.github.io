@@ -9,7 +9,7 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useGameStore } from '../../../stores/gameStore'
-import { TEAM_COLORS, type TeamColor, type GameTeam, getTeamBeanProduct } from '../../../types/game'
+import { type GameTeam, getTeamBeanProduct } from '../../../types/game'
 import TeamBadge from '../../../components/arena/TeamBadge.vue'
 import RaceTrack from '../../../components/arena/RaceTrack.vue'
 import BeanIcon from '../../../components/common/BeanIcon.vue'
@@ -111,17 +111,6 @@ const timeProgress = computed(() => {
   const elapsed = Math.floor((Date.now() - startedAt) / 1000)
   const progress = Math.min(elapsed / room.value.time_limit, 1)
   return progress * 100
-})
-
-const topFiveScores = computed(() => {
-  return [...participants.value]
-    .filter(p => p.score > 0)
-    .sort((a, b) => (b.score || 0) - (a.score || 0))
-    .slice(0, 5)
-    .map((p, index) => ({
-      ...p,
-      rank: index + 1,
-    }))
 })
 
 interface ActivityItem {
@@ -276,8 +265,10 @@ onUnmounted(() => {
       <!-- 2. 時間進度條（賽道下方）-->
       <div class="time-progress-container">
         <div class="time-progress-header">
-          <span class="time-progress-label">比賽進度</span>
-          <span class="time-progress-text">{{ Math.round(timeProgress) }}%</span>
+          <span class="time-progress-label">剩餘時間</span>
+          <span class="time-progress-text" :class="{ warning: remainingTime < 30 }">
+            {{ formatTime(remainingTime) }}
+          </span>
         </div>
         <div class="time-progress-bar">
           <div 
@@ -285,6 +276,10 @@ onUnmounted(() => {
             :style="{ width: `${timeProgress}%` }"
             :class="{ warning: timeProgress > 80 }"
           ></div>
+        </div>
+        <div class="time-progress-footer">
+          <span class="time-progress-start">開始</span>
+          <span class="time-progress-end">結束</span>
         </div>
       </div>
       
@@ -294,11 +289,6 @@ onUnmounted(() => {
           v-for="stats in sortedTeamStats" 
           :key="stats.team.id"
           class="team-card"
-          :style="{ 
-            '--team-primary': TEAM_COLORS[stats.team.team_color as TeamColor].primary,
-            '--team-secondary': TEAM_COLORS[stats.team.team_color as TeamColor].secondary,
-            '--team-text': TEAM_COLORS[stats.team.team_color as TeamColor].text,
-          }"
         >
           <!-- 隊伍頭像和名稱 -->
           <div class="team-card-header">
@@ -321,10 +311,13 @@ onUnmounted(() => {
           <!-- 成員列表 -->
           <div class="team-card-members">
             <div 
-              v-for="p in participantsByTeam[stats.team.id]" 
+              v-for="(p, index) in participantsByTeam[stats.team.id]" 
               :key="p.id"
               class="member-item"
-              :class="{ completed: p.status === 'completed' }"
+              :class="{ 
+                completed: p.status === 'completed',
+                'top-scorer': index === 0 && p.score > 0
+              }"
             >
               <div class="member-info">
                 <img 
@@ -339,53 +332,14 @@ onUnmounted(() => {
                 <span class="member-name">{{ p.user?.display_name || '未知' }}</span>
               </div>
               
-              <div class="member-status">
-                <template v-if="p.status === 'completed'">
-                  <span class="score">{{ p.score }} 分</span>
-                  <span class="accuracy">{{ p.accuracy?.toFixed(0) }}%</span>
-                </template>
-                <template v-else-if="p.status === 'playing'">
-                  <span class="status-badge playing">作答中...</span>
-                </template>
-                <template v-else>
-                  <span class="status-badge waiting">等待中</span>
-                </template>
+              <div v-if="index === 0 && p.score > 0" class="member-status">
+                <span class="score">{{ p.score }} 分</span>
               </div>
             </div>
           </div>
         </div>
       </div>
       
-      <!-- 4. 前五名排行榜（佔據水平全寬）-->
-      <div class="top-scores-panel-full">
-        <h3 class="panel-title">🏆 得分前五</h3>
-        <div class="top-scores-list">
-          <div 
-            v-for="participant in topFiveScores"
-            :key="participant.id"
-            class="top-score-item"
-            :class="{ 'rank-1': participant.rank === 1, 'rank-2': participant.rank === 2, 'rank-3': participant.rank === 3 }"
-          >
-            <span class="rank-badge">{{ participant.rank }}</span>
-            <img 
-              v-if="participant.user?.avatar_url" 
-              :src="participant.user.avatar_url" 
-              :alt="participant.user.display_name"
-              class="top-score-avatar"
-            />
-            <span v-else class="top-score-avatar-placeholder">
-              {{ participant.user?.display_name?.charAt(0) || '?' }}
-            </span>
-            <div class="top-score-info">
-              <span class="top-score-name">{{ participant.user?.display_name || '未知' }}</span>
-              <span class="top-score-value">{{ participant.score }} 分</span>
-            </div>
-          </div>
-          <div v-if="topFiveScores.length === 0" class="no-scores">
-            暫無分數
-          </div>
-        </div>
-      </div>
     </div>
 
     <!-- 結束畫面 -->
@@ -400,10 +354,6 @@ onUnmounted(() => {
             :key="stats.team.id"
             class="ranking-item"
             :class="{ winner: index === 0 }"
-            :style="{ 
-              '--team-primary': TEAM_COLORS[stats.team.team_color as TeamColor].primary,
-              '--team-secondary': TEAM_COLORS[stats.team.team_color as TeamColor].secondary,
-            }"
           >
             <span class="rank">{{ index === 0 ? '🏆' : index + 1 }}</span>
             <TeamBadge
@@ -514,7 +464,7 @@ onUnmounted(() => {
 }
 
 .countdown.warning {
-  background: rgba(239, 68, 68, 0.3);
+  background: rgba(220, 107, 107, 0.3);
   animation: pulse 1s infinite;
 }
 
@@ -559,7 +509,7 @@ onUnmounted(() => {
 
 .btn-danger {
   padding: 0.5rem 1rem;
-  background: #ef4444;
+  background: var(--color-error, #dc6b6b);
   border: none;
   border-radius: 8px;
   color: white;
@@ -569,7 +519,7 @@ onUnmounted(() => {
 }
 
 .btn-danger:hover {
-  background: #dc2626;
+  background: rgba(220, 107, 107, 0.8);
 }
 
 /* 主內容 */
@@ -600,7 +550,7 @@ onUnmounted(() => {
   background: rgba(255, 255, 255, 0.05);
   border-radius: 16px;
   overflow: hidden;
-  border-top: 4px solid var(--team-primary);
+  border-top: 4px solid var(--color-primary-500, #8bb24f);
   display: flex;
   flex-direction: column;
 }
@@ -611,7 +561,7 @@ onUnmounted(() => {
   align-items: center;
   gap: 1rem;
   padding: 1.25rem 1.5rem;
-  background: var(--team-secondary);
+  background: var(--color-neutral-50, #fafaf9);
 }
 
 .team-card-badge {
@@ -626,13 +576,13 @@ onUnmounted(() => {
 .team-card-title h3 {
   margin: 0 0 0.25rem 0;
   font-size: 1.25rem;
-  color: var(--team-text);
+  color: var(--color-neutral-800, #292524);
   font-weight: 600;
 }
 
 .team-card-progress {
   font-size: 0.875rem;
-  color: var(--team-text);
+  color: var(--color-neutral-800, #292524);
   opacity: 0.7;
 }
 
@@ -646,13 +596,13 @@ onUnmounted(() => {
 .team-card-score .score-value {
   font-size: 1.75rem;
   font-weight: 700;
-  color: var(--team-primary);
+  color: var(--color-primary-600, #6f9638);
   line-height: 1;
 }
 
 .team-card-score .score-label {
   font-size: 0.75rem;
-  color: var(--team-text);
+  color: var(--color-neutral-800, #292524);
   opacity: 0.7;
 }
 
@@ -676,8 +626,40 @@ onUnmounted(() => {
 }
 
 .member-item.completed {
-  background: rgba(34, 197, 94, 0.1);
-  border-left: 3px solid #22c55e;
+  background: rgba(139, 178, 79, 0.15);
+  border-left: 3px solid var(--color-success, #8bb24f);
+}
+
+.member-item.top-scorer {
+  background: linear-gradient(90deg, rgba(227, 166, 61, 0.2), rgba(227, 166, 61, 0.05));
+  border-left: 4px solid var(--color-harvest, #e3a63d);
+  border-top: 2px solid rgba(227, 166, 61, 0.3);
+  border-bottom: 2px solid rgba(227, 166, 61, 0.3);
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+  box-shadow: 0 2px 8px rgba(227, 166, 61, 0.2);
+  position: relative;
+}
+
+.member-item.top-scorer::before {
+  content: '⭐';
+  position: absolute;
+  left: -12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.25rem;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+.member-item.top-scorer .member-name {
+  font-weight: 700;
+  color: var(--color-harvest, #e3a63d);
+}
+
+.member-item.top-scorer .member-status .score {
+  font-size: 1.25rem;
+  color: var(--color-harvest, #e3a63d);
+  font-weight: 800;
 }
 
 .member-info {
@@ -700,8 +682,8 @@ onUnmounted(() => {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: var(--team-secondary);
-  color: var(--team-text);
+  background: var(--color-neutral-50, #fafaf9);
+  color: var(--color-neutral-800, #292524);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -726,7 +708,7 @@ onUnmounted(() => {
 .member-status .score {
   font-size: 1rem;
   font-weight: 700;
-  color: #22c55e;
+  color: var(--color-success, #8bb24f);
 }
 
 .member-status .accuracy {
@@ -741,8 +723,8 @@ onUnmounted(() => {
 }
 
 .status-badge.playing {
-  background: rgba(59, 130, 246, 0.3);
-  color: #60a5fa;
+  background: rgba(139, 178, 79, 0.3);
+  color: var(--color-primary-400, #a8c870);
 }
 
 .status-badge.waiting {
@@ -1057,10 +1039,16 @@ onUnmounted(() => {
 }
 
 .time-progress-text {
-  font-size: 1.25rem;
+  font-size: 1.5rem;
   font-weight: 700;
   color: white;
   font-variant-numeric: tabular-nums;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.time-progress-text.warning {
+  color: #ef4444;
+  animation: pulse 1s infinite;
 }
 
 .time-progress-bar {
@@ -1074,15 +1062,31 @@ onUnmounted(() => {
 
 .time-progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #3b82f6, #60a5fa);
+  background: linear-gradient(90deg, var(--color-primary-500, #8bb24f), var(--color-primary-400, #a8c870));
   border-radius: 6px;
   transition: width 1s ease;
-  box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+  box-shadow: 0 0 10px rgba(139, 178, 79, 0.5);
 }
 
 .time-progress-fill.warning {
-  background: linear-gradient(90deg, #ef4444, #f87171);
-  box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
+  background: linear-gradient(90deg, var(--color-error, #dc6b6b), rgba(220, 107, 107, 0.8));
+  box-shadow: 0 0 10px rgba(220, 107, 107, 0.5);
+}
+
+.time-progress-footer {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.time-progress-footer {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.6);
 }
 
 /* 側邊欄 */
@@ -1137,18 +1141,18 @@ onUnmounted(() => {
 }
 
 .top-score-item.rank-1 {
-  background: linear-gradient(90deg, rgba(234, 179, 8, 0.2), rgba(234, 179, 8, 0.05));
-  border-left: 3px solid #eab308;
+  background: linear-gradient(90deg, rgba(227, 166, 61, 0.2), rgba(227, 166, 61, 0.05));
+  border-left: 3px solid var(--color-harvest, #e3a63d);
 }
 
 .top-score-item.rank-2 {
-  background: linear-gradient(90deg, rgba(156, 163, 175, 0.2), rgba(156, 163, 175, 0.05));
-  border-left: 3px solid #9ca3af;
+  background: linear-gradient(90deg, rgba(88, 122, 43, 0.2), rgba(88, 122, 43, 0.05));
+  border-left: 3px solid var(--color-primary-600, #6f9638);
 }
 
 .top-score-item.rank-3 {
-  background: linear-gradient(90deg, rgba(180, 83, 9, 0.2), rgba(180, 83, 9, 0.05));
-  border-left: 3px solid #b45309;
+  background: linear-gradient(90deg, rgba(184, 141, 54, 0.2), rgba(184, 141, 54, 0.05));
+  border-left: 3px solid var(--color-secondary-600, #b88d36);
 }
 
 .rank-badge {
@@ -1166,16 +1170,16 @@ onUnmounted(() => {
 }
 
 .top-score-item.rank-1 .rank-badge {
-  background: #eab308;
-  color: #1a1a2e;
+  background: var(--color-harvest, #e3a63d);
+  color: var(--color-neutral-900, #1c1917);
 }
 
 .top-score-item.rank-2 .rank-badge {
-  background: #9ca3af;
+  background: var(--color-primary-600, #6f9638);
 }
 
 .top-score-item.rank-3 .rank-badge {
-  background: #b45309;
+  background: var(--color-secondary-600, #b88d36);
 }
 
 .top-score-avatar {
@@ -1276,11 +1280,11 @@ onUnmounted(() => {
 }
 
 .activity-item.completed {
-  border-left: 3px solid #22c55e;
+  border-left: 3px solid var(--color-success, #8bb24f);
 }
 
 .activity-item.scored {
-  border-left: 3px solid #3b82f6;
+  border-left: 3px solid var(--color-primary-400, #a8c870);
 }
 
 .activity-avatar {
@@ -1376,12 +1380,12 @@ onUnmounted(() => {
   padding: 1rem 1.5rem;
   background: rgba(255, 255, 255, 0.1);
   border-radius: 12px;
-  border-left: 4px solid var(--team-primary);
+  border-left: 4px solid var(--color-primary-500, #8bb24f);
 }
 
 .ranking-item.winner {
-  background: linear-gradient(90deg, rgba(234, 179, 8, 0.2), rgba(234, 179, 8, 0.05));
-  border-left-color: #eab308;
+  background: linear-gradient(90deg, rgba(227, 166, 61, 0.2), rgba(227, 166, 61, 0.05));
+  border-left-color: var(--color-harvest, #e3a63d);
   transform: scale(1.05);
 }
 
@@ -1392,7 +1396,7 @@ onUnmounted(() => {
 }
 
 .ranking-item.winner .rank {
-  color: #eab308;
+  color: var(--color-harvest, #e3a63d);
 }
 
 .team-badge-in-mini-ranking {
@@ -1429,9 +1433,9 @@ onUnmounted(() => {
 .winner-reward-section {
   margin: 2rem 0;
   padding: 2rem;
-  background: linear-gradient(135deg, rgba(234, 179, 8, 0.2), rgba(234, 179, 8, 0.05));
+  background: linear-gradient(135deg, rgba(227, 166, 61, 0.2), rgba(227, 166, 61, 0.05));
   border-radius: 16px;
-  border: 2px solid rgba(234, 179, 8, 0.3);
+  border: 2px solid rgba(227, 166, 61, 0.3);
   text-align: center;
 }
 
@@ -1450,7 +1454,7 @@ onUnmounted(() => {
 .winner-reward-title h3 {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #eab308;
+  color: var(--color-harvest, #e3a63d);
   margin: 0 0 0.25rem 0;
 }
 
@@ -1471,7 +1475,7 @@ onUnmounted(() => {
 .reward-number {
   font-size: 3rem;
   font-weight: 700;
-  color: #eab308;
+  color: var(--color-harvest, #e3a63d);
   line-height: 1;
 }
 

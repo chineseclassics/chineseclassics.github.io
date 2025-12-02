@@ -8,7 +8,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useGameStore } from '../../../stores/gameStore'
-import { TEAM_COLORS, type TeamColor, getTeamBeanProduct } from '../../../types/game'
+import { getTeamBeanProduct } from '../../../types/game'
 import TeamBadge from '../../../components/arena/TeamBadge.vue'
 
 const router = useRouter()
@@ -226,17 +226,12 @@ onUnmounted(async () => {
           v-for="team in teams" 
           :key="team.id"
           class="team-card"
-          :style="{ 
-            '--team-primary': TEAM_COLORS[team.team_color as TeamColor].primary,
-            '--team-secondary': TEAM_COLORS[team.team_color as TeamColor].secondary,
-            '--team-text': TEAM_COLORS[team.team_color as TeamColor].text,
-          }"
         >
           <div class="team-header">
             <TeamBadge
               v-if="getTeamBeanProduct(team)"
               :product-type="getTeamBeanProduct(team)!"
-              :size="32"
+              :size="48"
               class="team-badge-in-card"
             />
             <h3>{{ team.team_name }}</h3>
@@ -300,11 +295,6 @@ onUnmounted(async () => {
               v-for="team in teams"
               :key="team.id"
               class="team-select-btn"
-              :style="{ 
-                background: TEAM_COLORS[team.team_color as TeamColor].secondary,
-                borderColor: TEAM_COLORS[team.team_color as TeamColor].primary,
-                color: TEAM_COLORS[team.team_color as TeamColor].text,
-              }"
               @click="assignToTeam(team.id)"
             >
               <TeamBadge
@@ -330,7 +320,7 @@ onUnmounted(async () => {
 .game-lobby {
   min-height: 100vh;
   padding: 1.5rem;
-  background: linear-gradient(135deg, #f0fdf4, #ecfdf5);
+  background: linear-gradient(135deg, var(--color-primary-50, #f8faf5), var(--color-primary-100, #eff6e5));
 }
 
 /* 頂部導航 */
@@ -372,12 +362,13 @@ onUnmounted(async () => {
   justify-content: center;
   gap: 0.5rem;
   padding: 0.75rem 1rem;
-  background: linear-gradient(135deg, #fef3c7, #fde68a);
-  border: 1px solid #f59e0b;
+  background: linear-gradient(135deg, var(--color-secondary-100, #fbf5e3), var(--color-secondary-200, #f6eac4));
+  border: 1px solid var(--color-warning, #e3a63d);
   border-radius: 10px;
   margin-bottom: 1rem;
   font-size: 0.875rem;
-  color: #92400e;
+  color: var(--color-neutral-800, #292524);
+  font-weight: 500;
 }
 
 .warning-icon {
@@ -529,7 +520,7 @@ onUnmounted(async () => {
   border-radius: 16px;
   overflow: hidden;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  border-top: 4px solid var(--team-primary);
+  border-top: 4px solid var(--color-primary-500, #8bb24f);
 }
 
 .team-header {
@@ -538,12 +529,12 @@ onUnmounted(async () => {
   gap: 0.75rem;
   justify-content: space-between;
   padding: 1rem 1.25rem;
-  background: var(--team-secondary);
+  background: var(--color-neutral-50, #fafaf9);
 }
 
 .team-header h3 {
   margin: 0;
-  color: var(--team-text);
+  color: var(--color-neutral-800, #292524);
   flex: 1;
 }
 
@@ -553,7 +544,7 @@ onUnmounted(async () => {
 
 .team-count {
   font-size: 0.875rem;
-  color: var(--team-text);
+  color: var(--color-neutral-800, #292524);
   opacity: 0.8;
 }
 
@@ -645,13 +636,23 @@ onUnmounted(async () => {
 .team-select-btn {
   display: flex;
   align-items: center;
+  justify-content: center;
   padding: 1rem;
-  border: 2px solid;
+  background: var(--color-primary-100, #eff6e5);
+  border: 2px solid var(--color-primary-400, #a8c870);
   border-radius: 12px;
   font-weight: 600;
   font-size: 1rem;
+  color: var(--color-primary-800, #456124);
   cursor: pointer;
   transition: all 0.2s ease;
+}
+
+.team-select-btn:hover {
+  background: var(--color-primary-200, #deedc4);
+  border-color: var(--color-primary-500, #8bb24f);
+  transform: scale(1.02);
+  box-shadow: 0 2px 8px rgba(139, 178, 79, 0.2);
 }
 
 .team-badge-in-select {
@@ -659,9 +660,6 @@ onUnmounted(async () => {
   margin-right: 0.5rem;
 }
 
-.team-select-btn:hover {
-  transform: scale(1.02);
-}
 
 /* 按鈕 */
 .btn-primary {
