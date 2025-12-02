@@ -79,10 +79,6 @@ const participantsByTeam = computed(() => {
   return result
 })
 
-const completedCount = computed(() => 
-  participants.value.filter(p => p.status === 'completed').length
-)
-
 // 賽道用：準備隊伍數據
 const raceTrackTeams = computed(() => {
   if (!teamStats.value.length) return []
@@ -229,18 +225,7 @@ onUnmounted(() => {
         </div>
       </div>
       
-      <div class="header-center">
-        <div class="countdown" :class="{ warning: remainingTime < 30 }">
-          <span class="countdown-label">{{ isFinished ? '比賽結束' : '剩餘時間' }}</span>
-          <span class="countdown-time">{{ formatTime(remainingTime) }}</span>
-        </div>
-      </div>
-      
       <div class="header-right">
-        <div class="progress-info">
-          <span class="progress-label">完成進度</span>
-          <span class="progress-value">{{ completedCount }} / {{ participants.length }}</span>
-        </div>
         <button 
           v-if="!isFinished"
           class="btn-danger"
@@ -406,8 +391,12 @@ onUnmounted(() => {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background: linear-gradient(135deg, #1a1a2e, #16213e);
-  color: white;
+  /* 使用句豆綠色系的深色主題，適合大屏幕投影 */
+  background: linear-gradient(135deg, 
+    var(--color-primary-900, #3a5020), 
+    var(--color-primary-800, #456124)
+  );
+  color: var(--color-primary-50, #f8faf5);
 }
 
 /* 頂部狀態欄 */
@@ -416,7 +405,9 @@ onUnmounted(() => {
   justify-content: space-between;
   align-items: center;
   padding: 1rem 2rem;
-  background: rgba(0, 0, 0, 0.3);
+  background: rgba(58, 80, 32, 0.4);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid rgba(139, 178, 79, 0.2);
 }
 
 .header-left {
@@ -426,64 +417,34 @@ onUnmounted(() => {
 }
 
 .back-btn {
-  background: rgba(255, 255, 255, 0.1);
-  border: none;
-  color: white;
+  background: rgba(139, 178, 79, 0.2);
+  border: 1px solid rgba(139, 178, 79, 0.3);
+  color: var(--color-primary-100, #eff6e5);
   padding: 0.5rem 1rem;
   border-radius: 8px;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.2s;
+  font-weight: 500;
 }
 
 .back-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(139, 178, 79, 0.3);
+  border-color: rgba(139, 178, 79, 0.5);
+  color: var(--color-primary-50, #f8faf5);
 }
 
 .text-info h1 {
   margin: 0;
   font-size: 1.25rem;
+  color: var(--color-primary-50, #f8faf5);
+  font-weight: 600;
 }
 
 .text-info p {
   margin: 0;
   font-size: 0.875rem;
-  opacity: 0.7;
-}
-
-.header-center {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-}
-
-.countdown {
-  text-align: center;
-  padding: 0.75rem 2rem;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-}
-
-.countdown.warning {
-  background: rgba(220, 107, 107, 0.3);
-  animation: pulse 1s infinite;
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
-}
-
-.countdown-label {
-  display: block;
-  font-size: 0.75rem;
-  opacity: 0.7;
-  margin-bottom: 0.25rem;
-}
-
-.countdown-time {
-  font-size: 2rem;
-  font-weight: 700;
-  font-family: 'JetBrains Mono', monospace;
+  color: var(--color-primary-200, #deedc4);
+  opacity: 0.9;
 }
 
 .header-right {
@@ -492,27 +453,12 @@ onUnmounted(() => {
   gap: 1.5rem;
 }
 
-.progress-info {
-  text-align: right;
-}
-
-.progress-label {
-  display: block;
-  font-size: 0.75rem;
-  opacity: 0.7;
-}
-
-.progress-value {
-  font-size: 1.25rem;
-  font-weight: 600;
-}
-
 .btn-danger {
   padding: 0.5rem 1rem;
   background: var(--color-error, #dc6b6b);
   border: none;
   border-radius: 8px;
-  color: white;
+  color: var(--color-primary-50, #f8faf5);
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
@@ -547,12 +493,14 @@ onUnmounted(() => {
 .team-card {
   flex: 1;
   min-width: 0;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(58, 80, 32, 0.3);
   border-radius: 16px;
   overflow: hidden;
   border-top: 4px solid var(--color-primary-500, #8bb24f);
+  border: 1px solid rgba(139, 178, 79, 0.2);
   display: flex;
   flex-direction: column;
+  backdrop-filter: blur(4px);
 }
 
 /* 隊伍卡片頭部（包含頭像、名稱、分數）*/
@@ -561,7 +509,8 @@ onUnmounted(() => {
   align-items: center;
   gap: 1rem;
   padding: 1.25rem 1.5rem;
-  background: var(--color-neutral-50, #fafaf9);
+  background: rgba(58, 80, 32, 0.4);
+  border-bottom: 1px solid rgba(139, 178, 79, 0.15);
 }
 
 .team-card-badge {
@@ -576,14 +525,14 @@ onUnmounted(() => {
 .team-card-title h3 {
   margin: 0 0 0.25rem 0;
   font-size: 1.25rem;
-  color: var(--color-neutral-800, #292524);
+  color: var(--color-primary-100, #eff6e5);
   font-weight: 600;
 }
 
 .team-card-progress {
   font-size: 0.875rem;
-  color: var(--color-neutral-800, #292524);
-  opacity: 0.7;
+  color: var(--color-primary-200, #deedc4);
+  opacity: 0.8;
 }
 
 .team-card-score {
@@ -596,14 +545,14 @@ onUnmounted(() => {
 .team-card-score .score-value {
   font-size: 1.75rem;
   font-weight: 700;
-  color: var(--color-primary-600, #6f9638);
+  color: var(--color-primary-300, #c5dd9a);
   line-height: 1;
 }
 
 .team-card-score .score-label {
   font-size: 0.75rem;
-  color: var(--color-neutral-800, #292524);
-  opacity: 0.7;
+  color: var(--color-primary-200, #deedc4);
+  opacity: 0.8;
 }
 
 /* 隊伍卡片成員列表 */
@@ -621,7 +570,8 @@ onUnmounted(() => {
   padding: 0.75rem 1rem;
   border-radius: 10px;
   margin-bottom: 0.5rem;
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(58, 80, 32, 0.2);
+  border: 1px solid rgba(139, 178, 79, 0.1);
   transition: all 0.3s ease;
 }
 
@@ -682,13 +632,14 @@ onUnmounted(() => {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: var(--color-neutral-50, #fafaf9);
-  color: var(--color-neutral-800, #292524);
+  background: rgba(139, 178, 79, 0.3);
+  color: var(--color-primary-100, #eff6e5);
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 600;
   flex-shrink: 0;
+  border: 1px solid rgba(139, 178, 79, 0.4);
 }
 
 .member-name {
@@ -696,6 +647,7 @@ onUnmounted(() => {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  color: var(--color-primary-100, #eff6e5);
 }
 
 .member-status {
@@ -728,8 +680,9 @@ onUnmounted(() => {
 }
 
 .status-badge.waiting {
-  background: rgba(255, 255, 255, 0.1);
-  opacity: 0.5;
+  background: rgba(88, 122, 43, 0.2);
+  color: var(--color-primary-300, #c5dd9a);
+  opacity: 0.6;
 }
 
 /* 大型隊伍進度條區域 */
@@ -1021,8 +974,10 @@ onUnmounted(() => {
 .time-progress-container {
   width: 100%;
   padding: 1rem;
-  background: rgba(0, 0, 0, 0.2);
+  background: rgba(58, 80, 32, 0.3);
   border-radius: 12px;
+  border: 1px solid rgba(139, 178, 79, 0.2);
+  backdrop-filter: blur(4px);
 }
 
 .time-progress-header {
@@ -1034,30 +989,31 @@ onUnmounted(() => {
 
 .time-progress-label {
   font-size: 0.875rem;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--color-primary-200, #deedc4);
   font-weight: 500;
 }
 
 .time-progress-text {
   font-size: 1.5rem;
   font-weight: 700;
-  color: white;
+  color: var(--color-primary-100, #eff6e5);
   font-variant-numeric: tabular-nums;
   font-family: 'JetBrains Mono', monospace;
 }
 
 .time-progress-text.warning {
-  color: #ef4444;
+  color: var(--color-error, #dc6b6b);
   animation: pulse 1s infinite;
 }
 
 .time-progress-bar {
   width: 100%;
   height: 12px;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(58, 80, 32, 0.5);
   border-radius: 6px;
   overflow: hidden;
   position: relative;
+  border: 1px solid rgba(139, 178, 79, 0.2);
 }
 
 .time-progress-fill {
@@ -1078,15 +1034,8 @@ onUnmounted(() => {
   justify-content: space-between;
   margin-top: 0.5rem;
   font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.6);
-}
-
-.time-progress-footer {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 0.5rem;
-  font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--color-primary-300, #c5dd9a);
+  opacity: 0.8;
 }
 
 /* 側邊欄 */
@@ -1101,17 +1050,18 @@ onUnmounted(() => {
 .panel-title {
   font-size: 1.125rem;
   font-weight: 600;
-  color: white;
+  color: var(--color-primary-100, #eff6e5);
   margin: 0 0 1rem 0;
 }
 
 /* 前五名排行榜（全寬）*/
 .top-scores-panel-full {
   width: 100%;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(58, 80, 32, 0.3);
   border-radius: 16px;
   padding: 1.5rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(139, 178, 79, 0.2);
+  backdrop-filter: blur(4px);
 }
 
 /* 前五名排行榜列表（水平排列）*/
@@ -1128,15 +1078,17 @@ onUnmounted(() => {
   align-items: center;
   gap: 0.75rem;
   padding: 0.75rem 1rem;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(58, 80, 32, 0.4);
   border-radius: 10px;
+  border: 1px solid rgba(139, 178, 79, 0.15);
   transition: all 0.3s ease;
   flex: 0 1 calc(20% - 0.8rem);
   min-width: 180px;
 }
 
 .top-score-item:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(58, 80, 32, 0.5);
+  border-color: rgba(139, 178, 79, 0.3);
   transform: translateY(-2px);
 }
 
@@ -1161,12 +1113,13 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(139, 178, 79, 0.3);
   border-radius: 50%;
   font-weight: 700;
   font-size: 1rem;
-  color: white;
+  color: var(--color-primary-100, #eff6e5);
   flex-shrink: 0;
+  border: 1px solid rgba(139, 178, 79, 0.4);
 }
 
 .top-score-item.rank-1 .rank-badge {
@@ -1195,13 +1148,13 @@ onUnmounted(() => {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.2);
-  color: white;
+  background: rgba(139, 178, 79, 0.3);
+  color: var(--color-primary-100, #eff6e5);
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 600;
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  border: 2px solid rgba(139, 178, 79, 0.4);
   flex-shrink: 0;
 }
 
@@ -1215,7 +1168,7 @@ onUnmounted(() => {
 
 .top-score-name {
   font-weight: 600;
-  color: white;
+  color: var(--color-primary-100, #eff6e5);
   font-size: 0.95rem;
   white-space: nowrap;
   overflow: hidden;
@@ -1224,27 +1177,29 @@ onUnmounted(() => {
 
 .top-score-value {
   font-size: 0.875rem;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--color-primary-200, #deedc4);
   font-weight: 500;
 }
 
 .no-scores {
   text-align: center;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--color-primary-300, #c5dd9a);
+  opacity: 0.7;
   padding: 2rem;
   font-size: 0.875rem;
 }
 
 /* 實時活動流面板 */
 .activity-stream-panel {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(58, 80, 32, 0.3);
   border-radius: 16px;
   padding: 1.5rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(139, 178, 79, 0.2);
   flex: 1;
   min-height: 300px;
   max-height: 500px;
   overflow-y: auto;
+  backdrop-filter: blur(4px);
 }
 
 .activity-stream-list {
@@ -1258,8 +1213,9 @@ onUnmounted(() => {
   align-items: center;
   gap: 0.75rem;
   padding: 0.75rem;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(58, 80, 32, 0.4);
   border-radius: 10px;
+  border: 1px solid rgba(139, 178, 79, 0.1);
   animation: slideInRight 0.5s ease;
   transition: all 0.3s ease;
 }
@@ -1276,7 +1232,8 @@ onUnmounted(() => {
 }
 
 .activity-item:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(58, 80, 32, 0.5);
+  border-color: rgba(139, 178, 79, 0.2);
 }
 
 .activity-item.completed {
@@ -1300,13 +1257,13 @@ onUnmounted(() => {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.2);
-  color: white;
+  background: rgba(139, 178, 79, 0.3);
+  color: var(--color-primary-100, #eff6e5);
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 600;
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  border: 2px solid rgba(139, 178, 79, 0.4);
   flex-shrink: 0;
 }
 
@@ -1317,18 +1274,19 @@ onUnmounted(() => {
 
 .activity-text {
   font-size: 0.875rem;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--color-primary-100, #eff6e5);
   line-height: 1.4;
 }
 
 .activity-text strong {
-  color: white;
+  color: var(--color-primary-50, #f8faf5);
   font-weight: 600;
 }
 
 .no-activity {
   text-align: center;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--color-primary-300, #c5dd9a);
+  opacity: 0.7;
   padding: 2rem;
   font-size: 0.875rem;
 }
@@ -1337,7 +1295,11 @@ onUnmounted(() => {
 .finish-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.9);
+  background: linear-gradient(135deg, 
+    rgba(58, 80, 32, 0.95), 
+    rgba(69, 97, 36, 0.95)
+  );
+  backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1363,6 +1325,8 @@ onUnmounted(() => {
 .finish-content h2 {
   font-size: 2.5rem;
   margin: 0 0 2rem 0;
+  color: var(--color-primary-50, #f8faf5);
+  font-weight: 700;
 }
 
 .final-ranking {
@@ -1378,9 +1342,11 @@ onUnmounted(() => {
   align-items: center;
   gap: 1rem;
   padding: 1rem 1.5rem;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(58, 80, 32, 0.4);
   border-radius: 12px;
   border-left: 4px solid var(--color-primary-500, #8bb24f);
+  border: 1px solid rgba(139, 178, 79, 0.2);
+  backdrop-filter: blur(4px);
 }
 
 .ranking-item.winner {
@@ -1393,6 +1359,7 @@ onUnmounted(() => {
   font-size: 1.5rem;
   font-weight: 700;
   width: 40px;
+  color: var(--color-primary-200, #deedc4);
 }
 
 .ranking-item.winner .rank {
@@ -1407,11 +1374,13 @@ onUnmounted(() => {
   flex: 1;
   font-weight: 600;
   text-align: left;
+  color: var(--color-primary-100, #eff6e5);
 }
 
 .team-members {
   font-size: 0.875rem;
-  opacity: 0.7;
+  color: var(--color-primary-200, #deedc4);
+  opacity: 0.8;
   min-width: 60px;
   text-align: center;
 }
@@ -1419,13 +1388,15 @@ onUnmounted(() => {
 .team-avg-score {
   font-size: 1.25rem;
   font-weight: 700;
+  color: var(--color-primary-300, #c5dd9a);
   min-width: 80px;
   text-align: right;
 }
 
 .scoring-note {
   font-size: 0.875rem;
-  opacity: 0.5;
+  color: var(--color-primary-300, #c5dd9a);
+  opacity: 0.7;
   margin-bottom: 2rem;
 }
 
@@ -1460,7 +1431,7 @@ onUnmounted(() => {
 
 .winner-reward-subtitle {
   font-size: 0.875rem;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--color-primary-200, #deedc4);
   margin: 0;
 }
 
@@ -1485,7 +1456,8 @@ onUnmounted(() => {
 
 .winner-reward-note {
   font-size: 0.875rem;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--color-primary-200, #deedc4);
+  opacity: 0.8;
   margin: 0.5rem 0 0 0;
 }
 

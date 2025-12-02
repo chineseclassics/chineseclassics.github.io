@@ -185,27 +185,30 @@ function getRacerStyle(team: TeamRacer) {
 <style scoped>
 .race-track-container {
   width: 100%;
-  background: white;
+  background: rgba(58, 80, 32, 0.2);
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(139, 178, 79, 0.2);
+  backdrop-filter: blur(4px);
 }
 
 /* 賽道主體 - 單一跑道設計 */
 .race-track {
   position: relative;
   width: 100%;
+  /* 使用句豆綠色系的深色漸變，適合深色背景 */
   background: linear-gradient(
     to bottom,
-    #f0f9ff 0%,
-    #e0f2fe 25%,
-    #cfe8f5 35%,
-    #cfe8f5 65%,
-    #e0f2fe 75%,
-    #f0f9ff 100%
+    rgba(88, 122, 43, 0.3) 0%,
+    rgba(69, 97, 36, 0.4) 25%,
+    rgba(58, 80, 32, 0.5) 35%,
+    rgba(58, 80, 32, 0.5) 65%,
+    rgba(69, 97, 36, 0.4) 75%,
+    rgba(88, 122, 43, 0.3) 100%
   );
-  border-top: 3px solid #0284c7;
-  border-bottom: 3px solid #0284c7;
+  border-top: 3px solid var(--color-primary-500, #8bb24f);
+  border-bottom: 3px solid var(--color-primary-500, #8bb24f);
   overflow: visible;  /* 允許隊伍圖標超出邊界 */
   
   /* 添加跑道中心線效果，強調這是單一跑道 */
@@ -214,8 +217,8 @@ function getRacerStyle(team: TeamRacer) {
       to right,
       transparent 0,
       transparent calc(50% - 1px),
-      rgba(2, 132, 199, 0.15) calc(50% - 1px),
-      rgba(2, 132, 199, 0.15) calc(50% + 1px),
+      rgba(139, 178, 79, 0.2) calc(50% - 1px),
+      rgba(139, 178, 79, 0.2) calc(50% + 1px),
       transparent calc(50% + 1px),
       transparent 100%
     );
@@ -231,15 +234,16 @@ function getRacerStyle(team: TeamRacer) {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.9);
-  border-right: 2px dashed #0284c7;
+  background: rgba(58, 80, 32, 0.6);
+  border-right: 2px dashed var(--color-primary-400, #a8c870);
   z-index: 1;
+  backdrop-filter: blur(4px);
 }
 
 .start-label {
   font-size: 0.75rem;
   font-weight: 600;
-  color: #0284c7;
+  color: var(--color-primary-200, #deedc4);
   writing-mode: vertical-rl;
   text-orientation: mixed;
 }
@@ -254,15 +258,16 @@ function getRacerStyle(team: TeamRacer) {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.9);
-  border-left: 3px solid #dc2626;
+  background: rgba(58, 80, 32, 0.6);
+  border-left: 3px solid var(--color-harvest, #e3a63d);
   z-index: 1;
+  backdrop-filter: blur(4px);
 }
 
 .finish-label {
   font-size: 0.75rem;
   font-weight: 600;
-  color: #dc2626;
+  color: var(--color-harvest, #e3a63d);
   writing-mode: vertical-rl;
   text-orientation: mixed;
   margin-bottom: 20px;
@@ -276,10 +281,10 @@ function getRacerStyle(team: TeamRacer) {
   width: 3px;
   background: repeating-linear-gradient(
     to bottom,
-    #dc2626 0px,
-    #dc2626 10px,
-    white 10px,
-    white 20px
+    var(--color-harvest, #e3a63d) 0px,
+    var(--color-harvest, #e3a63d) 10px,
+    rgba(58, 80, 32, 0.8) 10px,
+    rgba(58, 80, 32, 0.8) 20px
   );
 }
 
@@ -296,6 +301,8 @@ function getRacerStyle(team: TeamRacer) {
   gap: 4px;
   /* 確保圖標和分數在同一垂直線上 */
   transform-origin: center center;
+  /* 確保所有子元素都垂直居中對齊 */
+  text-align: center;
 }
 
 .team-racer.my-team {
@@ -390,6 +397,9 @@ function getRacerStyle(team: TeamRacer) {
   border: 2px solid rgba(255, 255, 255, 0.3);
   font-variant-numeric: tabular-nums; /* 等寬數字，避免數字跳動 */
   flex-shrink: 0;
+  /* 確保與父元素對齊，不影響父元素的 transform */
+  align-self: center;
+  margin: 0 auto;
 }
 
 .team-racer.my-team .racer-score-label {
@@ -407,10 +417,10 @@ function getRacerStyle(team: TeamRacer) {
 
 @keyframes pulse-score {
   0%, 100% {
-    transform: translateX(-50%) scale(1);
+    transform: scale(1);
   }
   50% {
-    transform: translateX(-50%) scale(1.05);
+    transform: scale(1.05);
   }
 }
 
