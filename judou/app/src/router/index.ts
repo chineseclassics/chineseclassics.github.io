@@ -138,14 +138,6 @@ const routes: RouteRecordRaw[] = [
           title: '句豆 - 課堂鬥豆等待室',
         },
       },
-      {
-        path: 'arena/teacher/board/:roomId',
-        name: 'arena-teacher-board',
-        component: () => import('../pages/arena/teacher/GameBoard.vue'),
-        meta: {
-          title: '句豆 - 鬥豆台',
-        },
-      },
       // 學生模式 - PK 競技
       {
         path: 'arena/create',
@@ -181,6 +173,16 @@ const routes: RouteRecordRaw[] = [
         },
       },
     ],
+  },
+  // 老師模式 - 全屏大屏幕（不顯示側邊欄）
+  {
+    path: '/arena/teacher/board/:roomId',
+    name: 'arena-teacher-board',
+    component: () => import('../pages/arena/teacher/GameBoard.vue'),
+    meta: {
+      title: '句豆 - 鬥豆台',
+      fullscreen: true,
+    },
   },
 ]
 

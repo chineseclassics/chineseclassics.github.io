@@ -64,7 +64,7 @@
         <TeamBadge
           v-if="team.productType"
           :product-type="team.productType"
-          :size="24"
+          :size="40"
           class="ranking-badge"
         />
         <span class="ranking-name">{{ team.name }}</span>

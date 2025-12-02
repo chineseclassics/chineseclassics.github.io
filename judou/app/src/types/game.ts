@@ -395,14 +395,25 @@ export function getBeanProductBadgeUrl(productType: BeanProductType): string {
 
 /**
  * 隊伍使用的豆製品列表（按順序，最多 4 個）
+ * 保留用於向後兼容，但不再使用
  */
 export const TEAM_BEAN_PRODUCTS: BeanProductType[] = ['豆芽', '豆乾', '豆腐', '豆包']
 
 /**
- * 根據隊伍數量獲取豆製品列表
+ * 根據隊伍數量隨機獲取豆製品列表
+ * 從所有可用的豆製品中隨機選擇
  */
 export function getTeamBeanProducts(count: number): BeanProductType[] {
-  return TEAM_BEAN_PRODUCTS.slice(0, count)
+  const allProducts: BeanProductType[] = Object.keys(BEAN_PRODUCTS) as BeanProductType[]
+  
+  // 如果需要的數量大於等於所有產品數量，直接返回所有產品
+  if (count >= allProducts.length) {
+    return allProducts.slice()
+  }
+  
+  // 隨機選擇指定數量的產品
+  const shuffled = [...allProducts].sort(() => Math.random() - 0.5)
+  return shuffled.slice(0, count)
 }
 
 /**

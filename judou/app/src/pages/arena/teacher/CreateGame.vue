@@ -41,9 +41,6 @@ const selectedTexts = computed(() => {
   return textSelector.value?.selectedTexts || []
 })
 
-// 隊伍預覽數量
-const teamPreviewNumbers = computed(() => Array.from({ length: teamCount.value }, (_, i) => i + 1))
-
 // 更新選中的文本 ID
 function updateSelectedIds(ids: string[]) {
   selectedTextIds.value = ids
@@ -211,17 +208,6 @@ onMounted(async () => {
             >
               {{ count }} 隊
             </button>
-          </div>
-          
-          <!-- 隊伍預覽 -->
-          <div class="teams-preview">
-            <div 
-              v-for="num in teamPreviewNumbers" 
-              :key="num"
-              class="team-preview"
-            >
-              隊伍 {{ num }}
-            </div>
           </div>
         </div>
 
@@ -757,32 +743,6 @@ onMounted(async () => {
 .time-desc {
   font-size: 0.75rem;
   color: var(--color-neutral-500);
-}
-
-/* 隊伍預覽 */
-.teams-preview {
-  display: flex;
-  gap: 0.5rem;
-  margin-top: 1rem;
-}
-
-.team-preview {
-  flex: 1;
-  padding: 0.75rem;
-  border-radius: 8px;
-  text-align: center;
-  font-weight: 600;
-  font-size: 0.875rem;
-  background: var(--color-primary-100, #eff6e5);
-  border: 2px solid var(--color-primary-400, #a8c870);
-  color: var(--color-primary-800, #456124);
-  transition: all 0.2s ease;
-}
-
-.team-preview:hover {
-  background: var(--color-primary-200, #deedc4);
-  transform: translateY(-2px);
-  box-shadow: 0 2px 8px rgba(139, 178, 79, 0.2);
 }
 
 /* 確認卡片 */

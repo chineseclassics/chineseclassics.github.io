@@ -280,7 +280,7 @@ onUnmounted(() => {
             <TeamBadge
               v-if="getTeamBeanProduct(stats.team)"
               :product-type="getTeamBeanProduct(stats.team)!"
-              :size="48"
+              :size="40"
               class="team-card-badge"
             />
             <div class="team-card-title">
@@ -344,7 +344,7 @@ onUnmounted(() => {
             <TeamBadge
               v-if="getTeamBeanProduct(stats.team)"
               :product-type="getTeamBeanProduct(stats.team)!"
-              :size="28"
+              :size="40"
               class="team-badge-in-mini-ranking"
             />
             <span class="team-name">{{ stats.team.team_name }}</span>
@@ -388,15 +388,24 @@ onUnmounted(() => {
 
 <style scoped>
 .game-board {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100vw;
+  height: 100vh;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  overflow-y: auto;
   /* 使用句豆綠色系的深色主題，適合大屏幕投影 */
   background: linear-gradient(135deg, 
     var(--color-primary-900, #3a5020), 
     var(--color-primary-800, #456124)
   );
   color: var(--color-primary-50, #f8faf5);
+  z-index: 1000;
 }
 
 /* 頂部狀態欄 */

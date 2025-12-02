@@ -231,7 +231,7 @@ onUnmounted(async () => {
             <TeamBadge
               v-if="getTeamBeanProduct(team)"
               :product-type="getTeamBeanProduct(team)!"
-              :size="48"
+              :size="40"
               class="team-badge-in-card"
             />
             <h3>{{ team.team_name }}</h3>
@@ -300,7 +300,7 @@ onUnmounted(async () => {
               <TeamBadge
                 v-if="getTeamBeanProduct(team)"
                 :product-type="getTeamBeanProduct(team)!"
-                :size="24"
+                :size="40"
                 class="team-badge-in-select"
               />
               {{ team.team_name }}

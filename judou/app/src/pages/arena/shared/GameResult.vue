@@ -451,7 +451,7 @@ onMounted(() => {
           <TeamBadge
             v-if="getTeamBeanProduct(team)"
             :product-type="getTeamBeanProduct(team)!"
-            :size="36"
+            :size="40"
             class="team-badge-in-ranking"
           />
           <div class="team-name-group">
