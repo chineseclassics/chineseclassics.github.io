@@ -13,8 +13,8 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useGameStore } from '../../../stores/gameStore'
 import type { UpdateProgressParams, GameTeam } from '../../../types/game'
-import { getTeamBeanProduct, BEAN_PRODUCTS } from '../../../types/game'
-import TeamBadge from '../../../components/arena/TeamBadge.vue'
+import { getTeamBeanProduct } from '../../../types/game'
+import RaceTrack from '../../../components/arena/RaceTrack.vue'
 
 interface TextItem {
   id: string
@@ -96,10 +96,16 @@ const teamStats = computed(() => {
     stat.localAvg = localAvg
   })
 
-  return Array.from(byTeam.values()).map(s => ({
-    ...s,
-    displayAvg: s.authAvg || s.localAvg || 0,
-  }))
+  return Array.from(byTeam.values()).map(s => {
+    const teamMembers = participants.value.filter(p => p.team_id === s.id)
+    const completedMembers = teamMembers.filter(p => p.status === 'completed')
+    return {
+      ...s,
+      displayAvg: s.authAvg || s.localAvg || 0,
+      memberCount: teamMembers.length,
+      completedCount: completedMembers.length,
+    }
+  })
 })
 
 const teamAverage = computed(() => {
@@ -113,36 +119,26 @@ const teamRanking = computed(() => {
   return [...teamStats.value].sort((a, b) => b.displayAvg - a.displayAvg)
 })
 
-// 進度條用：計算每個隊伍的寬度比例（用於進度條顯示）
-const teamProgressData = computed(() => {
+// 賽道用：準備隊伍數據（用於賽道顯示）
+const raceTrackTeams = computed(() => {
   if (!teamStats.value.length) return []
   
-  // 找到最高分（作為100%基準）
-  const maxScore = Math.max(...teamStats.value.map(t => t.displayAvg), 1)
-  
-  // 如果所有隊伍分數都是0，則等寬顯示
-  const allZero = maxScore === 0 || (maxScore < 0.01)
-  
-  return teamStats.value
-    .map(stat => {
-      const productType = getTeamBeanProduct(stat.team)
-      const product = productType ? BEAN_PRODUCTS[productType] : null
-      
-      // 計算進度條寬度（使用 flex-grow 值）
-      const flexGrow = allZero 
-        ? 1  // 等寬：每個隊伍 flex-grow = 1
-        : Math.max(stat.displayAvg / maxScore, 0.1)  // 最少0.1以確保可見
-      
-      return {
-        ...stat,
-        productType,
-        product,
-        flexGrow,
-        rank: teamRanking.value.findIndex(t => t.id === stat.id) + 1,
-        isMyTeam: stat.id === myTeam.value?.id,
-      }
-    })
-    .sort((a, b) => b.displayAvg - a.displayAvg)  // 按分數排序
+  return teamStats.value.map(stat => {
+    const productType = getTeamBeanProduct(stat.team)
+    const rank = teamRanking.value.findIndex(t => t.id === stat.id) + 1
+    
+    return {
+      id: stat.id,
+      team: stat.team,
+      displayAvg: stat.displayAvg,
+      rank,
+      productType,
+      isMyTeam: stat.id === myTeam.value?.id,
+      name: stat.team.team_name,
+      memberCount: stat.memberCount,
+      completedCount: stat.completedCount,
+    }
+  })
 })
 
 // =====================================================
@@ -567,43 +563,15 @@ function updateLocalParticipantScore(score: number) {
     </div>
 
     <template v-else>
-      <!-- 隊伍進度條（橫向排名展示）-->
-      <div v-if="teamProgressData.length" class="team-progress-bar">
-        <div 
-          v-for="teamData in teamProgressData" 
-          :key="teamData.id"
-          class="team-progress-item"
-          :class="{ 'my-team': teamData.isMyTeam }"
-          :style="{ 
-            flex: `${teamData.flexGrow} 1 auto`,
-            minWidth: '120px',
-          }"
-        >
-          <div 
-            class="team-progress-segment"
-            :style="{
-              background: teamData.product?.color || '#e5e7eb',
-            }"
-          >
-            <div class="team-progress-content">
-              <!-- 隊伍徽章 -->
-              <TeamBadge 
-                v-if="teamData.productType"
-                :product-type="teamData.productType"
-                :size="32"
-                class="team-badge-icon"
-              />
-              <div class="team-info">
-                <div class="team-name-row">
-                  <span class="team-name">{{ teamData.name }}</span>
-                  <span class="team-rank">#{{ teamData.rank }}</span>
-                </div>
-                <span class="team-score">{{ teamData.displayAvg.toFixed(2) }}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <!-- 隊伍賽道（動態排名展示）-->
+      <RaceTrack
+        v-if="raceTrackTeams.length > 0"
+        :teams="raceTrackTeams"
+        :height="100"
+        :racer-size="48"
+        :show-rankings="false"
+        class="game-race-track"
+      />
 
       <!-- 頂部狀態欄 -->
       <header class="play-header">
@@ -757,101 +725,13 @@ function updateLocalParticipantScore(score: number) {
   to { transform: rotate(360deg); }
 }
 
-/* 隊伍進度條（橫向排名展示）*/
-.team-progress-bar {
-  display: flex;
+/* 隊伍賽道 */
+.game-race-track {
   width: 100%;
-  height: 56px;
-  background: white;
+  margin-bottom: 0.5rem;
   border-bottom: 1px solid var(--color-neutral-100);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-  overflow: hidden;
-  gap: 2px;
 }
 
-.team-progress-item {
-  position: relative;
-  transition: flex 0.3s ease;
-}
-
-.team-progress-item.my-team {
-  z-index: 1;
-}
-
-.team-progress-segment {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  padding: 0.5rem 0.75rem;
-  border-right: 2px solid rgba(255, 255, 255, 0.3);
-  position: relative;
-  overflow: hidden;
-  transition: all 0.3s ease;
-}
-
-.team-progress-item.my-team .team-progress-segment {
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
-  border-right-color: rgba(59, 130, 246, 0.5);
-}
-
-.team-progress-content {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  width: 100%;
-  min-width: 0;
-}
-
-.team-badge-icon {
-  flex-shrink: 0;
-}
-
-.team-info {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.team-name-row {
-  display: flex;
-  align-items: center;
-  gap: 0.375rem;
-}
-
-.team-name {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: rgba(0, 0, 0, 0.8);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.team-rank {
-  font-size: 0.7rem;
-  font-weight: 700;
-  color: rgba(0, 0, 0, 0.6);
-  padding: 0.125rem 0.375rem;
-  background: rgba(255, 255, 255, 0.6);
-  border-radius: 4px;
-  flex-shrink: 0;
-}
-
-.team-score {
-  font-size: 0.875rem;
-  font-weight: 700;
-  color: rgba(0, 0, 0, 0.9);
-  font-variant-numeric: tabular-nums;
-}
-
-.team-progress-item.my-team .team-name,
-.team-progress-item.my-team .team-score {
-  color: rgba(0, 0, 0, 1);
-  font-weight: 700;
-}
 
 /* 頂部狀態欄 */
 .play-header {

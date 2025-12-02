@@ -9,8 +9,9 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useGameStore } from '../../../stores/gameStore'
-import { TEAM_COLORS, type TeamColor, type GameTeam, getTeamBeanProduct, BEAN_PRODUCTS } from '../../../types/game'
+import { TEAM_COLORS, type TeamColor, type GameTeam, getTeamBeanProduct } from '../../../types/game'
 import TeamBadge from '../../../components/arena/TeamBadge.vue'
+import RaceTrack from '../../../components/arena/RaceTrack.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -77,29 +78,26 @@ const completionRate = computed(() => {
   return Math.round((completedCount.value / totalParticipants.value) * 100)
 })
 
-const teamProgressData = computed(() => {
+// 賽道用：準備隊伍數據
+const raceTrackTeams = computed(() => {
   if (!teamStats.value.length) return []
   
-  const maxScore = Math.max(...teamStats.value.map(t => t.averageScore), 1)
-  const allZero = maxScore === 0 || (maxScore < 0.01)
-  
-  return teamStats.value
-    .map(stat => {
-      const productType = getTeamBeanProduct(stat.team)
-      const product = productType ? BEAN_PRODUCTS[productType] : null
-      const flexGrow = allZero 
-        ? 1
-        : Math.max(stat.averageScore / maxScore, 0.1)
-      
-      return {
-        ...stat,
-        productType,
-        product,
-        flexGrow,
-        rank: sortedTeamStats.value.findIndex(t => t.team.id === stat.team.id) + 1,
-      }
-    })
-    .sort((a, b) => b.averageScore - a.averageScore)
+  return teamStats.value.map(stat => {
+    const productType = getTeamBeanProduct(stat.team)
+    const rank = sortedTeamStats.value.findIndex(t => t.team.id === stat.team.id) + 1
+    
+    return {
+      id: stat.team.id,
+      team: stat.team,
+      displayAvg: stat.averageScore,
+      rank,
+      productType,
+      isMyTeam: false,  // 老師端不需要標記「我的隊伍」
+      name: stat.team.team_name,
+      memberCount: stat.memberCount,
+      completedCount: stat.completedCount,
+    }
+  })
 })
 
 const averageSpeed = computed(() => {
@@ -212,7 +210,7 @@ function startCountdown() {
     
     if (remainingTime.value === 0) {
       if (countdownInterval) {
-        clearInterval(countdownInterval)
+      clearInterval(countdownInterval)
         countdownInterval = null
       }
       if (!isFinished.value) {
@@ -293,49 +291,15 @@ onUnmounted(() => {
       </div>
     </header>
 
-    <!-- 大型隊伍進度條（大屏幕版）-->
-    <div v-if="!isFinished && teamProgressData.length" class="team-progress-section">
-      <div class="team-progress-bar-large">
-        <div 
-          v-for="teamData in teamProgressData" 
-          :key="teamData.team.id"
-          class="team-progress-item-large"
-          :style="{ 
-            flex: `${teamData.flexGrow} 1 auto`,
-            minWidth: '200px',
-          }"
-        >
-          <div 
-            class="team-progress-segment-large"
-            :style="{
-              background: teamData.product?.color || '#e5e7eb',
-            }"
-          >
-            <div class="team-progress-content-large">
-              <!-- 隊伍徽章 -->
-              <TeamBadge 
-                v-if="teamData.productType"
-                :product-type="teamData.productType"
-                :size="56"
-                class="team-badge-large"
-              />
-              <div class="team-info-large">
-                <div class="team-name-row-large">
-                  <span class="team-name-large">{{ teamData.team.team_name }}</span>
-                  <span class="team-rank-large">#{{ teamData.rank }}</span>
-                </div>
-                <div class="team-stats-large">
-                  <span class="team-score-large">{{ teamData.averageScore.toFixed(1) }}</span>
-                  <span class="team-score-label">平均分</span>
-                  <span class="team-divider">•</span>
-                  <span class="team-completion">{{ teamData.completedCount }}/{{ teamData.memberCount }}</span>
-                  <span class="team-completion-label">完成</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+    <!-- 大型隊伍賽道（大屏幕版）-->
+    <div v-if="!isFinished && raceTrackTeams.length" class="team-progress-section">
+      <RaceTrack
+        :teams="raceTrackTeams"
+        :height="150"
+        :racer-size="72"
+        :show-rankings="true"
+        class="teacher-race-track"
+      />
 
       <!-- 時間進度條 -->
       <div class="time-progress-container">
@@ -386,7 +350,15 @@ onUnmounted(() => {
           <div class="stat-content">
             <div class="stat-value">{{ mostActiveTeam.completedCount }}</div>
             <div class="stat-label">最活躍</div>
-            <div class="stat-detail">{{ mostActiveTeam.team.team_name }}</div>
+            <div class="stat-detail">
+              <TeamBadge
+                v-if="getTeamBeanProduct(mostActiveTeam.team)"
+                :product-type="getTeamBeanProduct(mostActiveTeam.team)!"
+                :size="20"
+                class="team-badge-in-stat"
+              />
+              {{ mostActiveTeam.team.team_name }}
+            </div>
           </div>
         </div>
       </div>
@@ -477,6 +449,12 @@ onUnmounted(() => {
             }"
           >
             <span class="rank">{{ index + 1 }}</span>
+            <TeamBadge
+              v-if="getTeamBeanProduct(stats.team)"
+              :product-type="getTeamBeanProduct(stats.team)!"
+              :size="28"
+              class="team-badge-in-mini-ranking"
+            />
             <span class="team-name">{{ stats.team.team_name }}</span>
             <span class="team-members">{{ stats.completedCount }}/{{ stats.memberCount }} 人</span>
             <span class="team-avg-score">{{ stats.averageScore.toFixed(1) }} 分</span>
@@ -520,7 +498,7 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <div class="teams-battle">
+      <div class="teams-battle">
         <div 
           v-for="stats in sortedTeamStats" 
           :key="stats.team.id"
@@ -534,6 +512,12 @@ onUnmounted(() => {
           <!-- 隊伍標題 -->
           <div class="team-title">
             <div class="team-name-row">
+              <TeamBadge
+                v-if="getTeamBeanProduct(stats.team)"
+                :product-type="getTeamBeanProduct(stats.team)!"
+                :size="40"
+                class="team-badge-in-title"
+              />
               <h2>{{ stats.team.team_name }}</h2>
               <span class="team-progress">{{ stats.completedCount }}/{{ stats.memberCount }}</span>
             </div>
@@ -576,10 +560,10 @@ onUnmounted(() => {
                   <span class="status-badge waiting">等待中</span>
                 </template>
               </div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
       </div>
     </main>
 
@@ -935,6 +919,16 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+}
+
+.team-badge-in-title {
+  flex-shrink: 0;
+}
+
+.team-badge-in-stat {
+  flex-shrink: 0;
+  vertical-align: middle;
+  margin-right: 0.5rem;
 }
 
 .team-name-large {
@@ -1484,6 +1478,10 @@ onUnmounted(() => {
 
 .ranking-item.winner .rank {
   color: #eab308;
+}
+
+.team-badge-in-mini-ranking {
+  flex-shrink: 0;
 }
 
 .ranking-item .team-name {

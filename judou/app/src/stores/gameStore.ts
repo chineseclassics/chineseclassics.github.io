@@ -123,11 +123,11 @@ export const useGameStore = defineStore('game', () => {
           const color = teamColors[index]
           
           return {
-            room_id: room.id,
+          room_id: room.id,
             team_name: product.name,  // 使用豆製品名稱
             team_color: color,  // 保留顏色字段（向後兼容）
             bean_product: productType,  // 新增：豆製品類型
-            order_index: index,
+          order_index: index,
           }
         })
 

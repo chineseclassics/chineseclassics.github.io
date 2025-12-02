@@ -8,7 +8,8 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useGameStore } from '../../../stores/gameStore'
-import { TEAM_COLORS, type TeamColor } from '../../../types/game'
+import { TEAM_COLORS, type TeamColor, getTeamBeanProduct } from '../../../types/game'
+import TeamBadge from '../../../components/arena/TeamBadge.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -232,6 +233,12 @@ onUnmounted(async () => {
           }"
         >
           <div class="team-header">
+            <TeamBadge
+              v-if="getTeamBeanProduct(team)"
+              :product-type="getTeamBeanProduct(team)!"
+              :size="32"
+              class="team-badge-in-card"
+            />
             <h3>{{ team.team_name }}</h3>
             <span class="team-count">{{ participantsByTeam[team.id]?.length || 0 }} 人</span>
           </div>
@@ -300,6 +307,12 @@ onUnmounted(async () => {
               }"
               @click="assignToTeam(team.id)"
             >
+              <TeamBadge
+                v-if="getTeamBeanProduct(team)"
+                :product-type="getTeamBeanProduct(team)!"
+                :size="24"
+                class="team-badge-in-select"
+              />
               {{ team.team_name }}
             </button>
           </div>
@@ -521,8 +534,9 @@ onUnmounted(async () => {
 
 .team-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 0.75rem;
+  justify-content: space-between;
   padding: 1rem 1.25rem;
   background: var(--team-secondary);
 }
@@ -530,6 +544,11 @@ onUnmounted(async () => {
 .team-header h3 {
   margin: 0;
   color: var(--team-text);
+  flex: 1;
+}
+
+.team-badge-in-card {
+  flex-shrink: 0;
 }
 
 .team-count {
@@ -624,6 +643,8 @@ onUnmounted(async () => {
 }
 
 .team-select-btn {
+  display: flex;
+  align-items: center;
   padding: 1rem;
   border: 2px solid;
   border-radius: 12px;
@@ -631,6 +652,11 @@ onUnmounted(async () => {
   font-size: 1rem;
   cursor: pointer;
   transition: all 0.2s ease;
+}
+
+.team-badge-in-select {
+  flex-shrink: 0;
+  margin-right: 0.5rem;
 }
 
 .team-select-btn:hover {

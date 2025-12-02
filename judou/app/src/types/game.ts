@@ -386,7 +386,11 @@ export const BEAN_PRODUCTS: Record<BeanProductType, {
  */
 export function getBeanProductBadgeUrl(productType: BeanProductType): string {
   const product = BEAN_PRODUCTS[productType]
-  return `${import.meta.env.BASE_URL}images/team-badges/${product.filename}`
+  // 直接使用絕對路徑，確保在開發和生產環境都能正確加載
+  const baseUrl = import.meta.env.BASE_URL || '/judou/'
+  // 移除重複的斜杠
+  const cleanBase = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl
+  return `${cleanBase}/images/team-badges/${product.filename}`
 }
 
 /**

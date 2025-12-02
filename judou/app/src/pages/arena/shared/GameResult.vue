@@ -16,8 +16,9 @@ import { useRouter, useRoute } from 'vue-router'
 import { useGameStore } from '../../../stores/gameStore'
 import { useAuthStore } from '../../../stores/authStore'
 import { useUserStatsStore } from '../../../stores/userStatsStore'
-import { TEAM_COLORS, type TeamColor, getRankTitle } from '../../../types/game'
+import { TEAM_COLORS, type TeamColor, getRankTitle, getTeamBeanProduct } from '../../../types/game'
 import BeanIcon from '../../../components/common/BeanIcon.vue'
+import TeamBadge from '../../../components/arena/TeamBadge.vue'
 
 interface TextResult {
   textId: string
@@ -447,6 +448,12 @@ onMounted(() => {
           }"
         >
           <span class="rank">{{ index === 0 ? '🏆' : index + 1 }}</span>
+          <TeamBadge
+            v-if="getTeamBeanProduct(team)"
+            :product-type="getTeamBeanProduct(team)!"
+            :size="36"
+            class="team-badge-in-ranking"
+          />
           <span class="team-name">{{ team.team_name }}</span>
           <span class="team-score">{{ team.averageScore.toFixed(2) }} 分</span>
         </div>
@@ -1025,7 +1032,7 @@ onMounted(() => {
 .team-ranking-item {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.75rem;
   padding: 1rem 1.25rem;
   background: var(--team-secondary);
   border-left: 4px solid var(--team-primary);
@@ -1035,6 +1042,10 @@ onMounted(() => {
 .team-ranking-item.winner {
   transform: scale(1.02);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.team-badge-in-ranking {
+  flex-shrink: 0;
 }
 
 .team-name {

@@ -1,0 +1,484 @@
+<!--
+  句豆 - 賽道組件
+  展示隊伍在賽道上的排名和位置，類似南風詩詞的賽道設計
+-->
+<template>
+  <div class="race-track-container">
+    <!-- 賽道背景 -->
+    <div class="race-track" :style="trackStyle">
+      <!-- 起點標記 -->
+      <div class="track-start">
+        <span class="start-label">起點</span>
+      </div>
+      
+      <!-- 終點標記 -->
+      <div class="track-finish">
+        <span class="finish-label">終點</span>
+        <div class="finish-line"></div>
+      </div>
+      
+      <!-- 隊伍圖標（在賽道上） -->
+      <div
+        v-for="team in sortedTeams"
+        :key="team.id"
+        class="team-racer"
+        :class="{ 'my-team': team.isMyTeam, 'is-first': team.rank === 1 }"
+        :style="getRacerStyle(team)"
+      >
+        <!-- 隊伍徽章 -->
+        <TeamBadge
+          v-if="team.productType"
+          :product-type="team.productType"
+          :size="racerSize"
+          class="racer-badge"
+        />
+        
+        <!-- 排名標籤 -->
+        <div class="racer-rank-badge">{{ team.rank }}</div>
+        
+        <!-- 隊伍平均分顯示（在圖標下方） -->
+        <div class="racer-score-label">
+          {{ team.displayAvg.toFixed(1) }}
+        </div>
+        
+        <!-- 隊伍信息氣泡（懸停顯示） -->
+        <div class="racer-tooltip">
+          <div class="tooltip-name">{{ team.name }}</div>
+          <div class="tooltip-score">平均分: {{ team.displayAvg.toFixed(2) }}</div>
+          <div v-if="team.memberCount" class="tooltip-members">
+            {{ team.completedCount }}/{{ team.memberCount }} 完成
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 底部排名信息（可選） -->
+    <div v-if="showRankings" class="rankings-info">
+      <div
+        v-for="team in sortedTeams"
+        :key="team.id"
+        class="ranking-item"
+        :class="{ 'my-team': team.isMyTeam }"
+      >
+        <span class="ranking-number">#{{ team.rank }}</span>
+        <TeamBadge
+          v-if="team.productType"
+          :product-type="team.productType"
+          :size="24"
+          class="ranking-badge"
+        />
+        <span class="ranking-name">{{ team.name }}</span>
+        <span class="ranking-score">{{ team.displayAvg.toFixed(2) }}</span>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { computed } from 'vue'
+import TeamBadge from './TeamBadge.vue'
+import { type GameTeam, type BeanProductType } from '@/types/game'
+
+interface TeamRacer {
+  id: string
+  team: GameTeam
+  displayAvg: number
+  rank: number
+  productType: BeanProductType | null
+  isMyTeam: boolean
+  memberCount?: number
+  completedCount?: number
+  name: string
+}
+
+interface Props {
+  teams: TeamRacer[]
+  maxScore?: number  // 最大分數（用於計算百分比），如果不提供則自動計算
+  height?: number | string  // 賽道高度
+  racerSize?: number  // 選手圖標大小
+  showRankings?: boolean  // 是否顯示底部排名信息
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  maxScore: undefined,
+  height: 120,
+  racerSize: 48,
+  showRankings: false,
+})
+
+// 按分數排序的隊伍列表
+const sortedTeams = computed(() => {
+  return [...props.teams].sort((a, b) => b.displayAvg - a.displayAvg)
+})
+
+// 計算最大分數（用於定位）
+const computedMaxScore = computed(() => {
+  if (props.maxScore !== undefined && props.maxScore > 0) {
+    return props.maxScore
+  }
+  const scores = props.teams.map(t => t.displayAvg)
+  const max = Math.max(...scores, 1)  // 至少為1，避免除零
+  return max
+})
+
+// 賽道樣式
+const trackStyle = computed(() => {
+  const heightValue = typeof props.height === 'number' 
+    ? `${props.height}px` 
+    : props.height
+  return {
+    height: heightValue,
+  }
+})
+
+// 計算每個隊伍在賽道上的位置
+function getRacerStyle(team: TeamRacer) {
+  // 計算百分比位置（5% 到 95%，留出邊距給起點終點）
+  const basePercentage = computedMaxScore.value > 0
+    ? Math.max(5, Math.min(95, (team.displayAvg / computedMaxScore.value) * 90 + 5))
+    : 5
+  
+  // 為了避免相同分數時完全重疊，按排名稍微調整位置
+  // 但調整幅度很小，確保仍在同一條賽道上
+  const rankOffset = (team.rank - 1) * 0.3  // 每個排名偏移 0.3%
+  const percentage = basePercentage + rankOffset
+  
+  // 垂直偏移（讓隊伍稍微錯開，避免完全重疊，但都在同一條賽道上）
+  // 偏移範圍很小，確保視覺上在同一條賽道
+  const offsetY = (team.id.charCodeAt(0) % 3 - 1) * 4  // -4px 到 +4px，很小的垂直偏移
+  
+  return {
+    left: `${percentage}%`,
+    transform: `translate(-50%, calc(-50% + ${offsetY}px))`,
+  }
+}
+</script>
+
+<style scoped>
+.race-track-container {
+  width: 100%;
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* 賽道主體 - 單一跑道設計 */
+.race-track {
+  position: relative;
+  width: 100%;
+  background: linear-gradient(
+    to bottom,
+    #f0f9ff 0%,
+    #e0f2fe 25%,
+    #cfe8f5 35%,
+    #cfe8f5 65%,
+    #e0f2fe 75%,
+    #f0f9ff 100%
+  );
+  border-top: 3px solid #0284c7;
+  border-bottom: 3px solid #0284c7;
+  overflow: visible;  /* 允許隊伍圖標超出邊界 */
+  
+  /* 添加跑道中心線效果，強調這是單一跑道 */
+  background-image: 
+    repeating-linear-gradient(
+      to right,
+      transparent 0,
+      transparent calc(50% - 1px),
+      rgba(2, 132, 199, 0.15) calc(50% - 1px),
+      rgba(2, 132, 199, 0.15) calc(50% + 1px),
+      transparent calc(50% + 1px),
+      transparent 100%
+    );
+}
+
+/* 起點標記 */
+.track-start {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.9);
+  border-right: 2px dashed #0284c7;
+  z-index: 1;
+}
+
+.start-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #0284c7;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+}
+
+/* 終點標記 */
+.track-finish {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.9);
+  border-left: 3px solid #dc2626;
+  z-index: 1;
+}
+
+.finish-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #dc2626;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  margin-bottom: 20px;
+}
+
+.finish-line {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: repeating-linear-gradient(
+    to bottom,
+    #dc2626 0px,
+    #dc2626 10px,
+    white 10px,
+    white 20px
+  );
+}
+
+/* 隊伍選手 */
+.team-racer {
+  position: absolute;
+  top: 50%;
+  z-index: 10;
+  transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform, left;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.team-racer.my-team {
+  z-index: 15;
+  filter: drop-shadow(0 4px 12px rgba(251, 191, 36, 0.6));
+}
+
+.team-racer.is-first {
+  filter: drop-shadow(0 4px 16px rgba(251, 191, 36, 0.8));
+}
+
+.racer-badge {
+  position: relative;
+  border: 3px solid white;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  flex-shrink: 0;
+  transition: transform 0.3s ease;
+}
+
+.team-racer.my-team .racer-badge {
+  transform: scale(1.15);
+}
+
+.team-racer.my-team .racer-badge {
+  border-color: #fbbf24;
+  border-width: 4px;
+  box-shadow: 0 4px 20px rgba(251, 191, 36, 0.5);
+}
+
+.team-racer.is-first .racer-badge {
+  border-color: #f59e0b;
+  border-width: 4px;
+  animation: pulse-first 2s ease-in-out infinite;
+}
+
+@keyframes pulse-first {
+  0%, 100% {
+    box-shadow: 0 4px 20px rgba(251, 191, 36, 0.5);
+  }
+  50% {
+    box-shadow: 0 6px 24px rgba(251, 191, 36, 0.8);
+  }
+}
+
+/* 排名標籤 */
+.racer-rank-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  min-width: 24px;
+  height: 24px;
+  background: #dc2626;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border: 2px solid white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.team-racer.is-first .racer-rank-badge {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  animation: pulse-badge 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-badge {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+/* 隊伍分數標籤 */
+.racer-score-label {
+  position: relative;
+  min-width: 50px;
+  padding: 4px 10px;
+  background: rgba(0, 0, 0, 0.85);
+  color: white;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  text-align: center;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  z-index: 12;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  font-variant-numeric: tabular-nums; /* 等寬數字，避免數字跳動 */
+  flex-shrink: 0;
+}
+
+.team-racer.my-team .racer-score-label {
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  border-color: rgba(255, 255, 255, 0.5);
+  box-shadow: 0 2px 12px rgba(251, 191, 36, 0.5);
+}
+
+.team-racer.is-first .racer-score-label {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  border-color: rgba(255, 255, 255, 0.6);
+  box-shadow: 0 2px 12px rgba(251, 191, 36, 0.6);
+  animation: pulse-score 2s ease-in-out infinite;
+}
+
+@keyframes pulse-score {
+  0%, 100% {
+    transform: translateX(-50%) scale(1);
+  }
+  50% {
+    transform: translateX(-50%) scale(1.05);
+  }
+}
+
+/* 工具提示 */
+.racer-tooltip {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 8px;
+  padding: 6px 10px;
+  background: rgba(0, 0, 0, 0.85);
+  color: white;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  z-index: 20;
+}
+
+.racer-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: rgba(0, 0, 0, 0.85);
+}
+
+.team-racer:hover .racer-tooltip {
+  opacity: 1;
+}
+
+.tooltip-name {
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.tooltip-score {
+  font-size: 0.7rem;
+  opacity: 0.9;
+}
+
+.tooltip-members {
+  font-size: 0.7rem;
+  opacity: 0.8;
+  margin-top: 2px;
+}
+
+/* 底部排名信息 */
+.rankings-info {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.02);
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.ranking-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: white;
+  border-radius: 20px;
+  border: 2px solid rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+}
+
+.ranking-item.my-team {
+  border-color: #fbbf24;
+  background: #fef3c7;
+  font-weight: 600;
+}
+
+.ranking-number {
+  font-weight: 700;
+  color: #dc2626;
+  font-size: 0.875rem;
+}
+
+.ranking-badge {
+  flex-shrink: 0;
+}
+
+.ranking-name {
+  font-size: 0.875rem;
+  color: #374151;
+}
+
+.ranking-score {
+  font-weight: 600;
+  color: #059669;
+  font-size: 0.875rem;
+}
+</style>
