@@ -207,24 +207,38 @@ function startBeanAnimation() {
   animatedBeanValue.value = 0
   beanAnimationComplete.value = false
   
-  // 動畫持續 2.5 秒
-  const duration = 2500
+  // 動畫持續 1.8 秒（縮短總時長）
+  const duration = 1800
   const startTime = Date.now()
   const maxValue = target > 0 ? target : 100
+  
+  // 控制更新頻率：每 3 幀更新一次（放慢數字滾動速度）
+  let frameCount = 0
+  const updateInterval = 3  // 每 3 幀更新一次
+  let lastUpdateTime = 0
+  const minUpdateDelay = 50  // 最小更新間隔 50ms（約每秒 20 次更新）
   
   function animate() {
     const elapsed = Date.now() - startTime
     const progress = Math.min(elapsed / duration, 1)
+    const now = Date.now()
     
     if (progress < 1) {
-      if (progress < 0.8) {
-        // 前 80% 時間快速滾動
-        animatedBeanValue.value = Math.floor(Math.random() * maxValue * 1.5)
-      } else {
-        // 最後 20% 時間逐漸接近目標值
-        const remaining = (progress - 0.8) / 0.2
-        animatedBeanValue.value = Math.floor(target * remaining + Math.random() * (target * (1 - remaining)))
+      frameCount++
+      
+      // 控制更新頻率：每 N 幀或達到最小間隔時才更新
+      if (frameCount % updateInterval === 0 && (now - lastUpdateTime) >= minUpdateDelay) {
+        if (progress < 0.8) {
+          // 前 80% 時間快速滾動
+          animatedBeanValue.value = Math.floor(Math.random() * maxValue * 1.5)
+        } else {
+          // 最後 20% 時間逐漸接近目標值
+          const remaining = (progress - 0.8) / 0.2
+          animatedBeanValue.value = Math.floor(target * remaining + Math.random() * (target * (1 - remaining)))
+        }
+        lastUpdateTime = now
       }
+      
       requestAnimationFrame(animate)
     } else {
       // 動畫結束
@@ -233,10 +247,10 @@ function startBeanAnimation() {
     }
   }
   
-  // 延遲 0.5 秒後開始動畫
+  // 延遲 0.3 秒後開始動畫（縮短延遲）
   setTimeout(() => {
     requestAnimationFrame(animate)
-  }, 500)
+  }, 300)
 }
 
 // 切換文章結果

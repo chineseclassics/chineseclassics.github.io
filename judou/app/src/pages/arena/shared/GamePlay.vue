@@ -1139,6 +1139,14 @@ function updateLocalParticipantScore(score: number) {
   position: relative;
 }
 
+.char-unit:last-child {
+  /* 最后一个字符后面没有 bean-slot，需要补偿 bean-slot 占据的空间
+     bean-slot: width 24px + margin 0 -4px (左右各-4px) = 净占用 16px
+     但 bean-slot 的负 margin 会让字符和 bean-slot 重叠，实际字符间距由 bean-slot 的净宽度决定
+     因此需要给最后一个字符添加右侧间距来保持对齐 */
+  padding-right: 16px;
+}
+
 .char {
   font-size: var(--text-2xl, 24px);
   font-family: var(--font-main, 'LXGW WenKai TC', serif);

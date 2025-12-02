@@ -1327,49 +1327,68 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   z-index: 100;
+  overflow-y: auto;
+  padding: 1rem;
 }
 
 .finish-content {
   text-align: center;
-  padding: 3rem;
+  padding: 0.75rem 2rem;
+  max-width: 800px;
+  width: 100%;
+  max-height: calc(100vh - 1.5rem);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 0.5rem;
+  overflow-y: auto;
+  box-sizing: border-box;
 }
 
 .trophy {
-  font-size: 6rem;
-  margin-bottom: 1rem;
+  font-size: 4rem;
+  margin-bottom: 0.5rem;
   animation: bounce 1s ease-in-out infinite;
+  flex-shrink: 0;
 }
 
 @keyframes bounce {
   0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-20px); }
+  50% { transform: translateY(-15px); }
 }
 
 .finish-content h2 {
-  font-size: 2.5rem;
-  margin: 0 0 2rem 0;
+  font-size: 2rem;
+  margin: 0;
   color: var(--color-primary-50, #f8faf5);
   font-weight: 700;
+  flex-shrink: 0;
 }
 
 .final-ranking {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  margin-bottom: 2rem;
+  gap: 0.5rem;
+  margin-bottom: 0;
   min-width: 400px;
+  flex: 0 1 auto;
+  overflow-y: auto;
+  min-height: 0;
+  max-height: 35vh;
+  padding-right: 0.5rem;
 }
 
 .ranking-item {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  padding: 1rem 1.5rem;
+  gap: 0.75rem;
+  padding: 0.625rem 1rem;
   background: rgba(58, 80, 32, 0.4);
-  border-radius: 12px;
+  border-radius: 10px;
   border-left: 4px solid var(--color-primary-500, #8bb24f);
   border: 1px solid rgba(139, 178, 79, 0.2);
   backdrop-filter: blur(4px);
+  flex-shrink: 0;
 }
 
 .ranking-item.winner {
@@ -1420,25 +1439,27 @@ onUnmounted(() => {
   font-size: 0.875rem;
   color: var(--color-primary-300, #c5dd9a);
   opacity: 0.7;
-  margin-bottom: 2rem;
+  margin: 0;
+  flex-shrink: 0;
 }
 
 /* 獲勝隊伍獎勵區域 */
 .winner-reward-section {
-  margin: 2rem 0;
-  padding: 2rem;
+  margin: 0;
+  padding: 1rem 1.25rem;
   background: linear-gradient(135deg, rgba(227, 166, 61, 0.2), rgba(227, 166, 61, 0.05));
-  border-radius: 16px;
+  border-radius: 12px;
   border: 2px solid rgba(227, 166, 61, 0.3);
   text-align: center;
+  flex-shrink: 0;
 }
 
 .winner-reward-header {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
 }
 
 .winner-badge {
@@ -1446,7 +1467,7 @@ onUnmounted(() => {
 }
 
 .winner-reward-title h3 {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   font-weight: 700;
   color: var(--color-harvest, #e3a63d);
   margin: 0 0 0.25rem 0;
@@ -1463,11 +1484,11 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   gap: 0.75rem;
-  margin: 1rem 0;
+  margin: 0.5rem 0;
 }
 
 .reward-number {
-  font-size: 3rem;
+  font-size: 2.5rem;
   font-weight: 700;
   color: var(--color-harvest, #e3a63d);
   line-height: 1;
@@ -1481,7 +1502,7 @@ onUnmounted(() => {
   font-size: 0.875rem;
   color: var(--color-primary-200, #deedc4);
   opacity: 0.8;
-  margin: 0.5rem 0 0 0;
+  margin: 0.25rem 0 0 0;
 }
 
 .btn-primary {
@@ -1502,8 +1523,10 @@ onUnmounted(() => {
 }
 
 .btn-primary.btn-large {
-  padding: 1.25rem 3rem;
-  font-size: 1.25rem;
+  padding: 0.875rem 2rem;
+  font-size: 1rem;
+  flex-shrink: 0;
+  margin-top: 0.25rem;
 }
 
 /* 響應式設計 */
