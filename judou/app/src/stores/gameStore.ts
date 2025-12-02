@@ -53,6 +53,10 @@ export const useGameStore = defineStore('game', () => {
   const POLLING_INTERVAL = 5000  // 5 秒輪詢一次（降低流量）
   const POLLING_MAX_DURATION = 10 * 60 * 1000  // 最多輪詢 10 分鐘
   const isRealtimeConnected = ref(false)  // 追蹤 Realtime 連接狀態
+  
+  // 防重複執行 endGame 的標記（每個用戶+房間的組合）
+  // 格式：`${userId}-${roomId}`，確保每個用戶對每個房間只執行一次
+  const endGameExecutedByUser = new Set<string>()
 
   // =====================================================
   // 計算屬性
@@ -663,7 +667,66 @@ export const useGameStore = defineStore('game', () => {
    * 結束遊戲
    */
   async function endGame(): Promise<GameResult | null> {
-    if (!supabase || !currentRoom.value) return null
+    if (!supabase || !currentRoom.value || !authStore.user) return null
+    
+    const roomId = currentRoom.value.id
+    const currentUserId = authStore.user.id
+    const executionKey = `${currentUserId}-${roomId}`
+    
+    // 防重複執行：每個用戶對每個房間只執行一次
+    // 這樣確保獲勝者一定會執行，即使其他客戶端先調用了
+    if (endGameExecutedByUser.has(executionKey)) {
+      console.log('[Game] endGame() 已經執行過（當前用戶），跳過重複執行')
+      // 仍然返回結果，但不再執行分發邏輯
+      // 先刷新房間數據以獲取最新狀態
+      const { data: room } = await supabase
+        .from('game_rooms')
+        .select(`
+          *,
+          teams:game_teams!game_teams_room_id_fkey(*),
+          participants:game_participants(
+            *,
+            user:users!game_participants_user_id_fkey(id, display_name, avatar_url)
+          )
+        `)
+        .eq('id', roomId)
+        .single()
+      
+      if (!room) return null
+      
+      // 確定獲勝者（用於返回結果）
+      let winnerTeamId: string | null = null
+      let winners: GameParticipant[] = []
+      
+      if (room.game_mode === 'team_battle' && room.teams) {
+        const sortedTeams = [...room.teams].sort((a, b) => b.total_score - a.total_score)
+        const winningTeam = sortedTeams[0]
+        winnerTeamId = winningTeam?.id
+        winners = room.participants?.filter((p: GameParticipant) => p.team_id === winnerTeamId) || []
+      } else {
+        const sortedParticipants = [...(room.participants || [])].sort((a, b) => {
+          if (b.score !== a.score) return b.score - a.score
+          return (a.time_spent || 999999) - (b.time_spent || 999999)
+        })
+        const topPlayer = sortedParticipants[0]
+        if (topPlayer) {
+          winners = sortedParticipants.filter(p => 
+            p.score === topPlayer.score && 
+            (p.time_spent || 999999) === (topPlayer.time_spent || 999999)
+          )
+        }
+      }
+      
+      return {
+        room,
+        winners,
+        winningTeam: room.teams?.find((t: GameTeam) => t.id === winnerTeamId),
+        prizeDistribution: [],
+      }
+    }
+    
+    // 標記為已執行（在實際執行前標記，防止併發調用）
+    endGameExecutedByUser.add(executionKey)
 
     // 檢查時間是否到了
     const startedAt = currentRoom.value.started_at ? new Date(currentRoom.value.started_at) : null
@@ -1146,6 +1209,9 @@ export const useGameStore = defineStore('game', () => {
           
           console.log('[Game] 房間更新:', payload.eventType, newRoom)
           if (newRoom) {
+            const oldStatus = currentRoom.value?.status
+            const newStatus = newRoom.status
+            
             // 更新房間狀態，保留已有的關聯數據（participants, teams 等）
             currentRoom.value = { 
               ...currentRoom.value, 
@@ -1157,7 +1223,21 @@ export const useGameStore = defineStore('game', () => {
               text: currentRoom.value?.text,
               class: currentRoom.value?.class,
             } as GameRoom
-            console.log('[Game] 房間狀態已更新為:', newRoom.status)
+            console.log('[Game] 房間狀態已更新為:', newStatus)
+            
+            // 🔧 當房間狀態變為 finished 時，自動調用 endGame() 處理獎勵分發
+            // 每個客戶端都會調用，但只有獲勝者會更新自己的豆子（通過 distributePrizes 中的 user_id 檢查）
+            // 防重複機制確保每個用戶對每個房間只執行一次，這樣獲勝者一定會獲得豆子
+            if (newStatus === 'finished' && oldStatus !== 'finished') {
+              console.log('[Game] 檢測到房間狀態變為 finished，自動調用 endGame() 處理獎勵分發')
+              
+              // 異步調用 endGame()，不阻塞 Realtime 更新
+              // endGame() 內部會處理防重複執行邏輯（每個用戶只執行一次）
+              // distributePrizes() 中只有獲勝者會更新自己的豆子，確保安全
+              endGame().catch((error) => {
+                console.error('[Game] 自動調用 endGame() 失敗:', error)
+              })
+            }
           }
         }
       )
@@ -1619,6 +1699,8 @@ export const useGameStore = defineStore('game', () => {
     myParticipant.value = null
     rooms.value = []
     error.value = null
+    // 清理防重複執行標記
+    endGameExecutedByUser.clear()
   }
 
   return {
