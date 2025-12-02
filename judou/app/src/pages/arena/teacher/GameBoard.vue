@@ -328,7 +328,6 @@ onUnmounted(() => {
     <!-- 結束畫面 -->
     <div v-if="isFinished" class="finish-overlay">
       <div class="finish-content">
-        <div class="trophy">🏆</div>
         <h2>比賽結束！</h2>
         
         <div class="final-ranking">
@@ -1343,18 +1342,6 @@ onUnmounted(() => {
   gap: 0.5rem;
   overflow-y: auto;
   box-sizing: border-box;
-}
-
-.trophy {
-  font-size: 4rem;
-  margin-bottom: 0.5rem;
-  animation: bounce 1s ease-in-out infinite;
-  flex-shrink: 0;
-}
-
-@keyframes bounce {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-15px); }
 }
 
 .finish-content h2 {
