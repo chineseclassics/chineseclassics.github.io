@@ -83,13 +83,6 @@ const completedCount = computed(() =>
   participants.value.filter(p => p.status === 'completed').length
 )
 
-const totalParticipants = computed(() => participants.value.length)
-
-const completionRate = computed(() => {
-  if (totalParticipants.value === 0) return 0
-  return Math.round((completedCount.value / totalParticipants.value) * 100)
-})
-
 // 賽道用：準備隊伍數據
 const raceTrackTeams = computed(() => {
   if (!teamStats.value.length) return []
@@ -112,40 +105,6 @@ const raceTrackTeams = computed(() => {
   })
 })
 
-const averageSpeed = computed(() => {
-  const completed = participants.value.filter(p => p.status === 'completed' && p.time_spent)
-  if (completed.length === 0) return null
-  
-  const totalTime = completed.reduce((sum, p) => sum + (p.time_spent || 0), 0)
-  const avgSeconds = totalTime / completed.length
-  const minutes = Math.floor(avgSeconds / 60)
-  const seconds = Math.floor(avgSeconds % 60)
-  return { minutes, seconds }
-})
-
-const highestScore = computed(() => {
-  if (participants.value.length === 0) return 0
-  return Math.max(...participants.value.map(p => p.score || 0), 0)
-})
-
-const recentCompletions = computed(() => {
-  return participants.value
-    .filter(p => p.status === 'completed' && p.completed_at)
-    .sort((a, b) => {
-      const timeA = new Date(a.completed_at!).getTime()
-      const timeB = new Date(b.completed_at!).getTime()
-      return timeB - timeA
-    })
-    .slice(0, 5)
-})
-
-const mostActiveTeam = computed(() => {
-  if (teamStats.value.length === 0) return null
-  return teamStats.value.reduce((max, current) => 
-    current.completedCount > max.completedCount ? current : max
-  )
-})
-
 const timeProgress = computed(() => {
   if (!room.value?.started_at || !room.value?.time_limit) return 0
   const startedAt = new Date(room.value.started_at).getTime()
@@ -154,11 +113,11 @@ const timeProgress = computed(() => {
   return progress * 100
 })
 
-const topThreeScores = computed(() => {
+const topFiveScores = computed(() => {
   return [...participants.value]
     .filter(p => p.score > 0)
     .sort((a, b) => (b.score || 0) - (a.score || 0))
-    .slice(0, 3)
+    .slice(0, 5)
     .map((p, index) => ({
       ...p,
       rank: index + 1,
@@ -304,16 +263,17 @@ onUnmounted(() => {
     </header>
 
     <!-- 大型隊伍賽道（大屏幕版）-->
-    <div v-if="!isFinished && raceTrackTeams.length" class="team-progress-section">
+    <div v-if="!isFinished && raceTrackTeams.length" class="main-content-wrapper">
+      <!-- 1. 比分賽道（頂部）-->
       <RaceTrack
         :teams="raceTrackTeams"
         :height="150"
         :racer-size="72"
-        :show-rankings="true"
+        :show-rankings="false"
         class="teacher-race-track"
       />
 
-      <!-- 時間進度條 -->
+      <!-- 2. 時間進度條（賽道下方）-->
       <div class="time-progress-container">
         <div class="time-progress-header">
           <span class="time-progress-label">比賽進度</span>
@@ -327,63 +287,81 @@ onUnmounted(() => {
           ></div>
         </div>
       </div>
-
-      <!-- 實時統計面板 -->
-      <div class="stats-panel">
-        <div class="stat-card">
-          <div class="stat-icon">📊</div>
-          <div class="stat-content">
-            <div class="stat-value">{{ completionRate }}%</div>
-            <div class="stat-label">完成率</div>
-            <div class="stat-detail">{{ completedCount }} / {{ totalParticipants }} 人</div>
+      
+      <!-- 3. 隊伍卡片（水平排列）-->
+      <div class="teams-cards-container">
+        <div 
+          v-for="stats in sortedTeamStats" 
+          :key="stats.team.id"
+          class="team-card"
+          :style="{ 
+            '--team-primary': TEAM_COLORS[stats.team.team_color as TeamColor].primary,
+            '--team-secondary': TEAM_COLORS[stats.team.team_color as TeamColor].secondary,
+            '--team-text': TEAM_COLORS[stats.team.team_color as TeamColor].text,
+          }"
+        >
+          <!-- 隊伍頭像和名稱 -->
+          <div class="team-card-header">
+            <TeamBadge
+              v-if="getTeamBeanProduct(stats.team)"
+              :product-type="getTeamBeanProduct(stats.team)!"
+              :size="48"
+              class="team-card-badge"
+            />
+            <div class="team-card-title">
+              <h3>{{ stats.team.team_name }}</h3>
+              <span class="team-card-progress">{{ stats.completedCount }}/{{ stats.memberCount }} 人</span>
+            </div>
+            <div class="team-card-score">
+              <span class="score-value">{{ stats.averageScore.toFixed(1) }}</span>
+              <span class="score-label">平均分</span>
+            </div>
           </div>
-        </div>
-        
-        <div class="stat-card" v-if="averageSpeed">
-          <div class="stat-icon">⚡</div>
-          <div class="stat-content">
-            <div class="stat-value">{{ averageSpeed.minutes }}:{{ averageSpeed.seconds.toString().padStart(2, '0') }}</div>
-            <div class="stat-label">平均速度</div>
-            <div class="stat-detail">已完成學生</div>
-          </div>
-        </div>
-        
-        <div class="stat-card">
-          <div class="stat-icon">🏆</div>
-          <div class="stat-content">
-            <div class="stat-value">{{ highestScore }}</div>
-            <div class="stat-label">最高分</div>
-            <div class="stat-detail">個人記錄</div>
-          </div>
-        </div>
-        
-        <div class="stat-card" v-if="mostActiveTeam">
-          <div class="stat-icon">🔥</div>
-          <div class="stat-content">
-            <div class="stat-value">{{ mostActiveTeam.completedCount }}</div>
-            <div class="stat-label">最活躍</div>
-            <div class="stat-detail">
-              <TeamBadge
-                v-if="getTeamBeanProduct(mostActiveTeam.team)"
-                :product-type="getTeamBeanProduct(mostActiveTeam.team)!"
-                :size="20"
-                class="team-badge-in-stat"
-              />
-              {{ mostActiveTeam.team.team_name }}
+          
+          <!-- 成員列表 -->
+          <div class="team-card-members">
+            <div 
+              v-for="p in participantsByTeam[stats.team.id]" 
+              :key="p.id"
+              class="member-item"
+              :class="{ completed: p.status === 'completed' }"
+            >
+              <div class="member-info">
+                <img 
+                  v-if="p.user?.avatar_url" 
+                  :src="p.user.avatar_url" 
+                  :alt="p.user.display_name"
+                  class="member-avatar"
+                />
+                <span v-else class="member-avatar-placeholder">
+                  {{ p.user?.display_name?.charAt(0) || '?' }}
+                </span>
+                <span class="member-name">{{ p.user?.display_name || '未知' }}</span>
+              </div>
+              
+              <div class="member-status">
+                <template v-if="p.status === 'completed'">
+                  <span class="score">{{ p.score }} 分</span>
+                  <span class="accuracy">{{ p.accuracy?.toFixed(0) }}%</span>
+                </template>
+                <template v-else-if="p.status === 'playing'">
+                  <span class="status-badge playing">作答中...</span>
+                </template>
+                <template v-else>
+                  <span class="status-badge waiting">等待中</span>
+                </template>
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
-
-    <!-- 側邊欄：排行榜和活動流 -->
-    <aside v-if="!isFinished" class="board-sidebar">
-      <!-- 得分前三名 -->
-      <div class="top-scores-panel">
-        <h3 class="panel-title">🏆 得分前三</h3>
+      
+      <!-- 4. 前五名排行榜（佔據水平全寬）-->
+      <div class="top-scores-panel-full">
+        <h3 class="panel-title">🏆 得分前五</h3>
         <div class="top-scores-list">
           <div 
-            v-for="participant in topThreeScores"
+            v-for="participant in topFiveScores"
             :key="participant.id"
             class="top-score-item"
             :class="{ 'rank-1': participant.rank === 1, 'rank-2': participant.rank === 2, 'rank-3': participant.rank === 3 }"
@@ -403,45 +381,12 @@ onUnmounted(() => {
               <span class="top-score-value">{{ participant.score }} 分</span>
             </div>
           </div>
-          <div v-if="topThreeScores.length === 0" class="no-scores">
+          <div v-if="topFiveScores.length === 0" class="no-scores">
             暫無分數
           </div>
         </div>
       </div>
-
-      <!-- 實時活動流 -->
-      <div class="activity-stream-panel">
-        <h3 class="panel-title">⚡ 實時動態</h3>
-        <div class="activity-stream-list">
-          <div 
-            v-for="activity in activityStream"
-            :key="activity.id"
-            class="activity-item"
-            :class="activity.action"
-          >
-            <img 
-              v-if="activity.participant.user?.avatar_url" 
-              :src="activity.participant.user.avatar_url" 
-              :alt="activity.participant.user.display_name"
-              class="activity-avatar"
-            />
-            <span v-else class="activity-avatar-placeholder">
-              {{ activity.participant.user?.display_name?.charAt(0) || '?' }}
-            </span>
-            <div class="activity-content">
-              <span class="activity-text">
-                <strong>{{ activity.participant.user?.display_name || '未知' }}</strong>
-                <span v-if="activity.action === 'completed'"> 完成了答題！</span>
-                <span v-else-if="activity.action === 'scored'"> 得分 {{ activity.score }}</span>
-              </span>
-            </div>
-          </div>
-          <div v-if="activityStream.length === 0" class="no-activity">
-            等待活動...
-          </div>
-        </div>
-      </div>
-    </aside>
+    </div>
 
     <!-- 結束畫面 -->
     <div v-if="isFinished" class="finish-overlay">
@@ -502,103 +447,6 @@ onUnmounted(() => {
       </div>
     </div>
 
-    <!-- 主內容：隊伍對比 -->
-    <main v-else class="board-main">
-      <div class="board-main-content">
-        <!-- 最近完成列表 -->
-        <div v-if="recentCompletions.length > 0" class="recent-completions">
-          <h3 class="section-title">🎉 最近完成</h3>
-          <div class="completions-list">
-            <div 
-              v-for="participant in recentCompletions"
-              :key="participant.id"
-              class="completion-item"
-            >
-              <img 
-                v-if="participant.user?.avatar_url" 
-                :src="participant.user.avatar_url" 
-                :alt="participant.user.display_name"
-                class="completion-avatar"
-              />
-              <span v-else class="completion-avatar-placeholder">
-                {{ participant.user?.display_name?.charAt(0) || '?' }}
-              </span>
-              <div class="completion-info">
-                <span class="completion-name">{{ participant.user?.display_name || '未知' }}</span>
-                <span class="completion-score">{{ participant.score }} 分</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-      <div class="teams-battle">
-        <div 
-          v-for="stats in sortedTeamStats" 
-          :key="stats.team.id"
-          class="team-column"
-          :style="{ 
-            '--team-primary': TEAM_COLORS[stats.team.team_color as TeamColor].primary,
-            '--team-secondary': TEAM_COLORS[stats.team.team_color as TeamColor].secondary,
-            '--team-text': TEAM_COLORS[stats.team.team_color as TeamColor].text,
-          }"
-        >
-          <!-- 隊伍標題 -->
-          <div class="team-title">
-            <div class="team-name-row">
-              <TeamBadge
-                v-if="getTeamBeanProduct(stats.team)"
-                :product-type="getTeamBeanProduct(stats.team)!"
-                :size="40"
-                class="team-badge-in-title"
-              />
-              <h2>{{ stats.team.team_name }}</h2>
-              <span class="team-progress">{{ stats.completedCount }}/{{ stats.memberCount }}</span>
-            </div>
-            <div class="team-score">
-              <span class="score-value">{{ stats.averageScore.toFixed(1) }}</span>
-              <span class="score-label">平均分</span>
-            </div>
-          </div>
-          
-          <!-- 成員列表 -->
-          <div class="members-list">
-            <div 
-              v-for="p in participantsByTeam[stats.team.id]" 
-              :key="p.id"
-              class="member-row"
-              :class="{ completed: p.status === 'completed' }"
-            >
-              <div class="member-info">
-                <img 
-                  v-if="p.user?.avatar_url" 
-                  :src="p.user.avatar_url" 
-                  :alt="p.user.display_name"
-                  class="avatar"
-                />
-                <span v-else class="avatar-placeholder">
-                  {{ p.user?.display_name?.charAt(0) || '?' }}
-                </span>
-                <span class="member-name">{{ p.user?.display_name || '未知' }}</span>
-              </div>
-              
-              <div class="member-status">
-                <template v-if="p.status === 'completed'">
-                  <span class="score">{{ p.score }} 分</span>
-                  <span class="accuracy">{{ p.accuracy?.toFixed(0) }}%</span>
-                </template>
-                <template v-else-if="p.status === 'playing'">
-                  <span class="status-badge playing">作答中...</span>
-                </template>
-                <template v-else>
-                  <span class="status-badge waiting">等待中</span>
-                </template>
-              </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </main>
 
   </div>
 </template>
@@ -738,73 +586,85 @@ onUnmounted(() => {
   min-width: 0;
 }
 
-.teams-battle {
+/* 隊伍卡片容器（水平排列，均勻分布）*/
+.teams-cards-container {
   display: flex;
   gap: 1.5rem;
-  height: 100%;
+  width: 100%;
 }
 
-.team-column {
+/* 隊伍卡片 */
+.team-card {
   flex: 1;
+  min-width: 0;
   background: rgba(255, 255, 255, 0.05);
   border-radius: 16px;
   overflow: hidden;
   border-top: 4px solid var(--team-primary);
+  display: flex;
+  flex-direction: column;
 }
 
-.team-title {
+/* 隊伍卡片頭部（包含頭像、名稱、分數）*/
+.team-card-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 1rem;
   padding: 1.25rem 1.5rem;
-  background: rgba(var(--team-primary-rgb), 0.2);
   background: var(--team-secondary);
 }
 
-.team-name-row {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
+.team-card-badge {
+  flex-shrink: 0;
 }
 
-.team-title h2 {
-  margin: 0;
+.team-card-title {
+  flex: 1;
+  min-width: 0;
+}
+
+.team-card-title h3 {
+  margin: 0 0 0.25rem 0;
   font-size: 1.25rem;
   color: var(--team-text);
+  font-weight: 600;
 }
 
-.team-progress {
+.team-card-progress {
   font-size: 0.875rem;
   color: var(--team-text);
   opacity: 0.7;
-  padding: 0.125rem 0.5rem;
-  background: rgba(0, 0, 0, 0.1);
-  border-radius: 10px;
 }
 
-.team-score {
+.team-card-score {
   display: flex;
-  align-items: baseline;
+  flex-direction: column;
+  align-items: flex-end;
   gap: 0.25rem;
 }
 
-.score-value {
-  font-size: 2rem;
+.team-card-score .score-value {
+  font-size: 1.75rem;
   font-weight: 700;
   color: var(--team-primary);
+  line-height: 1;
 }
 
-.score-label {
+.team-card-score .score-label {
   font-size: 0.75rem;
   color: var(--team-text);
   opacity: 0.7;
 }
 
-.members-list {
+/* 隊伍卡片成員列表 */
+.team-card-members {
   padding: 1rem;
+  flex: 1;
+  overflow-y: auto;
+  max-height: 400px;
 }
 
-.member-row {
+.member-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -815,7 +675,7 @@ onUnmounted(() => {
   transition: all 0.3s ease;
 }
 
-.member-row.completed {
+.member-item.completed {
   background: rgba(34, 197, 94, 0.1);
   border-left: 3px solid #22c55e;
 }
@@ -824,16 +684,19 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  flex: 1;
+  min-width: 0;
 }
 
-.avatar {
+.member-avatar {
   width: 36px;
   height: 36px;
   border-radius: 50%;
   object-fit: cover;
+  flex-shrink: 0;
 }
 
-.avatar-placeholder {
+.member-avatar-placeholder {
   width: 36px;
   height: 36px;
   border-radius: 50%;
@@ -843,25 +706,30 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   font-weight: 600;
+  flex-shrink: 0;
 }
 
 .member-name {
   font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .member-status {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  flex-shrink: 0;
 }
 
-.score {
-  font-size: 1.1rem;
+.member-status .score {
+  font-size: 1rem;
   font-weight: 700;
   color: #22c55e;
 }
 
-.accuracy {
+.member-status .accuracy {
   font-size: 0.875rem;
   opacity: 0.7;
 }
@@ -883,10 +751,18 @@ onUnmounted(() => {
 }
 
 /* 大型隊伍進度條區域 */
-.team-progress-section {
-  background: rgba(0, 0, 0, 0.2);
-  padding: 1.5rem 2rem;
-  border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+.main-content-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 2rem;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.teacher-race-track {
+  width: 100%;
+  margin-bottom: 0;
 }
 
 .team-progress-bar-large {
@@ -1161,7 +1037,7 @@ onUnmounted(() => {
 
 /* 時間進度條 */
 .time-progress-container {
-  margin-bottom: 1.5rem;
+  width: 100%;
   padding: 1rem;
   background: rgba(0, 0, 0, 0.2);
   border-radius: 12px;
@@ -1225,33 +1101,39 @@ onUnmounted(() => {
   margin: 0 0 1rem 0;
 }
 
-/* 得分前三名面板 */
-.top-scores-panel {
+/* 前五名排行榜（全寬）*/
+.top-scores-panel-full {
+  width: 100%;
   background: rgba(255, 255, 255, 0.05);
   border-radius: 16px;
   padding: 1.5rem;
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.top-scores-list {
+/* 前五名排行榜列表（水平排列）*/
+.top-scores-panel-full .top-scores-list {
   display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: space-around;
 }
 
 .top-score-item {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.75rem;
+  padding: 0.75rem 1rem;
   background: rgba(255, 255, 255, 0.05);
   border-radius: 10px;
   transition: all 0.3s ease;
+  flex: 0 1 calc(20% - 0.8rem);
+  min-width: 180px;
 }
 
 .top-score-item:hover {
   background: rgba(255, 255, 255, 0.1);
-  transform: translateX(4px);
+  transform: translateY(-2px);
 }
 
 .top-score-item.rank-1 {

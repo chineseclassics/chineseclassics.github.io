@@ -292,6 +292,7 @@ function getRacerStyle(team: TeamRacer) {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 4px;
   /* 確保圖標和分數在同一垂直線上 */
   transform-origin: center center;

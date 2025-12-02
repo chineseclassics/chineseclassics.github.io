@@ -16,7 +16,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { useGameStore } from '../../../stores/gameStore'
 import { useAuthStore } from '../../../stores/authStore'
 import { useUserStatsStore } from '../../../stores/userStatsStore'
-import { TEAM_COLORS, type TeamColor, getRankTitle, getTeamBeanProduct } from '../../../types/game'
+import { TEAM_COLORS, type TeamColor, getTeamBeanProduct } from '../../../types/game'
 import BeanIcon from '../../../components/common/BeanIcon.vue'
 import TeamBadge from '../../../components/arena/TeamBadge.vue'
 
@@ -152,8 +152,6 @@ const teamRanking = computed(() => {
 
 
 // 用戶統計
-const level = computed(() => userStatsStore.level)
-const rankTitle = computed(() => getRankTitle(level.value))
 const winStreak = computed(() => (userStatsStore.profile as any)?.pvp_win_streak ?? 0)
 
 // 得豆/失豆動畫相關
@@ -298,10 +296,11 @@ onMounted(() => {
   <div class="game-result" :class="{ winner: isWinner, tie: isTie }">
     <!-- 結果標題 -->
     <header class="result-header">
-      <div class="result-icon">
-        {{ isTie ? '🤝' : isWinner ? '🏆' : '💪' }}
+      <div v-if="isTie || isWinner" class="result-icon">
+        {{ isTie ? '🤝' : '🏆' }}
       </div>
-      <h1>{{ isTie ? '平局！' : isWinner ? '恭喜獲勝！' : '惜敗' }}</h1>
+      <h1 v-if="!isTie && isWinner">恭喜獲勝！</h1>
+      <h1 v-else-if="isTie">平局！</h1>
       
       <!-- 得豆/失豆動畫區域 -->
       <div 
@@ -471,14 +470,6 @@ onMounted(() => {
       </div>
     </section>
 
-    <!-- 用戶稱號 -->
-    <section class="rank-title-section">
-      <p>當前稱號</p>
-      <div class="rank-title-display" :style="{ color: rankTitle.color }">
-        {{ rankTitle.title }}
-      </div>
-      <p class="level-text">Lv.{{ level }}</p>
-    </section>
 
     <!-- 操作按鈕 -->
     <footer class="result-footer">

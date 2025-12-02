@@ -593,10 +593,6 @@ function updateLocalParticipantScore(score: number) {
               <span class="chip-value">{{ teamAverage?.toFixed(2) }}</span>
             </div>
           </div>
-          <div class="live-pill">
-            <span class="live-dot"></span>
-            <span>實時計分</span>
-          </div>
         </div>
       </header>
 
