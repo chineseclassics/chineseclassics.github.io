@@ -101,13 +101,7 @@ const raceTrackTeams = computed(() => {
   })
 })
 
-const timeProgress = computed(() => {
-  if (!room.value?.started_at || !room.value?.time_limit) return 0
-  const startedAt = new Date(room.value.started_at).getTime()
-  const elapsed = Math.floor((Date.now() - startedAt) / 1000)
-  const progress = Math.min(elapsed / room.value.time_limit, 1)
-  return progress * 100
-})
+const timeProgress = ref(0)
 
 interface ActivityItem {
   id: string
@@ -163,6 +157,10 @@ function startCountdown() {
     const startedAt = new Date(room.value!.started_at!).getTime()
     const elapsed = Math.floor((Date.now() - startedAt) / 1000)
     remainingTime.value = Math.max(0, room.value!.time_limit - elapsed)
+    
+    // 更新時間進度條（已用時間的百分比）
+    const progress = Math.min(elapsed / room.value!.time_limit, 1)
+    timeProgress.value = progress * 100
     
     if (remainingTime.value === 0) {
       if (countdownInterval) {
@@ -280,7 +278,7 @@ onUnmounted(() => {
             <TeamBadge
               v-if="getTeamBeanProduct(stats.team)"
               :product-type="getTeamBeanProduct(stats.team)!"
-              :size="40"
+              :size="54"
               class="team-card-badge"
             />
             <div class="team-card-title">
@@ -344,7 +342,7 @@ onUnmounted(() => {
             <TeamBadge
               v-if="getTeamBeanProduct(stats.team)"
               :product-type="getTeamBeanProduct(stats.team)!"
-              :size="40"
+              :size="54"
               class="team-badge-in-mini-ranking"
             />
             <span class="team-name">{{ stats.team.team_name }}</span>
@@ -359,7 +357,7 @@ onUnmounted(() => {
             <TeamBadge
               v-if="getTeamBeanProduct(winningTeam.team)"
               :product-type="getTeamBeanProduct(winningTeam.team)!"
-              :size="40"
+              :size="54"
               class="winner-badge"
             />
             <div class="winner-reward-title">
@@ -1027,15 +1025,31 @@ onUnmounted(() => {
 
 .time-progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--color-primary-500, #8bb24f), var(--color-primary-400, #a8c870));
+  background: linear-gradient(90deg, 
+    var(--color-primary-300, #c5dd9a), 
+    var(--color-primary-400, #a8c870),
+    var(--color-primary-500, #8bb24f)
+  );
   border-radius: 6px;
   transition: width 1s ease;
-  box-shadow: 0 0 10px rgba(139, 178, 79, 0.5);
+  box-shadow: 
+    0 0 15px rgba(197, 221, 154, 0.8),
+    0 0 30px rgba(139, 178, 79, 0.4),
+    inset 0 2px 4px rgba(255, 255, 255, 0.3);
+  border: 1px solid rgba(197, 221, 154, 0.6);
 }
 
 .time-progress-fill.warning {
-  background: linear-gradient(90deg, var(--color-error, #dc6b6b), rgba(220, 107, 107, 0.8));
-  box-shadow: 0 0 10px rgba(220, 107, 107, 0.5);
+  background: linear-gradient(90deg, 
+    #fca5a5, 
+    var(--color-error, #dc6b6b),
+    #b91c1c
+  );
+  box-shadow: 
+    0 0 15px rgba(252, 165, 165, 0.8),
+    0 0 30px rgba(220, 107, 107, 0.4),
+    inset 0 2px 4px rgba(255, 255, 255, 0.3);
+  border: 1px solid rgba(252, 165, 165, 0.6);
 }
 
 .time-progress-footer {

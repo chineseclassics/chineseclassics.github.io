@@ -721,11 +721,93 @@ function updateLocalParticipantScore(score: number) {
   to { transform: rotate(360deg); }
 }
 
-/* 隊伍賽道 */
+/* 隊伍賽道 - 淺色主題適配 */
 .game-race-track {
   width: 100%;
   margin-bottom: 0.5rem;
   border-bottom: 1px solid var(--color-neutral-100);
+}
+
+/* 淺色主題的賽道容器 */
+.game-race-track :deep(.race-track-container) {
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid var(--color-primary-200, #deedc4);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* 淺色主題的賽道主體 */
+.game-race-track :deep(.race-track) {
+  background: linear-gradient(
+    to bottom,
+    var(--color-primary-50, #f8faf5) 0%,
+    var(--color-primary-100, #eff6e5) 25%,
+    rgba(255, 255, 255, 0.9) 35%,
+    rgba(255, 255, 255, 0.9) 65%,
+    var(--color-primary-100, #eff6e5) 75%,
+    var(--color-primary-50, #f8faf5) 100%
+  );
+  border-top: 2px solid var(--color-primary-300, #c5dd9a);
+  border-bottom: 2px solid var(--color-primary-300, #c5dd9a);
+  background-image: 
+    repeating-linear-gradient(
+      to right,
+      transparent 0,
+      transparent calc(50% - 1px),
+      rgba(139, 178, 79, 0.15) calc(50% - 1px),
+      rgba(139, 178, 79, 0.15) calc(50% + 1px),
+      transparent calc(50% + 1px),
+      transparent 100%
+    );
+}
+
+/* 淺色主題的起點標記 */
+.game-race-track :deep(.track-start) {
+  background: rgba(255, 255, 255, 0.9);
+  border-right: 2px dashed var(--color-primary-400, #a8c870);
+}
+
+.game-race-track :deep(.start-label) {
+  color: var(--color-primary-700, #456124);
+}
+
+/* 淺色主題的終點標記 */
+.game-race-track :deep(.track-finish) {
+  background: rgba(255, 255, 255, 0.9);
+  border-left: 3px solid var(--color-harvest, #e3a63d);
+}
+
+.game-race-track :deep(.finish-label) {
+  color: var(--color-harvest, #e3a63d);
+}
+
+.game-race-track :deep(.finish-line) {
+  background: repeating-linear-gradient(
+    to bottom,
+    var(--color-harvest, #e3a63d) 0px,
+    var(--color-harvest, #e3a63d) 10px,
+    rgba(255, 255, 255, 0.9) 10px,
+    rgba(255, 255, 255, 0.9) 20px
+  );
+}
+
+/* 淺色主題的選手分數標籤 */
+.game-race-track :deep(.racer-score-label) {
+  color: var(--color-neutral-700, #292524);
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid var(--color-primary-300, #c5dd9a);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.game-race-track :deep(.team-racer.my-team .racer-score-label) {
+  background: var(--color-primary-100, #eff6e5);
+  border-color: var(--color-primary-500, #8bb24f);
+  color: var(--color-primary-800, #456124);
+}
+
+.game-race-track :deep(.team-racer.is-first .racer-score-label) {
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  border-color: var(--color-harvest, #e3a63d);
+  color: var(--color-neutral-800, #292524);
 }
 
 
