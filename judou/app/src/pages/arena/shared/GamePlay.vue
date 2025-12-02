@@ -12,7 +12,9 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useGameStore } from '../../../stores/gameStore'
-import type { UpdateProgressParams } from '../../../types/game'
+import type { UpdateProgressParams, GameTeam } from '../../../types/game'
+import { getTeamBeanProduct, BEAN_PRODUCTS } from '../../../types/game'
+import TeamBadge from '../../../components/arena/TeamBadge.vue'
 
 interface TextItem {
   id: string
@@ -55,12 +57,19 @@ const localScore = computed(() => localTotals.value.totalCorrect)
 
 // 權威 total_score / 100，後備用本地聚合
 const teamStats = computed(() => {
-  const byTeam = new Map<string, { id: string; name: string; authAvg: number; localAvg: number }>()
+  const byTeam = new Map<string, { 
+    id: string
+    name: string
+    team: GameTeam  // 完整隊伍對象
+    authAvg: number
+    localAvg: number
+  }>()
 
   teams.value.forEach(t => {
     byTeam.set(t.id, {
       id: t.id,
       name: t.team_name,
+      team: t,
       authAvg: typeof t.total_score === 'number' ? t.total_score / 100 : 0,
       localAvg: 0,
     })
@@ -102,6 +111,38 @@ const teamAverage = computed(() => {
 
 const teamRanking = computed(() => {
   return [...teamStats.value].sort((a, b) => b.displayAvg - a.displayAvg)
+})
+
+// 進度條用：計算每個隊伍的寬度比例（用於進度條顯示）
+const teamProgressData = computed(() => {
+  if (!teamStats.value.length) return []
+  
+  // 找到最高分（作為100%基準）
+  const maxScore = Math.max(...teamStats.value.map(t => t.displayAvg), 1)
+  
+  // 如果所有隊伍分數都是0，則等寬顯示
+  const allZero = maxScore === 0 || (maxScore < 0.01)
+  
+  return teamStats.value
+    .map(stat => {
+      const productType = getTeamBeanProduct(stat.team)
+      const product = productType ? BEAN_PRODUCTS[productType] : null
+      
+      // 計算進度條寬度（使用 flex-grow 值）
+      const flexGrow = allZero 
+        ? 1  // 等寬：每個隊伍 flex-grow = 1
+        : Math.max(stat.displayAvg / maxScore, 0.1)  // 最少0.1以確保可見
+      
+      return {
+        ...stat,
+        productType,
+        product,
+        flexGrow,
+        rank: teamRanking.value.findIndex(t => t.id === stat.id) + 1,
+        isMyTeam: stat.id === myTeam.value?.id,
+      }
+    })
+    .sort((a, b) => b.displayAvg - a.displayAvg)  // 按分數排序
 })
 
 // =====================================================
@@ -526,6 +567,44 @@ function updateLocalParticipantScore(score: number) {
     </div>
 
     <template v-else>
+      <!-- 隊伍進度條（橫向排名展示）-->
+      <div v-if="teamProgressData.length" class="team-progress-bar">
+        <div 
+          v-for="teamData in teamProgressData" 
+          :key="teamData.id"
+          class="team-progress-item"
+          :class="{ 'my-team': teamData.isMyTeam }"
+          :style="{ 
+            flex: `${teamData.flexGrow} 1 auto`,
+            minWidth: '120px',
+          }"
+        >
+          <div 
+            class="team-progress-segment"
+            :style="{
+              background: teamData.product?.color || '#e5e7eb',
+            }"
+          >
+            <div class="team-progress-content">
+              <!-- 隊伍徽章 -->
+              <TeamBadge 
+                v-if="teamData.productType"
+                :product-type="teamData.productType"
+                :size="32"
+                class="team-badge-icon"
+              />
+              <div class="team-info">
+                <div class="team-name-row">
+                  <span class="team-name">{{ teamData.name }}</span>
+                  <span class="team-rank">#{{ teamData.rank }}</span>
+                </div>
+                <span class="team-score">{{ teamData.displayAvg.toFixed(2) }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- 頂部狀態欄 -->
       <header class="play-header">
         <div class="header-left">
@@ -533,11 +612,6 @@ function updateLocalParticipantScore(score: number) {
             <span class="countdown-label">剩餘時間</span>
             <span class="countdown-time">{{ formatTime(remainingTime) }}</span>
           </div>
-        </div>
-        
-        <div class="header-center">
-          <span class="text-title">{{ currentText?.title }}</span>
-          <span v-if="currentText?.author" class="text-author">{{ currentText.author }}</span>
         </div>
         
         <div class="header-right">
@@ -623,14 +697,6 @@ function updateLocalParticipantScore(score: number) {
         <span>已標記 {{ userBreaks.size }} / {{ correctBreaks.size }} 處</span>
       </div>
 
-      <!-- 團隊排名 -->
-      <div v-if="teamRanking.length" class="team-board">
-        <div class="team-row" v-for="team in teamRanking" :key="team.id" :class="{ me: team.id === myTeam?.id }">
-          <span class="team-name">{{ team.name }}</span>
-          <span class="team-score">{{ team.displayAvg.toFixed(2) }}</span>
-        </div>
-      </div>
-
         <!-- 多篇導航按鈕 -->
         <div v-if="texts.length > 1" class="text-nav">
           <button 
@@ -691,6 +757,102 @@ function updateLocalParticipantScore(score: number) {
   to { transform: rotate(360deg); }
 }
 
+/* 隊伍進度條（橫向排名展示）*/
+.team-progress-bar {
+  display: flex;
+  width: 100%;
+  height: 56px;
+  background: white;
+  border-bottom: 1px solid var(--color-neutral-100);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+  gap: 2px;
+}
+
+.team-progress-item {
+  position: relative;
+  transition: flex 0.3s ease;
+}
+
+.team-progress-item.my-team {
+  z-index: 1;
+}
+
+.team-progress-segment {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 0.75rem;
+  border-right: 2px solid rgba(255, 255, 255, 0.3);
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.team-progress-item.my-team .team-progress-segment {
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+  border-right-color: rgba(59, 130, 246, 0.5);
+}
+
+.team-progress-content {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  min-width: 0;
+}
+
+.team-badge-icon {
+  flex-shrink: 0;
+}
+
+.team-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.team-name-row {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.team-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: rgba(0, 0, 0, 0.8);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.team-rank {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: rgba(0, 0, 0, 0.6);
+  padding: 0.125rem 0.375rem;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.team-score {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: rgba(0, 0, 0, 0.9);
+  font-variant-numeric: tabular-nums;
+}
+
+.team-progress-item.my-team .team-name,
+.team-progress-item.my-team .team-score {
+  color: rgba(0, 0, 0, 1);
+  font-weight: 700;
+}
+
 /* 頂部狀態欄 */
 .play-header {
   display: flex;
@@ -703,22 +865,6 @@ function updateLocalParticipantScore(score: number) {
 
 .header-left, .header-right {
   flex: 0 0 auto;
-}
-
-.header-center {
-  flex: 1;
-  text-align: center;
-}
-
-.text-title {
-  font-weight: 600;
-  font-size: 1.1rem;
-}
-
-.text-author {
-  margin-left: 0.5rem;
-  font-size: 0.875rem;
-  color: var(--color-neutral-500);
 }
 
 /* 倒計時 */
@@ -1146,38 +1292,6 @@ function updateLocalParticipantScore(score: number) {
   color: var(--color-neutral-500);
 }
 
-.team-board {
-  margin-top: 0.75rem;
-  background: rgba(255, 255, 255, 0.9);
-  border: 1px solid rgba(0, 0, 0, 0.05);
-  border-radius: 12px;
-  padding: 0.75rem 1rem;
-  max-width: 800px;
-  width: 100%;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
-}
-
-.team-row {
-  display: flex;
-  justify-content: space-between;
-  padding: 0.4rem 0;
-  font-size: 0.9rem;
-  color: var(--color-neutral-700);
-  border-bottom: 1px dashed rgba(0, 0, 0, 0.05);
-}
-
-.team-row:last-child {
-  border-bottom: none;
-}
-
-.team-row.me {
-  color: #065f46;
-  font-weight: 700;
-}
-
-.team-score {
-  font-variant-numeric: tabular-nums;
-}
 
 /* 多篇導航 */
 .text-nav {
@@ -1257,10 +1371,33 @@ function updateLocalParticipantScore(score: number) {
     padding: 0.75rem 1rem;
   }
   
-  .header-center {
-    order: -1;
-    flex-basis: 100%;
-    margin-bottom: 0.5rem;
+  .team-progress-bar {
+    height: auto;
+    min-height: 56px;
+    flex-wrap: wrap;
+  }
+  
+  .team-progress-item {
+    min-width: calc(50% - 1px);
+    flex: 1 1 auto;
+  }
+  
+  .team-progress-content {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
+  
+  .team-info {
+    width: 100%;
+  }
+  
+  .team-name {
+    font-size: 0.75rem;
+  }
+  
+  .team-score {
+    font-size: 0.8rem;
   }
   
   .practice-board {

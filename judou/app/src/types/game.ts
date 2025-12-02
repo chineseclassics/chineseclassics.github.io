@@ -13,6 +13,12 @@ export type ParticipantStatus = 'waiting' | 'playing' | 'completed' | 'disconnec
 export type TeamColor = 'red' | 'blue' | 'green' | 'yellow'
 export type TransactionType = 'entry_fee' | 'prize' | 'refund' | 'win_streak_bonus'
 
+// =====================================================
+// 豆製品徽章系統（隊伍標識）
+// =====================================================
+
+export type BeanProductType = '豆芽' | '豆乾' | '豆腐' | '豆包' | '豆豉' | '豆漿' | '油豆腐' | '豆苗'
+
 /**
  * 遊戲模式配置（支持未來擴展新玩法）
  */
@@ -155,7 +161,8 @@ export interface GameTeam {
   id: string
   room_id: string
   team_name: string
-  team_color: TeamColor
+  team_color: TeamColor  // 保留向後兼容
+  bean_product?: BeanProductType  // 豆製品類型（新增，優先使用）
   total_score: number
   order_index: number
   created_at: string
@@ -311,7 +318,115 @@ export interface GameResult {
 }
 
 // =====================================================
-// 團隊顏色配置
+// 豆製品徽章配置（統一圖標系統）
+// =====================================================
+
+/**
+ * 豆製品徽章配置
+ * 用於隊伍標識和成就徽章系統
+ */
+export const BEAN_PRODUCTS: Record<BeanProductType, {
+  name: string
+  filename: string  // 圖片文件名（圓形圖標）
+  color: string  // 主題色（用於 UI 配色）
+  description: string
+}> = {
+  豆芽: {
+    name: '豆芽',
+    filename: '豆芽.png',
+    color: '#a7f3d0',  // 嫩綠色
+    description: '生機勃勃',
+  },
+  豆乾: {
+    name: '豆乾',
+    filename: '豆乾.png',
+    color: '#d97706',  // 棕黃色
+    description: '堅實耐嚼',
+  },
+  豆腐: {
+    name: '豆腐',
+    filename: '豆腐.png',
+    color: '#f3f4f6',  // 灰白色
+    description: '柔軟細膩',
+  },
+  豆包: {
+    name: '豆包',
+    filename: '豆包.png',
+    color: '#fbbf24',  // 金黃色
+    description: '圓潤飽滿',
+  },
+  豆豉: {
+    name: '豆豉',
+    filename: '豆豉.png',
+    color: '#78350f',  // 深棕色
+    description: '發酵深度',
+  },
+  豆漿: {
+    name: '豆漿',
+    filename: '豆漿.png',
+    color: '#fef3c7',  // 米白色
+    description: '流暢滋養',
+  },
+  油豆腐: {
+    name: '油豆腐',
+    filename: '油豆腐.png',
+    color: '#fbbf24',  // 金黃色
+    description: '外酥內嫩',
+  },
+  豆苗: {
+    name: '豆苗',
+    filename: '豆苗.png',
+    color: '#86efac',  // 淺綠色
+    description: '清新翠綠',
+  },
+}
+
+/**
+ * 獲取豆製品徽章的圖片 URL
+ */
+export function getBeanProductBadgeUrl(productType: BeanProductType): string {
+  const product = BEAN_PRODUCTS[productType]
+  return `${import.meta.env.BASE_URL}images/team-badges/${product.filename}`
+}
+
+/**
+ * 隊伍使用的豆製品列表（按順序，最多 4 個）
+ */
+export const TEAM_BEAN_PRODUCTS: BeanProductType[] = ['豆芽', '豆乾', '豆腐', '豆包']
+
+/**
+ * 根據隊伍數量獲取豆製品列表
+ */
+export function getTeamBeanProducts(count: number): BeanProductType[] {
+  return TEAM_BEAN_PRODUCTS.slice(0, count)
+}
+
+/**
+ * 獲取隊伍的豆製品名稱
+ */
+export function getTeamBeanProductName(productType: BeanProductType): string {
+  return BEAN_PRODUCTS[productType].name
+}
+
+/**
+ * 獲取隊伍的豆製品類型（如果存在）
+ */
+export function getTeamBeanProduct(team: GameTeam): BeanProductType | null {
+  return team.bean_product || null
+}
+
+/**
+ * 獲取隊伍的主題色（優先使用豆製品顏色，否則使用隊伍顏色）
+ */
+export function getTeamThemeColor(team: GameTeam): string {
+  if (team.bean_product) {
+    return BEAN_PRODUCTS[team.bean_product].color
+  }
+  return TEAM_COLORS[team.team_color].primary
+}
+
+// =====================================================
+// 團隊顏色配置（保留向後兼容）
 // =====================================================
 
 export const TEAM_COLORS: Record<TeamColor, { name: string; primary: string; secondary: string; text: string }> = {

@@ -23,7 +23,8 @@ import type {
 } from '../types/game'
 import {
   getTeamColors,
-  getDefaultTeamName,
+  getTeamBeanProducts,
+  BEAN_PRODUCTS,
   // WIN_STREAK_BONUSES,  // 暫時禁用連勝獎勵
   SAFETY_LIMITS,
 } from '../types/game'
@@ -114,15 +115,21 @@ export const useGameStore = defineStore('game', () => {
         return null
       }
 
-      // 如果是團隊模式，創建團隊
       if (params.gameMode === 'team_battle' && params.teamCount) {
-        const teamColors = getTeamColors(params.teamCount)
-        const teams: Partial<GameTeam>[] = teamColors.map((color, index) => ({
-          room_id: room.id,
-          team_name: getDefaultTeamName(color),
-          team_color: color,
-          order_index: index,
-        }))
+        const beanProducts = getTeamBeanProducts(params.teamCount)
+        const teams: Partial<GameTeam>[] = beanProducts.map((productType, index) => {
+          const product = BEAN_PRODUCTS[productType]
+          const teamColors = getTeamColors(params.teamCount!)
+          const color = teamColors[index]
+          
+          return {
+            room_id: room.id,
+            team_name: product.name,  // 使用豆製品名稱
+            team_color: color,  // 保留顏色字段（向後兼容）
+            bean_product: productType,  // 新增：豆製品類型
+            order_index: index,
+          }
+        })
 
         const { data: createdTeams, error: teamsError } = await supabase
           .from('game_teams')
