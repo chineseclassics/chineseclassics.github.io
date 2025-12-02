@@ -782,7 +782,11 @@ export const useGameStore = defineStore('game', () => {
     // 分發獎勵或返還入場費
     let prizeDistribution: { userId: string; displayName: string; prize: number; streakBonus: number }[] = []
     
-    if (actualPrizePool > 0 && winners.length > 0) {
+    if (room.game_mode === 'team_battle' && winnerTeamId && winners.length > 0) {
+      // 團隊模式：獲勝隊伍的每個成員獲得 20 豆
+      prizeDistribution = await distributeTeamBattleRewards(room, winners)
+    } else if (actualPrizePool > 0 && winners.length > 0) {
+      // PvP 模式：使用獎池分發
       // 用計算出的實際獎池替換 room.prize_pool
       const roomWithPrizePool = { ...room, prize_pool: actualPrizePool }
       
@@ -809,7 +813,83 @@ export const useGameStore = defineStore('game', () => {
   }
 
   /**
-   * 分發獎勵
+   * 分發團隊模式獎勵（獲勝隊伍每個成員獲得 20 豆）
+   */
+  async function distributeTeamBattleRewards(
+    room: GameRoom,
+    winners: GameParticipant[]
+  ): Promise<{ userId: string; displayName: string; prize: number; streakBonus: number }[]> {
+    if (!supabase) return []
+
+    const authStore = useAuthStore()
+    const currentUserId = authStore.user?.id
+    const TEAM_BATTLE_REWARD = 20  // 獲勝隊伍每個成員獲得 20 豆
+    const distribution: { userId: string; displayName: string; prize: number; streakBonus: number }[] = []
+
+    for (const winner of winners) {
+      // 只為自己更新豆子（RLS 限制）
+      // 其他贏家的更新由他們自己的客戶端處理
+      if (winner.user_id === currentUserId) {
+        // 獲取當前豆子餘額（從 profiles 表）
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('total_beans, weekly_beans, monthly_beans')
+          .eq('id', winner.user_id)
+          .single()
+
+        const currentBeans = profile?.total_beans || 0
+        const newBalance = currentBeans + TEAM_BATTLE_REWARD
+
+        // 更新 profiles 表
+        await supabase
+          .from('profiles')
+          .update({ 
+            total_beans: newBalance,
+            weekly_beans: (profile?.weekly_beans || 0) + TEAM_BATTLE_REWARD,
+            monthly_beans: (profile?.monthly_beans || 0) + TEAM_BATTLE_REWARD,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', winner.user_id)
+
+        // 更新參與者獎勵記錄
+        await supabase
+          .from('game_participants')
+          .update({ prize_won: TEAM_BATTLE_REWARD })
+          .eq('id', winner.id)
+
+        // 更新本地狀態
+        if (myParticipant.value && myParticipant.value.id === winner.id) {
+          myParticipant.value.prize_won = TEAM_BATTLE_REWARD
+        }
+
+        // 記錄交易
+        await supabase
+          .from('game_transactions')
+          .insert({
+            user_id: winner.user_id,
+            room_id: room.id,
+            type: 'prize',
+            amount: TEAM_BATTLE_REWARD,
+            balance_after: newBalance,
+            description: `課堂鬥豆獲勝獎勵：+${TEAM_BATTLE_REWARD} 豆`,
+          })
+
+        console.log(`🎉 ${winner.user?.display_name} 獲得 ${TEAM_BATTLE_REWARD} 豆，餘額 ${newBalance} 豆`)
+      }
+
+      distribution.push({
+        userId: winner.user_id,
+        displayName: winner.user?.display_name || '未知',
+        prize: TEAM_BATTLE_REWARD,
+        streakBonus: 0,
+      })
+    }
+
+    return distribution
+  }
+
+  /**
+   * 分發獎勵（PvP 模式）
    * 注意：豆子存儲在 profiles 表的 total_beans 欄位
    */
   async function distributePrizes(

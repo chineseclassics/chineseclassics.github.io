@@ -12,6 +12,7 @@ import { useGameStore } from '../../../stores/gameStore'
 import { TEAM_COLORS, type TeamColor, type GameTeam, getTeamBeanProduct } from '../../../types/game'
 import TeamBadge from '../../../components/arena/TeamBadge.vue'
 import RaceTrack from '../../../components/arena/RaceTrack.vue'
+import BeanIcon from '../../../components/common/BeanIcon.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -54,6 +55,17 @@ const teamStats = computed((): TeamStats[] => {
 
 const sortedTeamStats = computed(() => {
   return [...teamStats.value].sort((a, b) => b.averageScore - a.averageScore)
+})
+
+// 獲勝隊伍（第一名）
+const winningTeam = computed(() => {
+  return sortedTeamStats.value[0] || null
+})
+
+// 獲勝隊伍的成員列表
+const winningTeamMembers = computed(() => {
+  if (!winningTeam.value) return []
+  return participants.value.filter(p => p.team_id === winningTeam.value!.team.id)
 })
 
 // 按團隊分組的參與者（含完成狀態）
@@ -448,7 +460,7 @@ onUnmounted(() => {
               '--team-secondary': TEAM_COLORS[stats.team.team_color as TeamColor].secondary,
             }"
           >
-            <span class="rank">{{ index + 1 }}</span>
+            <span class="rank">{{ index === 0 ? '🏆' : index + 1 }}</span>
             <TeamBadge
               v-if="getTeamBeanProduct(stats.team)"
               :product-type="getTeamBeanProduct(stats.team)!"
@@ -459,6 +471,27 @@ onUnmounted(() => {
             <span class="team-members">{{ stats.completedCount }}/{{ stats.memberCount }} 人</span>
             <span class="team-avg-score">{{ stats.averageScore.toFixed(1) }} 分</span>
           </div>
+        </div>
+        
+        <!-- 獲勝隊伍獎勵信息 -->
+        <div v-if="winningTeam" class="winner-reward-section">
+          <div class="winner-reward-header">
+            <TeamBadge
+              v-if="getTeamBeanProduct(winningTeam.team)"
+              :product-type="getTeamBeanProduct(winningTeam.team)!"
+              :size="40"
+              class="winner-badge"
+            />
+            <div class="winner-reward-title">
+              <h3>{{ winningTeam.team.team_name }} 獲勝！</h3>
+              <p class="winner-reward-subtitle">每位成員獲得</p>
+            </div>
+          </div>
+          <div class="winner-reward-amount">
+            <span class="reward-number">20</span>
+            <BeanIcon :size="48" class="reward-bean-icon" />
+          </div>
+          <p class="winner-reward-note">共 {{ winningTeamMembers.length }} 位成員</p>
         </div>
         
         <p class="scoring-note">* 以隊員平均分計算排名</p>
@@ -1508,6 +1541,66 @@ onUnmounted(() => {
   font-size: 0.875rem;
   opacity: 0.5;
   margin-bottom: 2rem;
+}
+
+/* 獲勝隊伍獎勵區域 */
+.winner-reward-section {
+  margin: 2rem 0;
+  padding: 2rem;
+  background: linear-gradient(135deg, rgba(234, 179, 8, 0.2), rgba(234, 179, 8, 0.05));
+  border-radius: 16px;
+  border: 2px solid rgba(234, 179, 8, 0.3);
+  text-align: center;
+}
+
+.winner-reward-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.winner-badge {
+  flex-shrink: 0;
+}
+
+.winner-reward-title h3 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #eab308;
+  margin: 0 0 0.25rem 0;
+}
+
+.winner-reward-subtitle {
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.8);
+  margin: 0;
+}
+
+.winner-reward-amount {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+
+.reward-number {
+  font-size: 3rem;
+  font-weight: 700;
+  color: #eab308;
+  line-height: 1;
+}
+
+.reward-bean-icon {
+  flex-shrink: 0;
+}
+
+.winner-reward-note {
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0.5rem 0 0 0;
 }
 
 .btn-primary {

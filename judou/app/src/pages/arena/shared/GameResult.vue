@@ -162,15 +162,20 @@ const animatedBeanValue = ref(0)
 const beanAnimationComplete = ref(false)
 
 // 計算我的得豆/失豆情況
-// 簡單邏輯：
-// - 贏家獲得 = 入場費 × 玩家人數（整個獎池，因為入場費已經在開始時扣掉了）
-// - 輸家失去 = 入場費（已經扣掉了，這裡顯示損失）
-// - 平局 = 退還入場費
 const myBeanChange = computed(() => {
   if (!myParticipant.value || !room.value) {
     return { amount: 0, type: 'neutral' as const }
   }
   
+  // 團隊模式：獲勝隊伍每個成員獲得 20 豆
+  if (room.value.game_mode === 'team_battle') {
+    if (isWinner.value) {
+      return { amount: 20, type: 'win' as const }
+    }
+    return { amount: 0, type: 'neutral' as const }
+  }
+  
+  // PvP 模式：使用獎池邏輯
   const feePaid = myParticipant.value.fee_paid || room.value.entry_fee || 0
   const playerCount = room.value.participants?.length || 0
   
@@ -454,7 +459,13 @@ onMounted(() => {
             :size="36"
             class="team-badge-in-ranking"
           />
-          <span class="team-name">{{ team.team_name }}</span>
+          <div class="team-name-group">
+            <span class="team-name">{{ team.team_name }}</span>
+            <div v-if="index === 0" class="team-reward-badge">
+              <BeanIcon :size="16" />
+              <span>每位成員 +20 豆</span>
+            </div>
+          </div>
           <span class="team-score">{{ team.averageScore.toFixed(2) }} 分</span>
         </div>
       </div>
@@ -1048,14 +1059,38 @@ onMounted(() => {
   flex-shrink: 0;
 }
 
-.team-name {
+.team-name-group {
   flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.team-name {
   font-weight: 600;
 }
 
 .team-score {
   font-size: 1.25rem;
   font-weight: 700;
+  min-width: 80px;
+  text-align: right;
+}
+
+.team-reward-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.75rem;
+  background: var(--color-primary-100, #eff6e5);
+  border: 1px solid var(--color-primary-300, #c5dd9a);
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-primary-700, #587a2b);
+  white-space: nowrap;
+  line-height: 1.2;
 }
 
 /* 稱號顯示 */

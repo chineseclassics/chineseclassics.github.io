@@ -133,23 +133,51 @@ const trackStyle = computed(() => {
 
 // 計算每個隊伍在賽道上的位置
 function getRacerStyle(team: TeamRacer) {
-  // 計算百分比位置（5% 到 95%，留出邊距給起點終點）
-  const basePercentage = computedMaxScore.value > 0
-    ? Math.max(5, Math.min(95, (team.displayAvg / computedMaxScore.value) * 90 + 5))
-    : 5
+  // 優化的位置計算邏輯：
+  // 1. 起點留出 8% 空間，終點留出 15% 空間（確保第一名不會太靠近終點）
+  // 2. 使用可用的 77% 空間來展示相對位置和差距
+  const startMargin = 8  // 起點邊距
+  const endMargin = 15   // 終點邊距（給第一名留出空間）
+  const availableSpace = 100 - startMargin - endMargin  // 77%
   
-  // 為了避免相同分數時完全重疊，按排名稍微調整位置
-  // 但調整幅度很小，確保仍在同一條賽道上
-  const rankOffset = (team.rank - 1) * 0.3  // 每個排名偏移 0.3%
-  const percentage = basePercentage + rankOffset
+  let percentage: number
   
-  // 垂直偏移（讓隊伍稍微錯開，避免完全重疊，但都在同一條賽道上）
-  // 偏移範圍很小，確保視覺上在同一條賽道
-  const offsetY = (team.id.charCodeAt(0) % 3 - 1) * 4  // -4px 到 +4px，很小的垂直偏移
+  if (computedMaxScore.value <= 0 || sortedTeams.value.length === 0) {
+    // 如果沒有分數或沒有隊伍，平均分佈
+    const rankIndex = sortedTeams.value.findIndex(t => t.id === team.id)
+    percentage = startMargin + (availableSpace / Math.max(1, sortedTeams.value.length - 1)) * rankIndex
+  } else {
+    // 計算基礎位置：根據分數比例
+    const scoreRatio = team.displayAvg / computedMaxScore.value
+    
+    // 為了更好地展示相對差距，使用非線性映射
+    // 分數差距越大，視覺距離越大
+    const normalizedRatio = Math.pow(scoreRatio, 0.7)  // 使用 0.7 次方，讓差距更明顯
+    const mappedPercentage = startMargin + (normalizedRatio * availableSpace)
+    
+    // 確保第一名不會太靠近終點（最多到 85%）
+    percentage = Math.min(mappedPercentage, 100 - endMargin)
+    
+    // 如果分數相同，按排名稍微錯開（但保持在同一條賽道上）
+    const sameScoreTeams = sortedTeams.value.filter(t => 
+      Math.abs(t.displayAvg - team.displayAvg) < 0.01
+    )
+    if (sameScoreTeams.length > 1) {
+      const sameScoreRank = sameScoreTeams.findIndex(t => t.id === team.id)
+      percentage += sameScoreRank * 0.5  // 相同分數時，每個隊伍偏移 0.5%
+    }
+  }
+  
+  // 確保在有效範圍內
+  percentage = Math.max(startMargin, Math.min(100 - endMargin, percentage))
+  
+  // 所有隊伍都在完全同一水平線上，不做垂直偏移
+  // 通過水平位置的差異來展示相對距離和排序
   
   return {
     left: `${percentage}%`,
-    transform: `translate(-50%, calc(-50% + ${offsetY}px))`,
+    top: '50%',
+    transform: `translateX(-50%) translateY(-50%)`,
   }
 }
 </script>
@@ -258,14 +286,15 @@ function getRacerStyle(team: TeamRacer) {
 /* 隊伍選手 */
 .team-racer {
   position: absolute;
-  top: 50%;
   z-index: 10;
   transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-  will-change: transform, left;
+  will-change: transform, left, top;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 4px;
+  /* 確保圖標和分數在同一垂直線上 */
+  transform-origin: center center;
 }
 
 .team-racer.my-team {
