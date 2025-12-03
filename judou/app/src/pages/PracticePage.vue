@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 import { useTextsStore } from '@/stores/textsStore'
 import { usePracticeLibraryStore } from '@/stores/practiceLibraryStore'
 import { useAssignmentStore } from '@/stores/assignmentStore'
@@ -12,6 +12,8 @@ import { classicalSpeak, classicalPreload, classicalStopSpeak } from '@/composab
 import { useSupabase } from '@/composables/useSupabase'
 import type { PracticeText } from '@/types/text'
 import { RefreshCw, Clock, Volume2, Square } from 'lucide-vue-next'
+import BaseModal from '@/components/common/BaseModal.vue'
+import ReadingDetailPage from '@/pages/ReadingDetailPage.vue'
 
 interface SlotStatus {
   index: number
@@ -19,7 +21,6 @@ interface SlotStatus {
 }
 
 const route = useRoute()
-const router = useRouter()
 const supabase = useSupabase()
 const textsStore = useTextsStore()
 const libraryStore = usePracticeLibraryStore()
@@ -82,6 +83,10 @@ const visitorDisplayName = ref(localStorage.getItem('judou_display_name') || '�
 // TTS 朗讀狀態
 const isPlayingTTS = ref(false)
 
+// 來源文章模態窗口
+const showSourceModal = ref(false)
+const sourceTextId = ref<string | null>(null)
+
 let timerId: number | null = null
 
 // 音效 - 使用 Web Audio API 生成簡單音效
@@ -131,9 +136,15 @@ function vibrate(duration: number = 10) {
 }
 
 // 計算屬性 - 分類選項
+// 只顯示系統分類，不顯示其他老師的私有分類
 const gradeOptions = computed(() =>
   libraryStore.state.categories
-    .filter((c) => c.level === 1)
+    .filter((c) => {
+      // 必須是頂級分類（level 1）
+      if (c.level !== 1) return false
+      // 只顯示系統分類
+      return c.is_system === true
+    })
     .sort((a, b) => a.order_index - b.order_index)
 )
 
@@ -148,13 +159,15 @@ function isTextVisible(t: PracticeText): boolean {
   return false
 }
 
-// 當前年級的文章列表
+// 當前分類的文章列表
 const textsInGrade = computed(() => {
   if (!selectedGradeId.value) return []
   return textsStore.texts
     .filter((t) => {
-      // 必須屬於當前年級
-      if (t.category_id !== selectedGradeId.value) return false
+      // 必須屬於當前分類（支持多選分類）
+      const hasCategory = t.practice_categories?.some(c => c.id === selectedGradeId.value) ||
+        t.category_id === selectedGradeId.value  // 向後兼容：單一分類
+      if (!hasCategory) return false
       // 過濾可見文章
       return isTextVisible(t)
     })
@@ -180,7 +193,7 @@ const searchResults = computed(() => {
 })
 
 // 麵包屑
-// 麵包屑：年級 › 文章標題
+// 麵包屑：分類 › 文章標題
 const breadcrumbText = computed(() => {
   if (!currentText.value) return '尚未選擇練習素材'
   const parts = []
@@ -191,7 +204,7 @@ const breadcrumbText = computed(() => {
   return parts.join(' › ')
 })
 
-// 監聽年級變化，重置模組選擇
+// 監聽分類變化，重置模組選擇
 // 加載學生所屬班級的老師 ID
 async function loadMyTeacherIds() {
   if (!authStore.isStudent || !authStore.isAuthenticated) return
@@ -269,7 +282,7 @@ function selectText(text: PracticeText) {
   isPickerExpanded.value = false
   searchQuery.value = ''
   
-  // 同步選擇器狀態（文章直接關聯到年級）
+  // 同步選擇器狀態（文章直接關聯到分類）
   if (text.category_id) {
     selectedGradeId.value = text.category_id
   }
@@ -334,7 +347,7 @@ async function ensureDataLoaded() {
   if (!currentText.value && textsStore.texts.length) {
     pickRandomText()
   }
-  // 預設選中第一個年級
+  // 預設選中第一個分類
   if (!selectedGradeId.value && gradeOptions.value.length) {
     const firstGrade = gradeOptions.value[0]
     if (firstGrade) {
@@ -343,11 +356,18 @@ async function ensureDataLoaded() {
   }
 }
 
-// 跳轉到來源文章（若有）
+// 打開來源文章模態窗口
 function goToSourceArticle() {
   const sourceId = currentText.value?.source_text?.id
   if (!sourceId) return
-  router.push({ name: 'reading-detail', params: { id: sourceId } })
+  sourceTextId.value = sourceId
+  showSourceModal.value = true
+}
+
+// 關閉來源文章模態窗口
+function closeSourceModal() {
+  showSourceModal.value = false
+  sourceTextId.value = null
 }
 
 watch(
@@ -357,13 +377,14 @@ watch(
     sourceTitle: currentText.value?.source_text?.title,
   }),
   (val) => {
-    console.log('PracticePage 調試：來源按鈕狀態', {
+    const debugInfo = {
       ...val,
       hasSourceLink: hasSourceLink.value,
       source_text_id: currentText.value?.source_text_id,
       source_text_raw: currentText.value?.source_text,
       source_text_type: Array.isArray(currentText.value?.source_text) ? 'array' : typeof currentText.value?.source_text,
-    })
+    }
+    console.log('PracticePage 調試：來源按鈕狀態', JSON.stringify(debugInfo, null, 2))
   },
   { immediate: true }
 )
@@ -394,11 +415,12 @@ async function ensureSourceTextLoaded(text: PracticeText) {
     if (idx !== -1) {
       textsStore.texts[idx] = updated
     }
-    console.log('PracticePage 調試：補抓來源文章成功', {
+    console.log('PracticePage 調試：補抓來源文章成功', JSON.stringify({
       textId: updated.id,
       sourceId: updated.source_text?.id,
       sourceTitle: updated.source_text?.title,
-    })
+      source_text: updated.source_text,
+    }, null, 2))
   }
 }
 
@@ -826,14 +848,6 @@ onBeforeUnmount(() => {
             <span v-if="currentText" class="picker-meta">
               {{ currentText.author || '佚名' }}
               <span v-if="currentText.source"> · {{ currentText.source }}</span>
-              <router-link 
-                v-if="currentText.source_text?.id" 
-                :to="{ name: 'reading-detail', params: { id: currentText.source_text.id }}"
-                class="source-link"
-                @click.stop
-              >
-                · 來自《{{ currentText.source_text.title }}》
-              </router-link>
             </span>
           </div>
         </div>
@@ -874,10 +888,10 @@ onBeforeUnmount(() => {
           </div>
         </div>
 
-        <!-- 年級選擇器 -->
+        <!-- 分類選擇器 -->
         <div v-else class="picker-cascade">
           <div class="grade-filter-section">
-            <label class="grade-filter-label">年級</label>
+            <label class="grade-filter-label">分類</label>
             <div class="grade-tags">
               <button
                 v-for="grade in gradeOptions"
@@ -894,10 +908,10 @@ onBeforeUnmount(() => {
           <!-- 文章列表 -->
           <div class="picker-list">
             <div v-if="!selectedGradeId" class="picker-empty">
-              請選擇年級以查看文章
+              請選擇分類以查看文章
             </div>
             <div v-else-if="!textsInGrade.length" class="picker-empty">
-              此年級尚無文章
+              此分類尚無文章
             </div>
             <div
               v-for="text in textsInGrade"
@@ -1092,6 +1106,22 @@ onBeforeUnmount(() => {
         </p>
       </article>
     </section>
+
+    <!-- 來源文章模態窗口 -->
+    <BaseModal
+      v-model="showSourceModal"
+      :title="currentText?.source_text?.title || '載入中...'"
+      icon="📖"
+      size="full"
+      :no-padding="true"
+      @close="closeSourceModal"
+    >
+      <ReadingDetailPage 
+        v-if="sourceTextId"
+        :text-id-prop="sourceTextId"
+        :hide-back-button="true"
+      />
+    </BaseModal>
   </div>
 </template>
 
@@ -1241,7 +1271,7 @@ onBeforeUnmount(() => {
   gap: 1rem;
 }
 
-/* 年級標籤過濾器 */
+/* 分類標籤過濾器 */
 .grade-filter-section {
   display: flex;
   flex-direction: column;
@@ -1885,5 +1915,17 @@ onBeforeUnmount(() => {
   .board-actions {
     flex-wrap: wrap;
   }
+}
+
+/* 來源文章模態窗口樣式 */
+:deep(.judou-modal-body) {
+  padding: 0;
+  overflow-y: auto;
+  max-height: calc(95vh - 120px);
+}
+
+:deep(.reading-detail-page) {
+  padding: 1rem;
+  max-width: 100%;
 }
 </style>

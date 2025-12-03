@@ -45,6 +45,7 @@ const textForm = reactive({
   source: '',
   summary: '',
   content: '',
+  practice_category_ids: [] as string[],  // 多選分類
 })
 
 // 計算屬性 - 根據頁面模式過濾分類
@@ -83,8 +84,13 @@ const breadcrumb = computed(() => {
 const textsInCategory = computed(() => {
   if (!selectedCategoryId.value) return []
   
-  // 過濾屬於當前分類的文章
-  let filtered = textsStore.texts.filter((t) => t.category_id === selectedCategoryId.value)
+  // 過濾屬於當前分類的文章（支持多選分類）
+  let filtered = textsStore.texts.filter((t) => {
+    // 檢查是否屬於當前分類（支持多選分類）
+    const hasCategory = t.practice_categories?.some(c => c.id === selectedCategoryId.value) ||
+      t.category_id === selectedCategoryId.value  // 向後兼容：單一分類
+    return hasCategory
+  })
   
   // 根據頁面模式過濾：
   if (isAdminMode.value) {
@@ -123,20 +129,21 @@ const previewContent = computed(() => {
 })
 
 function getTextCountForCategory(categoryId: string) {
-  // 根據頁面模式過濾統計
-  if (isAdminMode.value) {
-    // 系統文庫模式：只統計系統文章
-    return textsStore.texts.filter((t) => 
-      t.category_id === categoryId && t.is_system === true
-    ).length
-  } else {
-    // 自訂練習模式：只統計自己創建的私有文章
-    return textsStore.texts.filter((t) => 
-      t.category_id === categoryId && 
-      t.is_system === false && 
-      t.created_by === authStore.user?.id
-    ).length
+  // 根據頁面模式過濾統計（支持多選分類）
+  const filterByMode = (t: PracticeText) => {
+    if (isAdminMode.value) {
+      return t.is_system === true
+    } else {
+      return t.is_system === false && t.created_by === authStore.user?.id
+    }
   }
+  
+  return textsStore.texts.filter((t) => {
+    // 檢查是否屬於當前分類（支持多選分類）
+    const hasCategory = t.practice_categories?.some(c => c.id === categoryId) ||
+      t.category_id === categoryId  // 向後兼容：單一分類
+    return hasCategory && filterByMode(t)
+  }).length
 }
 
 function selectCategory(categoryId: string) {
@@ -151,6 +158,11 @@ function openCreateText() {
   textForm.source = ''
   textForm.summary = ''
   textForm.content = ''
+  textForm.practice_category_ids = []
+  // 如果當前選中了分類，自動添加到表單
+  if (selectedCategoryId.value) {
+    textForm.practice_category_ids = [selectedCategoryId.value]
+  }
   feedback.value = null
   isTextFormOpen.value = true
 }
@@ -162,6 +174,9 @@ function openEditText(text: PracticeText) {
   textForm.source = text.source ?? ''
   textForm.summary = text.summary ?? ''
   textForm.content = text.content
+  // 獲取現有分類 IDs（多選分類優先，否則使用單一分類）
+  textForm.practice_category_ids = text.practice_categories?.map(c => c.id) || 
+    (text.category_id ? [text.category_id] : [])
   feedback.value = null
   isTextFormOpen.value = true
 }
@@ -171,14 +186,9 @@ async function handleTextSubmit() {
     feedback.value = '標題與內容為必填'
     return
   }
-  if (!selectedCategoryId.value) {
-    feedback.value = '請先選擇一個分類'
-    return
-  }
-  // 確保選中的是年級（level 1）
-  const category = selectedCategory.value
-  if (!category || category.level !== 1) {
-    feedback.value = '請選擇一個年級來新增文章'
+  // 檢查是否選擇了分類（必填）
+  if (!textForm.practice_category_ids || textForm.practice_category_ids.length === 0) {
+    feedback.value = '請至少選擇一個分類'
     return
   }
 
@@ -189,7 +199,8 @@ async function handleTextSubmit() {
       author: textForm.author || null,
       source: textForm.source || null,
       summary: textForm.summary || null,
-      category_id: selectedCategoryId.value,
+      category_id: textForm.practice_category_ids[0] || null,  // 向後兼容：使用第一個分類作為主分類
+      practice_category_ids: textForm.practice_category_ids,  // 多選分類
       content: textForm.content,
     }
 
@@ -244,6 +255,41 @@ function startAddCategory() {
 function cancelAddCategory() {
   isAddingCategory.value = false
   newCategoryName.value = ''
+}
+
+// 切換分類選擇狀態（用於表單中的多選分類）
+function togglePracticeCategory(categoryId: string) {
+  const index = textForm.practice_category_ids.indexOf(categoryId)
+  if (index > -1) {
+    textForm.practice_category_ids.splice(index, 1)
+  } else {
+    textForm.practice_category_ids.push(categoryId)
+  }
+}
+
+// 新增分類並自動選中（用於表單中）
+async function handleAddCategoryInForm() {
+  if (!newCategoryName.value.trim()) {
+    return
+  }
+  
+  try {
+    const newCategory = await libraryStore.addCategory({
+      name: newCategoryName.value.trim(),
+      parent_id: null,
+      type: 'grade',
+      is_system: isAdminMode.value,
+    }, authStore.user?.id)
+    
+    if (newCategory) {
+      // 自動選中新創建的分類
+      textForm.practice_category_ids.push(newCategory.id)
+    }
+    newCategoryName.value = ''
+    isAddingCategory.value = false
+  } catch (error: any) {
+    alert(error?.message ?? '新增分類失敗')
+  }
 }
 
 async function submitAddCategory() {
@@ -511,7 +557,6 @@ onMounted(async () => {
             <button class="close-btn" @click="isTextFormOpen = false">×</button>
           </header>
           <div class="modal-body">
-            <p class="form-context">將新增至：{{ breadcrumb.map(c => c.name).join(' › ') }}</p>
             <label>
               <span>標題</span>
               <input v-model="textForm.title" type="text" placeholder="請輸入標題" />
@@ -526,6 +571,47 @@ onMounted(async () => {
                 <input v-model="textForm.source" type="text" placeholder="例如：論語" />
               </label>
             </div>
+            
+            <!-- 分類選擇 -->
+            <label>
+              <span>分類（點擊選擇）*</span>
+              <div class="category-picker">
+                <!-- 所有分類標籤 -->
+                <button 
+                  v-for="cat in gradeOptions" 
+                  :key="cat.id"
+                  type="button"
+                  class="category-tag-btn"
+                  :class="{ selected: textForm.practice_category_ids.includes(cat.id) }"
+                  @click="togglePracticeCategory(cat.id)"
+                >
+                  <span class="tag-check" v-if="textForm.practice_category_ids.includes(cat.id)">✓</span>
+                  {{ cat.name }}
+                </button>
+                
+                <!-- 新增分類按鈕 / 輸入框 -->
+                <div v-if="isAddingCategory" class="new-category-inline">
+                  <input 
+                    v-model="newCategoryName" 
+                    type="text" 
+                    class="new-category-input-inline"
+                    @keyup.enter="handleAddCategoryInForm"
+                    @keyup.escape="isAddingCategory = false; newCategoryName = ''"
+                  />
+                  <button type="button" class="inline-action confirm" @click="handleAddCategoryInForm">✓</button>
+                  <button type="button" class="inline-action cancel" @click="isAddingCategory = false; newCategoryName = ''">×</button>
+                </div>
+                <button 
+                  v-else
+                  type="button"
+                  class="category-tag-btn add-new"
+                  @click="isAddingCategory = true; newCategoryName = ''"
+                >
+                  + 新增分類
+                </button>
+              </div>
+            </label>
+            
             <label>
               <span>內容（標點將自動轉為斷句符號）</span>
               <textarea v-model="textForm.content" rows="6" placeholder="貼上原文或手動輸入"></textarea>
@@ -1144,6 +1230,121 @@ td:nth-child(3) {
   margin: 0.2rem 0 0;
   font-size: var(--text-xs);
   color: var(--color-neutral-500);
+}
+
+/* 分類選擇器樣式（參考閱讀文庫） */
+.category-picker {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  background: rgba(248, 250, 252, 0.6);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  min-height: 2.5rem;
+}
+
+.category-tag-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  height: 1.75rem;
+  padding: 0 0.65rem;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 1rem;
+  background: white;
+  font-size: var(--text-xs);
+  color: var(--color-neutral-600);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.category-tag-btn:hover {
+  border-color: var(--color-primary-400);
+  background: var(--color-primary-50);
+  color: var(--color-primary-700);
+}
+
+.category-tag-btn.selected {
+  border-color: var(--color-primary-500);
+  background: var(--color-primary-500);
+  color: white;
+}
+
+.category-tag-btn.selected:hover {
+  background: var(--color-primary-600);
+  border-color: var(--color-primary-600);
+}
+
+.tag-check {
+  font-size: 0.65rem;
+}
+
+.category-tag-btn.add-new {
+  border-style: dashed;
+  border-color: var(--color-primary-300);
+  background: transparent;
+  color: var(--color-primary-500);
+}
+
+.category-tag-btn.add-new:hover {
+  border-style: solid;
+  background: var(--color-primary-50);
+}
+
+/* 新增分類內聯輸入 - 與標籤同高 */
+.new-category-inline {
+  display: inline-flex;
+  align-items: center;
+  height: 1.75rem;
+  background: white;
+  border: 1px solid var(--color-primary-400);
+  border-radius: 1rem;
+  padding: 0 0.25rem 0 0.5rem;
+  gap: 0.15rem;
+}
+
+.new-category-input-inline {
+  border: none;
+  outline: none;
+  font-size: var(--text-xs);
+  width: 5rem;
+  background: transparent;
+  height: 100%;
+}
+
+.inline-action {
+  width: 1.25rem;
+  height: 1.25rem;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 0.7rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.inline-action.confirm {
+  background: var(--color-primary-500);
+  color: white;
+}
+
+.inline-action.confirm:hover {
+  background: var(--color-primary-600);
+}
+
+.inline-action.cancel {
+  background: var(--color-neutral-300);
+  color: var(--color-neutral-700);
+}
+
+.inline-action.cancel:hover {
+  background: var(--color-neutral-400);
 }
 
 .difficulty-badge {

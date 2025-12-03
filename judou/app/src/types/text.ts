@@ -18,13 +18,19 @@ export interface PracticeText {
   author: string | null
   source: string | null
   summary: string | null
-  category_id: string | null
+  category_id: string | null  // 保留向後兼容（單一分類）
   category?: {
     id: string
     name: string
     slug: string
     level: number
   } | null
+  practice_categories?: Array<{  // 多選分類（新）
+    id: string
+    name: string
+    slug: string
+    level: number
+  }>
   content: string
   difficulty: number
   word_count?: number | null
@@ -54,7 +60,8 @@ export interface TextInput {
   author?: string | null
   source?: string | null
   summary?: string | null
-  category_id: string | null
+  category_id: string | null  // 保留向後兼容（單一分類）
+  practice_category_ids?: string[]  // 多選分類（新）
   content: string
 }
 

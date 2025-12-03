@@ -58,6 +58,15 @@ export const useTextsStore = defineStore('texts', () => {
             level,
             parent_id
           ),
+          text_practice_categories (
+            category:practice_categories (
+              id,
+              name,
+              slug,
+              level,
+              parent_id
+            )
+          ),
           source_text:practice_texts!source_text_id (
             id,
             title
@@ -68,14 +77,24 @@ export const useTextsStore = defineStore('texts', () => {
 
       if (fetchError) throw fetchError
       // 處理 source_text 可能是數組的情況（Supabase 關聯查詢有時返回數組）
+      // 處理 practice_categories 關聯
       texts.value = (data || []).map((item: any) => {
         const sourceText = Array.isArray(item.source_text) 
           ? item.source_text[0] 
           : item.source_text
         
+        // 處理多選分類
+        const practiceCategories = Array.isArray(item.text_practice_categories)
+          ? item.text_practice_categories
+              .map((tpc: any) => tpc.category)
+              .filter(Boolean)
+          : []
+        
         return {
           ...item,
-          source_text: sourceText || null
+          source_text: sourceText || null,
+          practice_categories: practiceCategories,
+          text_practice_categories: undefined
         }
       }) as PracticeText[]
     } catch (err: any) {
@@ -103,6 +122,11 @@ export const useTextsStore = defineStore('texts', () => {
       throw new Error('只有老師可以創建私有文章')
     }
     
+    // 優先使用多選分類，如果沒有則使用單一分類（向後兼容）
+    const categoryId = payload.practice_category_ids && payload.practice_category_ids.length > 0
+      ? payload.practice_category_ids[0]  // 使用第一個分類作為主分類（向後兼容）
+      : payload.category_id || null
+    
     const { data, error: insertError } = await supabase
       .from('practice_texts')
       .insert({
@@ -110,7 +134,7 @@ export const useTextsStore = defineStore('texts', () => {
         author: payload.author ?? null,
         source: payload.source ?? null,
         summary: payload.summary ?? null,
-        category_id: payload.category_id || null,
+        category_id: categoryId,
         content: sanitized,
         difficulty,
         word_count,
@@ -132,7 +156,63 @@ export const useTextsStore = defineStore('texts', () => {
       .single()
 
     if (insertError) throw insertError
-    if (data) {
+    
+    // 處理多選分類關聯
+    if (data && payload.practice_category_ids && payload.practice_category_ids.length > 0) {
+      const { error: categoryError } = await supabase
+        .from('text_practice_categories')
+        .insert(payload.practice_category_ids.map(catId => ({
+          text_id: data.id,
+          category_id: catId
+        })))
+      
+      if (categoryError) throw categoryError
+      
+      // 重新獲取包含多選分類的完整數據
+      const { data: fullData, error: fetchError } = await supabase
+        .from('practice_texts')
+        .select(
+          `
+          *,
+          category:practice_categories (
+            id,
+            name,
+            slug,
+            level,
+            parent_id
+          ),
+          text_practice_categories (
+            category:practice_categories (
+              id,
+              name,
+              slug,
+              level,
+              parent_id
+            )
+          )
+        `
+        )
+        .eq('id', data.id)
+        .single()
+      
+      if (fetchError) throw fetchError
+      
+      if (fullData) {
+        const practiceCategories = Array.isArray(fullData.text_practice_categories)
+          ? fullData.text_practice_categories
+              .map((tpc: any) => tpc.category)
+              .filter(Boolean)
+          : []
+        
+        const textWithCategories = {
+          ...fullData,
+          practice_categories: practiceCategories,
+          text_practice_categories: undefined
+        } as PracticeText
+        
+        texts.value.unshift(textWithCategories)
+      }
+    } else if (data) {
       texts.value.unshift(data as PracticeText)
     }
   }
@@ -162,6 +242,12 @@ export const useTextsStore = defineStore('texts', () => {
     const sanitized = sanitizeContent(payload.content)
     const difficulty = estimateDifficulty(sanitized)
     const word_count = countCharacters(sanitized)
+    
+    // 優先使用多選分類，如果沒有則使用單一分類（向後兼容）
+    const categoryId = payload.practice_category_ids && payload.practice_category_ids.length > 0
+      ? payload.practice_category_ids[0]  // 使用第一個分類作為主分類（向後兼容）
+      : payload.category_id || null
+    
     const { data, error: updateError } = await supabase
       .from('practice_texts')
       .update({
@@ -169,7 +255,7 @@ export const useTextsStore = defineStore('texts', () => {
         author: payload.author ?? null,
         source: payload.source ?? null,
         summary: payload.summary ?? null,
-        category_id: payload.category_id || null,
+        category_id: categoryId,
         content: sanitized,
         difficulty,
         word_count,
@@ -190,7 +276,74 @@ export const useTextsStore = defineStore('texts', () => {
       .single()
 
     if (updateError) throw updateError
-    if (data) {
+    
+    // 處理多選分類關聯
+    if (payload.practice_category_ids !== undefined) {
+      // 先刪除現有關聯
+      const { error: deleteError } = await supabase
+        .from('text_practice_categories')
+        .delete()
+        .eq('text_id', id)
+      
+      if (deleteError) throw deleteError
+      
+      // 添加新關聯
+      if (payload.practice_category_ids.length > 0) {
+        const { error: insertError } = await supabase
+          .from('text_practice_categories')
+          .insert(payload.practice_category_ids.map(catId => ({
+            text_id: id,
+            category_id: catId
+          })))
+        
+        if (insertError) throw insertError
+      }
+      
+      // 重新獲取包含多選分類的完整數據
+      const { data: fullData, error: fetchError } = await supabase
+        .from('practice_texts')
+        .select(
+          `
+          *,
+          category:practice_categories (
+            id,
+            name,
+            slug,
+            level,
+            parent_id
+          ),
+          text_practice_categories (
+            category:practice_categories (
+              id,
+              name,
+              slug,
+              level,
+              parent_id
+            )
+          )
+        `
+        )
+        .eq('id', id)
+        .single()
+      
+      if (fetchError) throw fetchError
+      
+      if (fullData) {
+        const practiceCategories = Array.isArray(fullData.text_practice_categories)
+          ? fullData.text_practice_categories
+              .map((tpc: any) => tpc.category)
+              .filter(Boolean)
+          : []
+        
+        const textWithCategories = {
+          ...fullData,
+          practice_categories: practiceCategories,
+          text_practice_categories: undefined
+        } as PracticeText
+        
+        texts.value = texts.value.map((item) => (item.id === id ? textWithCategories : item))
+      }
+    } else if (data) {
       texts.value = texts.value.map((item) => (item.id === id ? (data as PracticeText) : item))
     }
   }

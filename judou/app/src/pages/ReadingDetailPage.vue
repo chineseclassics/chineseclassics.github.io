@@ -7,13 +7,21 @@ import { classicalSpeak, classicalPreload, classicalStopSpeak } from '@/composab
 import type { TextAnnotation } from '@/types/text'
 import { Volume2, Square } from 'lucide-vue-next'
 
+const props = withDefaults(defineProps<{
+  hideBackButton?: boolean
+  textIdProp?: string
+}>(), {
+  hideBackButton: false,
+  textIdProp: undefined
+})
+
 const route = useRoute()
 const router = useRouter()
 const readingStore = useReadingStore()
 const authStore = useAuthStore()
 
-// 文章 ID
-const textId = computed(() => route.params.id as string)
+// 文章 ID：優先使用 prop，否則使用路由參數
+const textId = computed(() => props.textIdProp || (route.params.id as string))
 
 // 顯示模式：顯示斷句 / 隱藏斷句
 const showPunctuation = ref(true)
@@ -529,9 +537,10 @@ watch(showPunctuation, (newVal) => {
   <div class="reading-detail-page">
     <!-- 頂部工具列 -->
     <header class="reading-header edamame-glass">
-      <button class="back-btn" @click="goBack">
+      <button v-if="!hideBackButton" class="back-btn" @click="goBack">
         ← 返回
       </button>
+      <div v-else class="back-btn-placeholder"></div>
       
       <div class="header-title">
         <h1>{{ readingStore.currentText?.title || '載入中...' }}</h1>
@@ -706,6 +715,7 @@ watch(showPunctuation, (newVal) => {
   gap: 1rem;
   max-width: 800px;
   margin: 0 auto;
+  width: 100%;
 }
 
 /* 頂部工具列 */
@@ -728,6 +738,11 @@ watch(showPunctuation, (newVal) => {
 
 .back-btn:hover {
   background: rgba(0, 0, 0, 0.08);
+}
+
+.back-btn-placeholder {
+  width: 0;
+  flex-shrink: 0;
 }
 
 .header-title {
