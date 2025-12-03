@@ -372,7 +372,7 @@ async function ensureSourceTextLoaded(text: PracticeText) {
     .eq('id', text.source_text_id)
     .maybeSingle()
   if (error) {
-    console.warn('補抓來源文章失敗', error)
+    console.warn('補抓來源文章失敗', { error, source_text_id: text.source_text_id })
     return
   }
   if (data) {
@@ -395,6 +395,17 @@ async function ensureSourceTextLoaded(text: PracticeText) {
     })
   }
 }
+
+// 監聽當前練習，若有來源 ID 但缺來源資料則補抓
+watch(
+  () => currentText.value?.source_text_id,
+  (sourceId) => {
+    const text = currentText.value
+    if (!text || !sourceId) return
+    if (text.source_text) return
+    ensureSourceTextLoaded(text)
+  }
+)
 
 function toggleBreak(index: number) {
   // 如果已經提交過，不允許再修改，需要重新挑戰
