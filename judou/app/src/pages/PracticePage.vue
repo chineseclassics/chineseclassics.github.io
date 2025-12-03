@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useTextsStore } from '@/stores/textsStore'
 import { usePracticeLibraryStore } from '@/stores/practiceLibraryStore'
 import { useAssignmentStore } from '@/stores/assignmentStore'
@@ -18,6 +18,7 @@ interface SlotStatus {
 }
 
 const route = useRoute()
+const router = useRouter()
 const textsStore = useTextsStore()
 const libraryStore = usePracticeLibraryStore()
 const assignmentStore = useAssignmentStore()
@@ -334,6 +335,13 @@ async function ensureDataLoaded() {
       selectedGradeId.value = firstGrade.id
     }
   }
+}
+
+// 跳轉到來源文章（若有）
+function goToSourceArticle() {
+  const sourceId = currentText.value?.source_text?.id
+  if (!sourceId) return
+  router.push({ name: 'reading-detail', params: { id: sourceId } })
 }
 
 function toggleBreak(index: number) {
@@ -857,7 +865,15 @@ onBeforeUnmount(() => {
     <section class="board-card edamame-glass">
       <div v-if="currentText" class="practice-board">
         <div class="board-header">
-          <p class="board-hint">點擊字間空隙種下句豆來斷句</p>
+          <button 
+            v-if="currentText?.source_text?.id"
+            class="board-hint source-link-button"
+            type="button"
+            @click="goToSourceArticle"
+          >
+            閱讀完整原文
+          </button>
+          <p v-else class="board-hint">點擊字間空隙種下句豆來斷句</p>
           <div class="board-header-right">
             <!-- 朗讀按鈕（完成後顯示） -->
             <button 
@@ -1073,6 +1089,22 @@ onBeforeUnmount(() => {
 
 .source-link:hover {
   text-decoration: underline;
+}
+
+.source-link-button {
+  padding: 0.35rem 0.75rem;
+  border: 1px solid var(--color-primary-200);
+  background: var(--color-primary-50);
+  color: var(--color-primary-700);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition: all var(--duration-base) ease;
+}
+
+.source-link-button:hover {
+  background: var(--color-primary-100);
+  border-color: var(--color-primary-300);
 }
 
 .picker-toggle {

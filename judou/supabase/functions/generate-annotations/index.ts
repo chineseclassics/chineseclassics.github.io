@@ -103,10 +103,11 @@ async function generateAnnotationsWithAI({
 4. 註釋要適合中學生理解，使用繁體中文
 
 輸出格式要求：
-- 必須返回有效的 JSON 數組
+- 僅返回有效的 JSON 數組，**不得輸出任何解說文字**
 - 每個註釋對象包含：term（字詞）、annotation（註釋內容）、pinyin（拼音，可選）
 - 如果字詞是常見字，pinyin 可以為 null 或省略
 - 如果字詞是難讀字或多音字，必須提供 pinyin
+- 如果沒有可註釋的詞，請直接返回空數組 []
 
 注意：
 - 只註釋真正需要解釋的字詞，不要過度註釋
@@ -136,7 +137,7 @@ ${content}
 - term 必須是原文中的連續字符，不能修改、不能省略標點
 - 如果一個字詞在原文中出現多次，每個出現都要單獨列出
 
-返回格式示例：
+返回格式示例（僅允許 JSON 數組，不要包含額外文字或鍵名）：
 [
   {
     "term": "智",
@@ -172,7 +173,7 @@ ${content}
         { role: 'user', content: userPrompt }
       ],
       temperature: 0.3,  // 降低隨機性，確保輸出穩定
-      max_tokens: 6000  // 統一設置為 6000，支持更長文章生成更多註釋
+      max_tokens: 3500  // 降低上限，減少超長回應與解析失敗風險
       // 注意：不使用 response_format，因為我們需要返回數組，不是對象
     })
   })
@@ -236,4 +237,3 @@ ${content}
   
   return validatedAnnotations
 }
-
