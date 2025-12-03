@@ -1360,6 +1360,7 @@ onUnmounted(() => {
   min-width: 400px;
   flex: 0 1 auto;
   overflow-y: auto;
+  overflow-x: hidden;
   min-height: 0;
   max-height: 35vh;
   padding-right: 0.5rem;
@@ -1381,6 +1382,7 @@ onUnmounted(() => {
 .ranking-item.winner {
   background: linear-gradient(90deg, rgba(227, 166, 61, 0.2), rgba(227, 166, 61, 0.05));
   border-left-color: var(--color-harvest, #e3a63d);
+  border-radius: 10px;
   transform: scale(1.05);
 }
 

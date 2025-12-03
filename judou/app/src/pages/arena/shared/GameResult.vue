@@ -1044,6 +1044,7 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  overflow-x: hidden;
 }
 
 .team-ranking-item {
@@ -1066,6 +1067,7 @@ onMounted(() => {
 .team-ranking-item.winner {
   background: linear-gradient(135deg, var(--color-secondary-100, #fbf5e3), var(--color-secondary-50, #fdfaf3));
   border-left-color: var(--color-harvest, #e3a63d);
+  border-radius: 10px;
   transform: scale(1.02);
   box-shadow: 0 4px 12px rgba(227, 166, 61, 0.2);
 }
