@@ -1,7 +1,8 @@
 # 句豆 Supabase 配置
 # Project ID: zpmhxprltmzoaptvczgt
 
-project_id = "zpmhxprltmzoaptvczgt"
+[project]
+id = "zpmhxprltmzoaptvczgt"
 
 [api]
 port = 54321

@@ -37,13 +37,8 @@ serve(async (req) => {
     if (!content || typeof content !== 'string') {
       throw new Error('缺少必需參數：content（文章內容）')
     }
-    
-    // 驗證內容長度（避免過長導致超時）
-    if (content.length > 50000) {
-      throw new Error(`文章內容過長（${content.length} 字），超過 50000 字限制，請分段處理`)
-    }
 
-    console.log('📝 開始生成註釋，文章長度:', content.length, '標題:', title || '無', '作者:', author || '無')
+    console.log('📝 開始生成註釋，文章長度:', content.length)
 
     // 調用 DeepSeek API 生成註釋
     const annotations = await generateAnnotationsWithAI({
@@ -189,13 +184,6 @@ ${content}
 
   const data = await response.json()
   const aiContent = data.choices?.[0]?.message?.content || ''
-  
-  // 檢查 AI 是否返回了內容
-  if (!aiContent || aiContent.trim().length === 0) {
-    throw new Error('AI 未返回任何內容，請檢查 DeepSeek API 配置和請求參數')
-  }
-
-  console.log('📝 AI 回應長度:', aiContent.length, '字符')
 
   // 解析 AI 返回的 JSON
   let annotations: AnnotationResult[] = []
@@ -204,12 +192,9 @@ ${content}
     // 先嘗試從文本中提取 JSON 數組（AI 可能返回帶有說明文字的內容）
     const jsonMatch = aiContent.match(/\[[\s\S]*\]/)
     if (jsonMatch) {
-      const jsonStr = jsonMatch[0]
-      console.log('找到 JSON 數組，長度:', jsonStr.length)
-      annotations = JSON.parse(jsonStr)
+      annotations = JSON.parse(jsonMatch[0])
     } else {
       // 如果沒有找到數組，嘗試直接解析整個內容
-      console.log('未找到 JSON 數組，嘗試解析整個內容')
       const parsed = JSON.parse(aiContent)
       
       // 如果返回的是數組
@@ -222,31 +207,13 @@ ${content}
         // 如果返回的是對象，包含 data 字段
         annotations = parsed.data
       } else {
-        console.error('AI 返回的格式:', typeof parsed, Object.keys(parsed))
-        throw new Error('AI 返回的格式不符合預期，無法提取註釋數組。返回類型: ' + typeof parsed)
+        throw new Error('AI 返回的格式不符合預期，無法提取註釋數組')
       }
     }
-    
-    // 驗證解析結果
-    if (!Array.isArray(annotations)) {
-      throw new Error('解析後的註釋不是數組格式')
-    }
-    
   } catch (parseError: any) {
-    console.error('❌ 解析 AI 回應失敗:', parseError)
-    console.error('錯誤類型:', parseError.name)
-    console.error('錯誤消息:', parseError.message)
-    console.error('AI 回應內容（前 2000 字符）:', aiContent.substring(0, 2000))
-    console.error('AI 回應長度:', aiContent.length)
-    
-    // 提供更友好的錯誤信息
-    let errorMsg = `解析註釋失敗: ${parseError.message}`
-    if (parseError.name === 'SyntaxError') {
-      errorMsg += '。AI 返回的 JSON 格式不正確。'
-    }
-    errorMsg += ` AI 回應長度: ${aiContent.length} 字符。`
-    
-    throw new Error(errorMsg)
+    console.error('解析 AI 回應失敗:', parseError)
+    console.error('AI 回應內容:', aiContent.substring(0, 500))  // 只記錄前 500 字符
+    throw new Error(`解析註釋失敗: ${parseError.message}`)
   }
 
   // 驗證和清理註釋數據
