@@ -67,7 +67,17 @@ export const useTextsStore = defineStore('texts', () => {
         .order('created_at', { ascending: false })
 
       if (fetchError) throw fetchError
-      texts.value = (data || []) as PracticeText[]
+      // 處理 source_text 可能是數組的情況（Supabase 關聯查詢有時返回數組）
+      texts.value = (data || []).map((item: any) => {
+        const sourceText = Array.isArray(item.source_text) 
+          ? item.source_text[0] 
+          : item.source_text
+        
+        return {
+          ...item,
+          source_text: sourceText || null
+        }
+      }) as PracticeText[]
     } catch (err: any) {
       error.value = err.message ?? '無法載入文章'
     } finally {
