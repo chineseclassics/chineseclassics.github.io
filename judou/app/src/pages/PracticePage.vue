@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useTextsStore } from '@/stores/textsStore'
 import { usePracticeLibraryStore } from '@/stores/practiceLibraryStore'
@@ -9,6 +9,7 @@ import { useUserStatsStore, type ScoreBreakdown } from '@/stores/userStatsStore'
 import { useClassStore } from '@/stores/classStore'
 import { useAvatarStore } from '@/stores/avatarStore'
 import { classicalSpeak, classicalPreload, classicalStopSpeak } from '@/composables/useClassicalTTS'
+import { useSupabase } from '@/composables/useSupabase'
 import type { PracticeText } from '@/types/text'
 import { RefreshCw, Clock, Volume2, Square } from 'lucide-vue-next'
 
@@ -19,6 +20,7 @@ interface SlotStatus {
 
 const route = useRoute()
 const router = useRouter()
+const supabase = useSupabase()
 const textsStore = useTextsStore()
 const libraryStore = usePracticeLibraryStore()
 const assignmentStore = useAssignmentStore()
@@ -61,6 +63,7 @@ const isTimerStopped = ref(false)     // 計時器是否已停止（首次提交
 
 // 豆子庫存相關
 const beanShake = ref(false)          // 豆列抖動狀態
+const hasSourceLink = computed(() => !!currentText.value?.source_text?.id)
 
 // 計算屬性：總豆子數、已用數、剩餘數
 const totalBeans = computed(() => correctBreaks.value.size)
@@ -270,6 +273,9 @@ function selectText(text: PracticeText) {
   if (text.category_id) {
     selectedGradeId.value = text.category_id
   }
+
+  // 若來源未載入，嘗試補抓
+  ensureSourceTextLoaded(text)
 }
 
 function pickRandomText() {
@@ -342,6 +348,52 @@ function goToSourceArticle() {
   const sourceId = currentText.value?.source_text?.id
   if (!sourceId) return
   router.push({ name: 'reading-detail', params: { id: sourceId } })
+}
+
+watch(
+  () => ({
+    textId: currentText.value?.id,
+    sourceId: currentText.value?.source_text?.id,
+    sourceTitle: currentText.value?.source_text?.title,
+  }),
+  (val) => {
+    console.log('PracticePage 調試：來源按鈕狀態', { ...val, hasSourceLink: hasSourceLink.value })
+  },
+  { immediate: true }
+)
+
+// 若來源未帶回，嘗試補抓來源文章（僅最小字段）
+async function ensureSourceTextLoaded(text: PracticeText) {
+  if (!supabase) return
+  if (!text.source_text_id || text.source_text) return
+  const { data, error } = await supabase
+    .from('practice_texts')
+    .select('id, title, is_system, text_type')
+    .eq('id', text.source_text_id)
+    .maybeSingle()
+  if (error) {
+    console.warn('補抓來源文章失敗', error)
+    return
+  }
+  if (data) {
+    const updated: PracticeText = {
+      ...text,
+      source_text: {
+        id: data.id,
+        title: data.title,
+      },
+    }
+    currentText.value = updated
+    const idx = textsStore.texts.findIndex((t) => t.id === text.id)
+    if (idx !== -1) {
+      textsStore.texts[idx] = updated
+    }
+    console.log('PracticePage 調試：補抓來源文章成功', {
+      textId: updated.id,
+      sourceId: updated.source_text?.id,
+      sourceTitle: updated.source_text?.title,
+    })
+  }
 }
 
 function toggleBreak(index: number) {
@@ -866,7 +918,7 @@ onBeforeUnmount(() => {
       <div v-if="currentText" class="practice-board">
         <div class="board-header">
           <button 
-            v-if="currentText?.source_text?.id"
+            v-if="hasSourceLink"
             class="board-hint source-link-button"
             type="button"
             @click="goToSourceArticle"
