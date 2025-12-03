@@ -357,7 +357,13 @@ watch(
     sourceTitle: currentText.value?.source_text?.title,
   }),
   (val) => {
-    console.log('PracticePage 調試：來源按鈕狀態', { ...val, hasSourceLink: hasSourceLink.value })
+    console.log('PracticePage 調試：來源按鈕狀態', {
+      ...val,
+      hasSourceLink: hasSourceLink.value,
+      source_text_id: currentText.value?.source_text_id,
+      source_text_raw: currentText.value?.source_text,
+      source_text_type: Array.isArray(currentText.value?.source_text) ? 'array' : typeof currentText.value?.source_text,
+    })
   },
   { immediate: true }
 )
