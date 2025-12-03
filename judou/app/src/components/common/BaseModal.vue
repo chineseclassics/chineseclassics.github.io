@@ -326,6 +326,15 @@ defineExpose({ close })
     max-height: 90vh;
     border-radius: 1.5rem 1.5rem 0 0;
     margin-top: auto;
+    width: 100%;
+    max-width: 100%;
+  }
+  
+  /* full 尺寸在移動端也從底部彈出 */
+  .judou-modal-content.size-full {
+    max-width: 100%;
+    max-height: 90vh;
+    border-radius: 1.5rem 1.5rem 0 0;
   }
 
   .judou-modal-header {

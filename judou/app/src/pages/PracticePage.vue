@@ -1928,4 +1928,23 @@ onBeforeUnmount(() => {
   padding: 1rem;
   max-width: 100%;
 }
+
+/* 移動端優化 */
+@media (max-width: 640px) {
+  :deep(.judou-modal-body) {
+    max-height: calc(90vh - 80px);
+  }
+  
+  :deep(.reading-detail-page) {
+    padding: 0.75rem;
+  }
+  
+  :deep(.reading-header) {
+    padding: 0.75rem 1rem;
+  }
+  
+  :deep(.reading-content) {
+    padding: 1rem 0.75rem;
+  }
+}
 </style>
