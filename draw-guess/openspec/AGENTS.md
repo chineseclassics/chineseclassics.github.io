@@ -33,10 +33,14 @@ Instructions for AI coding assistants using OpenSpec for spec-driven development
 - 適合課堂教學和日常挑戰
 
 **技術棧**：
-- HTML5 + CSS3 + Vanilla JavaScript (ES Modules)
-- Supabase（數據庫、認證、實時同步）
-- HTML5 Canvas（繪畫功能）
-- GitHub Pages 部署
+- **前端框架**：Vue 3 + Vite + TypeScript
+- **狀態管理**：Pinia
+- **路由**：Vue Router
+- **樣式系統**：Tailwind CSS
+- **後端服務**：Supabase（數據庫、認證、實時同步）
+- **繪畫技術**：HTML5 Canvas
+- **構建工具**：Vite
+- **部署平台**：GitHub Pages（構建後的靜態文件）
 
 ## TL;DR Quick Checklist
 
@@ -185,9 +189,11 @@ Located in `changes/[change-id]/specs/[capability]/spec.md`:
 - **繪畫性能**：繪畫數據需要壓縮和優化
 
 ### Testing
-- **本地測試**：`python3 -m http.server 8000`
-- **實時同步測試**：多設備同時測試
-- **移動端測試**：觸摸繪畫功能
+- **開發測試**：使用 Vite 開發服務器（`npm run dev`）
+- **功能測試**：手動測試各項功能（房間創建、繪畫、猜詞、實時同步）
+- **兼容性測試**：桌面和移動端響應式測試
+- **實時同步測試**：多設備同時測試實時同步功能
+- **構建測試**：構建生產版本（`npm run build`）並測試
 
 ## Common Patterns
 

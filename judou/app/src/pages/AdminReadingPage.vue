@@ -1050,7 +1050,24 @@ async function handleGenerateAnnotations() {
       }
     })
     
-    if (error) throw error
+    // 處理錯誤：檢查是否有錯誤，或 data 中是否包含錯誤信息
+    if (error) {
+      // 嘗試從錯誤響應中提取詳細錯誤信息
+      let errorMessage = error.message || '生成註釋時發生錯誤'
+      if (data && data.error) {
+        errorMessage = data.error
+        if (data.details) {
+          errorMessage += `\n詳情：${data.details}`
+        }
+      }
+      throw new Error(errorMessage)
+    }
+    
+    // 檢查響應是否成功
+    if (!data || !data.success) {
+      const errorMsg = data?.error || '生成註釋失敗'
+      throw new Error(errorMsg)
+    }
     
     if (data.success && data.data) {
       // AI 返回的註釋不含位置，需要前端匹配
@@ -1117,14 +1134,14 @@ async function handleGenerateAnnotations() {
       } else {
         feedback.value = `未生成有效註釋（${aiAnnotations.length} 個無法匹配）`
       }
-    } else {
-      throw new Error(data.error || '生成註釋失敗')
     }
     
   } catch (err: any) {
     console.error('生成註釋失敗:', err)
     // 嘗試從錯誤中提取更詳細的信息
     let errorMessage = '生成註釋時發生錯誤'
+    
+    // 優先使用錯誤對象的 message
     if (err?.message) {
       errorMessage = err.message
     } else if (err?.error) {
@@ -1132,6 +1149,10 @@ async function handleGenerateAnnotations() {
     } else if (typeof err === 'string') {
       errorMessage = err
     }
+    
+    // 記錄完整錯誤信息到控制台（方便調試）
+    console.error('完整錯誤對象:', err)
+    
     feedback.value = errorMessage
     alert(`生成註釋失敗：${errorMessage}`)
   } finally {

@@ -2,47 +2,47 @@
 
 ## Phase 1: 項目基礎設置
 
-- [ ] 創建 Vue 項目結構
-  - [ ] 創建 `app/` 目錄
-  - [ ] 初始化 Vite + Vue 3 項目（`npm create vite@latest`）
-  - [ ] 安裝核心依賴（Vue 3, Pinia, Vue Router, TypeScript, Tailwind CSS）
-  - [ ] 安裝 UI 和工具庫（@headlessui/vue, @heroicons/vue, @vueuse/core）
-  - [ ] 安裝表單驗證庫（zod, @vee-validate/zod）
-  - [ ] 創建 `app/src/` 目錄結構（components/, views/, stores/, composables/, router/, lib/）
-  - [ ] 創建 `app/public/` 目錄
-  - [ ] 創建 `supabase/` 目錄結構
+- [x] 創建 Vue 項目結構
+  - [x] 創建 `app/` 目錄
+  - [x] 初始化 Vite + Vue 3 項目（`npm create vite@latest`）
+  - [x] 安裝核心依賴（Vue 3, Pinia, Vue Router, TypeScript, Tailwind CSS）
+  - [x] 安裝 UI 和工具庫（@headlessui/vue, @heroicons/vue, @vueuse/core）
+  - [x] 安裝表單驗證庫（zod, @vee-validate/zod）
+  - [x] 創建 `app/src/` 目錄結構（components/, views/, stores/, composables/, router/, lib/）
+  - [x] 創建 `app/public/` 目錄
+  - [x] 創建 `supabase/` 目錄結構
 
 - [ ] 配置 Supabase
-  - [ ] 創建 Supabase 項目
-  - [ ] 配置 Google OAuth
+  - [ ] 創建 Supabase 項目（需要手動在 Supabase Dashboard 創建）
+  - [ ] 配置 Google OAuth（在 Supabase Dashboard 配置）
   - [ ] 獲取 Project URL 和 Anon Key
-  - [ ] 創建 `app/src/lib/supabase.ts` 配置文件
+  - [x] 創建 `app/src/lib/supabase.ts` 配置文件（模板已創建，待填入實際配置）
 
-- [ ] 設置基礎 Vue 應用
-  - [ ] 配置 `vite.config.ts`
-  - [ ] 配置 `tailwind.config.js`
-  - [ ] 創建 `app/src/main.ts`（應用入口）
-  - [ ] 創建 `app/src/App.vue`（根組件）
-  - [ ] 配置 Vue Router
-  - [ ] 配置 Pinia
-  - [ ] 引入太虛幻境應用切換器組件
-  - [ ] 創建基礎樣式（極簡風格、低調配色）
+- [x] 設置基礎 Vue 應用
+  - [x] 配置 `vite.config.ts`
+  - [x] 配置 `tailwind.config.js`
+  - [x] 創建 `app/src/main.ts`（應用入口）
+  - [x] 創建 `app/src/App.vue`（根組件）
+  - [x] 配置 Vue Router
+  - [x] 配置 Pinia
+  - [x] 引入太虛幻境應用切換器組件
+  - [x] 創建基礎樣式（極簡風格、低調配色）
 
 ## Phase 2: 數據庫架構
 
-- [ ] 設計數據庫架構
-  - [ ] 設計 `users` 表（UUID 主鍵）
-  - [ ] 設計 `user_identities` 表（多重身份）
-  - [ ] 設計 `game_rooms` 表
-  - [ ] 設計 `room_participants` 表
-  - [ ] 設計 `game_rounds` 表
-  - [ ] 設計 `guesses` 表
+- [x] 設計數據庫架構
+  - [x] 設計 `users` 表（UUID 主鍵）
+  - [x] 設計 `user_identities` 表（多重身份）
+  - [x] 設計 `game_rooms` 表
+  - [x] 設計 `room_participants` 表
+  - [x] 設計 `game_rounds` 表
+  - [x] 設計 `guesses` 表
 
 - [ ] 實施數據庫遷移
-  - [ ] 創建遷移文件 `001_initial_schema.sql`
-  - [ ] 在 Supabase Dashboard 執行遷移
-  - [ ] 配置 RLS 策略
-  - [ ] 測試數據庫連接
+  - [x] 創建遷移文件 `001_initial_schema.sql`
+  - [ ] 在 Supabase Dashboard 執行遷移（需要先創建 Supabase 項目）
+  - [x] 配置 RLS 策略（已在遷移文件中）
+  - [ ] 測試數據庫連接（需要 Supabase 項目配置完成後）
 
 ## Phase 3: 用戶系統
 
