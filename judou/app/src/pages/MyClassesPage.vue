@@ -136,7 +136,8 @@ const allMembers = computed(() => {
     displayName: m.student?.display_name || m.student?.email?.split('@')[0] || '未知',
     status: 'active' as const,
     addedAt: m.added_at,
-    student_id: m.student_id
+    student_id: m.student_id,
+    current_avatar_id: (m.student as any)?.profiles?.current_avatar_id || null
   }))
   
   const pending = pendingStudents.value.map(p => ({
@@ -145,7 +146,8 @@ const allMembers = computed(() => {
     displayName: p.email.split('@')[0] || '未知',
     status: 'pending' as const,
     addedAt: p.added_at,
-    student_id: undefined as string | undefined
+    student_id: undefined as string | undefined,
+    current_avatar_id: null as string | null
   }))
   
   return [...active, ...pending].sort((a, b) => 
@@ -190,6 +192,8 @@ async function viewClass(cls: ClassInfo) {
     // 獲取作業統計（需要知道學生總數）
     const totalStudents = classMembers.value.length
     await assignmentStore.fetchAssignmentStats(cls.id, totalStudents)
+    // 獲取成員頭像信息
+    await fetchMemberAvatars()
   } else {
     await assignmentStore.fetchClassAssignments(cls.id)
     // 檢查每個作業的完成狀態
@@ -256,6 +260,19 @@ async function switchToProgressTab() {
   }
 }
 
+// 切換到成員標籤頁
+async function switchToMembersTab() {
+  activeTab.value = 'members'
+  if (selectedClass.value) {
+    // 確保成員數據已載入
+    if (classMembers.value.length === 0) {
+      await classStore.fetchClassMembers(selectedClass.value.id)
+    }
+    // 獲取成員頭像信息
+    await fetchMemberAvatars()
+  }
+}
+
 // 獲取學生頭像 URL
 async function fetchStudentAvatars() {
   if (!supabase || !classStore.studentProgress.length) return
@@ -273,7 +290,6 @@ async function fetchStudentAvatars() {
       .in('id', avatarIds)
 
     if (avatars) {
-      avatarUrlMap.value.clear()
       avatars.forEach(avatar => {
         // 頭像路徑：/images/avatars/{filename}
         const avatarUrl = `${import.meta.env.BASE_URL}images/avatars/${avatar.filename}`
@@ -285,10 +301,44 @@ async function fetchStudentAvatars() {
   }
 }
 
+// 獲取成員頭像 URL
+async function fetchMemberAvatars() {
+  if (!supabase || !allMembers.value.length) return
+
+  const avatarIds = allMembers.value
+    .map(m => m.current_avatar_id)
+    .filter((id): id is string => id !== null && id !== undefined)
+
+  if (avatarIds.length === 0) return
+
+  try {
+    const { data: avatars } = await supabase
+      .from('avatars')
+      .select('id, filename')
+      .in('id', avatarIds)
+
+    if (avatars) {
+      avatars.forEach(avatar => {
+        // 頭像路徑：/images/avatars/{filename}
+        const avatarUrl = `${import.meta.env.BASE_URL}images/avatars/${avatar.filename}`
+        avatarUrlMap.value.set(avatar.id, avatarUrl)
+      })
+    }
+  } catch (e) {
+    console.error('獲取成員頭像失敗:', e)
+  }
+}
+
 // 獲取學生頭像 URL
 function getStudentAvatarUrl(student: any): string | null {
   if (!student.current_avatar_id) return null
   return avatarUrlMap.value.get(student.current_avatar_id) || null
+}
+
+// 獲取成員頭像 URL
+function getMemberAvatarUrl(member: any): string | null {
+  if (!member.current_avatar_id || member.status === 'pending') return null
+  return avatarUrlMap.value.get(member.current_avatar_id) || null
 }
 
 // 批量添加學生
@@ -561,7 +611,7 @@ onMounted(async () => {
         <button 
           class="tab-btn" 
           :class="{ active: activeTab === 'members' }"
-          @click="activeTab = 'members'"
+          @click="switchToMembersTab()"
         >
           成員
         </button>
@@ -601,9 +651,12 @@ onMounted(async () => {
             class="member-card edamame-glass"
           >
             <div class="member-info">
-              <div class="member-avatar" :class="{ pending: member.status === 'pending' }">
-                {{ (member.displayName || '?').charAt(0).toUpperCase() }}
-              </div>
+              <UserAvatar 
+                :size="40" 
+                :src="getMemberAvatarUrl(member)"
+                :alt="member.displayName"
+                :class="{ pending: member.status === 'pending' }"
+              />
               <div class="member-details">
                 <p class="member-name">{{ member.displayName || '未知' }}</p>
                 <p class="member-email">{{ member.email }}</p>
@@ -1326,9 +1379,9 @@ onMounted(async () => {
   color: #a16207;
 }
 
-.member-avatar.pending {
+.user-avatar.pending {
   background: var(--color-neutral-200);
-  color: var(--color-neutral-500);
+  opacity: 0.6;
 }
 
 .remove-btn {

@@ -182,7 +182,8 @@ export const useClassStore = defineStore('class', () => {
     error.value = null
 
     try {
-      const { data, error: fetchError } = await supabase
+      // 先獲取班級成員
+      const { data: members, error: membersError } = await supabase
         .from('class_members')
         .select(`
           *,
@@ -196,12 +197,44 @@ export const useClassStore = defineStore('class', () => {
         .eq('class_id', classId)
         .order('added_at', { ascending: false })
 
-      if (fetchError) {
-        error.value = fetchError.message
+      if (membersError) {
+        error.value = membersError.message
         return
       }
 
-      classMembers.value = data || []
+      if (!members || members.length === 0) {
+        classMembers.value = []
+        return
+      }
+
+      // 獲取學生的 profiles 信息（包括 current_avatar_id）
+      const studentIds = members.map(m => m.student_id).filter((id): id is string => id !== null)
+      
+      let profilesMap = new Map<string, { current_avatar_id: string | null }>()
+      if (studentIds.length > 0) {
+        const { data: profiles, error: profilesError } = await supabase
+          .from('profiles')
+          .select('id, current_avatar_id')
+          .in('id', studentIds)
+
+        if (!profilesError && profiles) {
+          profiles.forEach(profile => {
+            profilesMap.set(profile.id, { current_avatar_id: profile.current_avatar_id })
+          })
+        }
+      }
+
+      // 合併數據，將 profiles 信息添加到 student 對象中
+      classMembers.value = members.map(member => {
+        const profile = profilesMap.get(member.student_id)
+        return {
+          ...member,
+          student: member.student ? {
+            ...member.student,
+            profiles: profile ? { current_avatar_id: profile.current_avatar_id } : null
+          } : null
+        }
+      })
     } catch (e) {
       error.value = (e as Error).message
     } finally {
