@@ -5,8 +5,10 @@
  * 顯示用戶頭像和登入/登出按鈕
  */
 import { computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/authStore'
 
+const router = useRouter()
 const authStore = useAuthStore()
 
 // 計算屬性
@@ -22,6 +24,8 @@ async function handleLogin() {
 
 async function handleLogout() {
   await authStore.logout()
+  // 跳轉到登入頁面
+  router.push({ name: 'login' })
 }
 </script>
 

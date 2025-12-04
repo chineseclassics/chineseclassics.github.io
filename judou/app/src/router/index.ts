@@ -1,6 +1,16 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 
 const routes: RouteRecordRaw[] = [
+  // 登入頁面（不需要認證）
+  {
+    path: '/login',
+    name: 'login',
+    component: () => import('../pages/LoginPage.vue'),
+    meta: {
+      title: '句豆 - 登入',
+      requiresAuth: false,
+    },
+  },
   {
     path: '/',
     component: () => import('../components/layout/AppLayout.vue'),
@@ -11,6 +21,7 @@ const routes: RouteRecordRaw[] = [
         component: () => import('../pages/HomePage.vue'),
         meta: {
           title: '句豆 - 主頁',
+          requiresAuth: true,
         },
       },
       {
@@ -198,6 +209,44 @@ const router = createRouter({
 router.afterEach((to) => {
   if (to.meta?.title) {
     document.title = to.meta.title as string
+  }
+})
+
+// 路由守衛 - 檢查認證狀態
+router.beforeEach(async (to, _from, next) => {
+  // 動態導入 authStore（避免循環依賴）
+  const { useAuthStore } = await import('../stores/authStore')
+  const authStore = useAuthStore()
+  
+  // 如果認證還在初始化中，等待完成
+  if (authStore.loading && !authStore.initialized) {
+    await authStore.init()
+  }
+  
+  // 檢查路由是否需要認證
+  const requiresAuth = to.meta?.requiresAuth !== false // 默認需要認證
+  
+  // 如果路由不需要認證（如登入頁），直接通過
+  if (!requiresAuth) {
+    // 如果已經登入，跳轉到首頁
+    if (authStore.isAuthenticated && to.name === 'login') {
+      next({ name: 'home' })
+      return
+    }
+    next()
+    return
+  }
+  
+  // 需要認證的路由
+  if (!authStore.isAuthenticated) {
+    // 保存目標路由，登入後跳轉回來
+    const redirectPath = to.fullPath !== '/judou/' ? to.fullPath : undefined
+    next({ 
+      name: 'login',
+      query: redirectPath ? { redirect: redirectPath } : undefined
+    })
+  } else {
+    next()
   }
 })
 

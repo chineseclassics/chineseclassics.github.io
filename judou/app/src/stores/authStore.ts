@@ -26,6 +26,10 @@ export interface UserProfile {
   is_super_admin: boolean
 }
 
+export type AuthResult = 
+  | { success: true; needsEmailConfirmation?: boolean; message?: string }
+  | { success: false; error: string }
+
 export const useAuthStore = defineStore('auth', () => {
   // 狀態
   const user = ref<User | null>(null)
@@ -168,6 +172,81 @@ export const useAuthStore = defineStore('auth', () => {
     return true
   }
 
+  // Email 註冊
+  async function signUpWithEmail(email: string, password: string, displayName?: string): Promise<AuthResult> {
+    if (!supabase) {
+      error.value = 'Supabase 未初始化'
+      return { success: false, error: error.value }
+    }
+
+    error.value = null
+
+    try {
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: displayName || email.split('@')[0]
+          },
+          emailRedirectTo: AUTH_CONFIG.redirectTo
+        }
+      })
+
+      if (signUpError) {
+        error.value = signUpError.message
+        return { success: false, error: signUpError.message }
+      }
+
+      // 如果用戶已經確認，立即同步到數據庫
+      if (data.user && data.session) {
+        await syncUser(data.user)
+      }
+
+      return { 
+        success: true, 
+        needsEmailConfirmation: !data.session,
+        message: data.session ? '註冊成功' : '請檢查您的郵箱以確認註冊'
+      }
+    } catch (e) {
+      const errorMessage = (e as Error).message
+      error.value = errorMessage
+      return { success: false, error: errorMessage }
+    }
+  }
+
+  // Email 登入
+  async function signInWithEmail(email: string, password: string): Promise<AuthResult> {
+    if (!supabase) {
+      error.value = 'Supabase 未初始化'
+      return { success: false, error: error.value }
+    }
+
+    error.value = null
+
+    try {
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      })
+
+      if (signInError) {
+        error.value = signInError.message
+        return { success: false, error: signInError.message }
+      }
+
+      if (data.user) {
+        await syncUser(data.user)
+      }
+
+      return { success: true, message: '登入成功' }
+    } catch (e) {
+      const errorMessage = (e as Error).message
+      error.value = errorMessage
+      return { success: false, error: errorMessage }
+    }
+  }
+
   // 登出
   async function logout() {
     if (!supabase) return false
@@ -304,6 +383,8 @@ export const useAuthStore = defineStore('auth', () => {
     // 方法
     init,
     loginWithGoogle,
+    signUpWithEmail,
+    signInWithEmail,
     logout,
     fetchUserProfile
   }

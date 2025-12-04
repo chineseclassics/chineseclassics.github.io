@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/authStore'
 import { useUserStatsStore } from '../stores/userStatsStore'
 import { useAvatarStore } from '../stores/avatarStore'
@@ -7,6 +8,7 @@ import { getRankTitle } from '../types/game'
 import AvatarSelector from '../components/avatar/AvatarSelector.vue'
 import BeanIcon from '../components/common/BeanIcon.vue'
 
+const router = useRouter()
 const authStore = useAuthStore()
 const userStatsStore = useUserStatsStore()
 const avatarStore = useAvatarStore()
@@ -33,6 +35,8 @@ async function handleLogout() {
   await authStore.logout()
   userStatsStore.reset()
   avatarStore.reset()
+  // 跳轉到登入頁面
+  router.push({ name: 'login' })
 }
 
 onMounted(async () => {
