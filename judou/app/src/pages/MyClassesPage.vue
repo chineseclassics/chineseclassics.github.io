@@ -5,16 +5,23 @@ import { useClassStore, type ClassInfo } from '../stores/classStore'
 import { useAssignmentStore } from '../stores/assignmentStore'
 import { useTextsStore } from '../stores/textsStore'
 import { usePracticeLibraryStore } from '../stores/practiceLibraryStore'
+import { useAvatarStore } from '../stores/avatarStore'
 import { storeToRefs } from 'pinia'
 import { useRouter } from 'vue-router'
 import BeanIcon from '../components/common/BeanIcon.vue'
+import UserAvatar from '../components/avatar/UserAvatar.vue'
+import { supabase } from '../lib/supabaseClient'
 
 const authStore = useAuthStore()
 const classStore = useClassStore()
 const assignmentStore = useAssignmentStore()
 const textsStore = useTextsStore()
 const libraryStore = usePracticeLibraryStore()
+const avatarStore = useAvatarStore()
 const router = useRouter()
+
+// 頭像 URL 映射（用於顯示學生頭像）
+const avatarUrlMap = ref<Map<string, string>>(new Map())
 
 const { classes, classMembers, pendingStudents, studentProgress, loading } = storeToRefs(classStore)
 const { assignments, completions, loading: assignmentsLoading } = storeToRefs(assignmentStore)
@@ -244,7 +251,44 @@ async function switchToProgressTab() {
   activeTab.value = 'progress'
   if (selectedClass.value) {
     await classStore.fetchStudentProgress(selectedClass.value.id)
+    // 獲取學生頭像信息
+    await fetchStudentAvatars()
   }
+}
+
+// 獲取學生頭像 URL
+async function fetchStudentAvatars() {
+  if (!supabase || !classStore.studentProgress.length) return
+
+  const avatarIds = classStore.studentProgress
+    .map(s => s.current_avatar_id)
+    .filter((id): id is string => id !== null)
+
+  if (avatarIds.length === 0) return
+
+  try {
+    const { data: avatars } = await supabase
+      .from('avatars')
+      .select('id, filename')
+      .in('id', avatarIds)
+
+    if (avatars) {
+      avatarUrlMap.value.clear()
+      avatars.forEach(avatar => {
+        // 頭像路徑：/images/avatars/{filename}
+        const avatarUrl = `${import.meta.env.BASE_URL}images/avatars/${avatar.filename}`
+        avatarUrlMap.value.set(avatar.id, avatarUrl)
+      })
+    }
+  } catch (e) {
+    console.error('獲取學生頭像失敗:', e)
+  }
+}
+
+// 獲取學生頭像 URL
+function getStudentAvatarUrl(student: any): string | null {
+  if (!student.current_avatar_id) return null
+  return avatarUrlMap.value.get(student.current_avatar_id) || null
 }
 
 // 批量添加學生
@@ -358,6 +402,9 @@ function startAssignment(assignment: any) {
 
 onMounted(async () => {
   if (authStore.isAuthenticated) {
+    // 初始化頭像系統（用於顯示學生頭像）
+    await avatarStore.fetchAvatars()
+    
     // 老師需要載入文章列表和分類（用於布置作業）
     if (authStore.isTeacher) {
       await Promise.all([
@@ -664,11 +711,12 @@ onMounted(async () => {
           <div class="progress-header">
             <span class="col-rank">#</span>
             <span class="col-student">學生</span>
-            <span class="col-level">等級</span>
             <span class="col-beans"><BeanIcon :size="14" /> 句豆</span>
-            <span class="col-exp">經驗</span>
-            <span class="col-practice">練習次數</span>
-            <span class="col-accuracy">正確率</span>
+            <span class="col-practice">總練習</span>
+            <span class="col-weekly-practice">本週練習</span>
+            <span class="col-unique-texts">不同文章</span>
+            <span class="col-accuracy">平均正確率</span>
+            <span class="col-last-practice">最近練習</span>
             <span class="col-streak">連續天數</span>
           </div>
           <div 
@@ -683,24 +731,38 @@ onMounted(async () => {
               <span v-else class="rank-number">{{ index + 1 }}</span>
             </span>
             <span class="col-student">
-              <div class="student-avatar">
-                {{ (student.display_name || '?').charAt(0).toUpperCase() }}
-              </div>
+              <UserAvatar 
+                :size="40" 
+                :src="getStudentAvatarUrl(student)"
+                :alt="student.display_name"
+              />
               <div class="student-info">
-                <span class="student-name">{{ student.display_name }}</span>
+                <div class="student-name-row">
+                  <span class="student-name">{{ student.display_name }}</span>
+                  <span class="level-badge-inline">Lv.{{ student.level }}</span>
+                </div>
                 <span class="student-email">{{ student.email }}</span>
               </div>
             </span>
-            <span class="col-level">
-              <span class="level-badge">Lv.{{ student.level }}</span>
-            </span>
             <span class="col-beans">{{ student.beans }}</span>
-            <span class="col-exp">{{ student.total_exp }}</span>
             <span class="col-practice">{{ student.total_practices }}</span>
+            <span class="col-weekly-practice">
+              <span v-if="student.weekly_practices > 0" class="weekly-badge active">
+                {{ student.weekly_practices }}
+              </span>
+              <span v-else class="weekly-badge inactive">0</span>
+            </span>
+            <span class="col-unique-texts">{{ student.unique_texts_practiced }}</span>
             <span class="col-accuracy">
-              {{ student.total_practices > 0 
-                ? Math.round((student.correct_count / student.total_practices) * 100) 
-                : 0 }}%
+              {{ student.average_accuracy }}%
+            </span>
+            <span class="col-last-practice">
+              <span v-if="student.last_practice_days_ago === null" class="never-practiced">從未練習</span>
+              <span v-else-if="student.last_practice_days_ago === 0" class="today-practiced">今天</span>
+              <span v-else-if="student.last_practice_days_ago === 1" class="recent-practiced">昨天</span>
+              <span v-else-if="student.last_practice_days_ago <= 7" class="recent-practiced">{{ student.last_practice_days_ago }}天前</span>
+              <span v-else-if="student.last_practice_days_ago <= 30" class="old-practiced">{{ student.last_practice_days_ago }}天前</span>
+              <span v-else class="very-old-practiced">{{ student.last_practice_days_ago }}天前</span>
             </span>
             <span class="col-streak">
               <span v-if="student.streak_days > 0" class="streak-badge">
@@ -1457,7 +1519,7 @@ onMounted(async () => {
 
 .progress-header {
   display: grid;
-  grid-template-columns: 50px 2fr 80px 100px 100px 100px 100px 100px;
+  grid-template-columns: 50px 2fr 100px 80px 80px 80px 100px 120px 100px;
   gap: 0.5rem;
   padding: 0.75rem 1rem;
   font-weight: 500;
@@ -1468,7 +1530,7 @@ onMounted(async () => {
 
 .progress-row {
   display: grid;
-  grid-template-columns: 50px 2fr 80px 100px 100px 100px 100px 100px;
+  grid-template-columns: 50px 2fr 100px 80px 80px 80px 100px 120px 100px;
   gap: 0.5rem;
   padding: 1rem;
   align-items: center;
@@ -1494,23 +1556,17 @@ onMounted(async () => {
   gap: 0.75rem;
 }
 
-.student-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: var(--radius-full);
-  background: var(--color-primary-200);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 600;
-  color: var(--color-primary-700);
-  flex-shrink: 0;
-}
-
 .student-info {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  gap: 0.25rem;
+}
+
+.student-name-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .student-name {
@@ -1518,6 +1574,16 @@ onMounted(async () => {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.level-badge-inline {
+  background: linear-gradient(135deg, var(--color-primary-500), var(--color-primary-600));
+  color: white;
+  padding: 0.125rem 0.5rem;
+  border-radius: var(--radius-md);
+  font-size: 0.75rem;
+  font-weight: 600;
+  flex-shrink: 0;
 }
 
 .student-email {
@@ -1538,15 +1604,58 @@ onMounted(async () => {
 }
 
 .col-beans,
-.col-exp,
 .col-practice,
-.col-accuracy {
+.col-weekly-practice,
+.col-unique-texts,
+.col-accuracy,
+.col-last-practice {
   text-align: center;
   font-weight: 500;
+  font-size: 0.875rem;
+}
+
+.weekly-badge {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+}
+
+.weekly-badge.active {
+  background: rgba(34, 197, 94, 0.15);
+  color: #15803d;
+}
+
+.weekly-badge.inactive {
+  background: var(--color-neutral-100);
+  color: var(--color-neutral-400);
 }
 
 .col-streak {
   text-align: center;
+}
+
+.never-practiced {
+  color: var(--color-neutral-400);
+  font-style: italic;
+}
+
+.today-practiced {
+  color: #22c55e;
+  font-weight: 600;
+}
+
+.recent-practiced {
+  color: #3b82f6;
+}
+
+.old-practiced {
+  color: #f59e0b;
+}
+
+.very-old-practiced {
+  color: #ef4444;
+  font-weight: 600;
 }
 
 .streak-badge {
@@ -1939,7 +2048,7 @@ onMounted(async () => {
 @media (max-width: 1024px) {
   .progress-header,
   .progress-row {
-    grid-template-columns: 40px 1.5fr 60px 80px 80px 80px 80px 80px;
+    grid-template-columns: 40px 1.5fr 80px 70px 70px 70px 80px 100px 80px;
     font-size: 0.75rem;
   }
 }
@@ -1964,14 +2073,12 @@ onMounted(async () => {
     flex: 1;
   }
   
-  .col-level {
-    order: 3;
-  }
-  
   .col-beans,
-  .col-exp,
   .col-practice,
+  .col-weekly-practice,
+  .col-unique-texts,
   .col-accuracy,
+  .col-last-practice,
   .col-streak {
     width: auto;
     text-align: left;

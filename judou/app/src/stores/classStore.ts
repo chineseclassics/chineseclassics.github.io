@@ -54,13 +54,18 @@ export interface StudentProgress {
   display_name: string
   email: string
   avatar_url: string | null
+  current_avatar_id: string | null  // 當前使用的頭像 ID
   beans: number
   total_exp: number
   total_practices: number
+  weekly_practices: number  // 最近一週練習次數
+  unique_texts_practiced: number  // 練習過的不同文章數
   correct_count: number
   streak_days: number
   last_practice_at: string | null
   level: number
+  average_accuracy: number  // 平均正確率（0-100）
+  last_practice_days_ago: number | null  // 距離上次練習的天數（null 表示從未練習）
 }
 
 export const useClassStore = defineStore('class', () => {
@@ -462,6 +467,7 @@ export const useClassStore = defineStore('class', () => {
 
   /**
    * 獲取班級學生的學習進度數據
+   * 從 profiles 和 practice_records 表聚合數據（不再使用空的 user_stats 表）
    */
   async function fetchStudentProgress(classId: string): Promise<void> {
     if (!supabase || !authStore.isTeacher) return
@@ -489,27 +495,208 @@ export const useClassStore = defineStore('class', () => {
         .select('id, display_name, email, avatar_url')
         .in('id', studentIds)
 
-      // 獲取學生統計數據
-      const { data: stats } = await supabase
-        .from('user_stats')
-        .select('user_id, beans, total_exp, total_practices, correct_count, streak_days, last_practice_at')
+      if (!users || users.length === 0) {
+        studentProgress.value = []
+        return
+      }
+
+      // 從 profiles 表獲取豆子、連續天數、頭像等數據
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, total_beans, streak_days, last_practice_date, current_avatar_id')
+        .in('id', studentIds)
+
+      // 計算一週前的時間戳（先計算，用於查詢和過濾）
+      const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+
+      // 從 practice_records 表聚合練習統計數據（一次性查詢所有學生）
+      const { data: allPracticeRecords, error: practiceError } = await supabase
+        .from('practice_records')
+        .select('user_id, correct_breaks, created_at, accuracy, text_id')
         .in('user_id', studentIds)
 
+      if (practiceError) {
+        console.error('獲取練習記錄失敗:', practiceError)
+      }
+
+      // 從 game_participants 表獲取遊戲正確率（已完成遊戲）
+      const { data: allGameParticipants } = await supabase
+        .from('game_participants')
+        .select('user_id, accuracy')
+        .in('user_id', studentIds)
+        .eq('status', 'completed')
+        .not('accuracy', 'is', null)
+
+      // 構建練習統計映射
+      const practiceStatsMap = new Map<string, {
+        total_practices: number
+        weekly_practices: number
+        unique_texts_practiced: number
+        correct_count: number
+        last_practice_at: string | null
+      }>()
+
+      // 初始化所有學生的統計（確保沒有練習記錄的學生也有數據）
+      studentIds.forEach(userId => {
+        practiceStatsMap.set(userId, {
+          total_practices: 0,
+          weekly_practices: 0,
+          unique_texts_practiced: 0,
+          correct_count: 0,
+          last_practice_at: null
+        })
+      })
+
+      // 過濾掉沒有 user_id 的記錄
+      const validPracticeRecords = (allPracticeRecords || []).filter(record => 
+        record.user_id && studentIds.includes(record.user_id)
+      )
+
+      // 聚合練習記錄數據
+      if (validPracticeRecords.length > 0) {
+        // 按用戶分組
+        const recordsByUser = new Map<string, typeof validPracticeRecords>()
+        validPracticeRecords.forEach(record => {
+          if (!record.user_id) return
+          if (!recordsByUser.has(record.user_id)) {
+            recordsByUser.set(record.user_id, [])
+          }
+          recordsByUser.get(record.user_id)!.push(record)
+        })
+
+        // 計算每個學生的統計
+        recordsByUser.forEach((records, userId) => {
+          const total_practices = records.length
+          const correct_count = records.reduce((sum, record) => sum + (record.correct_breaks || 0), 0)
+          
+          // 計算最近一週的練習次數
+          const weekAgoTimestamp = new Date(oneWeekAgo).getTime()
+          const weekly_practices = records.filter(record => {
+            if (!record.created_at) return false
+            try {
+              return new Date(record.created_at).getTime() >= weekAgoTimestamp
+            } catch {
+              return false
+            }
+          }).length
+          
+          // 計算練習過的不同文章數
+          const uniqueTextIds = new Set<string>()
+          records.forEach(record => {
+            if (record.text_id) {
+              const textId = String(record.text_id).trim()
+              if (textId) {
+                uniqueTextIds.add(textId)
+              }
+            }
+          })
+          const unique_texts_practiced = uniqueTextIds.size
+          
+          // 找到最新的練習時間
+          const sortedRecords = [...records].sort((a, b) => 
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+          )
+          const last_practice_at = sortedRecords[0]?.created_at || null
+
+          practiceStatsMap.set(userId, {
+            total_practices,
+            weekly_practices,
+            unique_texts_practiced,
+            correct_count,
+            last_practice_at
+          })
+        })
+      }
+
+      // 計算平均正確率（從 practice_records 和 game_participants）
+      const accuracyMap = new Map<string, number>()
+      
+      // 初始化所有學生的正確率
+      studentIds.forEach(userId => {
+        accuracyMap.set(userId, 0)
+      })
+
+      // 從練習記錄計算正確率
+      if (allPracticeRecords) {
+        const practiceAccuracyByUser = new Map<string, number[]>()
+        allPracticeRecords.forEach(record => {
+          if (!record.user_id || record.accuracy === null) return
+          if (!practiceAccuracyByUser.has(record.user_id)) {
+            practiceAccuracyByUser.set(record.user_id, [])
+          }
+          // practice_records 的 accuracy 是 0-1 之間的小數，轉換為百分比
+          practiceAccuracyByUser.get(record.user_id)!.push(Number(record.accuracy) * 100)
+        })
+
+        // 從遊戲記錄計算正確率
+        const gameAccuracyByUser = new Map<string, number[]>()
+        if (allGameParticipants) {
+          allGameParticipants.forEach(participant => {
+            if (!participant.user_id || participant.accuracy === null) return
+            if (!gameAccuracyByUser.has(participant.user_id)) {
+              gameAccuracyByUser.set(participant.user_id, [])
+            }
+            // game_participants 的 accuracy 已經是百分比
+            gameAccuracyByUser.get(participant.user_id)!.push(Number(participant.accuracy))
+          })
+        }
+
+        // 合併所有正確率並計算平均值
+        studentIds.forEach(userId => {
+          const practiceAccuracies = practiceAccuracyByUser.get(userId) || []
+          const gameAccuracies = gameAccuracyByUser.get(userId) || []
+          const allAccuracies = [...practiceAccuracies, ...gameAccuracies]
+
+          if (allAccuracies.length > 0) {
+            const average = allAccuracies.reduce((sum, acc) => sum + acc, 0) / allAccuracies.length
+            accuracyMap.set(userId, Math.round(average))
+          }
+        })
+      }
+
       // 合併數據
-      const progressList: StudentProgress[] = (users || []).map(user => {
-        const userStats = stats?.find(s => s.user_id === user.id)
+      const progressList: StudentProgress[] = users.map(user => {
+        const profile = profiles?.find(p => p.id === user.id)
+        const practiceStats = practiceStatsMap.get(user.id) || {
+          total_practices: 0,
+          weekly_practices: 0,
+          unique_texts_practiced: 0,
+          correct_count: 0,
+          last_practice_at: null
+        }
+        const average_accuracy = accuracyMap.get(user.id) || 0
+
+        // 豆子數作為經驗值（因為系統中經驗值實際上就是豆子數）
+        const total_exp = profile?.total_beans || 0
+
+        // 計算距離上次練習的天數
+        const lastPracticeAt = practiceStats.last_practice_at || (profile?.last_practice_date ? new Date(profile.last_practice_date).toISOString() : null)
+        let lastPracticeDaysAgo: number | null = null
+        if (lastPracticeAt) {
+          const daysDiff = Math.floor((Date.now() - new Date(lastPracticeAt).getTime()) / (1000 * 60 * 60 * 24))
+          lastPracticeDaysAgo = daysDiff
+        } else if (practiceStats.total_practices === 0) {
+          // 從未練習過
+          lastPracticeDaysAgo = null
+        }
+
         return {
           student_id: user.id,
           display_name: user.display_name || user.email?.split('@')[0] || '未知',
           email: user.email || '',
           avatar_url: user.avatar_url,
-          beans: userStats?.beans || 0,
-          total_exp: userStats?.total_exp || 0,
-          total_practices: userStats?.total_practices || 0,
-          correct_count: userStats?.correct_count || 0,
-          streak_days: userStats?.streak_days || 0,
-          last_practice_at: userStats?.last_practice_at || null,
-          level: calculateLevel(userStats?.total_exp || 0)
+          current_avatar_id: profile?.current_avatar_id || null,
+          beans: profile?.total_beans || 0,
+          total_exp: total_exp,
+          total_practices: practiceStats.total_practices,
+          weekly_practices: practiceStats.weekly_practices,
+          unique_texts_practiced: practiceStats.unique_texts_practiced,
+          correct_count: practiceStats.correct_count,
+          streak_days: profile?.streak_days || 0,
+          last_practice_at: lastPracticeAt,
+          level: calculateLevel(total_exp),
+          average_accuracy: average_accuracy,
+          last_practice_days_ago: lastPracticeDaysAgo
         }
       })
 
