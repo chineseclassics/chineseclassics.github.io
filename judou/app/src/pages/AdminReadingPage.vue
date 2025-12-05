@@ -84,6 +84,10 @@ interface AIAnnotation {
 }
 
 // 利用上下文匹配註釋位置（按順序匹配，利用前一個註釋的位置）
+// 修復：正確處理代理對字符（如"𦬼"），確保位置計算與 PostgreSQL 一致
+// 問題：JavaScript 的 indexOf 對於代理對字符，返回的是字符索引（代理對佔 2 個索引位置）
+// 但 PostgreSQL 的 position 函數返回的是實際字符位置（代理對只佔 1 個位置）
+// 解決方案：使用 Array.from 將字符串轉換為字符數組，正確處理代理對
 function matchAnnotationsWithContext(
   aiAnnotations: AIAnnotation[],
   pureContent: string
@@ -102,34 +106,71 @@ function matchAnnotationsWithContext(
     pinyin?: string | null
   }> = []
   
-  let searchStart = 0  // 從這裡開始搜索
+  // 構建一個映射：從 JavaScript 字符串索引到實際字符位置的映射
+  // 對於代理對字符，高代理和低代理在 JavaScript 中佔 2 個索引位置
+  // 但在實際字符位置中，代理對只佔 1 個位置
+  let actualCharPos = 0
+  const jsIndexToCharPos = new Map<number, number>()
+  
+  for (let jsIndex = 0; jsIndex < pureContent.length; jsIndex++) {
+    const code = pureContent.charCodeAt(jsIndex)
+    // 檢查是否是代理對的低代理（0xDC00-0xDFFF）
+    // 如果是低代理，說明前一個位置是代理對的高代理，已經計數過了
+    if (code >= 0xDC00 && code <= 0xDFFF) {
+      // 這是代理對的低代理，使用前一個字符的位置
+      jsIndexToCharPos.set(jsIndex, actualCharPos - 1)
+    } else {
+      // 普通字符或代理對的高代理，計數
+      jsIndexToCharPos.set(jsIndex, actualCharPos)
+      actualCharPos++
+    }
+  }
+  
+  // 輔助函數：將 JavaScript 字符串索引轉換為實際字符位置
+  function getCharPosition(jsIndex: number): number {
+    return jsIndexToCharPos.get(jsIndex) ?? jsIndex
+  }
+  
+  // 輔助函數：計算字符串的實際字符長度（代理對只佔 1 個位置）
+  function getActualLength(str: string): number {
+    return Array.from(str).length
+  }
+  
+  let searchStart = 0  // JavaScript 字符串索引（用於 indexOf）
   
   for (const ann of aiAnnotations) {
-    // 從 searchStart 開始搜索 term
-    const index = pureContent.indexOf(ann.term, searchStart)
+    // 使用 JavaScript 的 indexOf 搜索（返回 JavaScript 索引）
+    const jsIndex = pureContent.indexOf(ann.term, searchStart)
     
-    if (index === -1) {
+    if (jsIndex === -1) {
       // 找不到匹配，跳過
       console.warn(`⚠️ 無法找到註釋 "${ann.term}" 在原文中的位置，跳過`)
       continue
     }
     
+    // 將 JavaScript 索引轉換為實際字符位置（與 PostgreSQL 一致）
+    const startIndex = getCharPosition(jsIndex)
+    
+    // 計算 term 的實際字符長度（代理對只佔 1 個位置）
+    const termLength = getActualLength(ann.term)
+    const endIndex = startIndex + termLength
+    
     // 驗證是否與前一個註釋重疊
     if (matched.length > 0) {
       const lastMatch = matched[matched.length - 1]
-      if (lastMatch && index < lastMatch.end_index) {
+      if (lastMatch && startIndex < lastMatch.end_index) {
         console.warn(`⚠️ 註釋 "${ann.term}" 與前一個註釋 "${lastMatch.term}" 重疊，跳過`)
         continue
       }
     }
     
-    // 更新 searchStart 為這個位置之後（確保下一個註釋在當前之後）
-    searchStart = index + ann.term.length
+    // 更新 searchStart：使用 JavaScript 索引（需要跳過整個 term，包括代理對的 2 個索引位置）
+    searchStart = jsIndex + ann.term.length  // ann.term.length 對於包含代理對的字符串返回正確的 JavaScript 索引長度
     
     matched.push({
       term: ann.term,
-      start_index: index,
-      end_index: index + ann.term.length,
+      start_index: startIndex,
+      end_index: endIndex,
       annotation: ann.annotation,
       pinyin: ann.pinyin || null
     })
