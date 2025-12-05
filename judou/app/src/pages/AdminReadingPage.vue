@@ -999,7 +999,7 @@ async function handleAddAnnotation() {
   }
 }
 
-// AI 生成註釋
+// AI 生成註釋（整篇文章）
 async function handleGenerateAnnotations() {
   if (!selectedText.value) {
     feedback.value = '請先選擇一篇文章'
@@ -1124,6 +1124,155 @@ async function handleGenerateAnnotations() {
   } catch (err: any) {
     console.error('生成註釋失敗:', err)
     // 嘗試從錯誤中提取更詳細的信息
+    let errorMessage = '生成註釋時發生錯誤'
+    if (err?.message) {
+      errorMessage = err.message
+    } else if (err?.error) {
+      errorMessage = err.error
+    } else if (typeof err === 'string') {
+      errorMessage = err
+    }
+    feedback.value = errorMessage
+    alert(`生成註釋失敗：${errorMessage}`)
+  } finally {
+    isGeneratingAnnotations.value = false
+  }
+}
+
+// AI 生成註釋（選中片段）
+async function handleGenerateAnnotationsForSelection() {
+  if (!selectedText.value || !selectionActions.text) {
+    feedback.value = '請先選取要生成註釋的文字'
+    return
+  }
+  
+  try {
+    isGeneratingAnnotations.value = true
+    feedback.value = null
+    hideSelectionActions()  // 關閉選中工具欄
+    
+    const originalContent = selectedText.value.content
+    const selectionStart = selectionActions.startIndex
+    const selectionEnd = selectionActions.endIndex
+    
+    // 1. 從原文中提取選中片段（保留斷句符號）
+    // 參考 handleExtract 的邏輯，確保斷句符號正確保留
+    let fragmentContent = ''  // 帶斷句符的片段內容（給 AI）
+    let fragmentPureContent = ''  // 純文字片段（用於位置匹配）
+    let pureIdx = 0
+    
+    for (let i = 0; i < originalContent.length; i++) {
+      const char = originalContent[i]
+      if (char === '|') {
+        // 斷句符號：如果下一個字符在選中範圍內，保留這個斷句符
+        // 使用 > startIndex 和 <= endIndex 的邏輯，與 handleExtract 保持一致
+        if (pureIdx > selectionStart && pureIdx <= selectionEnd) {
+          fragmentContent += char
+        }
+      } else if (char !== '\n' && char !== '\r') {
+        // 普通字符：如果在選中範圍內，加入兩個版本
+        if (pureIdx >= selectionStart && pureIdx < selectionEnd) {
+          fragmentContent += char
+          fragmentPureContent += char
+        }
+        pureIdx++
+      } else {
+        // 換行符：如果在選中範圍內，只加入給 AI 的版本（保留上下文）
+        if (pureIdx >= selectionStart && pureIdx < selectionEnd) {
+          fragmentContent += char
+        }
+      }
+    }
+    
+    // 2. 調用 Edge Function（傳入選中片段，包含標題和作者作為上下文）
+    const supabase = useSupabase()
+    const { data, error } = await supabase.functions.invoke('generate-annotations', {
+      body: {
+        content: fragmentContent,  // 傳入帶斷句符的片段內容
+        title: selectedText.value.title,  // 傳入標題作為上下文
+        author: selectedText.value.author  // 傳入作者作為上下文
+      }
+    })
+    
+    if (error) throw error
+    
+    if (data.success && data.data) {
+      // 3. AI 返回的註釋位置是相對於片段的，需要轉換為整篇文章的絕對位置
+      const aiAnnotations: AIAnnotation[] = data.data
+      
+      // 在片段純文字中匹配位置
+      const matched = matchAnnotationsWithContext(aiAnnotations, fragmentPureContent)
+      
+      // 4. 將片段內的位置轉換為整篇文章的絕對位置
+      // 關鍵：加上 selectionStart 偏移量
+      const absoluteMatched = matched.map(ann => ({
+        ...ann,
+        start_index: ann.start_index + selectionStart,
+        end_index: ann.end_index + selectionStart
+      }))
+      
+      // 5. 保存註釋（跳過與用戶註釋重疊的）
+      if (absoluteMatched.length > 0) {
+        let successCount = 0
+        let skippedCount = 0
+        let errorCount = 0
+        
+        for (const ann of absoluteMatched) {
+          try {
+            // 檢查是否與用戶註釋重疊
+            const hasOverlap = await readingStore.checkAnnotationOverlap(
+              selectedText.value.id,
+              ann.start_index,
+              ann.end_index
+            )
+            
+            if (hasOverlap) {
+              // 跳過與用戶註釋重疊的新註釋
+              skippedCount++
+              continue
+            }
+            
+            // 保存新註釋（標記為 AI 生成）
+            await readingStore.addAnnotation({
+              text_id: selectedText.value.id,
+              start_index: ann.start_index,
+              end_index: ann.end_index,
+              term: ann.term,
+              annotation: ann.annotation,
+              pinyin: ann.pinyin || null,
+              source: 'ai',  // 標記為 AI 生成
+            })
+            successCount++
+          } catch (err) {
+            console.error('保存註釋失敗:', ann.term, err)
+            errorCount++
+          }
+        }
+        
+        // 重新獲取文章詳情
+        await readingStore.fetchTextDetail(selectedText.value.id)
+        
+        // 顯示結果
+        let message = `成功為選中片段生成並保存 ${successCount} 個註釋`
+        if (aiAnnotations.length - matched.length > 0) {
+          message += `（${aiAnnotations.length - matched.length} 個無法匹配已跳過）`
+        }
+        if (skippedCount > 0) {
+          message += `，跳過 ${skippedCount} 個（與用戶註釋重疊）`
+        }
+        if (errorCount > 0) {
+          message += `，${errorCount} 個失敗`
+        }
+        feedback.value = message
+      } else {
+        feedback.value = `未生成有效註釋（${aiAnnotations.length} 個無法匹配）`
+      }
+    } else {
+      throw new Error(data.error || '生成註釋失敗')
+    }
+    
+  } catch (err: any) {
+    console.error('生成註釋失敗:', err)
     let errorMessage = '生成註釋時發生錯誤'
     if (err?.message) {
       errorMessage = err.message
@@ -1562,15 +1711,23 @@ onUnmounted(() => {
       <!-- 選取操作浮層 -->
       <div v-if="selectionActions.show" class="selection-toolbar">
         <span class="selected-text">「{{ selectionActions.text.slice(0, 20) }}{{ selectionActions.text.length > 20 ? '...' : '' }}」</span>
-        <!-- 選取 >= 10 個字：只顯示提取為練習 -->
-        <button 
-          v-if="selectionActions.text.length >= 10" 
-          class="toolbar-btn extract" 
-          @click="openExtractDialog"
-        >
-          📤 提取為斷句練習
-        </button>
-        <!-- 選取 < 10 個字：只顯示添加註釋 -->
+        <!-- 選取 >= 10 個字：顯示提取為練習和 AI 生成註釋 -->
+        <template v-if="selectionActions.text.length >= 10">
+          <button 
+            class="toolbar-btn extract" 
+            @click="openExtractDialog"
+          >
+            📤 提取為斷句練習
+          </button>
+          <button 
+            class="toolbar-btn ai-annotate" 
+            @click="handleGenerateAnnotationsForSelection"
+            :disabled="isGeneratingAnnotations"
+          >
+            {{ isGeneratingAnnotations ? '🤖 生成中...' : '🤖 AI生成註釋' }}
+          </button>
+        </template>
+        <!-- 選取 < 10 個字：顯示添加註釋 -->
         <button 
           v-else 
           class="toolbar-btn annotate" 
@@ -2485,6 +2642,20 @@ td:nth-child(2) {
 
 .toolbar-btn.annotate:hover {
   background: rgba(59, 130, 246, 0.25);
+}
+
+.toolbar-btn.ai-annotate {
+  background: rgba(139, 92, 246, 0.15);
+  color: #6b21a8;
+}
+
+.toolbar-btn.ai-annotate:hover:not(:disabled) {
+  background: rgba(139, 92, 246, 0.25);
+}
+
+.toolbar-btn.ai-annotate:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .toolbar-btn.cancel {
