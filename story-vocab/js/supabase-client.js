@@ -24,8 +24,10 @@ export async function initSupabase() {
   }
   
   try {
-    // 动态加载 Supabase 客户端库
-    const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');
+    // 動態加載 Supabase 客戶端庫
+    // 使用 esm.sh 確保正確的 ES 模組支持
+    const supabaseModule = await import('https://esm.sh/@supabase/supabase-js@2');
+    const { createClient } = supabaseModule;
     
     // 配置選項
     const options = {
@@ -43,10 +45,11 @@ export async function initSupabase() {
       options
     );
     
-    console.log('✅ Supabase 客户端初始化成功');
+    console.log('✅ Supabase 客戶端初始化成功');
     return supabaseClient;
   } catch (error) {
-    console.error('❌ Supabase 客户端初始化失败:', error);
+    console.error('❌ Supabase 客戶端初始化失敗:', error);
+    console.error('錯誤詳情:', error.message, error.stack);
     throw error;
   }
 }
