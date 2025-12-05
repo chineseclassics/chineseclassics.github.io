@@ -271,3 +271,4 @@ COMMENT ON TABLE game_rounds IS '遊戲輪次表，記錄每輪的繪畫和詞�
 COMMENT ON TABLE guesses IS '猜測記錄表，記錄玩家的猜測和得分';
 
 
+

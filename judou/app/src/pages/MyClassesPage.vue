@@ -37,6 +37,13 @@ const newClassName = ref('')
 const newClassDesc = ref('')
 const creating = ref(false)
 
+// 編輯班級
+const showEditModal = ref(false)
+const editingClass = ref<ClassInfo | null>(null)
+const editClassName = ref('')
+const editClassDesc = ref('')
+const updating = ref(false)
+
 // 批量添加學生
 const showAddStudentsModal = ref(false)
 const emailListText = ref('')
@@ -172,7 +179,54 @@ async function createClass() {
   }
 }
 
-// 刪除班級功能保留在 classStore 中，這裡不需要
+// 打開編輯班級模態框
+function openEditModal(cls: ClassInfo) {
+  editingClass.value = cls
+  editClassName.value = cls.class_name
+  editClassDesc.value = cls.description || ''
+  showEditModal.value = true
+}
+
+// 關閉編輯模態框
+function closeEditModal() {
+  showEditModal.value = false
+  editingClass.value = null
+  editClassName.value = ''
+  editClassDesc.value = ''
+}
+
+// 更新班級信息
+async function updateClass() {
+  if (!editingClass.value || !editClassName.value.trim()) return
+  
+  updating.value = true
+  try {
+    const success = await classStore.updateClass(editingClass.value.id, {
+      class_name: editClassName.value.trim(),
+      description: editClassDesc.value.trim() || null
+    })
+    if (success) {
+      closeEditModal()
+    } else {
+      alert('更新失敗：' + (classStore.error || '未知錯誤'))
+    }
+  } catch (e) {
+    console.error('更新班級失敗:', e)
+    alert('更新失敗：' + (e as Error).message)
+  } finally {
+    updating.value = false
+  }
+}
+
+// 刪除班級
+async function deleteClass(classId: string) {
+  if (!confirm('確定要刪除這個班級嗎？此操作無法撤銷，所有相關的作業和學生數據也將被移除。')) return
+  
+  const success = await classStore.deleteClass(classId)
+  if (!success) {
+    alert('刪除失敗：' + (classStore.error || '未知錯誤'))
+  }
+}
 
 // 作業完成狀態（學生）
 const assignmentStatuses = ref<Map<string, boolean>>(new Map())
@@ -548,6 +602,22 @@ onMounted(async () => {
               {{ authStore.isTeacher ? '創建於' : '加入於' }} 
               {{ new Date(cls.created_at).toLocaleDateString('zh-TW') }}
             </span>
+            <div v-if="authStore.isTeacher" class="class-actions" @click.stop>
+              <button 
+                class="action-btn edit-btn" 
+                @click="openEditModal(cls)"
+                title="修改班級名稱"
+              >
+                ✏️ 修改
+              </button>
+              <button 
+                class="action-btn delete-btn" 
+                @click="deleteClass(cls.id)"
+                title="刪除班級"
+              >
+                🗑️ 刪除
+              </button>
+            </div>
           </div>
         </article>
       </section>
@@ -996,6 +1066,44 @@ onMounted(async () => {
       </div>
     </div>
 
+    <!-- 編輯班級模態框 -->
+    <div v-if="showEditModal" class="modal-overlay" @click.self="closeEditModal">
+      <div class="modal-content edamame-glass">
+        <div class="modal-header">
+          <h2>修改班級信息</h2>
+          <button class="close-btn" @click="closeEditModal">✕</button>
+        </div>
+        <div class="form-group">
+          <label>班級名稱 *</label>
+          <input 
+            v-model="editClassName" 
+            type="text" 
+            placeholder="例如：七年級A班"
+            class="form-input"
+          />
+        </div>
+        <div class="form-group">
+          <label>班級描述</label>
+          <textarea 
+            v-model="editClassDesc" 
+            placeholder="選填，簡單描述這個班級"
+            class="form-textarea"
+            rows="2"
+          ></textarea>
+        </div>
+        <div class="modal-actions">
+          <button class="cancel-btn" @click="closeEditModal">取消</button>
+          <button 
+            class="submit-btn" 
+            @click="updateClass"
+            :disabled="!editClassName.trim() || updating"
+          >
+            {{ updating ? '更新中...' : '保存修改' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- 作業詳情彈窗 -->
     <div v-if="showAssignmentDetailModal" class="modal-overlay" @click.self="closeAssignmentDetailModal">
       <div class="modal-content modal-large edamame-glass">
@@ -1266,6 +1374,42 @@ onMounted(async () => {
   border-top: 1px solid var(--color-neutral-200);
   font-size: 0.875rem;
   color: var(--color-neutral-500);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.class-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.action-btn {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.edit-btn {
+  background: var(--color-primary-500);
+  color: white;
+}
+
+.edit-btn:hover {
+  background: var(--color-primary-600);
+}
+
+.action-btn.delete-btn {
+  background: var(--color-error);
+  color: white;
+}
+
+.action-btn.delete-btn:hover {
+  background: #dc2626;
 }
 
 .empty-state {
