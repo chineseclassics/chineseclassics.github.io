@@ -604,18 +604,20 @@ onMounted(async () => {
             </span>
             <div v-if="authStore.isTeacher" class="class-actions" @click.stop>
               <button 
-                class="action-btn edit-btn" 
+                class="class-action-btn edit-btn" 
                 @click="openEditModal(cls)"
                 title="修改班級名稱"
               >
-                ✏️ 修改
+                <span class="btn-icon">✎</span>
+                <span class="btn-text">修改</span>
               </button>
               <button 
-                class="action-btn delete-btn" 
+                class="class-action-btn delete-btn" 
                 @click="deleteClass(cls.id)"
                 title="刪除班級"
               >
-                🗑️ 刪除
+                <span class="btn-icon">×</span>
+                <span class="btn-text">刪除</span>
               </button>
             </div>
           </div>
@@ -1377,39 +1379,123 @@ onMounted(async () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
 }
 
 .class-actions {
   display: flex;
   gap: 0.5rem;
+  align-items: center;
 }
 
-.action-btn {
-  padding: 0.5rem 1rem;
+.class-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.5rem 0.875rem;
   border: none;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   cursor: pointer;
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   font-weight: 500;
-  transition: all 0.2s;
+  font-family: var(--font-ui, 'Inter', -apple-system, BlinkMacSystemFont, sans-serif);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  white-space: nowrap;
+  user-select: none;
 }
 
-.edit-btn {
-  background: var(--color-primary-500);
-  color: white;
+.class-action-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at center,
+    rgba(255, 255, 255, 0.3),
+    transparent 70%
+  );
+  opacity: 0;
+  transition: opacity 0.2s ease;
 }
 
-.edit-btn:hover {
-  background: var(--color-primary-600);
+.class-action-btn:hover::before {
+  opacity: 1;
 }
 
-.action-btn.delete-btn {
-  background: var(--color-error);
-  color: white;
+.class-action-btn .btn-icon {
+  font-size: 0.875rem;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1em;
+  height: 1em;
+  font-weight: 600;
 }
 
-.action-btn.delete-btn:hover {
-  background: #dc2626;
+.class-action-btn .btn-text {
+  line-height: 1.2;
+  letter-spacing: 0.01em;
+}
+
+/* 編輯按鈕 - 柔和黃綠主題 */
+.class-action-btn.edit-btn {
+  background: linear-gradient(
+    135deg,
+    var(--color-primary-100),
+    var(--color-primary-50)
+  );
+  color: var(--color-primary-700);
+  border: 1.5px solid var(--color-primary-200);
+  box-shadow: 0 1px 2px rgba(139, 178, 79, 0.08);
+}
+
+.class-action-btn.edit-btn:hover {
+  background: linear-gradient(
+    135deg,
+    var(--color-primary-200),
+    var(--color-primary-100)
+  );
+  border-color: var(--color-primary-300);
+  color: var(--color-primary-800);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(139, 178, 79, 0.15);
+}
+
+.class-action-btn.edit-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(139, 178, 79, 0.1);
+}
+
+/* 刪除按鈕 - 柔和紅色主題 */
+.class-action-btn.delete-btn {
+  background: linear-gradient(
+    135deg,
+    rgba(220, 107, 107, 0.12),
+    rgba(220, 107, 107, 0.08)
+  );
+  color: #b91c1c;
+  border: 1.5px solid rgba(220, 107, 107, 0.25);
+  box-shadow: 0 1px 2px rgba(220, 107, 107, 0.08);
+}
+
+.class-action-btn.delete-btn:hover {
+  background: linear-gradient(
+    135deg,
+    rgba(220, 107, 107, 0.2),
+    rgba(220, 107, 107, 0.15)
+  );
+  border-color: rgba(220, 107, 107, 0.4);
+  color: #991b1b;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(220, 107, 107, 0.15);
+}
+
+.class-action-btn.delete-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(220, 107, 107, 0.1);
 }
 
 .empty-state {
@@ -2283,6 +2369,24 @@ onMounted(async () => {
   
   .detail-stats {
     grid-template-columns: 1fr;
+  }
+
+  /* 移動端按鈕優化 */
+  .class-footer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .class-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .class-action-btn {
+    flex: 0 0 auto;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.75rem;
   }
 }
 </style>
