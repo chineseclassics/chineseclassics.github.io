@@ -715,19 +715,26 @@ onMounted(async () => {
   }
   
   .nav-bar {
-    flex-wrap: wrap;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+  
+  .back-btn {
+    align-self: flex-start;
   }
   
   .nav-title {
-    order: 3;
+    order: 2;
     width: 100%;
-    margin-top: 0.5rem;
     text-align: center;
+    margin: 0;
   }
   
   .search-input.compact {
+    order: 3;
     max-width: none;
-    flex: 1;
+    width: 100%;
   }
 }
 </style>

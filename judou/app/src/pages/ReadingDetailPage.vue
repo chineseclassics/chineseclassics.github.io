@@ -1239,8 +1239,40 @@ watch(showPunctuation, (newVal) => {
   }
   
   .control-bar {
-    flex-direction: column;
-    gap: 0.75rem;
+    flex-direction: row;
+    gap: 0.5rem;
+    flex-wrap: nowrap;
+    align-items: center;
+  }
+  
+  .punctuation-toggle {
+    flex: 1;
+    min-width: 0;
+    padding: 0.375rem 0.625rem;
+    gap: 0.5rem;
+  }
+  
+  .toggle-label {
+    font-size: var(--text-xs);
+    white-space: nowrap;
+  }
+  
+  .toggle-switch {
+    flex-shrink: 0;
+  }
+  
+  .tts-btn {
+    flex: 1;
+    min-width: 0;
+    padding: 0.5rem 0.75rem;
+    font-size: var(--text-xs);
+    gap: 0.375rem;
+  }
+  
+  .tts-btn span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   
   .char {
