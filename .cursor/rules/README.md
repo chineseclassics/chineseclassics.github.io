@@ -8,7 +8,7 @@
 
 | 規則文件 | 描述 | 狀態 |
 |---------|------|------|
-| `development-standards.mdc` | 開發標準 - 語言、代碼、文件組織、應用開發規範（合併版） | ✅ Always |
+| `development-standards.mdc` | 開發標準 - 語言、代碼、文件組織、應用開發、項目初始化、代碼審查 | ✅ Always |
 | `documentation-standards.mdc` | 文檔創建規範 - 少而精，避免過度記錄 | ✅ Always |
 | `problem-solving-principles.mdc` | 問題解決原則 - 避免過度複雜化，追求簡單有效 | ✅ Always |
 
@@ -16,22 +16,17 @@
 
 | 規則文件 | 描述 | 觸發條件 | 狀態 |
 |---------|------|---------|------|
-| `supabase-architecture.mdc` | Supabase 架構管理 - 子項目獨立部署 | `**/supabase/**`, `**/*deploy*.md` | 🔄 Auto |
-| `dual-mode-architecture.mdc` | 雙模式架構規範 | 應用開發時手動引用 | 🔄 Auto |
+| `supabase-architecture.mdc` | Supabase 架構管理 - 子項目獨立部署 | `**/supabase/**`, `**/*[Ss]upabase*.md`, `**/*[Dd]eploy*.md` | 🔄 Auto |
 
 ### Manual Rules（手動引用）
 
 | 規則文件 | 描述 | 引用方式 | 狀態 |
 |---------|------|---------|------|
-| `git-workflow.mdc` | Git 工作流程規範 | `@git-workflow` | 📖 Manual |
-| `how-to-create-rules.mdc` | 如何創建規則 (Meta Rule) | `@how-to-create-rules` | 📖 Manual |
-| `nested-rules-architecture.mdc` | 巢狀規則架構指南 | `@nested-rules-architecture` | 📖 Manual |
+| `rules-management.mdc` | 規則管理指南 - 如何創建和管理規則 | `@rules-management` | 📖 Manual |
+| `git-workflow.mdc` | Git 工作流程規範 - 提交和分支管理 | `@git-workflow` | 📖 Manual |
+| `dual-mode-architecture.mdc` | 雙模式架構規範 - 應用獨立性與平台協作 | `@dual-mode-architecture` | 📖 Manual |
 | `tailwind-ui-system.mdc` | Tailwind CSS 統一 UI 和配色系統規範 | `@tailwind-ui-system` | 📖 Manual |
 | `supabase-client-init.mdc` | Supabase 客戶端初始化最佳實踐 | `@supabase-client-init` | 📖 Manual |
-| `self-code-review.mdc` | 自我代碼審查規範 | `@self-code-review` | 📖 Manual |
-| `story-vocab-user-id.mdc` | Story-Vocab 用戶 ID 使用規範 | `@story-vocab-user-id` | 📖 Manual |
-| `dual-mode-architecture.mdc` | 雙模式架構規範 | `@dual-mode-architecture` | 📖 Manual |
-| `project-setup.mdc` | 項目初始化指南 - 新項目創建和設置規範 | `@project-setup` | 📖 Manual |
 
 ## 🎯 規則類型說明
 
@@ -52,33 +47,25 @@
 - 特殊工作流程
 - 範本和腳手架
 - Meta 規則（關於規則的規則）
+- 專業技術棧規範
 
 ## 🛠️ 如何使用規則
-
-### 查看所有規則
-在 Cursor 中：
-```
-Settings → Rules → Project Rules
-```
 
 ### 手動引用規則
 在對話中使用：
 ```
+@rules-management 我想創建一個新的規則
 @git-workflow 請幫我創建一個 feature 分支
-@how-to-create-rules 我想創建一個新的規則
+@dual-mode-architecture 請幫我設計雙模式架構
 @tailwind-ui-system 請幫我設計統一的 UI 配色方案
 @supabase-client-init 請幫我配置 Supabase 客戶端初始化
-@self-code-review 請幫我進行代碼審查
-@story-vocab-user-id 請幫我處理用戶 ID 問題
-@dual-mode-architecture 請幫我設計雙模式架構
-@project-setup 請幫我創建一個新的應用項目
 ```
 
 ### 創建新規則
 1. 使用指令：`New Cursor Rule`
 2. 手動創建：在本目錄創建新的 `.mdc` 文件
 3. 生成指令：`/Generate Cursor Rules`
-4. 參考：`@how-to-create-rules`
+4. 參考：`@rules-management`
 
 ## 📐 規則結構
 
@@ -94,13 +81,6 @@ alwaysApply: true    # 或 false
 # 規則內容（Markdown 格式）
 ```
 
-## 🔗 相關資源
-
-- **官方文檔**：[Cursor Rules](https://cursor.com/zh-Hant/docs/context/rules)
-- **架構文檔**：[TAIXU_ARCHITECTURE.md](../../TAIXU_ARCHITECTURE.md)
-- **簡化指令**：[AGENTS.md](../../AGENTS.md)
-- **舊版規則**：[.cursorrules](../../.cursorrules)（已淘汰）
-
 ## 🌲 巢狀規則（子項目專屬）
 
 根據 Cursor 的巢狀規則功能，子項目可以有各自的 `.cursor/rules/` 目錄：
@@ -115,18 +95,13 @@ alwaysApply: true    # 或 false
 
 詳見：[story-vocab/.cursor/rules/README.md](../../story-vocab/.cursor/rules/README.md)
 
-### 未來子項目
-- `wanwuxiaoyao/.cursor/rules/` - 莊子遊戲專屬規則（待創建）
-- `cilong/.cursor/rules/` - 字龍專屬規則（待創建）
-
 ## 📊 規則統計
 
 ### 平台級規則（本目錄）
-- **總規則數**：12
+- **總規則數**：8
 - **Always 規則**：3
 - **Auto Attached 規則**：1
-- **Manual 規則**：9
-- **Meta 規則**：1
+- **Manual 規則**：5
 
 ### 子項目規則
 - **Story-Vocab**：2 個規則（`auth.mdc`, `supabase-deployment.mdc`）
@@ -143,45 +118,33 @@ alwaysApply: true    # 或 false
 
 ## 🔄 更新記錄
 
-- **2025-10-19**：深度優化規則結構，最大化減少上下文佔用
-  - **第一輪優化**：將大型規則改為手動引用（`tailwind-ui-system`、`supabase-client-init`、`nested-rules-architecture`）
-  - **第二輪優化**：將中型規則改為手動引用（`self-code-review`、`story-vocab-user-id`、`dual-mode-architecture`）
-  - **第三輪優化**：合併小型規則（`language` + `coding-standards` + `file-organization` → `development-standards`）
-  - **第四輪優化**：合併重疊規則（`app-development` → `development-standards`），創建項目初始化規則（`project-setup`）
-  - **最終結果**：上下文從 3,223 行減少到約 1,000 行，提升 68% 效率
-  - **Always 規則**：從 6 個減少到 3 個，只保留核心開發規範
-  - **Manual 規則**：從 3 個增加到 9 個，按需引用專業規範
+- **2025-01-20**：精簡規則結構
+  - **合併規則**：將 `self-code-review` 和 `project-setup` 合併到 `development-standards`
+  - **合併規則**：將 `nested-rules-architecture` 和 `how-to-create-rules` 合併為 `rules-management`
+  - **簡化規則**：`git-workflow` 只保留核心提交規範
+  - **簡化規則**：`dual-mode-architecture` 精簡為核心要點
+  - **結果**：從 14 個規則減少到 8 個核心規則，提升效率
+
+- **2025-10-19**：深度優化規則結構
+  - 將大型規則改為手動引用
+  - 合併小型規則
+  - 上下文從 3,223 行減少到約 1,000 行
 
 - **2025-10-15**：添加 Supabase 客戶端初始化最佳實踐
-  - 新增 `supabase-client-init.mdc` - Supabase 客戶端初始化規範（Auto）
-  - 記錄詩詞組句遠程對戰認證問題的排查與修復經驗
-  - 總結跨平台兼容性問題（GitHub Pages vs Cloudflare Pages）
-  - 提供明確的 auth 配置選項規範
-  - 強調 storageKey 隔離的重要性
-  - 提供認證流程的超時保護和清理邏輯
 
 - **2025-10-14**：添加應用開發規範
-  - 新增 `app-development.mdc` - 應用開發規範（Always）
-  - 記錄從 iframe 到直接跳轉的架構變更
-  - 規範應用切換器組件必須引入
-  - 確立 URL 必須使用絕對路徑的規範
-  - 提供完整的開發檢查清單
 
 - **2025-10-12**：添加文檔創建規範
-  - 新增 `documentation-standards.mdc` - 文檔創建規範（Always）
-  - 規範何時創建文檔、何時不創建
-  - 強調"少而精"原則，避免過度記錄
 
 - **2025-10-11**：創建 MDC 格式的專案規則系統
-  - 從 `.cursorrules` 遷移到 `.cursor/rules/`
-  - 創建 7 個平台級規則文件
-  - 添加 `AGENTS.md` 作為簡化替代方案
-  - 創建 `story-vocab/.cursor/rules/` 子項目規則目錄
-  - 添加 `dual-mode-architecture.mdc` - 雙模式架構通用規範
-  - 將 story-vocab 專屬規則移至子項目目錄（2 個規則）
+
+## 🔗 相關資源
+
+- **官方文檔**：[Cursor Rules](https://cursor.com/zh-Hant/docs/context/rules)
+- **架構文檔**：[TAIXU_ARCHITECTURE.md](../../TAIXU_ARCHITECTURE.md)
+- **簡化指令**：[AGENTS.md](../../AGENTS.md)
 
 ---
 
 **維護**：太虛幻境開發團隊  
-**最後更新**：2025-10-15
-
+**最後更新**：2025-01-20

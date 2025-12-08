@@ -162,6 +162,13 @@ function cleanupPlatformMode() {
 
 **注意**：由於改用直接頁面跳轉，不再使用 postMessage。localStorage 在同域名下的所有頁面間共享。
 
+## 核心要點總結
+
+1. **默認獨立模式**：應用默認自己管理認證，確保向後兼容
+2. **localStorage 通信**：平台模式通過 localStorage 傳遞用戶信息
+3. **Supabase 獨立**：每個應用使用自己的 Supabase project
+4. **統一標識符**：使用 Google ID 作為跨模式統一標識
+
 ### 用戶體驗流程
 
 **平台模式**：
@@ -180,16 +187,14 @@ function cleanupPlatformMode() {
 
 為應用添加雙模式支持時：
 
-- [ ] 創建 `auth/` 目錄結構
-- [ ] 實現運行模式檢測器
+- [ ] 實現運行模式檢測器（默認獨立模式）
 - [ ] 實現認證服務抽象層
 - [ ] 實現獨立模式認證（完整 OAuth 流程）
-- [ ] 實現平台模式認證（接收 postMessage）
-- [ ] 使用 Google ID 作為 users 表主鍵
+- [ ] 實現平台模式認證（讀取 localStorage）
 - [ ] UI 根據模式自動適配（顯示/隱藏登入按鈕）
 - [ ] 測試兩種模式的切換和數據一致性
 
 ## 參考
 
-- [太虛幻境架構文檔](mdc:TAIXU_ARCHITECTURE.md)
-- [Story-Vocab 認證實現](mdc:.cursor/rules/story-vocab-auth.mdc)
+- [太虛幻境架構文檔](../../TAIXU_ARCHITECTURE.md)
+- [Story-Vocab 認證實現](../../story-vocab/.cursor/rules/auth.mdc)

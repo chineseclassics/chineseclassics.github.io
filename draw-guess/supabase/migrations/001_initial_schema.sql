@@ -273,3 +273,4 @@ COMMENT ON TABLE guesses IS '猜測記錄表，記錄玩家的猜測和得分';
 
 
 
+

@@ -97,6 +97,60 @@ url: '../cilong.html'
 - 🔗 所有應用必須引入應用切換器組件
 - 🛣️ 所有應用 URL 必須使用絕對路徑
 
+## 🏗️ 新項目初始化
+
+### 標準文件結構
+```
+應用名/
+├── index.html              # 主入口（必需）
+├── README.md               # 應用說明（必需）
+├── js/                     # JavaScript（推薦）
+├── css/                    # 樣式文件（推薦）
+├── assets/                 # 資源文件（推薦）
+│   ├── fonts/
+│   ├── audio/
+│   ├── images/
+│   └── data/
+└── docs/                   # 詳細文檔（可選）
+```
+
+### HTML 模板要求
+```html
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>應用名稱 - 太虛幻境</title>
+</head>
+<body>
+    <!-- 應用內容 -->
+    
+    <!-- ⭐ 必需：應用切換器組件（在 </body> 之前） -->
+    <script src="/assets/js/taixu-app-switcher.js"></script>
+</body>
+</html>
+```
+
+### 應用註冊
+新應用需要在兩個地方註冊（使用絕對路徑）：
+1. 主頁 `index.html` 的 `apps` 數組
+2. `assets/js/taixu-app-switcher.js` 的應用列表
+
+## 🔍 代碼審查要點
+
+### 完成修改後檢查
+- [ ] 功能完整性：所有任務是否完成？
+- [ ] 代碼簡潔性：是否有重複代碼？是否過度工程化？
+- [ ] 錯誤處理：是否有適當的 null 檢查和錯誤處理？
+- [ ] 性能優化：是否有不必要的 DOM 操作或重複計算？
+- [ ] 兼容性：是否破壞了現有功能？
+
+### 避免過度工程化
+- ❌ 不要為了展示技術而增加不必要的複雜度
+- ❌ 不要創建過多的小方法（能用 5 行解決不用 50 行）
+- ✅ 優先使用最簡單直接的解決方案
+
 ---
 
 **適用範圍**：所有太虛幻境項目和子項目  
