@@ -263,6 +263,16 @@
             description: '扮演碧城掌燈人，通過組合李商隱詩歌中的意象碎片，修復無題詩人破碎的靈魂記憶，體驗詩歌的意象組合與情感表達',
             isNew: true
         },
+        {
+            id: 'draw-guess',
+            category: 'qiangu',
+            name: '你畫我猜',
+            icon: 'fas fa-palette',
+            gradient: 'from-purple-500 to-pink-500',
+            url: '/draw-guess/assets/index.html',
+            description: '支持中文的多人繪畫猜詞遊戲，通過繪畫和猜測，幫助學生掌握概念名詞和詩句',
+            isNew: true
+        },
 
         // 錦繡坊 - 中華文化體驗
         {
