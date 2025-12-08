@@ -415,7 +415,7 @@ export const useRoomStore = defineStore('room', () => {
         throw new Error('暱稱不能超過 20 個字符')
       }
 
-      // 查詢房間
+      // 查詢房間（使用 Supabase 客戶端，與句豆一致）
       const { data: room, error: roomError } = await supabase
         .from('game_rooms')
         .select('*')
@@ -431,13 +431,13 @@ export const useRoomStore = defineStore('room', () => {
         throw new Error('房間已開始或已結束')
       }
 
-      // 檢查是否已加入
+      // 檢查是否已加入（使用 maybeSingle，因為可能不存在）
       const { data: existingParticipant } = await supabase
         .from('room_participants')
         .select('*')
         .eq('room_id', room.id)
         .eq('user_id', authStore.user.id)
-        .single()
+        .maybeSingle()
 
       if (existingParticipant) {
         // 已加入，直接返回房間信息
@@ -456,7 +456,15 @@ export const useRoomStore = defineStore('room', () => {
           score: 0,
         })
 
-      if (joinError) throw joinError
+      if (joinError) {
+        // 如果是重複鍵錯誤（已加入），嘗試重新載入
+        if (joinError.code === '23505' || joinError.message.includes('duplicate')) {
+          currentRoom.value = room as GameRoom
+          await loadParticipants(room.id)
+          return { success: true, room }
+        }
+        throw joinError
+      }
 
       // 更新房間狀態
       currentRoom.value = room as GameRoom
