@@ -75,7 +75,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import UserAuth from '../components/UserAuth.vue'
 import RoomCreate from '../components/RoomCreate.vue'
@@ -210,13 +210,6 @@ onMounted(() => {
   // 這裡可以添加邏輯來恢復房間狀態
   // roomCode 變量未使用，但保留以備將來使用
   // const roomCode = route.params.code as string
-})
-
-onUnmounted(() => {
-  // 清理時取消訂閱
-  if (currentRoom.value) {
-    unsubscribeRoom(currentRoom.value.code)
-  }
 })
 </script>
 

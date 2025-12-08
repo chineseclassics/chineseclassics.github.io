@@ -8,10 +8,10 @@ export default defineConfig({
   // GitHub Pages 部署路徑（開發和生產環境都使用相同路徑，與句豆一致）
   base: '/draw-guess/',
   
-  // 輸出到上層目錄（與句豆一致）
+  // 與句豆一致：輸出到上層目錄（draw-guess/），直接推送即可部署 GitHub Pages
   build: {
     outDir: '../',
-    emptyOutDir: false, // 不清空目錄，保留 app/ 和 docs/
+    emptyOutDir: false, // 保留 app/ 與 docs/
   },
   
   plugins: [vue()],

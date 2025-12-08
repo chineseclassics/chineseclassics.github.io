@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from './auth'
 import { useRoomStore } from './room'
+import { useScoring } from '../composables/useScoring'
 
 // 遊戲輪次接口
 export interface GameRound {
@@ -145,7 +146,6 @@ export const useGameStore = defineStore('game', () => {
     try {
       // 計算畫家得分
       const correctCount = correctGuesses.value.length
-      const { useScoring } = await import('../composables/useScoring')
       const { updateDrawerScore } = useScoring()
       
       await updateDrawerScore(currentRound.value.drawer_id, correctCount)
