@@ -45,7 +45,6 @@ export const useAuthStore = defineStore('auth', () => {
       
       if (sessionError) {
         error.value = sessionError.message
-        console.error('獲取會話錯誤:', sessionError)
       } else if (data.session) {
         session.value = data.session
         user.value = data.session.user
@@ -58,7 +57,6 @@ export const useAuthStore = defineStore('auth', () => {
       }
     } catch (err) {
       error.value = err instanceof Error ? err.message : '初始化認證失敗'
-      console.error('認證初始化錯誤:', err)
     } finally {
       loading.value = false
     }
@@ -87,7 +85,6 @@ export const useAuthStore = defineStore('auth', () => {
 
       profile.value = data as UserProfile
     } catch (err) {
-      console.error('載入用戶資料錯誤:', err)
       error.value = err instanceof Error ? err.message : '載入用戶資料失敗'
     } finally {
       if (setLoading) {
@@ -122,7 +119,6 @@ export const useAuthStore = defineStore('auth', () => {
       if (insertError) {
         // 如果是重複鍵錯誤，嘗試重新載入
         if (insertError.code === '23505') {
-          console.log('用戶資料已存在，重新載入')
           await loadUserProfile(userId, false)
           return
         }
@@ -138,13 +134,12 @@ export const useAuthStore = defineStore('auth', () => {
         console.warn('創建身份關聯失敗（非關鍵錯誤）:', identityErr)
       }
     } catch (err) {
-      console.error('創建用戶資料錯誤:', err)
       error.value = err instanceof Error ? err.message : '創建用戶資料失敗'
       // 即使創建失敗，也嘗試重新載入（可能已經被其他進程創建）
       try {
         await loadUserProfile(userId, false)
-      } catch (loadErr) {
-        console.error('重新載入用戶資料也失敗:', loadErr)
+      } catch {
+        // 忽略重試失敗
       }
     }
   }
@@ -169,8 +164,8 @@ export const useAuthStore = defineStore('auth', () => {
       if (identityError && identityError.code !== '23505') { // 忽略重複鍵錯誤
         throw identityError
       }
-    } catch (err) {
-      console.error('創建用戶身份錯誤:', err)
+    } catch {
+      // 身份創建失敗不影響主流程
     }
   }
 
@@ -201,7 +196,7 @@ export const useAuthStore = defineStore('auth', () => {
 
         // 忽略 PGRST116（沒有找到記錄）錯誤
         if (selectError && selectError.code !== 'PGRST116') {
-          console.warn('查詢用戶資料錯誤:', selectError)
+          console.warn('[Auth] 查詢用戶資料錯誤:', selectError.code)
         }
 
         if (existingProfile) {
@@ -228,7 +223,6 @@ export const useAuthStore = defineStore('auth', () => {
             .single()
 
           if (upsertError) {
-            console.error('創建/更新用戶資料錯誤:', upsertError)
             // 不拋出錯誤，嘗試重新查詢
             const { data: retryProfile } = await supabase
               .from('users')
@@ -251,7 +245,6 @@ export const useAuthStore = defineStore('auth', () => {
       }
     } catch (err) {
       error.value = err instanceof Error ? err.message : '匿名登入失敗'
-      console.error('匿名登入錯誤:', err)
       return { success: false, error: error.value }
     } finally {
       loading.value = false
@@ -277,7 +270,6 @@ export const useAuthStore = defineStore('auth', () => {
       return { success: true }
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Google 登入失敗'
-      console.error('Google 登入錯誤:', err)
       return { success: false, error: error.value }
     } finally {
       loading.value = false
@@ -342,7 +334,6 @@ export const useAuthStore = defineStore('auth', () => {
       return { success: true }
     } catch (err) {
       error.value = err instanceof Error ? err.message : '更新用戶資料失敗'
-      console.error('更新用戶資料錯誤:', err)
       return { success: false, error: error.value }
     }
   }
@@ -352,7 +343,7 @@ export const useAuthStore = defineStore('auth', () => {
     if (!supabase) return
 
     supabase.auth.onAuthStateChange((event, newSession) => {
-      console.log('[Auth] 狀態變化:', event, newSession?.user?.id)
+      if (import.meta.env.DEV) console.log('[Auth]', event)
       session.value = newSession
       user.value = newSession?.user ?? null
       
