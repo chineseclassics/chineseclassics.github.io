@@ -48,6 +48,8 @@
   --border-light: #A89B8C;       /* 淺邊框：淺古銅 */
   --shadow-color: #E8E0D5;       /* 陰影：淡墨色 */
   --accent-gold: #D4A574;        /* 裝飾金黃 */
+  --bg-highlight: #FFF9E6;       /* 高亮背景 */
+  --color-warning-light: #FFF8E1; /* 淺警告色 */
 }
 
 body {

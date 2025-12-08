@@ -192,12 +192,17 @@ export const useAuthStore = defineStore('auth', () => {
         // 生成臨時暱稱
         const displayName = nickname || `訪客${Math.floor(Math.random() * 10000)}`
         
-        // 檢查用戶資料是否存在
-        const { data: existingProfile } = await supabase
+        // 檢查用戶資料是否存在（使用 maybeSingle 避免 406 錯誤）
+        const { data: existingProfile, error: selectError } = await supabase
           .from('users')
           .select('*')
           .eq('id', data.user.id)
-          .single()
+          .maybeSingle()
+
+        // 忽略 PGRST116（沒有找到記錄）錯誤
+        if (selectError && selectError.code !== 'PGRST116') {
+          console.warn('查詢用戶資料錯誤:', selectError)
+        }
 
         if (existingProfile) {
           // 如果已存在，更新暱稱（如果提供了新暱稱）
@@ -207,7 +212,7 @@ export const useAuthStore = defineStore('auth', () => {
             profile.value = existingProfile as UserProfile
           }
         } else {
-          // 如果不存在，創建新資料
+          // 如果不存在，創建新資料（使用 upsert 避免競爭條件）
           const profileData = {
             id: data.user.id,
             email: null,
@@ -216,17 +221,29 @@ export const useAuthStore = defineStore('auth', () => {
             user_type: 'anonymous' as const,
           }
 
-          const { data: newProfile, error: insertError } = await supabase
+          const { data: newProfile, error: upsertError } = await supabase
             .from('users')
-            .insert(profileData)
+            .upsert(profileData, { onConflict: 'id' })
             .select()
             .single()
 
-          if (insertError) throw insertError
+          if (upsertError) {
+            console.error('創建/更新用戶資料錯誤:', upsertError)
+            // 不拋出錯誤，嘗試重新查詢
+            const { data: retryProfile } = await supabase
+              .from('users')
+              .select('*')
+              .eq('id', data.user.id)
+              .maybeSingle()
+            
+            if (retryProfile) {
+              profile.value = retryProfile as UserProfile
+            }
+          } else if (newProfile) {
+            profile.value = newProfile as UserProfile
+          }
 
-          profile.value = newProfile as UserProfile
-
-          // 創建身份關聯
+          // 創建身份關聯（忽略重複錯誤）
           await createUserIdentity(data.user.id, 'anonymous')
         }
 
