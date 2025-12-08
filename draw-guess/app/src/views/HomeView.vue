@@ -64,7 +64,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import UserAuth from '../components/UserAuth.vue'
 import RoomCreate from '../components/RoomCreate.vue'
@@ -72,10 +72,14 @@ import RoomJoin from '../components/RoomJoin.vue'
 import WaitingLobby from '../components/WaitingLobby.vue'
 import { useRoom } from '../composables/useRoom'
 import { useGame } from '../composables/useGame'
+import { useRealtime } from '../composables/useRealtime'
+import { useAuthStore } from '../stores/auth'
 
 const router = useRouter()
 const { currentRoom, participants, leaveRoom } = useRoom()
 const { startGame } = useGame()
+const { subscribeRoom, unsubscribeRoom } = useRealtime()
+const authStore = useAuthStore()
 
 const showCreateForm = ref(false)
 const showJoinForm = ref(false)
@@ -118,12 +122,43 @@ async function handleLeaveRoom() {
   }
 }
 
+// 當有房間時，訂閱 Realtime（參考句豆的實現）
+watch(
+  () => currentRoom.value,
+  (room) => {
+    if (room && authStore.user) {
+      // 訂閱房間的所有實時更新
+      subscribeRoom(
+        room.code,
+        room.id,
+        authStore.user.id,
+        {
+          nickname: authStore.profile?.display_name || '玩家',
+        }
+      )
+    } else if (!room) {
+      // 沒有房間時，取消訂閱
+      if (currentRoom.value) {
+        unsubscribeRoom(currentRoom.value.code)
+      }
+    }
+  },
+  { immediate: true }
+)
+
 // 檢查是否有當前房間（從路由參數）
 onMounted(() => {
   // 如果從其他地方返回，檢查是否有房間狀態
   // 這裡可以添加邏輯來恢復房間狀態
   // roomCode 變量未使用，但保留以備將來使用
   // const roomCode = route.params.code as string
+})
+
+onUnmounted(() => {
+  // 清理時取消訂閱
+  if (currentRoom.value) {
+    unsubscribeRoom(currentRoom.value.code)
+  }
 })
 </script>
 

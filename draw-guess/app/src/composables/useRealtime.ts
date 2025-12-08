@@ -38,124 +38,116 @@ export function useRealtime() {
     return channel
   }
 
-  // 訂閱房間狀態變化
+  // 訂閱房間狀態變化（不調用 subscribe，由 subscribeRoom 統一調用）
   function subscribeRoomChanges(roomCode: string, roomId: string) {
     const channel = getRoomChannel(roomCode)
 
     // 監聽 game_rooms 表變化
-    channel
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'game_rooms',
-          filter: `id=eq.${roomId}`,
-        },
-        async (payload) => {
-          console.log('房間狀態變化:', payload)
-          
-          // 重新載入房間信息
-          if (roomStore.currentRoom) {
-            await roomStore.loadRoom(roomStore.currentRoom.id)
-          }
+    channel.on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'game_rooms',
+        filter: `id=eq.${roomId}`,
+      },
+      async (payload) => {
+        console.log('房間狀態變化:', payload)
+        
+        // 重新載入房間信息
+        if (roomStore.currentRoom) {
+          await roomStore.loadRoom(roomStore.currentRoom.id)
         }
-      )
-      .subscribe()
+      }
+    )
 
     return channel
   }
 
-  // 訂閱參與者變化
+  // 訂閱參與者變化（不調用 subscribe，由 subscribeRoom 統一調用）
   function subscribeParticipants(roomCode: string, roomId: string) {
     const channel = getRoomChannel(roomCode)
 
     // 監聽 room_participants 表變化（包括分數更新）
-    channel
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'room_participants',
-          filter: `room_id=eq.${roomId}`,
-        },
-        async (payload) => {
-          console.log('參與者變化:', payload)
-          
-          // 重新載入參與者列表（包括分數更新）
-          await roomStore.loadParticipants(roomId)
-        }
-      )
-      .subscribe()
+    channel.on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'room_participants',
+        filter: `room_id=eq.${roomId}`,
+      },
+      async (payload) => {
+        console.log('參與者變化:', payload)
+        
+        // 重新載入參與者列表（包括分數更新）
+        await roomStore.loadParticipants(roomId)
+      }
+    )
 
     return channel
   }
 
-  // 訂閱輪次變化
+  // 訂閱輪次變化（不調用 subscribe，由 subscribeRoom 統一調用）
   function subscribeRounds(roomCode: string, roomId: string) {
     const channel = getRoomChannel(roomCode)
 
     // 監聽 game_rounds 表變化
-    channel
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'game_rounds',
-          filter: `room_id=eq.${roomId}`,
-        },
-        async (payload) => {
-          console.log('輪次變化:', payload)
-          
-          // 重新載入當前輪次
-          if (roomStore.currentRoom) {
-            await gameStore.loadCurrentRound(roomStore.currentRoom.id)
-          }
+    channel.on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'game_rounds',
+        filter: `room_id=eq.${roomId}`,
+      },
+      async (payload) => {
+        console.log('輪次變化:', payload)
+        
+        // 重新載入當前輪次
+        if (roomStore.currentRoom) {
+          await gameStore.loadCurrentRound(roomStore.currentRoom.id)
         }
-      )
-      .subscribe()
+      }
+    )
 
     return channel
   }
 
-  // 訂閱猜測記錄變化
+  // 訂閱猜測記錄變化（獨立訂閱，因為可能在不同時機調用）
   function subscribeGuesses(roomCode: string, roundId: string) {
     const channel = getRoomChannel(roomCode)
 
     // 監聽 guesses 表變化
-    channel
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'guesses',
-          filter: `round_id=eq.${roundId}`,
-        },
-        async (payload) => {
-          console.log('猜測記錄變化:', payload)
-          
-          // 重新載入猜測記錄
-          await gameStore.loadGuesses(roundId)
-        }
-      )
-      .subscribe()
+    channel.on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'guesses',
+        filter: `round_id=eq.${roundId}`,
+      },
+      async (payload) => {
+        console.log('猜測記錄變化:', payload)
+        
+        // 重新載入猜測記錄
+        await gameStore.loadGuesses(roundId)
+      }
+    )
+    .subscribe()
 
     return channel
   }
 
-  // 訂閱繪畫數據（broadcast）
+  // 訂閱繪畫數據（broadcast，獨立訂閱）
   function subscribeDrawing(roomCode: string, onDrawing: (stroke: any) => void) {
     const channel = getRoomChannel(roomCode)
 
-    channel
-      .on('broadcast', { event: 'drawing' }, (payload) => {
-        console.log('收到繪畫數據:', payload)
-        onDrawing(payload.payload.stroke)
-      })
-      .subscribe()
+    channel.on('broadcast', { event: 'drawing' }, (payload) => {
+      console.log('收到繪畫數據:', payload)
+      onDrawing(payload.payload.stroke)
+    })
+    .subscribe()
 
     return channel
   }
@@ -191,40 +183,35 @@ export function useRealtime() {
     }
   }
 
-  // 訂閱 Presence（玩家在線狀態）
-  function subscribePresence(roomCode: string, userId: string, userData: any) {
-    const channel = getRoomChannel(roomCode)
+  // 訂閱 Presence（玩家在線狀態，不調用 subscribe，由 subscribeRoom 統一調用）
+  // userId 和 userData 會在 subscribeRoom 的 subscribe 回調中使用
+  function subscribePresence(_roomCode: string, _userId: string, _userData: any) {
+    const channel = getRoomChannel(_roomCode)
 
-    channel
-      .on('presence', { event: 'sync' }, () => {
-        const state = channel.presenceState()
-        console.log('Presence 狀態:', state)
-      })
-      .on('presence', { event: 'join' }, ({ key, newPresences }) => {
-        console.log('玩家加入:', key, newPresences)
-      })
-      .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
-        console.log('玩家離開:', key, leftPresences)
-      })
-      .subscribe(async (status) => {
-        if (status === 'SUBSCRIBED') {
-          await channel.track({
-            user_id: userId,
-            ...userData,
-          })
-        }
-      })
+    channel.on('presence', { event: 'sync' }, () => {
+      const state = channel.presenceState()
+      console.log('Presence 狀態:', state)
+    })
+    .on('presence', { event: 'join' }, ({ key, newPresences }) => {
+      console.log('玩家加入:', key, newPresences)
+    })
+    .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
+      console.log('玩家離開:', key, leftPresences)
+    })
+
+    // 在 channel 訂閱成功後追蹤 presence
+    // 這個邏輯會在 subscribeRoom 的 subscribe 回調中處理
 
     return channel
   }
 
-  // 訂閱房間的所有實時更新
+  // 訂閱房間的所有實時更新（參考句豆的實現）
   function subscribeRoom(roomCode: string, roomId: string, userId: string, userData: any) {
     if (!roomCode || !roomId) return
 
     const channel = getRoomChannel(roomCode)
 
-    // 訂閱所有變化
+    // 在同一個 channel 上添加所有監聽器（不重複訂閱）
     subscribeRoomChanges(roomCode, roomId)
     subscribeParticipants(roomCode, roomId)
     subscribeRounds(roomCode, roomId)
@@ -235,7 +222,6 @@ export function useRealtime() {
       console.log('Realtime 系統狀態:', payload)
       if (payload.status === 'ok') {
         connectionStatus.value = 'connected'
-        // 連接成功，重置重試計數
         retryCounts.value.set(roomCode, 0)
         clearRetryTimer(roomCode)
       } else if (payload.status === 'error') {
@@ -245,14 +231,19 @@ export function useRealtime() {
       }
     })
 
-    // 監聽訂閱狀態
-    channel.subscribe((status) => {
+    // 最後統一訂閱 channel（只調用一次）
+    channel.subscribe(async (status) => {
       console.log('Realtime 訂閱狀態:', status)
       if (status === 'SUBSCRIBED') {
         connectionStatus.value = 'connected'
-        // 訂閱成功，重置重試計數
         retryCounts.value.set(roomCode, 0)
         clearRetryTimer(roomCode)
+        
+        // 訂閱成功後追蹤 presence
+        await channel.track({
+          user_id: userId,
+          ...userData,
+        })
       } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
         connectionStatus.value = 'disconnected'
         console.warn('Realtime 訂閱失敗，嘗試重試')
