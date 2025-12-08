@@ -1,4 +1,4 @@
-/* PaperCSS 手繪風格全局樣式 - 水墨丹青 + 童趣點綴配色方案 */
+/* PaperCSS 手繪風格全局樣式 - 溫馨畫室配色方案 */
 /* 注意：不再使用 Tailwind，完全使用 PaperCSS */
 
 /* LXGW 文楷繁體版 - 本地字體 */
@@ -23,31 +23,31 @@
   --font-head: 'LXGW WenKai TC', serif;
   --font-body: 'LXGW WenKai TC', serif;
   
-  /* 背景色 - 溫暖米白系 */
+  /* 背景色 - 溫暖米白系（保留） */
   --bg-primary: #FAF8F3;        /* 主背景：溫暖米白 */
   --bg-secondary: #F5F1E8;      /* 次要背景：淺米色 */
   --bg-card: #FFFFFF;           /* 卡片背景：純白 */
   --bg-hover: #FFFEF7;          /* 懸停背景：米白高光 */
   
-  /* 文字色 - 深墨系 */
+  /* 文字色 - 深墨系（保留） */
   --text-primary: #2C2416;      /* 主文字：深墨色 */
   --text-secondary: #5C4A37;    /* 次要文字：灰褐色 */
   --text-tertiary: #8B7355;     /* 第三級文字：中褐色 */
   --text-hint: #A89B8C;         /* 提示文字：淺褐色 */
   
-  /* 功能色 - 中國傳統色彩 */
-  --color-primary: #C73E1D;     /* 主要操作：朱砂紅 */
-  --color-secondary: #4A90A4;   /* 次要操作：青花藍 */
-  --color-success: #6B8E5A;     /* 成功：竹青 */
-  --color-warning: #D4A574;      /* 警告：金黃 */
-  --color-danger: #A52A2A;       /* 危險：深紅 */
-  --color-info: #B8D4E3;         /* 信息：淡藍 */
+  /* 功能色 - 活潑親切的塗鴉色彩 */
+  --color-primary: #E07B67;     /* 主要操作：柔和珊瑚 */
+  --color-secondary: #6BAFB2;   /* 次要操作：天青 */
+  --color-success: #8DC26F;     /* 成功：草綠 */
+  --color-warning: #F0C078;     /* 警告：杏黃 */
+  --color-danger: #D46A6A;      /* 危險：柔紅 */
+  --color-info: #B8D4E3;        /* 信息：淡藍（保留） */
   
-  /* 裝飾色 */
+  /* 裝飾色（保留） */
   --border-color: #8B7355;       /* 邊框：古銅色 */
   --border-light: #A89B8C;       /* 淺邊框：淺古銅 */
   --shadow-color: #E8E0D5;       /* 陰影：淡墨色 */
-  --accent-gold: #D4A574;        /* 裝飾金黃 */
+  --accent-gold: #F0C078;        /* 裝飾杏黃（與警告色統一） */
   --bg-highlight: #FFF9E6;       /* 高亮背景 */
   --color-warning-light: #FFF8E1; /* 淺警告色 */
 }
@@ -94,8 +94,8 @@ h1, h2, h3, h4, h5, h6, .card-title, .brand {
 }
 
 .paper-btn.btn-primary:hover {
-  background-color: #B0351A;
-  border-color: #B0351A;
+  background-color: #D06A57;
+  border-color: #D06A57;
 }
 
 .paper-btn.btn-secondary {
@@ -105,8 +105,8 @@ h1, h2, h3, h4, h5, h6, .card-title, .brand {
 }
 
 .paper-btn.btn-secondary:hover {
-  background-color: #3A7080;
-  border-color: #3A7080;
+  background-color: #5A9A9D;
+  border-color: #5A9A9D;
 }
 
 .paper-btn.btn-success {
