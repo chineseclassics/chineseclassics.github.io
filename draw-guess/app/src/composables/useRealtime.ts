@@ -139,15 +139,15 @@ export function useRealtime() {
     return channel
   }
 
-  // 訂閱繪畫數據（broadcast，獨立訂閱）
+  // 訂閱繪畫數據（broadcast，不重複訂閱 channel）
   function subscribeDrawing(roomCode: string, onDrawing: (stroke: any) => void) {
     const channel = getRoomChannel(roomCode)
 
+    // 只添加監聽器，不調用 subscribe（channel 已在 subscribeRoom 中訂閱）
     channel.on('broadcast', { event: 'drawing' }, (payload) => {
       console.log('收到繪畫數據:', payload)
       onDrawing(payload.payload.stroke)
     })
-    .subscribe()
 
     return channel
   }
@@ -157,13 +157,8 @@ export function useRealtime() {
     try {
       const channel = getRoomChannel(roomCode)
 
-      // 檢查連接狀態
-      if (connectionStatus.value === 'disconnected') {
-        console.warn('Realtime 未連接，無法發送繪畫數據')
-        // 降級方案：可以將數據暫存，連接恢復後再發送
-        return { error: '連接未建立' }
-      }
-
+      // 直接嘗試發送，讓 Supabase 處理連接狀態
+      // 如果 channel 未連接，Supabase 會自動處理或返回錯誤
       const result = await channel.send({
         type: 'broadcast',
         event: 'drawing',
@@ -171,14 +166,17 @@ export function useRealtime() {
       })
 
       if (result === 'error') {
-        console.error('發送繪畫數據失敗')
-        return { error: '發送失敗' }
+        console.warn('發送繪畫數據失敗，channel 可能未連接')
+        // 不返回錯誤，讓繪畫繼續（用戶體驗優先）
+        // 如果連接恢復，下次發送會成功
+        return { error: '發送失敗，請檢查網絡連接' }
       }
 
       return result
     } catch (error) {
-      console.error('發送繪畫數據錯誤:', error)
-      // 降級方案：可以將數據暫存到本地，稍後重試
+      console.warn('發送繪畫數據錯誤:', error)
+      // 不拋出錯誤，讓繪畫繼續
+      // 如果連接恢復，下次發送會成功
       return { error: error instanceof Error ? error.message : '發送失敗' }
     }
   }
@@ -246,8 +244,23 @@ export function useRealtime() {
         })
       } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
         connectionStatus.value = 'disconnected'
-        console.warn('Realtime 訂閱失敗，嘗試重試')
+        console.warn('Realtime 訂閱失敗，嘗試重試，狀態:', status)
         scheduleRetry(roomCode, roomId, userId, userData)
+      } else if (status === 'CLOSED') {
+        // CLOSED 狀態可能是正常關閉（用戶離開）或異常斷開
+        // 檢查用戶是否還在房間中
+        if (roomStore.currentRoom && roomStore.currentRoom.code === roomCode) {
+          connectionStatus.value = 'disconnected'
+          console.warn('Realtime 連接關閉，但用戶仍在房間中，嘗試重試')
+          scheduleRetry(roomCode, roomId, userId, userData)
+        } else {
+          // 用戶已離開房間，正常關閉
+          connectionStatus.value = 'disconnected'
+          console.log('Realtime 連接正常關閉（用戶已離開房間）')
+        }
+      } else if (status === 'JOINED') {
+        // JOINED 狀態表示 channel 已加入，但可能還沒完全訂閱
+        connectionStatus.value = 'connecting'
       }
     })
 
