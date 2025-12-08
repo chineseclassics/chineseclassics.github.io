@@ -141,15 +141,28 @@ export function useRealtime() {
     return channel
   }
 
-  // 訂閱繪畫數據（broadcast，不重複訂閱 channel）
+  // 訂閱繪畫數據（broadcast，確保 channel 已訂閱）
   function subscribeDrawing(roomCode: string, onDrawing: (stroke: any) => void) {
     const channel = getRoomChannel(roomCode)
+    const channelState = (channel as any).state
 
-    // 只添加監聽器，不調用 subscribe（channel 已在 subscribeRoom 中訂閱）
+    console.log('[subscribeDrawing] 訂閱繪畫數據，roomCode:', roomCode, 'channelState:', channelState)
+
+    // 添加繪畫監聽器
     channel.on('broadcast', { event: 'drawing' }, (payload) => {
-      console.log('收到繪畫數據:', payload)
-      onDrawing(payload.payload.stroke)
+      console.log('[subscribeDrawing] 收到繪畫數據:', payload)
+      if (payload.payload?.stroke) {
+        onDrawing(payload.payload.stroke)
+      }
     })
+
+    // 如果 channel 還沒訂閱，需要訂閱
+    if (channelState !== 'joined' && channelState !== 'joining') {
+      console.log('[subscribeDrawing] Channel 未訂閱，正在訂閱...')
+      channel.subscribe((status) => {
+        console.log('[subscribeDrawing] 訂閱狀態:', status)
+      })
+    }
 
     return channel
   }
@@ -158,25 +171,37 @@ export function useRealtime() {
   async function sendDrawing(roomCode: string, stroke: any) {
     try {
       const channel = getRoomChannel(roomCode)
+      const channelState = (channel as any).state
 
-      // 直接嘗試發送，讓 Supabase 處理連接狀態
-      // 如果 channel 未連接，Supabase 會自動處理或返回錯誤
+      console.log('[sendDrawing] 發送繪畫數據，roomCode:', roomCode, 'channelState:', channelState)
+
+      // 如果 channel 還沒訂閱，先訂閱
+      if (channelState !== 'joined') {
+        console.warn('[sendDrawing] Channel 未連接，狀態:', channelState)
+        // 嘗試訂閱
+        if (channelState !== 'joining') {
+          channel.subscribe()
+        }
+        // 等待一下讓連接建立
+        await new Promise(resolve => setTimeout(resolve, 100))
+      }
+
       const result = await channel.send({
         type: 'broadcast',
         event: 'drawing',
         payload: { stroke },
       })
 
+      console.log('[sendDrawing] 發送結果:', result)
+
       if (result === 'error') {
-        console.warn('發送繪畫數據失敗，channel 可能未連接')
-        // 不返回錯誤，讓繪畫繼續（用戶體驗優先）
-        // 如果連接恢復，下次發送會成功
+        console.warn('[sendDrawing] 發送繪畫數據失敗，channel 可能未連接')
         return { error: '發送失敗，請檢查網絡連接' }
       }
 
       return result
     } catch (error) {
-      console.warn('發送繪畫數據錯誤:', error)
+      console.warn('[sendDrawing] 發送繪畫數據錯誤:', error)
       // 不拋出錯誤，讓繪畫繼續
       // 如果連接恢復，下次發送會成功
       return { error: error instanceof Error ? error.message : '發送失敗' }

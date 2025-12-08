@@ -2,11 +2,13 @@ import { ref } from 'vue'
 import { useDrawingStore } from '../stores/drawing'
 import { getCanvasCoordinates, drawStroke, generateStrokeId, redrawCanvas, type Stroke } from '../lib/canvas-utils'
 import { useRoomStore } from '../stores/room'
+import { useAuthStore } from '../stores/auth'
 import { useRealtime } from './useRealtime'
 
 export function useDrawing() {
   const drawingStore = useDrawingStore()
   const roomStore = useRoomStore()
+  const authStore = useAuthStore()
   const { sendDrawing } = useRealtime()
 
   const canvasRef = ref<HTMLCanvasElement | null>(null)
@@ -135,18 +137,32 @@ export function useDrawing() {
 
   // 發送筆觸數據（通過 Supabase Realtime）
   async function sendStrokeData() {
-    if (!currentStroke.value || !roomStore.currentRoom) return
+    if (!currentStroke.value || !roomStore.currentRoom || !authStore.user) return
 
     try {
-      await sendDrawing(roomStore.currentRoom.code, currentStroke.value)
+      // 包含用戶 ID，讓接收端可以過濾自己的消息
+      const strokeWithUser = {
+        ...currentStroke.value,
+        userId: authStore.user.id,
+      }
+      console.log('[sendStrokeData] 發送筆觸數據:', strokeWithUser.id)
+      await sendDrawing(roomStore.currentRoom.code, strokeWithUser)
     } catch (error) {
-      console.error('發送繪畫數據失敗:', error)
+      console.error('[sendStrokeData] 發送繪畫數據失敗:', error)
     }
   }
 
-  // 接收繪畫數據
-  function handleDrawingData(stroke: Stroke) {
+  // 接收繪畫數據（來自其他玩家）
+  function handleDrawingData(stroke: Stroke & { userId?: string }) {
     if (!canvasRef.value || !ctxRef.value) return
+
+    // 過濾自己發送的消息
+    if (stroke.userId && authStore.user && stroke.userId === authStore.user.id) {
+      console.log('[handleDrawingData] 忽略自己的筆觸:', stroke.id)
+      return
+    }
+
+    console.log('[handleDrawingData] 接收到其他玩家的筆觸:', stroke.id)
 
     // 添加到筆觸列表
     drawingStore.addStroke(stroke)
