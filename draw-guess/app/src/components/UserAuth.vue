@@ -1,11 +1,11 @@
 <template>
   <div class="user-auth">
     <!-- 未登入狀態 -->
-    <div v-if="!authStore.isAuthenticated" class="space-y-3">
+    <div v-if="!authStore.isAuthenticated">
       <button
         @click="handleAnonymousSignIn"
         :disabled="authStore.loading"
-        class="btn-minimal w-full"
+        class="paper-btn btn-primary btn-block margin-bottom-small"
       >
         {{ authStore.loading ? '處理中...' : '匿名遊玩' }}
       </button>
@@ -13,52 +13,60 @@
       <button
         @click="handleGoogleSignIn"
         :disabled="authStore.loading"
-        class="btn-minimal w-full"
+        class="paper-btn btn-secondary btn-block"
       >
         {{ authStore.loading ? '處理中...' : 'Google 登入' }}
       </button>
     </div>
 
     <!-- 已登入狀態 -->
-    <div v-else class="flex items-center gap-3">
+    <div v-else class="row flex-middle">
       <!-- 用戶信息 -->
-      <div class="flex items-center gap-2 flex-1 min-w-0">
-        <img
-          v-if="authStore.profile?.avatar_url"
-          :src="authStore.profile.avatar_url"
-          :alt="authStore.profile.display_name"
-          class="w-8 h-8 rounded-full object-cover border-thin border-border-light"
-        />
-        <div
-          v-else
-          class="w-8 h-8 rounded-full bg-bg-secondary border-thin border-border-light flex items-center justify-center text-text-secondary text-sm"
-        >
-          {{ authStore.profile?.display_name?.charAt(0) || '?' }}
-        </div>
-        <div class="min-w-0 flex-1">
-          <div class="text-sm text-text-primary truncate">
-            {{ authStore.profile?.display_name || '用戶' }}
+      <div class="col-8">
+        <div class="row flex-middle">
+          <div class="col-2">
+            <img
+              v-if="authStore.profile?.avatar_url"
+              :src="authStore.profile.avatar_url"
+              :alt="authStore.profile.display_name"
+              class="border"
+              style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border-color: var(--border-color);"
+            />
+            <div
+              v-else
+              class="border"
+              style="width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background-color: var(--bg-secondary); border-color: var(--border-light); color: var(--text-primary);"
+            >
+              {{ authStore.profile?.display_name?.charAt(0) || '?' }}
+            </div>
           </div>
-          <div class="text-xs text-text-secondary">
-            {{ authStore.isAnonymous ? '匿名遊玩' : '已登入' }}
+          <div class="col-10">
+            <div class="text-hand">
+              {{ authStore.profile?.display_name || '用戶' }}
+            </div>
+            <div class="text-small">
+              {{ authStore.isAnonymous ? '匿名遊玩' : '已登入' }}
+            </div>
           </div>
         </div>
       </div>
 
       <!-- 登出按鈕 -->
-      <button
-        @click="handleSignOut"
-        :disabled="authStore.loading"
-        class="btn-minimal text-sm px-3 py-1.5"
-      >
-        {{ authStore.loading ? '處理中...' : '登出' }}
-      </button>
+      <div class="col-4 text-right">
+        <button
+          @click="handleSignOut"
+          :disabled="authStore.loading"
+          class="paper-btn btn-small"
+        >
+          {{ authStore.loading ? '處理中...' : '登出' }}
+        </button>
+      </div>
     </div>
 
     <!-- 錯誤提示 -->
     <div
       v-if="authStore.error"
-      class="mt-3 text-sm text-red-600 bg-red-50 p-2 rounded-minimal border-thin border-red-200"
+      class="alert alert-danger margin-top-small"
     >
       {{ authStore.error }}
     </div>
@@ -97,7 +105,7 @@ async function handleSignOut() {
 
 <style scoped>
 .user-auth {
-  @apply w-full;
+  width: 100%;
 }
 </style>
 

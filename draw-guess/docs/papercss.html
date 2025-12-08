@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PaperCSS x Vue 3 手繪風格範例</title>
+    
+    <!-- 1. 引入 PaperCSS -->
+    <link rel="stylesheet" href="https://unpkg.com/papercss@1.9.2/dist/paper.min.css">
+    
+    <!-- 2. 引入 Google Fonts (中文手寫體: Ma Shan Zheng, 英文: Patrick Hand) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Patrick+Hand&display=swap" rel="stylesheet">
+
+    <!-- 3. 引入 Vue 3 -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+    <style>
+        /* --- 全域樣式調整 --- */
+        :root {
+            --font-head: 'Ma Shan Zheng', cursive;
+            --font-body: 'Patrick Hand', 'Microsoft JhengHei', sans-serif;
+            --bg-color: #fdfdfd;
+            --grid-color: #e0e0e0;
+        }
+
+        body {
+            font-family: var(--font-body);
+            background-color: var(--bg-color);
+            /* 方格紙背景效果 */
+            background-image: 
+                linear-gradient(var(--grid-color) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+            background-size: 20px 20px;
+            color: #41403e;
+        }
+
+        /* 標題專用字體 */
+        h1, h2, h3, h4, h5, h6, .card-title, .brand {
+            font-family: var(--font-head);
+            letter-spacing: 2px;
+        }
+
+        /* Vue 應用區塊 */
+        #app {
+            padding-bottom: 50px;
+        }
+
+        /* 自定義導覽列樣式，讓它浮動起來 */
+        .fixed-nav {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(255, 255, 255, 0.95);
+            border-bottom: 2px dashed #41403e;
+            backdrop-filter: blur(5px);
+        }
+
+        /* --- 特效動畫 --- */
+        
+        /* 1. 讓重要的數字稍微大一點 */
+        .stat-number {
+            font-size: 3rem;
+            font-weight: bold;
+            color: #e8590c; /* PaperCSS 的主要強調色 */
+            line-height: 1;
+        }
+
+        /* 2. 塗鴉風格的刪除線動畫 */
+        .done-task {
+            text-decoration: line-through;
+            text-decoration-color: #e8590c;
+            text-decoration-thickness: 3px;
+            color: #888;
+            transition: all 0.3s ease;
+        }
+
+        /* 3. 按鈕 Hover 時的輕微抖動 (Wiggle Effect) */
+        @keyframes wiggle {
+            0% { transform: rotate(0deg); }
+            25% { transform: rotate(1deg); }
+            75% { transform: rotate(-1deg); }
+            100% { transform: rotate(0deg); }
+        }
+        
+        .paper-btn:hover {
+            animation: wiggle 0.3s ease-in-out;
+        }
+
+        /* 讓表格看起來更像筆記 */
+        table {
+            background: white;
+        }
+        
+        /* 調整輸入框字體大小 */
+        input, select, textarea {
+            font-family: var(--font-body);
+            font-size: 1.1rem;
+        }
+    </style>
+</head>
+<body>
+
+<div id="app">
+    <!-- 導覽列 -->
+    <nav class="border fixed-nav split-nav">
+        <div class="nav-brand">
+            <h3>📝 塗鴉筆記本</h3>
+        </div>
+        <div class="collapsible">
+            <input id="collapsible1" type="checkbox" name="collapsible1">
+            <label for="collapsible1">
+                <div class="bar1"></div>
+                <div class="bar2"></div>
+                <div class="bar3"></div>
+            </label>
+            <div class="collapsible-body">
+                <ul class="inline">
+                    <li><a href="#" @click.prevent="currentTab = 'dashboard'">總覽</a></li>
+                    <li><a href="#" @click.prevent="currentTab = 'components'">元件庫</a></li>
+                    <li><a href="https://github.com/papercss/papercss" target="_blank">Github</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container margin-top-large">
+        
+        <!-- 頁面標題 -->
+        <div class="row flex-center">
+            <div class="text-center">
+                <h1>{{ greeting }}</h1>
+                <p class="lead">這是一個基於 Vue 3 和 PaperCSS 構建的手繪風格介面。</p>
+            </div>
+        </div>
+
+        <!-- TAB 1: 儀表板與待辦事項 -->
+        <div v-if="currentTab === 'dashboard'">
+            <!-- 統計卡片區 -->
+            <div class="row">
+                <div class="col-12 col-md-4">
+                    <div class="card" style="background-color: #fff;">
+                        <div class="card-body text-center">
+                            <h4 class="card-title">待辦任務</h4>
+                            <div class="stat-number">{{ activeTasksCount }}</div>
+                            <p>還需努力！</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-4">
+                    <div class="card" style="background-color: #fff;">
+                        <div class="card-body text-center">
+                            <h4 class="card-title">已完成</h4>
+                            <div class="stat-number" style="color: #41b883;">{{ completedTasksCount }}</div>
+                            <p>做得好！</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-4">
+                    <div class="card" style="background-color: #fff;">
+                        <div class="card-body text-center">
+                            <h4 class="card-title">總進度</h4>
+                            <div class="progress margin-top-small">
+                                <div class="bar success" :style="{ width: progressPercent + '%' }"></div>
+                            </div>
+                            <p class="margin-top-small">{{ progressPercent }}%</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 待辦清單區 -->
+            <div class="row flex-center">
+                <div class="col-12 col-md-8">
+                    <div class="card">
+                        <div class="card-body">
+                            <h4 class="card-title">今日計畫清單</h4>
+                            
+                            <!-- 新增任務表單 -->
+                            <form @submit.prevent="addTask" class="row flex-edges flex-middle">
+                                <div class="col-8">
+                                    <div class="form-group">
+                                        <input type="text" v-model="newTask" placeholder="想做點什麼？(例如：畫畫、喝咖啡)" class="input-block">
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <button type="submit" class="paper-btn btn-primary btn-block">新增</button>
+                                </div>
+                            </form>
+
+                            <!-- 任務列表 -->
+                            <div v-if="tasks.length > 0">
+                                <div v-for="(task, index) in tasks" :key="task.id" class="row flex-middle">
+                                    <div class="col-2">
+                                        <!-- PaperCSS Checkbox 結構 -->
+                                        <label class="paper-check">
+                                            <input type="checkbox" v-model="task.done">
+                                            <span></span>
+                                        </label>
+                                    </div>
+                                    <div class="col-8">
+                                        <span :class="{ 'done-task': task.done }" style="font-size: 1.2rem;">
+                                            {{ task.text }}
+                                        </span>
+                                    </div>
+                                    <div class="col-2 text-right">
+                                        <span class="badge danger" style="cursor: pointer;" @click="removeTask(index)">X</span>
+                                    </div>
+                                    <!-- 手繪分隔線 -->
+                                    <div style="width: 100%; border-bottom: 2px dashed #ddd; margin: 10px 0;"></div>
+                                </div>
+                            </div>
+                            
+                            <div v-else class="text-center padding-large">
+                                <p>目前沒有任務，去放鬆一下吧！🍵</p>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: 元件展示 -->
+        <div v-if="currentTab === 'components'">
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <h3 class="card-title">🎨 按鈕畫廊</h3>
+                            <p>PaperCSS 的按鈕看起來像用麥克筆塗的。</p>
+                            <div class="row flex-spaces">
+                                <button class="paper-btn">基礎</button>
+                                <button class="paper-btn btn-primary">主要 (Primary)</button>
+                                <button class="paper-btn btn-secondary">次要 (Secondary)</button>
+                                <button class="paper-btn btn-success">成功 (Success)</button>
+                                <button class="paper-btn btn-warning">警告 (Warning)</button>
+                                <button class="paper-btn btn-danger">危險 (Danger)</button>
+                            </div>
+                            <div class="row flex-spaces">
+                                <button class="paper-btn btn-primary-outline">空心主要</button>
+                                <button class="paper-btn btn-success-outline">空心成功</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card margin-top-large">
+                        <div class="card-body">
+                            <h3 class="card-title">📊 手繪表格</h3>
+                            <table class="table table-hover table-alternating">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>項目名稱</th>
+                                        <th>狀態</th>
+                                        <th>負責人</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>1</td>
+                                        <td>設計首頁 UI</td>
+                                        <td><span class="badge success">完成</span></td>
+                                        <td>小明</td>
+                                    </tr>
+                                    <tr>
+                                        <td>2</td>
+                                        <td>串接 API</td>
+                                        <td><span class="badge warning">進行中</span></td>
+                                        <td>小華</td>
+                                    </tr>
+                                    <tr>
+                                        <td>3</td>
+                                        <td>測試除錯</td>
+                                        <td><span class="badge secondary">待定</span></td>
+                                        <td>大寶</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    const { createApp, ref, computed } = Vue;
+
+    createApp({
+        setup() {
+            // 頁面狀態
+            const currentTab = ref('dashboard');
+            const greeting = ref('早安，設計師！');
+            const newTask = ref('');
+
+            // 假資料
+            const tasks = ref([
+                { id: 1, text: '學習 Vue 3 Composition API', done: true },
+                { id: 2, text: '研究 PaperCSS 的組件', done: false },
+                { id: 3, text: '喝一杯手沖咖啡', done: false },
+                { id: 4, text: '畫一張草稿圖', done: false },
+            ]);
+
+            // 計算屬性
+            const activeTasksCount = computed(() => tasks.value.filter(t => !t.done).length);
+            const completedTasksCount = computed(() => tasks.value.filter(t => t.done).length);
+            
+            const progressPercent = computed(() => {
+                if (tasks.value.length === 0) return 0;
+                return Math.round((completedTasksCount.value / tasks.value.length) * 100);
+            });
+
+            // 方法
+            const addTask = () => {
+                if (!newTask.value.trim()) {
+                    alert('請寫點東西再新增喔！✏️');
+                    return;
+                }
+                tasks.value.push({
+                    id: Date.now(),
+                    text: newTask.value,
+                    done: false
+                });
+                newTask.value = '';
+            };
+
+            const removeTask = (index) => {
+                if(confirm('確定要擦掉這項任務嗎？')){
+                    tasks.value.splice(index, 1);
+                }
+            };
+
+            // 根據時間變更問候語
+            const hour = new Date().getHours();
+            if (hour >= 12 && hour < 18) greeting.value = '午安，該休息了嗎？';
+            else if (hour >= 18) greeting.value = '晚安，今天辛苦了！';
+
+            return {
+                currentTab,
+                greeting,
+                newTask,
+                tasks,
+                activeTasksCount,
+                completedTasksCount,
+                progressPercent,
+                addTask,
+                removeTask
+            };
+        }
+    }).mount('#app');
+</script>
+
+</body>
+</html>

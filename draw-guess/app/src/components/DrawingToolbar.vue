@@ -1,112 +1,88 @@
 <template>
   <div class="drawing-toolbar">
-    <!-- 工具按鈕（垂直排列，參考 Gartic.io） -->
-    <div class="flex flex-col gap-1 p-2">
+    <!-- 工具按鈕 -->
+    <div class="margin-bottom-small">
       <!-- 畫筆 -->
       <button
         @click="setTool('pen')"
         :class="[
-          'w-12 h-12 rounded-lg flex items-center justify-center transition-all',
-          tool === 'pen' 
-            ? 'bg-blue-500 text-white shadow-md' 
-            : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+          'paper-btn btn-block margin-bottom-small',
+          tool === 'pen' ? 'btn-primary' : 'btn-secondary'
         ]"
         title="畫筆"
       >
-        <i class="fas fa-pencil-alt text-lg"></i>
+        ✏️ 畫筆
       </button>
 
       <!-- 橡皮擦 -->
       <button
         @click="setTool('eraser')"
         :class="[
-          'w-12 h-12 rounded-lg flex items-center justify-center transition-all',
-          tool === 'eraser' 
-            ? 'bg-blue-500 text-white shadow-md' 
-            : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+          'paper-btn btn-block',
+          tool === 'eraser' ? 'btn-danger' : 'btn-secondary'
         ]"
         title="橡皮擦"
       >
-        <i class="fas fa-eraser text-lg"></i>
+        🧹 橡皮擦
       </button>
     </div>
 
-    <!-- 分隔線 -->
-    <div class="border-t border-gray-200 dark:border-gray-700 my-2"></div>
-
-    <!-- 顏色調色板（24色網格，參考 Gartic.io） -->
-    <div v-if="tool === 'pen'" class="p-2">
-      <div class="grid grid-cols-4 gap-1 mb-2">
-        <button
+    <!-- 顏色調色板（24色網格） -->
+    <div v-if="tool === 'pen'" class="margin-bottom-small">
+      <label class="text-small">顏色</label>
+      <div class="row" style="margin-top: 0.5rem;">
+        <div
           v-for="c in colors"
           :key="c"
           @click="setColor(c)"
           :class="[
-            'w-8 h-8 rounded border-2 transition-all',
-            color === c 
-              ? 'border-gray-800 dark:border-gray-200 scale-110 shadow-md' 
-              : 'border-gray-300 dark:border-gray-600 hover:scale-105'
+            'col-3',
+            color === c ? 'border' : ''
           ]"
-          :style="{ backgroundColor: c }"
+          :style="{
+            backgroundColor: c,
+            width: '30px',
+            height: '30px',
+            cursor: 'pointer',
+            border: color === c ? `3px solid var(--border-color)` : `1px solid var(--border-light)`,
+            margin: '2px'
+          }"
           :aria-label="`選擇顏色 ${c}`"
-        />
+        ></div>
       </div>
 
       <!-- 當前選中顏色（大色塊） -->
-      <div class="mt-2">
+      <div class="margin-top-small">
+        <label class="text-small">當前顏色</label>
         <div
-          class="w-full h-12 rounded-lg border-2 border-gray-300 dark:border-gray-600 shadow-sm"
+          class="border"
+          style="width: 100%; height: 50px; margin-top: 0.5rem; border-color: var(--border-color);"
           :style="{ backgroundColor: color }"
         ></div>
       </div>
     </div>
 
-    <!-- 分隔線 -->
-    <div class="border-t border-gray-200 dark:border-gray-700 my-2"></div>
-
-    <!-- 畫筆大小（垂直滑塊，參考 Gartic.io） -->
-    <div class="p-2">
-      <div class="flex flex-col items-center gap-2">
-        <input
-          v-model.number="lineWidth"
-          @input="handleLineWidthChange"
-          type="range"
-          min="1"
-          max="20"
-          orient="vertical"
-          class="w-2 h-32 vertical-slider"
-        />
-        <div class="text-xs text-text-secondary">{{ lineWidth }}px</div>
-      </div>
-
-      <!-- 畫筆大小指示器（4個點） -->
-      <div class="flex flex-col items-center gap-1 mt-2">
-        <div
-          v-for="(size, index) in brushSizes"
-          :key="index"
-          :class="[
-            'rounded-full border-2 transition-all',
-            lineWidth >= size.min && lineWidth <= size.max
-              ? 'border-blue-500 bg-blue-500'
-              : 'border-gray-300 dark:border-gray-600 bg-gray-200 dark:bg-gray-700'
-          ]"
-          :style="{ width: `${size.size}px`, height: `${size.size}px` }"
-        ></div>
-      </div>
+    <!-- 畫筆大小 -->
+    <div class="margin-bottom-small">
+      <label class="text-small">畫筆大小: {{ lineWidth }}px</label>
+      <input
+        v-model.number="lineWidth"
+        @input="handleLineWidthChange"
+        type="range"
+        min="1"
+        max="20"
+        class="margin-top-small"
+      />
     </div>
 
-    <!-- 分隔線 -->
-    <div class="border-t border-gray-200 dark:border-gray-700 my-2"></div>
-
     <!-- 清空按鈕 -->
-    <div class="p-2">
+    <div>
       <button
         @click="handleClear"
-        class="w-full px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium transition-colors"
+        class="paper-btn btn-danger btn-block"
         title="清空畫布"
       >
-        <i class="fas fa-trash-alt mr-1"></i>
-        清空
+        🗑️ 清空
       </button>
     </div>
   </div>
@@ -148,14 +124,6 @@ const colors = [
   '#400040', // 深紫
 ]
 
-// 畫筆大小指示器
-const brushSizes = [
-  { min: 1, max: 5, size: 4 },
-  { min: 6, max: 10, size: 8 },
-  { min: 11, max: 15, size: 12 },
-  { min: 16, max: 20, size: 16 },
-]
-
 const tool = computed(() => drawingStore.tool)
 const color = computed(() => drawingStore.color)
 const lineWidth = computed({
@@ -184,49 +152,7 @@ function handleClear() {
 
 <style scoped>
 .drawing-toolbar {
-  @apply h-full flex flex-col bg-white dark:bg-gray-800;
-  overflow-y: auto;
-}
-
-/* 垂直滑塊樣式 */
-.vertical-slider {
-  writing-mode: bt-lr; /* IE */
-  -webkit-appearance: slider-vertical;
-  appearance: slider-vertical;
-  width: 8px;
-  height: 128px;
-  outline: none;
-}
-
-.vertical-slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: #3b82f6;
-  cursor: pointer;
-}
-
-.vertical-slider::-moz-range-thumb {
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: #3b82f6;
-  cursor: pointer;
-  border: none;
-}
-
-.vertical-slider::-webkit-slider-runnable-track {
-  width: 8px;
-  background: #e5e7eb;
-  border-radius: 4px;
-}
-
-.vertical-slider::-moz-range-track {
-  width: 8px;
-  background: #e5e7eb;
-  border-radius: 4px;
+  width: 100%;
 }
 </style>
 

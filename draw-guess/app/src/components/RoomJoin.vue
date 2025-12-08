@@ -1,62 +1,66 @@
 <template>
   <div class="room-join">
-    <h2 class="text-xl font-light text-text-primary mb-4">加入房間</h2>
+    <div class="card">
+      <div class="card-body">
+        <h2 class="card-title text-hand-title">加入房間</h2>
 
-    <form @submit.prevent="handleSubmit" class="space-y-4">
-      <!-- 房間碼 -->
-      <div>
-        <label class="block text-sm text-text-secondary mb-1">房間碼</label>
-        <input
-          v-model="form.code"
-          type="text"
-          class="input-minimal w-full text-center text-2xl tracking-widest"
-          placeholder="000000"
-          maxlength="6"
-          pattern="[0-9]{6}"
-          required
-          @input="handleCodeInput"
-        />
-        <div class="text-xs text-text-secondary mt-1">
-          輸入 6 位數字房間碼
-        </div>
-      </div>
+        <form @submit.prevent="handleSubmit">
+          <!-- 房間碼 -->
+          <div class="form-group">
+            <label>房間碼</label>
+            <input
+              v-model="form.code"
+              type="text"
+              class="text-center"
+              style="font-size: 2rem; letter-spacing: 0.5rem;"
+              placeholder="000000"
+              maxlength="6"
+              pattern="[0-9]{6}"
+              required
+              @input="handleCodeInput"
+            />
+            <div class="text-small">
+              輸入 6 位數字房間碼
+            </div>
+          </div>
 
-      <!-- 暱稱 -->
-      <div>
-        <label class="block text-sm text-text-secondary mb-1">暱稱</label>
-        <input
-          v-model="form.nickname"
-          type="text"
-          class="input-minimal w-full"
-          placeholder="輸入您的暱稱"
-          maxlength="20"
-          required
-        />
-      </div>
+          <!-- 暱稱 -->
+          <div class="form-group">
+            <label>暱稱</label>
+            <input
+              v-model="form.nickname"
+              type="text"
+              placeholder="輸入您的暱稱"
+              maxlength="20"
+              required
+            />
+          </div>
 
-      <!-- 錯誤提示 -->
-      <div v-if="error" class="text-sm text-red-600 bg-red-50 p-2 rounded-minimal border-thin border-red-200">
-        {{ error }}
-      </div>
+          <!-- 錯誤提示 -->
+          <div v-if="error" class="alert alert-danger">
+            {{ error }}
+          </div>
 
-      <!-- 提交按鈕 -->
-      <div class="flex gap-3">
-        <button
-          type="submit"
-          :disabled="loading || !isFormValid"
-          class="btn-minimal flex-1"
-        >
-          {{ loading ? '加入中...' : '加入房間' }}
-        </button>
-        <button
-          type="button"
-          @click="$emit('cancel')"
-          class="btn-minimal"
-        >
-          取消
-        </button>
+          <!-- 提交按鈕 -->
+          <div class="row flex-spaces margin-top-medium">
+            <button
+              type="submit"
+              :disabled="loading || !isFormValid"
+              class="paper-btn btn-primary"
+            >
+              {{ loading ? '加入中...' : '加入房間' }}
+            </button>
+            <button
+              type="button"
+              @click="$emit('cancel')"
+              class="paper-btn btn-secondary"
+            >
+              取消
+            </button>
+          </div>
+        </form>
       </div>
-    </form>
+    </div>
   </div>
 </template>
 
@@ -116,7 +120,9 @@ async function handleSubmit() {
 
 <style scoped>
 .room-join {
-  @apply w-full max-w-md mx-auto;
+  width: 100%;
+  max-width: 500px;
+  margin: 0 auto;
 }
 </style>
 

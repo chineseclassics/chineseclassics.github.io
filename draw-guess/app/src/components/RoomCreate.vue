@@ -1,123 +1,120 @@
 <template>
   <div class="room-create">
-    <h2 class="text-xl font-light text-text-primary mb-4">創建房間</h2>
+    <div class="card">
+      <div class="card-body">
+        <h2 class="card-title text-hand-title">創建房間</h2>
 
-    <form @submit.prevent="handleSubmit" class="space-y-4">
-      <!-- 房間名稱 -->
-      <div>
-        <label class="block text-sm text-text-secondary mb-1">房間名稱</label>
-        <input
-          v-model="form.name"
-          type="text"
-          class="input-minimal w-full"
-          placeholder="輸入房間名稱"
-          maxlength="50"
-          required
-        />
-      </div>
-
-      <!-- 自定義詞語 -->
-      <div>
-        <label class="block text-sm text-text-secondary mb-1">
-          自定義詞語（至少 6 個，每個 1-32 字符，最多 600 字符）
-        </label>
-        <textarea
-          v-model="form.wordsText"
-          class="input-minimal w-full h-32 resize-none"
-          placeholder="輸入詞語，用逗號或換行分隔&#10;例如：春天,友誼,勇氣"
-          @input="handleWordsInput"
-        />
-        <div class="text-xs text-text-secondary mt-1">
-          已輸入 {{ wordCount }} 個詞語，{{ totalChars }} / 600 字符
-        </div>
-        <div v-if="wordCount < 6" class="text-xs text-red-600 mt-1">
-          還需要 {{ 6 - wordCount }} 個詞語
-        </div>
-      </div>
-
-      <!-- 遊戲設置 -->
-      <div class="space-y-3">
-        <h3 class="text-sm font-medium text-text-primary">遊戲設置</h3>
-
-        <!-- 繪畫時間 -->
-        <div>
-          <label class="block text-sm text-text-secondary mb-1">繪畫時間（秒）</label>
-          <input
-            v-model.number="form.settings.draw_time"
-            type="number"
-            class="input-minimal w-full"
-            min="60"
-            max="180"
-            required
-          />
-        </div>
-
-        <!-- 輪數 -->
-        <div>
-          <label class="block text-sm text-text-secondary mb-1">輪數</label>
-          <input
-            v-model.number="form.settings.rounds"
-            type="number"
-            class="input-minimal w-full"
-            :min="3"
-            :max="Math.min(10, wordCount)"
-            required
-          />
-          <div class="text-xs text-text-secondary mt-1">
-            最多 {{ Math.min(10, wordCount) }} 輪（不能超過詞語總數）
+        <form @submit.prevent="handleSubmit">
+          <!-- 房間名稱 -->
+          <div class="form-group">
+            <label>房間名稱</label>
+            <input
+              v-model="form.name"
+              type="text"
+              placeholder="輸入房間名稱"
+              maxlength="50"
+              required
+            />
           </div>
-        </div>
 
-        <!-- 每輪可選詞數 -->
-        <div>
-          <label class="block text-sm text-text-secondary mb-1">每輪可選詞數</label>
-          <input
-            v-model.number="form.settings.word_count_per_round"
-            type="number"
-            class="input-minimal w-full"
-            min="1"
-            max="5"
-            required
-          />
-        </div>
+          <!-- 自定義詞語 -->
+          <div class="form-group">
+            <label>自定義詞語（至少 6 個，每個 1-32 字符，最多 600 字符）</label>
+            <textarea
+              v-model="form.wordsText"
+              rows="6"
+              placeholder="輸入詞語，用逗號或換行分隔&#10;例如：春天,友誼,勇氣"
+              @input="handleWordsInput"
+            ></textarea>
+            <div class="text-small">
+              已輸入 {{ wordCount }} 個詞語，{{ totalChars }} / 600 字符
+            </div>
+            <div v-if="wordCount < 6" class="text-small" style="color: #e8590c;">
+              還需要 {{ 6 - wordCount }} 個詞語
+            </div>
+          </div>
 
-        <!-- 提示數量 -->
-        <div>
-          <label class="block text-sm text-text-secondary mb-1">提示數量</label>
-          <input
-            v-model.number="form.settings.hints_count"
-            type="number"
-            class="input-minimal w-full"
-            min="0"
-            max="5"
-            required
-          />
-        </div>
+          <!-- 遊戲設置 -->
+          <div class="margin-top-medium">
+            <h4 class="text-hand-title">遊戲設置</h4>
+
+            <!-- 繪畫時間 -->
+            <div class="form-group">
+              <label>繪畫時間（秒）</label>
+              <input
+                v-model.number="form.settings.draw_time"
+                type="number"
+                min="60"
+                max="180"
+                required
+              />
+            </div>
+
+            <!-- 輪數 -->
+            <div class="form-group">
+              <label>輪數</label>
+              <input
+                v-model.number="form.settings.rounds"
+                type="number"
+                :min="3"
+                :max="Math.min(10, wordCount)"
+                required
+              />
+              <div class="text-small">
+                最多 {{ Math.min(10, wordCount) }} 輪（不能超過詞語總數）
+              </div>
+            </div>
+
+            <!-- 每輪可選詞數 -->
+            <div class="form-group">
+              <label>每輪可選詞數</label>
+              <input
+                v-model.number="form.settings.word_count_per_round"
+                type="number"
+                min="1"
+                max="5"
+                required
+              />
+            </div>
+
+            <!-- 提示數量 -->
+            <div class="form-group">
+              <label>提示數量</label>
+              <input
+                v-model.number="form.settings.hints_count"
+                type="number"
+                min="0"
+                max="5"
+                required
+              />
+            </div>
+          </div>
+
+          <!-- 錯誤提示 -->
+          <div v-if="error" class="alert alert-danger margin-top-small">
+            {{ error }}
+          </div>
+
+          <!-- 提交按鈕 -->
+          <div class="row flex-spaces margin-top-medium">
+            <button
+              type="submit"
+              :disabled="loading || !isFormValid"
+              class="paper-btn btn-primary"
+            >
+              {{ loading ? '創建中...' : '創建房間' }}
+            </button>
+            <button
+              type="button"
+              @click="$emit('cancel')"
+              class="paper-btn btn-secondary"
+            >
+              取消
+            </button>
+          </div>
+        </form>
       </div>
-
-      <!-- 錯誤提示 -->
-      <div v-if="error" class="text-sm text-red-600 bg-red-50 p-2 rounded-minimal border-thin border-red-200">
-        {{ error }}
-      </div>
-
-      <!-- 提交按鈕 -->
-      <div class="flex gap-3">
-        <button
-          type="submit"
-          :disabled="loading || !isFormValid"
-          class="btn-minimal flex-1"
-        >
-          {{ loading ? '創建中...' : '創建房間' }}
-        </button>
-        <button
-          type="button"
-          @click="$emit('cancel')"
-          class="btn-minimal"
-        >
-          取消
-        </button>
-      </div>
-    </form>
+    </div>
   </div>
 </template>
 
@@ -211,7 +208,9 @@ async function handleSubmit() {
 
 <style scoped>
 .room-create {
-  @apply w-full max-w-md mx-auto;
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
 }
 </style>
 

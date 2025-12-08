@@ -1,67 +1,67 @@
 <template>
   <div class="player-list">
-    <div class="space-y-2">
-      <div
-        v-for="player in rankings"
-        :key="player.id"
-        :class="[
-          'flex items-center gap-2 p-2 rounded-lg transition-all',
-          isCurrentUser(player.user_id)
-            ? 'bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800'
-            : 'bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700'
-        ]"
-      >
-        <!-- 玩家頭像 -->
+    <div
+      v-for="player in rankings"
+      :key="player.id"
+      :class="[
+        'row flex-middle margin-bottom-small border-bottom',
+        isCurrentUser(player.user_id) ? 'border-primary' : ''
+      ]"
+      style="padding-bottom: 10px;"
+    >
+      <!-- 玩家頭像 -->
+      <div class="col-2">
         <div
           :class="[
-            'w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium flex-shrink-0',
-            isCurrentDrawer(player.user_id)
-              ? 'bg-yellow-400 text-yellow-900'
-              : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+            'border',
+            isCurrentDrawer(player.user_id) ? 'border-warning' : ''
           ]"
+          :style="{
+            width: '40px',
+            height: '40px',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: isCurrentDrawer(player.user_id) ? 'var(--color-warning)' : 'var(--bg-secondary)',
+            borderColor: isCurrentDrawer(player.user_id) ? 'var(--color-warning)' : 'var(--border-light)',
+            color: 'var(--text-primary)'
+          }"
         >
           {{ getParticipantName(player.user_id).charAt(0) }}
         </div>
-
-        <!-- 玩家信息 -->
-        <div class="flex-1 min-w-0">
-          <div class="flex items-center gap-1.5">
-            <div class="text-sm text-text-primary truncate font-medium">
-              {{ getParticipantName(player.user_id) }}
-            </div>
-            <!-- 畫家標記（鉛筆圖標） -->
-            <i
-              v-if="isCurrentDrawer(player.user_id)"
-              class="fas fa-pencil-alt text-xs text-yellow-600 flex-shrink-0"
-              title="畫家"
-            ></i>
-            <!-- 房主標記 -->
-            <span
-              v-if="isHost(player.user_id)"
-              class="text-xs text-text-secondary flex-shrink-0"
-              title="房主"
-            >
-              (房主)
-            </span>
-          </div>
-          <!-- 分數 -->
-          <div class="text-xs text-text-secondary">
-            得分 {{ player.score }}
-          </div>
-        </div>
       </div>
 
-      <!-- 獲勝者標識（遊戲結束時） -->
-      <div
-        v-if="showWinner && winner"
-        class="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg"
-      >
-        <div class="text-sm font-medium text-yellow-800 dark:text-yellow-300 text-center">
-          🏆 獲勝者：{{ getParticipantName(winner.user_id) }}
+      <!-- 玩家信息 -->
+      <div class="col-8">
+        <div class="text-hand">
+          {{ getParticipantName(player.user_id) }}
+          <span
+            v-if="isCurrentDrawer(player.user_id)"
+            class="badge warning"
+            style="background-color: var(--color-warning); color: var(--text-primary);"
+          >
+            畫家
+          </span>
+          <span v-if="isHost(player.user_id)" class="text-small">(房主)</span>
         </div>
-        <div class="text-xs text-yellow-600 dark:text-yellow-400 text-center mt-1">
-          總分：{{ winner.score }} 分
+        <div class="text-small">
+          得分 {{ player.score }}
         </div>
+      </div>
+    </div>
+
+    <!-- 獲勝者標識（遊戲結束時） -->
+    <div
+      v-if="showWinner && winner"
+      class="alert alert-success margin-top-medium"
+      style="background-color: var(--color-success); color: white; border-color: var(--color-success);"
+    >
+      <div class="text-hand-title" style="color: white;">
+        🏆 獲勝者：{{ getParticipantName(winner.user_id) }}
+      </div>
+      <div class="text-small margin-top-small" style="color: white;">
+        總分：{{ winner.score }} 分
       </div>
     </div>
   </div>
@@ -105,7 +105,7 @@ function isCurrentDrawer(userId: string): boolean {
 
 <style scoped>
 .player-list {
-  @apply w-full;
+  width: 100%;
 }
 </style>
 

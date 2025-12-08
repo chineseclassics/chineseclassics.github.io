@@ -1,188 +1,202 @@
 <template>
-  <div class="min-h-screen bg-bg-primary">
-    <div class="container mx-auto p-4 h-screen flex flex-col">
+  <div class="container margin-top-small">
+    <div style="min-height: 100vh;">
       <!-- 頂部欄（參考 Gartic.io） -->
-      <div v-if="isPlaying" class="mb-4 flex items-center justify-between">
+      <div v-if="isPlaying" class="row flex-middle flex-spaces margin-bottom-small">
         <!-- 左側：房間信息 -->
-        <div class="flex items-center gap-4">
-          <h1 class="text-xl font-light text-text-primary">
-            {{ currentRoom?.name || '遊戲房間' }}
-          </h1>
-          <div class="text-sm text-text-secondary">
-            房間碼：<span class="font-mono">{{ currentRoom?.code }}</span>
+        <div class="col-6">
+          <div class="row flex-middle">
+            <h1 class="text-hand-title" style="margin: 0; margin-right: 1rem;">
+              {{ currentRoom?.name || '遊戲房間' }}
+            </h1>
+            <div class="text-small">
+              房間碼：<span style="font-family: monospace;">{{ currentRoom?.code }}</span>
+            </div>
           </div>
         </div>
 
         <!-- 右側：遊戲控制按鈕 -->
-        <div class="flex items-center gap-2">
-          <!-- 提示按鈕（暫時隱藏，後續實現） -->
-          <button
-            v-if="false"
-            class="btn-minimal text-sm px-3 py-1.5"
-            title="提示"
-          >
-            <i class="fas fa-lightbulb"></i>
-          </button>
+        <div class="col-6 text-right">
+          <div class="row flex-middle flex-right">
+            <!-- 當前詞語（僅畫家可見） -->
+            <div
+              v-if="isCurrentDrawer && gameStore.currentWord"
+              class="badge success margin-right-small"
+              style="background-color: var(--color-secondary); color: white; font-family: var(--font-head);"
+            >
+              {{ gameStore.currentWord }}
+            </div>
 
-          <!-- 當前詞語（僅畫家可見） -->
-          <div
-            v-if="isCurrentDrawer && gameStore.currentWord"
-            class="px-3 py-1.5 bg-blue-500 text-white rounded-lg text-sm font-medium"
-          >
-            {{ gameStore.currentWord }}
+            <!-- 倒計時顯示 -->
+            <div
+              v-if="isCountingDown"
+              :class="[
+                'badge margin-right-small',
+                timeRemaining && timeRemaining <= 10 ? 'badge-danger' : 'badge-secondary'
+              ]"
+              :style="{
+                fontSize: '1.2rem',
+                fontFamily: 'var(--font-head)',
+                backgroundColor: timeRemaining && timeRemaining <= 10 ? 'var(--color-danger)' : 'var(--color-secondary)',
+                color: 'white'
+              }"
+            >
+              {{ formattedTime }}
+            </div>
+
+            <!-- 關閉按鈕 -->
+            <button
+              @click="handleLeaveRoom"
+              class="paper-btn btn-small"
+              title="離開房間"
+            >
+              ✕
+            </button>
           </div>
-
-          <!-- 跳過按鈕（僅畫家可見，暫時隱藏） -->
-          <button
-            v-if="false && isCurrentDrawer"
-            class="btn-minimal text-sm px-3 py-1.5"
-            title="跳過"
-          >
-            跳過
-          </button>
-
-          <!-- 倒計時顯示 -->
-          <div
-            v-if="isCountingDown"
-            :class="[
-              'text-lg font-mono px-3 py-1.5 rounded-lg',
-              timeRemaining && timeRemaining <= 10 
-                ? 'bg-red-100 text-red-600 dark:bg-red-900 dark:text-red-300' 
-                : 'bg-gray-100 text-text-primary dark:bg-gray-800'
-            ]"
-          >
-            {{ formattedTime }}
-          </div>
-
-          <!-- 信息圖標（暫時隱藏） -->
-          <button
-            v-if="false"
-            class="btn-minimal text-sm px-2 py-1.5"
-            title="信息"
-          >
-            <i class="fas fa-info-circle"></i>
-          </button>
-
-          <!-- 關閉按鈕 -->
-          <button
-            @click="handleLeaveRoom"
-            class="btn-minimal text-sm px-2 py-1.5"
-            title="離開房間"
-          >
-            <i class="fas fa-times"></i>
-          </button>
         </div>
       </div>
 
       <!-- 房間信息（非遊戲中時顯示） -->
-      <div v-else class="mb-4">
-        <div class="flex items-center justify-between mb-2">
-          <h1 class="text-2xl font-light text-text-primary">
-            {{ currentRoom?.name || '遊戲房間' }}
-          </h1>
-        </div>
-        <div class="text-sm text-text-secondary">
-          房間碼：<span class="font-mono">{{ currentRoom?.code }}</span>
+      <div v-else class="margin-bottom-small">
+        <h1 class="text-hand-title">
+          {{ currentRoom?.name || '遊戲房間' }}
+        </h1>
+        <div class="text-small">
+          房間碼：<span style="font-family: monospace;">{{ currentRoom?.code }}</span>
         </div>
       </div>
 
       <!-- 等待大廳 -->
-      <div v-if="isWaiting" class="flex-1 flex items-center justify-center">
-        <WaitingLobby
-          :room="currentRoom"
-          :participants="roomStore.participants"
-          @start-game="handleStartGame"
-          @leave-room="handleLeaveRoom"
-        />
+      <div v-if="isWaiting" class="row flex-center">
+        <div class="col-12 col-md-8">
+          <WaitingLobby
+            :room="currentRoom"
+            :participants="roomStore.participants"
+            @start-game="handleStartGame"
+            @leave-room="handleLeaveRoom"
+          />
+        </div>
       </div>
 
       <!-- 遊戲進行中 - 參考 Gartic.io 佈局 -->
-      <div v-else-if="isPlaying" class="flex-1 flex gap-4 min-h-0 overflow-hidden">
-        <!-- 左側：玩家列表（白色可滾動面板） -->
-        <div class="flex-shrink-0 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden flex flex-col">
-          <div class="p-3 border-b border-gray-200 dark:border-gray-700">
-            <h3 class="text-sm font-medium text-text-primary">玩家列表</h3>
-          </div>
-          <div class="flex-1 overflow-y-auto p-2">
-            <PlayerList :show-winner="false" />
-          </div>
-        </div>
-
-        <!-- 中間：畫布區域 -->
-        <div class="flex-1 flex flex-col min-w-0 min-h-0">
-          <!-- 畫布容器 -->
-          <div class="flex-1 bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden flex items-center justify-center p-4">
-            <DrawingCanvas class="w-full h-full max-w-full max-h-full" />
-          </div>
-
-          <!-- 進度條（時間進度，參考 Gartic.io） -->
-          <div v-if="isCountingDown && timeRemaining !== null" class="mt-2 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-            <div
-              class="h-full transition-all duration-1000"
-              :class="timeRemaining <= 10 ? 'bg-red-500' : 'bg-blue-500'"
-              :style="{ width: `${(timeRemaining / drawTime) * 100}%` }"
-            ></div>
-          </div>
-
-          <!-- 底部：輸入區域 -->
-          <div class="mt-2 flex gap-4">
-            <!-- 左側：答案輸入區域 -->
-            <div class="flex-1 bg-white dark:bg-gray-800 rounded-lg shadow-sm p-3 flex flex-col">
-              <button class="btn-minimal text-sm mb-2 self-start">答案</button>
-              <div class="bg-gray-50 dark:bg-gray-900 rounded p-2 mb-2 min-h-[60px] max-h-[100px] overflow-y-auto text-xs text-text-secondary flex-1">
-                <div v-if="isCurrentDrawer" class="text-center text-text-primary font-medium">
-                  輪到你了！
+      <div v-else-if="isPlaying">
+        <div class="row">
+          <!-- 左側：玩家列表 -->
+          <div class="col-12 col-md-3">
+            <div class="card">
+              <div class="card-body">
+                <h4 class="card-title text-hand-title">玩家列表</h4>
+                <div style="max-height: 400px; overflow-y: auto;">
+                  <PlayerList :show-winner="false" />
                 </div>
-                <div v-else-if="hasGuessed" class="text-center text-green-600">
-                  已猜中！
-                </div>
-                <div v-else class="text-center text-text-secondary">
-                  等待玩家加入...
-                </div>
-              </div>
-              <!-- 猜詞輸入（僅非畫家可見） -->
-              <div v-if="!isCurrentDrawer" class="space-y-2">
-                <form @submit.prevent="handleSubmitGuess" class="flex gap-2">
-                  <input
-                    v-model="guessInput"
-                    type="text"
-                    class="input-minimal flex-1 text-sm"
-                    placeholder="輪到你了"
-                    maxlength="32"
-                    :disabled="loading || hasGuessed"
-                  />
-                  <button
-                    type="submit"
-                    :disabled="loading || hasGuessed || !guessInput.trim()"
-                    class="btn-minimal px-3 py-1.5 text-sm"
-                  >
-                    {{ loading ? '提交中...' : hasGuessed ? '已猜中' : '提交' }}
-                  </button>
-                </form>
-              </div>
-            </div>
-
-            <!-- 右側：聊天室（暫時簡化） -->
-            <div class="w-64 bg-white dark:bg-gray-800 rounded-lg shadow-sm p-3 flex flex-col">
-              <button class="btn-minimal text-sm mb-2 self-start">聊天室</button>
-              <div class="bg-gray-50 dark:bg-gray-900 rounded p-2 mb-2 min-h-[60px] max-h-[100px] overflow-y-auto text-xs text-text-secondary flex-1">
-                <div class="text-center text-text-secondary">聊天功能即將推出</div>
               </div>
             </div>
           </div>
-        </div>
 
-        <!-- 右側：繪畫工具欄（垂直面板，參考 Gartic.io） -->
-        <div class="flex-shrink-0 w-20 bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-y-auto">
-          <DrawingToolbar />
+          <!-- 中間：畫布區域 -->
+          <div class="col-12 col-md-6">
+            <!-- 畫布容器 -->
+            <div class="card">
+              <div class="card-body" style="padding: 1rem;">
+                <div class="canvas-paper" style="min-height: 400px; display: flex; align-items: center; justify-content: center; padding: 1rem;">
+                  <DrawingCanvas style="width: 100%; height: 100%; max-width: 100%; max-height: 100%;" />
+                </div>
+              </div>
+            </div>
+
+            <!-- 進度條（時間進度） -->
+            <div v-if="isCountingDown && timeRemaining !== null" class="margin-top-small">
+              <div class="progress">
+                <div
+                  class="bar"
+                  :class="timeRemaining <= 10 ? 'bar-danger' : 'bar-success'"
+                  :style="{
+                    width: `${(timeRemaining / drawTime) * 100}%`,
+                    backgroundColor: timeRemaining <= 10 ? 'var(--color-danger)' : 'var(--color-secondary)'
+                  }"
+                ></div>
+              </div>
+            </div>
+
+            <!-- 底部：輸入區域 -->
+            <div class="row margin-top-small">
+              <!-- 答案輸入區域 -->
+              <div class="col-12 col-md-8">
+                <div class="card">
+                  <div class="card-body">
+                    <h5 class="text-hand-title">答案</h5>
+                    <div class="border margin-bottom-small" style="min-height: 60px; max-height: 100px; overflow-y: auto; padding: 0.5rem; background: #f4f4f4;">
+                      <div v-if="isCurrentDrawer" class="text-center text-hand">
+                        輪到你了！
+                      </div>
+                      <div v-else-if="hasGuessed" class="text-center" style="color: #41b883;">
+                        已猜中！
+                      </div>
+                      <div v-else class="text-center text-small">
+                        等待玩家加入...
+                      </div>
+                    </div>
+                    <!-- 猜詞輸入（僅非畫家可見） -->
+                    <div v-if="!isCurrentDrawer">
+                      <form @submit.prevent="handleSubmitGuess" class="row flex-middle">
+                        <div class="col-8">
+                          <input
+                            v-model="guessInput"
+                            type="text"
+                            placeholder="輪到你了"
+                            maxlength="32"
+                            :disabled="loading || hasGuessed"
+                          />
+                        </div>
+                        <div class="col-4">
+                          <button
+                            type="submit"
+                            :disabled="loading || hasGuessed || !guessInput.trim()"
+                            class="paper-btn btn-primary btn-block"
+                          >
+                            {{ loading ? '提交中...' : hasGuessed ? '已猜中' : '提交' }}
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 右側：聊天室（暫時簡化） -->
+              <div class="col-12 col-md-4">
+                <div class="card">
+                  <div class="card-body">
+                    <h5 class="text-hand-title">聊天室</h5>
+                    <div class="border" style="min-height: 60px; max-height: 100px; overflow-y: auto; padding: 0.5rem; background: #f4f4f4;">
+                      <div class="text-center text-small">聊天功能即將推出</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 右側：繪畫工具欄 -->
+          <div class="col-12 col-md-3">
+            <div class="card">
+              <div class="card-body">
+                <DrawingToolbar />
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
       <!-- 遊戲結束 -->
-      <div v-else-if="isFinished" class="flex-1 flex items-center justify-center">
-        <div class="text-center">
-          <h2 class="text-2xl font-light text-text-primary mb-4">遊戲結束</h2>
-          <PlayerList :show-winner="true" />
+      <div v-else-if="isFinished" class="row flex-center">
+        <div class="col-12 col-md-8">
+          <div class="card">
+            <div class="card-body text-center">
+              <h2 class="card-title text-hand-title">遊戲結束</h2>
+              <PlayerList :show-winner="true" />
+            </div>
+          </div>
         </div>
       </div>
     </div>

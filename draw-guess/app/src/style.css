@@ -1,75 +1,307 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* PaperCSS 手繪風格全局樣式 - 水墨丹青 + 童趣點綴配色方案 */
+/* 注意：不再使用 Tailwind，完全使用 PaperCSS */
 
-/* 極簡設計全局樣式 */
-@layer base {
-  body {
-    @apply bg-bg-primary text-text-primary;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-      'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-      sans-serif;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+/* LXGW 文楷繁體版 - 本地字體 */
+@font-face {
+  font-family: 'LXGW WenKai TC';
+  src: url(/draw-guess/font/LXGWWenKaiTC-Regular.ttf) format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'LXGW WenKai TC';
+  src: url(/draw-guess/font/LXGWWenKaiTC-Medium.ttf) format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  /* 字體 */
+  --font-head: 'LXGW WenKai TC', serif;
+  --font-body: 'LXGW WenKai TC', serif;
+  
+  /* 背景色 - 溫暖米白系 */
+  --bg-primary: #FAF8F3;        /* 主背景：溫暖米白 */
+  --bg-secondary: #F5F1E8;      /* 次要背景：淺米色 */
+  --bg-card: #FFFFFF;           /* 卡片背景：純白 */
+  --bg-hover: #FFFEF7;          /* 懸停背景：米白高光 */
+  
+  /* 文字色 - 深墨系 */
+  --text-primary: #2C2416;      /* 主文字：深墨色 */
+  --text-secondary: #5C4A37;    /* 次要文字：灰褐色 */
+  --text-tertiary: #8B7355;     /* 第三級文字：中褐色 */
+  --text-hint: #A89B8C;         /* 提示文字：淺褐色 */
+  
+  /* 功能色 - 中國傳統色彩 */
+  --color-primary: #C73E1D;     /* 主要操作：朱砂紅 */
+  --color-secondary: #4A90A4;   /* 次要操作：青花藍 */
+  --color-success: #6B8E5A;     /* 成功：竹青 */
+  --color-warning: #D4A574;      /* 警告：金黃 */
+  --color-danger: #A52A2A;       /* 危險：深紅 */
+  --color-info: #B8D4E3;         /* 信息：淡藍 */
+  
+  /* 裝飾色 */
+  --border-color: #8B7355;       /* 邊框：古銅色 */
+  --border-light: #A89B8C;       /* 淺邊框：淺古銅 */
+  --shadow-color: #E8E0D5;       /* 陰影：淡墨色 */
+  --accent-gold: #D4A574;        /* 裝飾金黃 */
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* 標題專用字體 */
+h1, h2, h3, h4, h5, h6, .card-title, .brand {
+  font-family: var(--font-head);
+  letter-spacing: 2px;
+  color: var(--text-primary);
+}
+
+/* Vue 應用區塊 */
+#app {
+  min-height: 100vh;
+  width: 100%;
+  background-color: var(--bg-primary);
+}
+
+/* 按鈕 Hover 時的輕微抖動效果 */
+@keyframes wiggle {
+  0% { transform: rotate(0deg); }
+  25% { transform: rotate(1deg); }
+  75% { transform: rotate(-1deg); }
+  100% { transform: rotate(0deg); }
+}
+
+.paper-btn:hover {
+  animation: wiggle 0.3s ease-in-out;
+}
+
+/* 自定義 PaperCSS 按鈕顏色 */
+.paper-btn.btn-primary {
+  background-color: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+}
+
+.paper-btn.btn-primary:hover {
+  background-color: #B0351A;
+  border-color: #B0351A;
+}
+
+.paper-btn.btn-secondary {
+  background-color: var(--color-secondary);
+  color: white;
+  border-color: var(--color-secondary);
+}
+
+.paper-btn.btn-secondary:hover {
+  background-color: #3A7080;
+  border-color: #3A7080;
+}
+
+.paper-btn.btn-success {
+  background-color: var(--color-success);
+  color: white;
+  border-color: var(--color-success);
+}
+
+.paper-btn.btn-warning {
+  background-color: var(--color-warning);
+  color: var(--text-primary);
+  border-color: var(--color-warning);
+}
+
+.paper-btn.btn-danger {
+  background-color: var(--color-danger);
+  color: white;
+  border-color: var(--color-danger);
+}
+
+/* 輸入框和表單元素字體 */
+input, select, textarea, button {
+  font-family: var(--font-body);
+  color: var(--text-primary);
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: var(--color-secondary);
+  outline-color: var(--color-secondary);
+}
+
+/* 卡片樣式調整 */
+.card {
+  background-color: var(--bg-card);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.card-body {
+  color: var(--text-primary);
+}
+
+/* Alert 樣式調整 */
+.alert {
+  border-color: var(--border-color);
+}
+
+.alert-success {
+  background-color: var(--color-success);
+  color: white;
+  border-color: var(--color-success);
+}
+
+.alert-danger {
+  background-color: var(--color-danger);
+  color: white;
+  border-color: var(--color-danger);
+}
+
+.alert-warning {
+  background-color: var(--color-warning);
+  color: var(--text-primary);
+  border-color: var(--color-warning);
+}
+
+.alert-secondary {
+  background-color: var(--color-secondary);
+  color: white;
+  border-color: var(--color-secondary);
+}
+
+/* Badge 樣式調整 */
+.badge {
+  border-color: var(--border-color);
+}
+
+.badge-success {
+  background-color: var(--color-success);
+  color: white;
+}
+
+.badge-danger {
+  background-color: var(--color-danger);
+  color: white;
+}
+
+.badge-warning {
+  background-color: var(--color-warning);
+  color: var(--text-primary);
+}
+
+.badge-secondary {
+  background-color: var(--color-secondary);
+  color: white;
+}
+
+/* Progress bar 樣式調整 */
+.progress {
+  background-color: var(--bg-secondary);
+  border-color: var(--border-light);
+}
+
+.bar-success {
+  background-color: var(--color-success);
+}
+
+.bar-danger {
+  background-color: var(--color-danger);
+}
+
+.bar-secondary {
+  background-color: var(--color-secondary);
+}
+
+/* 畫布區域 - 白色背景，無方格 */
+.canvas-paper {
+  background-color: var(--bg-card);
+  background-image: none;
+  border-color: var(--border-color);
+}
+
+/* 自定義工具類 */
+.text-hand {
+  font-family: var(--font-body);
+  color: var(--text-primary);
+}
+
+.text-hand-title {
+  font-family: var(--font-head);
+  letter-spacing: 2px;
+  color: var(--text-primary);
+}
+
+/* 文字顏色工具類 */
+.text-primary {
+  color: var(--text-primary);
+}
+
+.text-secondary {
+  color: var(--text-secondary);
+}
+
+.text-tertiary {
+  color: var(--text-tertiary);
+}
+
+.text-hint {
+  color: var(--text-hint);
+}
+
+/* 背景顏色工具類 */
+.bg-primary {
+  background-color: var(--bg-primary);
+}
+
+.bg-secondary {
+  background-color: var(--bg-secondary);
+}
+
+.bg-card {
+  background-color: var(--bg-card);
+}
+
+/* 淡入淡出效果 */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+/* 平滑的過渡 */
+.transition-smooth {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 分數更新動畫（手繪風格） */
+@keyframes score-update {
+  0% {
+    transform: scale(1) rotate(0deg);
+  }
+  25% {
+    transform: scale(1.15) rotate(-2deg);
+  }
+  50% {
+    transform: scale(1.2) rotate(2deg);
+  }
+  75% {
+    transform: scale(1.1) rotate(-1deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
   }
 }
 
-/* 極簡設計組件樣式 */
-@layer components {
-  /* 按鈕：極簡設計，細邊框，低調懸停效果 */
-  .btn-minimal {
-    @apply px-4 py-2 rounded-minimal border-thin border-border-light;
-    @apply bg-bg-primary text-text-primary;
-    @apply transition-all duration-200;
-    @apply hover:border-border-medium hover:bg-bg-secondary;
-  }
-
-  /* 輸入框：細線條邊框，低調焦點效果 */
-  .input-minimal {
-    @apply px-3 py-2 rounded-minimal border-thin border-border-light;
-    @apply bg-bg-primary text-text-primary;
-    @apply focus:outline-none focus:border-border-medium;
-    @apply transition-all duration-200;
-  }
-
-  /* 卡片：極簡設計，細邊框，無裝飾 */
-  .card-minimal {
-    @apply p-4 rounded-minimal border-thin border-border-light;
-    @apply bg-bg-primary;
-  }
-}
-
-/* 優雅的、微妙的動畫 */
-@layer utilities {
-  /* 淡入淡出效果 */
-  .fade-enter-active,
-  .fade-leave-active {
-    transition: opacity 0.3s ease;
-  }
-  .fade-enter-from,
-  .fade-leave-to {
-    opacity: 0;
-  }
-
-  /* 平滑的過渡 */
-  .transition-smooth {
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  /* 分數更新動畫 */
-  @keyframes score-update {
-    0% {
-      transform: scale(1);
-    }
-    50% {
-      transform: scale(1.1);
-    }
-    100% {
-      transform: scale(1);
-    }
-  }
-
-  .score-update {
-    animation: score-update 0.3s ease;
-  }
+.score-update {
+  animation: score-update 0.4s ease;
 }

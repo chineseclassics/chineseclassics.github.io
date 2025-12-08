@@ -96,12 +96,17 @@ onUnmounted(() => {
 
 <style scoped>
 .drawing-canvas-container {
-  @apply w-full h-full flex items-center justify-center bg-bg-primary;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .drawing-canvas {
-  @apply border-thin border-border-light;
-  background-color: #FFFFFF;
+  border: 2px solid var(--border-color);
+  background-color: var(--bg-card);
+  background-image: none;
   cursor: crosshair;
   touch-action: none; /* 防止觸摸滾動 */
   max-width: 100%;

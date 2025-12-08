@@ -1,69 +1,73 @@
 <template>
-  <div class="min-h-screen bg-bg-primary p-8">
-    <div class="max-w-2xl mx-auto">
-      <div class="text-center mb-8">
-        <h1 class="text-3xl font-light text-text-primary mb-2">
-          你畫我猜
-        </h1>
-        <p class="text-sm text-text-secondary">
-          通過繪畫和猜測，學習中文詞彙
-        </p>
-      </div>
+  <div class="container margin-top-large">
+    <div class="row flex-center">
+      <div class="col-12 col-md-10 col-lg-8">
+        <div class="text-center margin-bottom-large">
+          <h1 class="text-hand-title">
+            你畫我猜
+          </h1>
+          <p class="lead text-hand">
+            通過繪畫和猜測，學習中文詞彙
+          </p>
+        </div>
       
-      <!-- 用戶認證組件 -->
-      <div class="mb-8">
-        <UserAuth />
-      </div>
-
-      <!-- 等待大廳（如果已加入房間且狀態為 waiting） -->
-      <div v-if="currentRoom && currentRoom.status === 'waiting'" class="mb-8">
-        <WaitingLobby
-          :room="currentRoom"
-          :participants="participants"
-          @start-game="handleStartGame"
-          @leave-room="handleLeaveRoom"
-        />
-      </div>
-
-      <!-- 如果房間狀態為 playing 或 finished，應該在 RoomView 中顯示，這裡自動跳轉 -->
-      <div v-else-if="currentRoom && (currentRoom.status === 'playing' || currentRoom.status === 'finished')" class="mb-8">
-        <div class="text-center">
-          <p class="text-text-secondary mb-4">正在跳轉到遊戲房間...</p>
+        <!-- 用戶認證組件 -->
+        <div class="margin-bottom-large">
+          <UserAuth />
         </div>
-      </div>
 
-      <!-- 主界面（未加入房間時） -->
-      <div v-else class="space-y-4">
-        <!-- 創建房間 -->
-        <div v-if="showCreateForm" class="mb-8">
-          <RoomCreate
-            @created="handleRoomCreated"
-            @cancel="() => { console.log('取消創建房間'); showCreateForm = false }"
+        <!-- 等待大廳（如果已加入房間且狀態為 waiting） -->
+        <div v-if="currentRoom && currentRoom.status === 'waiting'" class="margin-bottom-large">
+          <WaitingLobby
+            :room="currentRoom"
+            :participants="participants"
+            @start-game="handleStartGame"
+            @leave-room="handleLeaveRoom"
           />
         </div>
 
-        <!-- 加入房間 -->
-        <div v-else-if="showJoinForm" class="mb-8">
-          <RoomJoin
-            @joined="handleRoomJoined"
-            @cancel="showJoinForm = false"
-          />
+        <!-- 如果房間狀態為 playing 或 finished，應該在 RoomView 中顯示，這裡自動跳轉 -->
+        <div v-else-if="currentRoom && (currentRoom.status === 'playing' || currentRoom.status === 'finished')" class="margin-bottom-large">
+          <div class="text-center">
+            <p class="text-hand">正在跳轉到遊戲房間...</p>
+          </div>
         </div>
 
-        <!-- 操作按鈕 -->
-        <div v-else class="space-y-4">
-          <button
-            @click="showCreateForm = true"
-            class="btn-minimal w-full"
-          >
-            創建房間
-          </button>
-          <button
-            @click="showJoinForm = true"
-            class="btn-minimal w-full"
-          >
-            加入房間
-          </button>
+        <!-- 主界面（未加入房間時） -->
+        <div v-else>
+          <!-- 創建房間 -->
+          <div v-if="showCreateForm" class="margin-bottom-large">
+            <RoomCreate
+              @created="handleRoomCreated"
+              @cancel="() => { console.log('取消創建房間'); showCreateForm = false }"
+            />
+          </div>
+
+          <!-- 加入房間 -->
+          <div v-else-if="showJoinForm" class="margin-bottom-large">
+            <RoomJoin
+              @joined="handleRoomJoined"
+              @cancel="showJoinForm = false"
+            />
+          </div>
+
+          <!-- 操作按鈕 -->
+          <div v-else class="row flex-center">
+            <div class="col-12 col-md-6">
+              <button
+                @click="showCreateForm = true"
+                class="paper-btn btn-primary btn-block margin-bottom-small"
+              >
+                創建房間
+              </button>
+              <button
+                @click="showJoinForm = true"
+                class="paper-btn btn-secondary btn-block"
+              >
+                加入房間
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
