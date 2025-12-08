@@ -15,7 +15,7 @@
         <UserAuth />
       </div>
 
-      <!-- 等待大廳（如果已加入房間） -->
+      <!-- 等待大廳（如果已加入房間且狀態為 waiting） -->
       <div v-if="currentRoom && currentRoom.status === 'waiting'" class="mb-8">
         <WaitingLobby
           :room="currentRoom"
@@ -23,6 +23,13 @@
           @start-game="handleStartGame"
           @leave-room="handleLeaveRoom"
         />
+      </div>
+
+      <!-- 如果房間狀態為 playing 或 finished，應該在 RoomView 中顯示，這裡自動跳轉 -->
+      <div v-else-if="currentRoom && (currentRoom.status === 'playing' || currentRoom.status === 'finished')" class="mb-8">
+        <div class="text-center">
+          <p class="text-text-secondary mb-4">正在跳轉到遊戲房間...</p>
+        </div>
       </div>
 
       <!-- 主界面（未加入房間時） -->
@@ -107,9 +114,9 @@ function handleRoomJoined() {
 // 處理開始遊戲
 async function handleStartGame() {
   const result = await startGame()
-  if (result.success && currentRoom.value) {
-    // 跳轉到遊戲房間頁面
-    router.push(`/room/${currentRoom.value.code}`)
+  // 不需要手動跳轉，watch 會監聽狀態變化自動跳轉
+  if (!result.success) {
+    console.error('開始遊戲失敗:', result.error)
   }
 }
 
@@ -144,6 +151,22 @@ watch(
     }
   },
   { immediate: true }
+)
+
+// 監聽房間狀態變化，當狀態變為 playing 或 finished 時自動跳轉到 RoomView
+watch(
+  () => currentRoom.value?.status,
+  (status, oldStatus) => {
+    // 只在狀態從 waiting 變為 playing/finished 時跳轉，避免重複跳轉
+    if (currentRoom.value && oldStatus === 'waiting' && (status === 'playing' || status === 'finished')) {
+      // 使用 nextTick 確保狀態更新完成
+      setTimeout(() => {
+        if (currentRoom.value) {
+          router.push(`/room/${currentRoom.value.code}`)
+        }
+      }, 100)
+    }
+  }
 )
 
 // 檢查是否有當前房間（從路由參數）

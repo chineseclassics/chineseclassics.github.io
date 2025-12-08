@@ -1,58 +1,52 @@
 <template>
   <div class="player-list">
-    <div class="card-minimal">
-      <h3 class="text-sm font-medium text-text-primary mb-3">
-        玩家排行榜
-      </h3>
-
-      <div class="space-y-2">
+    <div class="space-y-2">
+      <div
+        v-for="player in rankings"
+        :key="player.id"
+        :class="[
+          'flex items-center gap-2 p-2 rounded-lg transition-all',
+          isCurrentUser(player.user_id)
+            ? 'bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800'
+            : 'bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700'
+        ]"
+      >
+        <!-- 玩家頭像 -->
         <div
-          v-for="(player, index) in rankings"
-          :key="player.id"
           :class="[
-            'flex items-center gap-3 p-2 rounded-minimal border-thin transition-all',
-            isCurrentUser(player.user_id)
-              ? 'border-border-medium bg-bg-secondary'
-              : 'border-border-light'
+            'w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium flex-shrink-0',
+            isCurrentDrawer(player.user_id)
+              ? 'bg-yellow-400 text-yellow-900'
+              : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
           ]"
         >
-          <!-- 排名 -->
-          <div
-            :class="[
-              'w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium',
-              index === 0
-                ? 'bg-yellow-100 text-yellow-800'
-                : 'bg-bg-secondary text-text-secondary'
-            ]"
-          >
-            {{ player.rank }}
-          </div>
+          {{ getParticipantName(player.user_id).charAt(0) }}
+        </div>
 
-          <!-- 玩家信息 -->
-          <div class="flex-1 min-w-0">
-            <div class="flex items-center gap-2">
-              <div class="w-6 h-6 rounded-full bg-bg-secondary border-thin border-border-light flex items-center justify-center text-xs text-text-secondary">
-                {{ getParticipantName(player.user_id).charAt(0) }}
-              </div>
-              <div class="text-sm text-text-primary truncate">
-                {{ getParticipantName(player.user_id) }}
-                <span v-if="isHost(player.user_id)" class="text-xs text-text-secondary ml-1">
-                  (房主)
-                </span>
-                <span v-if="isCurrentDrawer(player.user_id)" class="text-xs text-text-secondary ml-1">
-                  (畫家)
-                </span>
-              </div>
+        <!-- 玩家信息 -->
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-1.5">
+            <div class="text-sm text-text-primary truncate font-medium">
+              {{ getParticipantName(player.user_id) }}
             </div>
+            <!-- 畫家標記（鉛筆圖標） -->
+            <i
+              v-if="isCurrentDrawer(player.user_id)"
+              class="fas fa-pencil-alt text-xs text-yellow-600 flex-shrink-0"
+              title="畫家"
+            ></i>
+            <!-- 房主標記 -->
+            <span
+              v-if="isHost(player.user_id)"
+              class="text-xs text-text-secondary flex-shrink-0"
+              title="房主"
+            >
+              (房主)
+            </span>
           </div>
-
           <!-- 分數 -->
-          <div
-            :key="`score-${player.user_id}-${player.score}`"
-            class="text-sm font-medium text-text-primary transition-all duration-300 score-update"
-          >
-            <span class="inline-block">{{ player.score }}</span>
-            <span class="text-text-secondary ml-1">分</span>
+          <div class="text-xs text-text-secondary">
+            得分 {{ player.score }}
           </div>
         </div>
       </div>
@@ -60,12 +54,12 @@
       <!-- 獲勝者標識（遊戲結束時） -->
       <div
         v-if="showWinner && winner"
-        class="mt-4 p-3 bg-yellow-50 border-thin border-yellow-200 rounded-minimal"
+        class="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg"
       >
-        <div class="text-sm font-medium text-yellow-800 text-center">
+        <div class="text-sm font-medium text-yellow-800 dark:text-yellow-300 text-center">
           🏆 獲勝者：{{ getParticipantName(winner.user_id) }}
         </div>
-        <div class="text-xs text-yellow-600 text-center mt-1">
+        <div class="text-xs text-yellow-600 dark:text-yellow-400 text-center mt-1">
           總分：{{ winner.score }} 分
         </div>
       </div>
@@ -111,7 +105,7 @@ function isCurrentDrawer(userId: string): boolean {
 
 <style scoped>
 .player-list {
-  @apply w-full max-w-sm;
+  @apply w-full;
 }
 </style>
 
