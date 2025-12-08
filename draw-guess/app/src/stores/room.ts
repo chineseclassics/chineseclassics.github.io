@@ -132,56 +132,13 @@ export const useRoomStore = defineStore('room', () => {
       }
 
       // 確保用戶資料存在（如果不存在則創建）
-      if (!authStore.profile) {
-        const supabaseUrl = 'https://sylsqdkkshkeicaxhisq.supabase.co'
-        const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN5bHNxZGtrc2hrZWljYXhoaXNxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUwOTAyNjgsImV4cCI6MjA4MDY2NjI2OH0.ZqcDaGIr4fCxGmgQm00zUdZei50HGs3Aa_SlWEPBA6A'
-        const accessToken = authStore.session?.access_token || supabaseAnonKey
-        
-        const userData = authStore.user
-        const profileData = {
-          id: userData.id,
-          email: userData.email || null,
-          display_name: userData.user_metadata?.full_name || userData.user_metadata?.name || `訪客${Math.floor(Math.random() * 10000)}`,
-          avatar_url: userData.user_metadata?.avatar_url || userData.user_metadata?.picture || null,
-          user_type: userData.is_anonymous ? 'anonymous' : 'registered',
-        }
-        
+      // 使用 auth store 的 loadUserProfile 方法，它會自動處理創建邏輯
+      if (!authStore.profile && authStore.user) {
         try {
-          const response = await fetch(`${supabaseUrl}/rest/v1/users`, {
-            method: 'POST',
-            headers: {
-              'apikey': supabaseAnonKey,
-              'Content-Type': 'application/json',
-              'Prefer': 'return=representation',
-              'Authorization': `Bearer ${accessToken}`,
-            },
-            body: JSON.stringify(profileData),
-          })
-          
-          if (response.ok) {
-            const createdProfile = await response.json()
-            // 更新 authStore 的 profile
-            authStore.profile = Array.isArray(createdProfile) ? createdProfile[0] : createdProfile
-          } else if (response.status === 409 || response.status === 23505) {
-            // 用戶已存在，嘗試載入
-            const loadResponse = await fetch(`${supabaseUrl}/rest/v1/users?id=eq.${userData.id}&select=*`, {
-              method: 'GET',
-              headers: {
-                'apikey': supabaseAnonKey,
-                'Authorization': `Bearer ${accessToken}`,
-              },
-            })
-            if (loadResponse.ok) {
-              const loadedProfile = await loadResponse.json()
-              authStore.profile = Array.isArray(loadedProfile) ? loadedProfile[0] : loadedProfile
-            }
-          } else {
-            const errorText = await response.text()
-            console.error('❌ 創建用戶資料失敗:', response.status, errorText)
-            // 繼續嘗試創建房間，如果失敗會得到更明確的錯誤
-          }
+          // loadUserProfile 會自動處理：如果用戶不存在，會自動創建
+          await authStore.loadUserProfile(authStore.user.id, false)
         } catch (profileError) {
-          console.error('創建用戶資料時發生錯誤:', profileError)
+          console.warn('載入用戶資料時發生錯誤（非關鍵）:', profileError)
           // 繼續嘗試創建房間，如果失敗會得到更明確的錯誤
         }
       }
@@ -218,100 +175,24 @@ export const useRoomStore = defineStore('room', () => {
           current_drawer_id: null,
         }
 
-        // 跳過 session 檢查，直接使用已知的用戶 ID（從 authStore 獲取）
-        // 因為 getSession() 可能會卡住，我們直接使用 authStore 中的用戶信息
-        const userId = authStore.user?.id
-        if (!userId) {
-          throw new Error('請先登入')
-        }
-        
-        // 更新 roomData 使用確定的用戶 ID
-        roomData.host_id = userId
+        // 使用 Supabase 客戶端創建房間（參考句豆的實現）
+        const { data: insertedRoom, error: insertError } = await supabase
+          .from('game_rooms')
+          .insert(roomData)
+          .select()
+          .single()
 
-        // 確保有認證 token
-        const session = authStore.session
-        const accessToken = session?.access_token
-        
-        // 直接使用 fetch 插入，避免 Supabase 客戶端超時問題
-        const supabaseUrl = 'https://sylsqdkkshkeicaxhisq.supabase.co'
-        const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN5bHNxZGtrc2hrZWljYXhoaXNxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUwOTAyNjgsImV4cCI6MjA4MDY2NjI2OH0.ZqcDaGIr4fCxGmgQm00zUdZei50HGs3Aa_SlWEPBA6A'
-        
-        const insertUrl = `${supabaseUrl}/rest/v1/game_rooms`
-        
-        const headers: Record<string, string> = {
-          'apikey': supabaseAnonKey,
-          'Content-Type': 'application/json',
-          'Prefer': 'return=representation',
-        }
-        
-        // 如果有認證 token，添加到 Authorization 頭
-        if (accessToken) {
-          headers['Authorization'] = `Bearer ${accessToken}`
-        }
-        
-        const fetchPromise = fetch(insertUrl, {
-          method: 'POST',
-          headers,
-          body: JSON.stringify(roomData),
-        })
-        
-        // 10 秒超時保護
-        const timeoutPromise = new Promise<Response>((_, reject) => {
-          setTimeout(() => reject(new Error('插入房間超時（10 秒）')), 10000)
-        })
-        let response: Response
-        try {
-          response = await Promise.race([fetchPromise, timeoutPromise])
-        } catch (timeoutError) {
-          console.error('❌ 插入超時:', timeoutError)
-          throw new Error('插入房間超時，請檢查網絡連接')
-        }
-        
-        if (!response.ok) {
-          const errorText = await response.text()
-          console.error('❌ 插入失敗:', {
-            status: response.status,
-            statusText: response.statusText,
-            error: errorText,
-          })
-          
-          // 解析錯誤信息
-          let errorMessage = `插入失敗: ${response.status}`
-          try {
-            const errorJson = JSON.parse(errorText)
-            errorMessage = errorJson.message || errorJson.error_description || errorMessage
-          } catch {
-            errorMessage = errorText || errorMessage
+        if (insertError) {
+          // 如果是房間碼重複錯誤（23505），重新生成
+          if (insertError.code === '23505') {
+            continue
           }
           
-          throw new Error(errorMessage)
+          // 其他錯誤
+          throw new Error(insertError.message || '插入房間失敗')
         }
-        
-        const fetchData = await response.json()
-        
-        // 統一返回格式
-        const insertedRoom = Array.isArray(fetchData) ? fetchData[0] : fetchData
 
         if (!insertedRoom) {
-          console.error('❌ 插入成功但沒有返回數據')
-          continue
-        }
-
-        // 檢查是否房間碼重複（雖然已經插入成功，但為了安全起見）
-        if (insertedRoom.code !== code) {
-          console.warn('⚠️ 返回的房間碼與請求的不一致，可能重複')
-          // 刪除這個房間，繼續嘗試
-          try {
-            await fetch(`${supabaseUrl}/rest/v1/game_rooms?id=eq.${insertedRoom.id}`, {
-              method: 'DELETE',
-              headers: {
-                'apikey': supabaseAnonKey,
-                ...(accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {}),
-              },
-            })
-          } catch (deleteError) {
-            console.error('刪除重複房間失敗:', deleteError)
-          }
           continue
         }
 
@@ -324,11 +205,7 @@ export const useRoomStore = defineStore('room', () => {
       }
 
       // 加入房間作為房主（不設置 loading，因為已經在 createRoom 中設置了）
-      // 直接創建參與記錄，使用 fetch 避免 Supabase 客戶端超時
-      const supabaseUrl = 'https://sylsqdkkshkeicaxhisq.supabase.co'
-      const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN5bHNxZGtrc2hrZWljYXhoaXNxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUwOTAyNjgsImV4cCI6MjA4MDY2NjI2OH0.ZqcDaGIr4fCxGmgQm00zUdZei50HGs3Aa_SlWEPBA6A'
-      const accessToken = authStore.session?.access_token || supabaseAnonKey
-      
+      // 使用 Supabase 客戶端創建參與記錄
       const participantData = {
         room_id: newRoom.id,
         user_id: authStore.user.id,
@@ -337,20 +214,12 @@ export const useRoomStore = defineStore('room', () => {
       }
       
       try {
-        const participantResponse = await fetch(`${supabaseUrl}/rest/v1/room_participants`, {
-          method: 'POST',
-          headers: {
-            'apikey': supabaseAnonKey,
-            'Content-Type': 'application/json',
-            'Prefer': 'return=representation',
-            'Authorization': `Bearer ${accessToken}`,
-          },
-          body: JSON.stringify(participantData),
-        })
+        const { error: participantError } = await supabase
+          .from('room_participants')
+          .insert(participantData)
         
-        if (!participantResponse.ok) {
-          const errorText = await participantResponse.text()
-          console.error('❌ 創建參與記錄錯誤:', participantResponse.status, errorText)
+        if (participantError) {
+          console.error('創建參與記錄錯誤:', participantError)
           // 即使參與記錄創建失敗，房間已經創建，仍然返回成功
         }
       } catch (participantError) {
@@ -358,21 +227,18 @@ export const useRoomStore = defineStore('room', () => {
         // 即使參與記錄創建失敗，房間已經創建，仍然返回成功
       }
 
-      // 載入參與者列表（使用 fetch）
+      // 載入參與者列表（使用 Supabase 客戶端）
       try {
-        const participantsResponse = await fetch(`${supabaseUrl}/rest/v1/room_participants?room_id=eq.${newRoom.id}&select=*&order=joined_at.asc`, {
-          method: 'GET',
-          headers: {
-            'apikey': supabaseAnonKey,
-            'Authorization': `Bearer ${accessToken}`,
-          },
-        })
+        const { data: participantsData, error: loadError } = await supabase
+          .from('room_participants')
+          .select('*')
+          .eq('room_id', newRoom.id)
+          .order('joined_at', { ascending: true })
         
-        if (participantsResponse.ok) {
-          const participantsData = await participantsResponse.json()
-          participants.value = (Array.isArray(participantsData) ? participantsData : [participantsData]) as RoomParticipant[]
-        } else {
-          console.error('載入參與者列表失敗:', participantsResponse.status)
+        if (loadError) {
+          console.error('載入參與者列表失敗:', loadError)
+        } else if (participantsData) {
+          participants.value = participantsData as RoomParticipant[]
         }
       } catch (loadError) {
         console.error('載入參與者列表時發生錯誤:', loadError)
@@ -493,43 +359,27 @@ export const useRoomStore = defineStore('room', () => {
         throw new Error('請先登入')
       }
 
-      const supabaseUrl = 'https://sylsqdkkshkeicaxhisq.supabase.co'
-      const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN5bHNxZGtrc2hrZWljYXhoaXNxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUwOTAyNjgsImV4cCI6MjA4MDY2NjI2OH0.ZqcDaGIr4fCxGmgQm00zUdZei50HGs3Aa_SlWEPBA6A'
-      const accessToken = authStore.session?.access_token || supabaseAnonKey
+      // 刪除參與記錄（使用 Supabase 客戶端）
+      const { error: deleteError } = await supabase
+        .from('room_participants')
+        .delete()
+        .eq('room_id', currentRoom.value.id)
+        .eq('user_id', authStore.user.id)
 
-      // 刪除參與記錄（使用 fetch）
-      const deleteUrl = `${supabaseUrl}/rest/v1/room_participants?room_id=eq.${currentRoom.value.id}&user_id=eq.${authStore.user.id}`
-      const deleteResponse = await fetch(deleteUrl, {
-        method: 'DELETE',
-        headers: {
-          'apikey': supabaseAnonKey,
-          'Authorization': `Bearer ${accessToken}`,
-        },
-      })
-
-      if (!deleteResponse.ok) {
-        const errorText = await deleteResponse.text()
-        throw new Error(`刪除參與記錄失敗: ${deleteResponse.status} ${errorText || ''}`)
+      if (deleteError) {
+        throw new Error(`刪除參與記錄失敗: ${deleteError.message || '未知錯誤'}`)
       }
 
       // 如果是房主，關閉房間
       if (isHost.value) {
-        const updateUrl = `${supabaseUrl}/rest/v1/game_rooms?id=eq.${currentRoom.value.id}`
-        const updateResponse = await fetch(updateUrl, {
-          method: 'PATCH',
-          headers: {
-            'apikey': supabaseAnonKey,
-            'Content-Type': 'application/json',
-            'Prefer': 'return=representation',
-            'Authorization': `Bearer ${accessToken}`,
-          },
-          body: JSON.stringify({ status: 'finished' }),
-        })
+        const { error: updateError } = await supabase
+          .from('game_rooms')
+          .update({ status: 'finished' })
+          .eq('id', currentRoom.value.id)
 
-        if (!updateResponse.ok) {
+        if (updateError) {
           // 即使關閉房間失敗，也繼續清除狀態
-          const errorText = await updateResponse.text()
-          console.error('關閉房間失敗:', updateResponse.status, errorText || '未知錯誤')
+          console.error('關閉房間失敗:', updateError)
         }
       }
 

@@ -20,7 +20,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
-    detectSessionInUrl: false, // 禁用 URL 中的 session 檢測，避免卡住
+    detectSessionInUrl: true, // 改為 true，與句豆一致
   },
   global: {
     headers: {
@@ -32,5 +32,16 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   },
 })
 
-// 測試函數已移除 - 不再需要自動測試，因為我們已經改用 fetch 直接調用
+// 超時包裝器：為 Supabase 客戶端添加超時保護
+export async function supabaseWithTimeout<T>(
+  query: Promise<{ data: T | null; error: any }>,
+  timeout = 10000
+): Promise<{ data: T | null; error: any }> {
+  return Promise.race([
+    query,
+    new Promise<{ data: null; error: any }>((_, reject) =>
+      setTimeout(() => reject({ data: null, error: { message: '請求超時', code: 'TIMEOUT' } }), timeout)
+    )
+  ])
+}
 

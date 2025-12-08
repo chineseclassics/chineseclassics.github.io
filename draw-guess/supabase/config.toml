@@ -1,0 +1,28 @@
+# 你畫我猜 Supabase 配置
+# Project ID: sylsqdkkshkeicaxhisq
+
+[project]
+id = "sylsqdkkshkeicaxhisq"
+
+[api]
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+major_version = 15
+
+[studio]
+port = 54323
+
+[auth]
+site_url = "https://chineseclassics.github.io/draw-guess/"
+additional_redirect_urls = [
+  "https://chineseclassics.github.io/draw-guess/",
+  "http://localhost:5174"
+]
+jwt_expiry = 604800
+enable_signup = true
+

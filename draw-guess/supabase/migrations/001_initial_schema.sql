@@ -7,8 +7,9 @@
 -- ============================================
 
 -- users 表：用戶主表
+-- 注意：id 必須與 auth.users.id 一致，以支持 RLS 策略中的 auth.uid()
 CREATE TABLE IF NOT EXISTS users (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   email TEXT UNIQUE,
   display_name TEXT NOT NULL,
   avatar_url TEXT,
@@ -152,10 +153,16 @@ CREATE POLICY "users_select" ON users
   TO authenticated, anon
   USING (true);
 
+-- 用戶可以插入自己的資料（與 auth.users.id 一致）
+CREATE POLICY "users_insert_own" ON users
+  FOR INSERT
+  TO authenticated, anon
+  WITH CHECK (auth.uid() = id);
+
 -- 用戶可以更新自己的資料
 CREATE POLICY "users_update_own" ON users
   FOR UPDATE
-  TO authenticated
+  TO authenticated, anon
   USING (auth.uid() = id);
 
 -- user_identities 表 RLS 策略

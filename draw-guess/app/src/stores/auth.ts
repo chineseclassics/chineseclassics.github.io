@@ -25,19 +25,36 @@ export const useAuthStore = defineStore('auth', () => {
   const isAnonymous = computed(() => profile.value?.user_type === 'anonymous')
   const isRegistered = computed(() => profile.value?.user_type === 'registered')
 
-  // 初始化：檢查現有會話
+  // 初始化（參考句豆的實現）
   async function init() {
+    if (!supabase) {
+      error.value = 'Supabase 未初始化'
+      loading.value = false
+      return
+    }
+
     try {
       loading.value = true
-      const { data: { session: currentSession }, error: sessionError } = await supabase.auth.getSession()
+      error.value = null
+
+      // 先設置監聽器，確保能捕獲所有狀態變化（參考句豆）
+      setupAuthListener()
+
+      // 獲取會話（這會自動處理 URL 中的 token）
+      const { data, error: sessionError } = await supabase.auth.getSession()
       
-      if (sessionError) throw sessionError
-      
-      if (currentSession) {
-        session.value = currentSession
-        user.value = currentSession.user
-        // 初始化時載入用戶資料，不設置 loading（因為已經在 init 中設置了）
-        await loadUserProfile(currentSession.user.id, false)
+      if (sessionError) {
+        error.value = sessionError.message
+        console.error('獲取會話錯誤:', sessionError)
+      } else if (data.session) {
+        session.value = data.session
+        user.value = data.session.user
+        // 不等待 loadUserProfile，避免阻塞應用啟動（參考句豆）
+        loadUserProfile(data.session.user.id, false).catch(e => 
+          console.warn('載入用戶資料錯誤:', e)
+        )
+      } else {
+        profile.value = null
       }
     } catch (err) {
       error.value = err instanceof Error ? err.message : '初始化認證失敗'
@@ -250,17 +267,29 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  // 登出
+  // 登出（完全參考句豆的實現）
   async function signOut() {
+    if (!supabase) {
+      error.value = 'Supabase 未初始化'
+      return { success: false, error: error.value }
+    }
+
+    loading.value = true
+    error.value = null
+
     try {
-      loading.value = true
-      error.value = null
-
       const { error: signOutError } = await supabase.auth.signOut()
+      
+      if (signOutError) {
+        error.value = signOutError.message
+        // 即使出錯，也清除本地狀態
+        user.value = null
+        session.value = null
+        profile.value = null
+        return { success: false, error: signOutError.message }
+      }
 
-      if (signOutError) throw signOutError
-
-      // 清除狀態
+      // 清除狀態（auth listener 也會處理，但這裡確保清除）
       user.value = null
       session.value = null
       profile.value = null
@@ -268,7 +297,10 @@ export const useAuthStore = defineStore('auth', () => {
       return { success: true }
     } catch (err) {
       error.value = err instanceof Error ? err.message : '登出失敗'
-      console.error('登出錯誤:', err)
+      // 即使出錯，也清除本地狀態
+      user.value = null
+      session.value = null
+      profile.value = null
       return { success: false, error: error.value }
     } finally {
       loading.value = false
@@ -298,32 +330,22 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  // 監聽認證狀態變化
+  // 監聽認證狀態變化（參考句豆的實現）
   function setupAuthListener() {
-    supabase.auth.onAuthStateChange(async (event, newSession) => {
-      // 僅在開發環境且啟用調試時輸出日誌
-      if (import.meta.env.DEV && import.meta.env.VITE_DEBUG_AUTH === 'true') {
-        console.log('認證狀態變化:', event, newSession)
-      }
+    if (!supabase) return
 
-      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-        if (newSession) {
-          session.value = newSession
-          user.value = newSession.user
-          // 監聽器中的載入不需要設置 loading，避免影響 UI
-          // 確保在載入前 loading 是 false
-          if (loading.value) {
-            loading.value = false
-          }
-          await loadUserProfile(newSession.user.id, false)
-          // 載入完成後再次確保 loading 是 false
-          loading.value = false
-        }
-      } else if (event === 'SIGNED_OUT') {
-        user.value = null
-        session.value = null
+    supabase.auth.onAuthStateChange((event, newSession) => {
+      console.log('[Auth] 狀態變化:', event, newSession?.user?.id)
+      session.value = newSession
+      user.value = newSession?.user ?? null
+      
+      if (newSession?.user) {
+        // 不等待 loadUserProfile，避免阻塞（參考句豆）
+        loadUserProfile(newSession.user.id, false).catch(e => 
+          console.warn('[Auth] 載入用戶資料錯誤:', e)
+        )
+      } else {
         profile.value = null
-        loading.value = false // 確保登出時重置 loading
       }
     })
   }
@@ -346,6 +368,7 @@ export const useAuthStore = defineStore('auth', () => {
     signOut,
     updateProfile,
     setupAuthListener,
+    loadUserProfile, // 導出以便其他 store 使用
   }
 })
 

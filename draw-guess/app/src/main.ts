@@ -14,10 +14,8 @@ app.use(pinia)
 // 使用 Vue Router
 app.use(router)
 
-// 初始化認證狀態
+// 初始化認證狀態（監聽器在 init 中設置，參考句豆）
 const authStore = useAuthStore()
-// 先設置監聽器，再初始化（避免監聽器錯過初始會話）
-authStore.setupAuthListener()
 authStore.init()
 
 app.mount('#app')
