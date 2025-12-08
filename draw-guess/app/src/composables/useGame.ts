@@ -1,12 +1,10 @@
 import { ref, computed, onUnmounted } from 'vue'
 import { useRoomStore } from '../stores/room'
 import { useGameStore } from '../stores/game'
-import { useScoring } from './useScoring'
 
 export function useGame() {
   const roomStore = useRoomStore()
   const gameStore = useGameStore()
-  const { updateDrawerScore } = useScoring()
 
   // 倒計時相關
   const timeRemaining = ref<number | null>(null) // 剩餘時間（秒）
@@ -42,8 +40,8 @@ export function useGame() {
         timeRemaining.value--
       } else {
         stopCountdown()
-        // 倒計時結束，自動結束輪次
-        if (isPlaying.value && currentRound.value) {
+        // 倒計時結束，只讓房主自動結束輪次（避免競爭條件）
+        if (isPlaying.value && currentRound.value && roomStore.isHost) {
           endRound()
         }
       }
@@ -143,21 +141,22 @@ export function useGame() {
     }
   }
 
-  // 結束當前輪次
+  // 結束當前輪次（只應由房主調用，避免競爭條件）
   async function endRound() {
     if (!currentRound.value || !roomStore.currentRoom) {
       return { success: false, error: '沒有當前輪次' }
+    }
+
+    // 只允許房主執行結束輪次操作
+    if (!roomStore.isHost) {
+      return { success: false, error: '只有房主可以結束輪次' }
     }
 
     try {
       // 停止倒計時
       stopCountdown()
 
-      // 計算畫家得分
-      const correctCount = gameStore.correctGuesses.length
-      await updateDrawerScore(currentRound.value.drawer_id, correctCount)
-
-      // 更新輪次結束時間
+      // 更新輪次結束時間（gameStore.endRound 內部會計算畫家得分）
       const endResult = await gameStore.endRound()
       if (!endResult.success) {
         return endResult
@@ -202,6 +201,30 @@ export function useGame() {
     }
   }
 
+  // 跳過當前詞語（僅畫家可用）
+  async function skipWord() {
+    if (!currentRound.value || !roomStore.currentRoom) {
+      return { success: false, error: '沒有當前輪次' }
+    }
+
+    // 只允許當前畫家跳過
+    if (!isCurrentDrawer.value) {
+      return { success: false, error: '只有畫家可以跳過詞語' }
+    }
+
+    try {
+      // 結束當前輪次（不計分）
+      stopCountdown()
+
+      // 直接開始下一輪
+      const roundResult = await startNextRound()
+      return roundResult
+    } catch (err) {
+      console.error('跳過詞語錯誤:', err)
+      return { success: false, error: err instanceof Error ? err.message : '跳過詞語失敗' }
+    }
+  }
+
   // 格式化倒計時顯示
   const formattedTime = computed(() => {
     if (timeRemaining.value === null) return '--:--'
@@ -234,6 +257,7 @@ export function useGame() {
     startNextRound,
     endRound,
     endGame,
+    skipWord,
     startCountdown,
     stopCountdown,
     resetCountdown,

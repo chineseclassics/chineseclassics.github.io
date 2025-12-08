@@ -35,16 +35,16 @@ export function useDrawing() {
     const dpr = window.devicePixelRatio || 1
     const rect = canvas.getBoundingClientRect()
 
+    // 設置實際像素尺寸
     canvas.width = rect.width * dpr
     canvas.height = rect.height * dpr
 
+    // 縮放上下文以匹配 CSS 尺寸
     ctx.scale(dpr, dpr)
-    ctx.canvas.width = rect.width
-    ctx.canvas.height = rect.height
 
     // 設置默認樣式
     ctx.fillStyle = '#FFFFFF'
-    ctx.fillRect(0, 0, canvas.width, canvas.height)
+    ctx.fillRect(0, 0, rect.width, rect.height)
 
     // 重繪已有筆觸
     if (canvasRef.value) {

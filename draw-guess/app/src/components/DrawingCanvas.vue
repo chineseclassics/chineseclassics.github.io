@@ -23,17 +23,12 @@ import { useAuthStore } from '../stores/auth'
 import type { Stroke } from '../stores/drawing'
 
 const {
-  canvasRef: _canvasRef,
   initCanvas,
   startDrawing,
   draw,
   stopDrawing,
   handleDrawingData,
 } = useDrawing()
-
-// canvasRef 在模板中使用，但 TypeScript 無法檢測到
-// 使用 void 運算符避免未使用警告
-void _canvasRef
 
 const roomStore = useRoomStore()
 const authStore = useAuthStore()

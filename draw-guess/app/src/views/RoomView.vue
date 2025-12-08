@@ -122,7 +122,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import DrawingCanvas from '../components/DrawingCanvas.vue'
 import DrawingToolbar from '../components/DrawingToolbar.vue'
@@ -150,12 +150,22 @@ const {
   isCurrentDrawer,
   drawTime,
   startGame,
+  skipWord,
 } = useGame()
 const { hasGuessed, guessInput, submitGuess, loading: guessingLoading } = useGuessing()
 const { leaveRoom } = useRoom()
 
 const currentRoom = computed(() => roomStore.currentRoom)
 const loading = computed(() => guessingLoading.value)
+const errorMessage = ref<string | null>(null)
+
+// 顯示錯誤訊息
+function showError(message: string) {
+  errorMessage.value = message
+  setTimeout(() => {
+    errorMessage.value = null
+  }, 3000)
+}
 
 // 提交猜測
 async function handleSubmitGuess() {
@@ -167,22 +177,25 @@ async function handleSubmitGuess() {
 // 處理開始遊戲
 async function handleStartGame() {
   const result = await startGame()
-  if (result.success) {
-    // 遊戲已開始，界面會自動切換
+  if (!result.success && result.error) {
+    showError(result.error)
   }
 }
 
 // 處理離開房間
 async function handleLeaveRoom() {
   const result = await leaveRoom()
-  if (result.success) {
-    // 可以跳轉回首頁
+  if (!result.success && result.error) {
+    showError(result.error)
   }
 }
 
-// 跳過詞語（TODO: 實現）
-function handleSkipWord() {
-  console.log('跳過詞語')
+// 跳過詞語
+async function handleSkipWord() {
+  const result = await skipWord()
+  if (!result.success && result.error) {
+    showError(result.error)
+  }
 }
 
 onMounted(async () => {
