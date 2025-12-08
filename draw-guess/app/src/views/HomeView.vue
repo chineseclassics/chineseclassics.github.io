@@ -122,21 +122,8 @@ async function handleStartGame() {
   console.log('[HomeView] 開始遊戲結果:', result, '當前狀態:', currentRoom.value?.status)
   
   if (result.success) {
-    // 遊戲開始成功，立即跳轉到 RoomView（不等待 watch）
-    // 使用 nextTick 確保狀態更新完成
-    await new Promise(resolve => setTimeout(resolve, 200))
-    
-    if (currentRoom.value && (currentRoom.value.status === 'playing' || currentRoom.value.status === 'finished')) {
-      const currentRoute = router.currentRoute.value
-      if (currentRoute.name !== 'room' || currentRoute.params.code !== currentRoom.value.code) {
-        console.log('[HomeView] handleStartGame 中跳轉到 RoomView:', currentRoom.value.code)
-        router.push(`/room/${currentRoom.value.code}`)
-      } else {
-        console.log('[HomeView] handleStartGame 中已在 RoomView，無需跳轉')
-      }
-    } else {
-      console.warn('[HomeView] handleStartGame 中狀態不正確:', { currentRoom: currentRoom.value, status: currentRoom.value?.status })
-    }
+    // 遊戲開始成功，跳轉由 watch 處理（避免重複跳轉）
+    console.log('[HomeView] 遊戲開始成功，等待 watch 觸發跳轉')
   } else {
     console.error('開始遊戲失敗:', result.error)
   }
@@ -175,10 +162,10 @@ watch(
   { immediate: true }
 )
 
-// 監聽房間狀態變化，當狀態變為 playing 或 finished 時自動跳轉到 RoomView
+// 監聯房間狀態變化，當狀態變為 playing 或 finished 時自動跳轉到 RoomView
 watch(
   () => currentRoom.value?.status,
-  (status, oldStatus) => {
+  async (status, oldStatus) => {
     console.log('[HomeView] 房間狀態變化:', { oldStatus, newStatus: status, currentRoute: router.currentRoute.value.name })
     
     // 當狀態變為 playing 或 finished 時跳轉到 RoomView
@@ -188,15 +175,16 @@ watch(
       // 如果當前不在 RoomView，則跳轉
       if (currentRoute.name !== 'room' || currentRoute.params.code !== currentRoom.value.code) {
         console.log('[HomeView] 準備跳轉到 RoomView:', currentRoom.value.code)
-        // 使用 nextTick 確保狀態更新完成
-        setTimeout(() => {
-          if (currentRoom.value && (currentRoom.value.status === 'playing' || currentRoom.value.status === 'finished')) {
-            console.log('[HomeView] 執行跳轉到 RoomView:', currentRoom.value.code)
-            router.push(`/room/${currentRoom.value.code}`)
-          } else {
-            console.warn('[HomeView] 跳轉條件不滿足:', { currentRoom: currentRoom.value, status: currentRoom.value?.status })
-          }
-        }, 100)
+        const targetPath = `/room/${currentRoom.value.code}`
+        console.log('[HomeView] 跳轉目標路徑:', targetPath)
+        
+        try {
+          // 直接跳轉，不使用 setTimeout
+          const navigationResult = await router.push(targetPath)
+          console.log('[HomeView] 路由跳轉結果:', navigationResult)
+        } catch (err) {
+          console.error('[HomeView] 路由跳轉錯誤:', err)
+        }
       } else {
         console.log('[HomeView] 已在 RoomView，無需跳轉')
       }

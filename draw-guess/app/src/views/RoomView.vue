@@ -260,14 +260,21 @@ async function handleLeaveRoom() {
 }
 
 onMounted(async () => {
+  console.log('[RoomView] onMounted 開始')
+  console.log('[RoomView] 路由參數:', route.params)
+  console.log('[RoomView] 當前房間:', currentRoom.value)
+  console.log('[RoomView] 當前用戶:', authStore.user?.id)
+
   // 如果從路由參數獲取房間碼，嘗試載入房間
   const roomCode = route.params.code as string
   if (roomCode && !currentRoom.value) {
-    // 可以添加邏輯來根據路由參數載入房間
+    console.log('[RoomView] 從路由參數載入房間:', roomCode)
+    // TODO: 需要添加 loadRoomByCode 方法
   }
 
   // 如果已有房間，載入當前輪次並訂閱實時更新
   if (currentRoom.value && authStore.user) {
+    console.log('[RoomView] 房間狀態:', currentRoom.value.status)
     await gameStore.loadCurrentRound(currentRoom.value.id)
 
     // 訂閱房間的所有實時更新
@@ -284,6 +291,11 @@ onMounted(async () => {
     if (gameStore.currentRound) {
       subscribeGuesses(currentRoom.value.code, gameStore.currentRound.id)
     }
+  } else {
+    console.warn('[RoomView] 沒有房間或用戶:', { 
+      hasRoom: !!currentRoom.value, 
+      hasUser: !!authStore.user 
+    })
   }
 })
 
