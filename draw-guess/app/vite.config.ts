@@ -6,7 +6,7 @@ import path from 'node:path'
 // https://vite.dev/config/
 export default defineConfig({
   // GitHub Pages 部署路徑
-  base: '/draw-guess/',
+  base: '/draw-guess/assets/',
   
   // 輸出到上層目錄的 assets 文件夾
   build: {
