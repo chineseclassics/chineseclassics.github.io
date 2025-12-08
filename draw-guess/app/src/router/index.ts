@@ -15,6 +15,7 @@ const routes: RouteRecordRaw[] = [
 ]
 
 const router = createRouter({
+  // GitHub Pages 部署路徑（與 Vite base 保持一致）
   history: createWebHistory(import.meta.env.BASE_URL),
   routes,
 })

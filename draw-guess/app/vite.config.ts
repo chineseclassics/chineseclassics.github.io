@@ -5,13 +5,13 @@ import path from 'node:path'
 
 // https://vite.dev/config/
 export default defineConfig({
-  // GitHub Pages 部署路徑
-  base: '/draw-guess/assets/',
+  // GitHub Pages 部署路徑（開發和生產環境都使用相同路徑，與句豆一致）
+  base: '/draw-guess/',
   
-  // 輸出到上層目錄的 assets 文件夾
+  // 輸出到上層目錄（與句豆一致）
   build: {
-    outDir: '../assets',
-    emptyOutDir: true,
+    outDir: '../',
+    emptyOutDir: false, // 不清空目錄，保留 app/ 和 docs/
   },
   
   plugins: [vue()],
