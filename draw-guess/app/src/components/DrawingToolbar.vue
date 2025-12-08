@@ -30,22 +30,19 @@
     <!-- 顏色調色板（24色網格） -->
     <div v-if="tool === 'pen'" class="margin-bottom-small">
       <label class="text-small">顏色</label>
-      <div class="row" style="margin-top: 0.5rem;">
+      <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; margin-top: 0.5rem;">
         <div
           v-for="c in colors"
           :key="c"
           @click="setColor(c)"
-          :class="[
-            'col-3',
-            color === c ? 'border' : ''
-          ]"
           :style="{
             backgroundColor: c,
-            width: '30px',
-            height: '30px',
+            width: '100%',
+            aspectRatio: '1',
             cursor: 'pointer',
             border: color === c ? `3px solid var(--border-color)` : `1px solid var(--border-light)`,
-            margin: '2px'
+            borderRadius: '4px',
+            boxSizing: 'border-box'
           }"
           :aria-label="`選擇顏色 ${c}`"
         ></div>

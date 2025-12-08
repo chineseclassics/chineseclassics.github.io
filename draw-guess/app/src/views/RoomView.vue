@@ -6,51 +6,54 @@
         <!-- 左側：房間信息 -->
         <div class="col-6">
           <div class="row flex-middle">
-            <h1 class="text-hand-title" style="margin: 0; margin-right: 1rem;">
+            <h1 class="text-hand-title" style="margin: 0; margin-right: 1rem; font-size: 1.5rem;">
               {{ currentRoom?.name || '遊戲房間' }}
             </h1>
-            <div class="text-small">
-              房間碼：<span style="font-family: monospace;">{{ currentRoom?.code }}</span>
+            <div class="text-small" style="white-space: nowrap;">
+              房間碼：<span style="font-family: monospace; font-weight: bold;">{{ currentRoom?.code }}</span>
             </div>
           </div>
         </div>
 
         <!-- 右側：遊戲控制按鈕 -->
         <div class="col-6 text-right">
-          <div class="row flex-middle flex-right">
+          <div class="row flex-middle flex-right" style="gap: 0.5rem;">
             <!-- 當前詞語（僅畫家可見） -->
             <div
               v-if="isCurrentDrawer && gameStore.currentWord"
-              class="badge success margin-right-small"
-              style="background-color: var(--color-secondary); color: white; font-family: var(--font-head);"
+              class="badge"
+              style="background-color: var(--color-success); color: white; font-family: var(--font-head); font-size: 1.1rem; padding: 0.5rem 1rem;"
             >
-              {{ gameStore.currentWord }}
+              🎯 {{ gameStore.currentWord }}
             </div>
 
             <!-- 倒計時顯示 -->
             <div
               v-if="isCountingDown"
               :class="[
-                'badge margin-right-small',
+                'badge',
                 timeRemaining && timeRemaining <= 10 ? 'badge-danger' : 'badge-secondary'
               ]"
               :style="{
                 fontSize: '1.2rem',
                 fontFamily: 'var(--font-head)',
+                fontWeight: 'bold',
                 backgroundColor: timeRemaining && timeRemaining <= 10 ? 'var(--color-danger)' : 'var(--color-secondary)',
-                color: 'white'
+                color: 'white',
+                padding: '0.5rem 1rem'
               }"
             >
-              {{ formattedTime }}
+              ⏱️ {{ formattedTime }}
             </div>
 
-            <!-- 關閉按鈕 -->
+            <!-- 離開房間按鈕 -->
             <button
               @click="handleLeaveRoom"
-              class="paper-btn btn-small"
+              class="paper-btn btn-small btn-danger"
               title="離開房間"
+              style="padding: 0.3rem 0.6rem;"
             >
-              ✕
+              ✕ 離開
             </button>
           </div>
         </div>
@@ -126,13 +129,13 @@
                   <h5 class="text-hand-title">答案</h5>
                   <div class="border margin-bottom-small" style="min-height: 60px; max-height: 100px; overflow-y: auto; padding: 0.5rem; background: #f4f4f4;">
                     <div v-if="isCurrentDrawer" class="text-center text-hand">
-                      輪到你了！
+                      🎨 你是畫家，開始畫畫吧！
                     </div>
                     <div v-else-if="hasGuessed" class="text-center" style="color: #41b883;">
-                      已猜中！
+                      ✅ 已猜中！
                     </div>
                     <div v-else class="text-center text-small">
-                      等待玩家加入...
+                      仔細看畫，猜猜是什麼詞語
                     </div>
                   </div>
                   <!-- 猜詞輸入（僅非畫家可見） -->
@@ -142,7 +145,7 @@
                         <input
                           v-model="guessInput"
                           type="text"
-                          placeholder="輪到你了"
+                          placeholder="輸入你的答案..."
                           maxlength="32"
                           :disabled="loading || hasGuessed"
                         />

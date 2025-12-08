@@ -20,22 +20,22 @@
             <div
               v-for="participant in participants"
               :key="participant.id"
-              class="row flex-middle margin-bottom-small border-bottom"
-              style="padding-bottom: 10px;"
+              class="row flex-middle margin-bottom-small"
+              style="padding: 0.5rem; background: var(--bg-secondary); border-radius: 8px;"
             >
-            <div class="col-2">
-              <div
-                class="border"
-                style="width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background-color: var(--bg-secondary); border-color: var(--border-light); color: var(--text-primary);"
-              >
-                {{ participant.nickname.charAt(0) }}
+              <div style="flex-shrink: 0; margin-right: 0.75rem;">
+                <div
+                  class="border"
+                  style="width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background-color: var(--bg-card); border-color: var(--border-light); color: var(--text-primary); font-weight: bold;"
+                >
+                  {{ participant.nickname.charAt(0).toUpperCase() }}
+                </div>
               </div>
-            </div>
-              <div class="col-10">
-                <div class="text-hand">
+              <div style="flex: 1;">
+                <div class="text-hand" style="font-weight: 500;">
                   {{ participant.nickname }}
-                  <span v-if="isParticipantHost(participant.user_id)" class="text-small">
-                    (房主)
+                  <span v-if="isParticipantHost(participant.user_id)" class="badge" style="background-color: var(--color-warning); color: var(--text-primary); font-size: 0.75rem; padding: 0.1rem 0.4rem; margin-left: 0.5rem;">
+                    房主
                   </span>
                 </div>
               </div>

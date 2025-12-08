@@ -3,10 +3,10 @@
     <div class="row flex-center">
       <div class="col-12 col-md-10 col-lg-8">
         <div class="text-center margin-bottom-large">
-          <h1 class="text-hand-title">
-            你畫我猜
+          <h1 class="text-hand-title" style="font-size: 2.5rem; margin-bottom: 0.5rem;">
+            🎨 你畫我猜
           </h1>
-          <p class="lead text-hand">
+          <p class="lead text-hand" style="color: var(--text-secondary);">
             通過繪畫和猜測，學習中文詞彙
           </p>
         </div>
