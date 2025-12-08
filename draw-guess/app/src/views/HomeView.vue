@@ -117,9 +117,27 @@ function handleRoomJoined() {
 
 // 處理開始遊戲
 async function handleStartGame() {
+  console.log('[HomeView] 開始遊戲，當前狀態:', currentRoom.value?.status)
   const result = await startGame()
-  // 不需要手動跳轉，watch 會監聽狀態變化自動跳轉
-  if (!result.success) {
+  console.log('[HomeView] 開始遊戲結果:', result, '當前狀態:', currentRoom.value?.status)
+  
+  if (result.success) {
+    // 遊戲開始成功，立即跳轉到 RoomView（不等待 watch）
+    // 使用 nextTick 確保狀態更新完成
+    await new Promise(resolve => setTimeout(resolve, 200))
+    
+    if (currentRoom.value && (currentRoom.value.status === 'playing' || currentRoom.value.status === 'finished')) {
+      const currentRoute = router.currentRoute.value
+      if (currentRoute.name !== 'room' || currentRoute.params.code !== currentRoom.value.code) {
+        console.log('[HomeView] handleStartGame 中跳轉到 RoomView:', currentRoom.value.code)
+        router.push(`/room/${currentRoom.value.code}`)
+      } else {
+        console.log('[HomeView] handleStartGame 中已在 RoomView，無需跳轉')
+      }
+    } else {
+      console.warn('[HomeView] handleStartGame 中狀態不正確:', { currentRoom: currentRoom.value, status: currentRoom.value?.status })
+    }
+  } else {
     console.error('開始遊戲失敗:', result.error)
   }
 }
@@ -161,14 +179,27 @@ watch(
 watch(
   () => currentRoom.value?.status,
   (status, oldStatus) => {
-    // 只在狀態從 waiting 變為 playing/finished 時跳轉，避免重複跳轉
-    if (currentRoom.value && oldStatus === 'waiting' && (status === 'playing' || status === 'finished')) {
-      // 使用 nextTick 確保狀態更新完成
-      setTimeout(() => {
-        if (currentRoom.value) {
-          router.push(`/room/${currentRoom.value.code}`)
-        }
-      }, 100)
+    console.log('[HomeView] 房間狀態變化:', { oldStatus, newStatus: status, currentRoute: router.currentRoute.value.name })
+    
+    // 當狀態變為 playing 或 finished 時跳轉到 RoomView
+    // 檢查當前路由，避免重複跳轉
+    if (currentRoom.value && (status === 'playing' || status === 'finished')) {
+      const currentRoute = router.currentRoute.value
+      // 如果當前不在 RoomView，則跳轉
+      if (currentRoute.name !== 'room' || currentRoute.params.code !== currentRoom.value.code) {
+        console.log('[HomeView] 準備跳轉到 RoomView:', currentRoom.value.code)
+        // 使用 nextTick 確保狀態更新完成
+        setTimeout(() => {
+          if (currentRoom.value && (currentRoom.value.status === 'playing' || currentRoom.value.status === 'finished')) {
+            console.log('[HomeView] 執行跳轉到 RoomView:', currentRoom.value.code)
+            router.push(`/room/${currentRoom.value.code}`)
+          } else {
+            console.warn('[HomeView] 跳轉條件不滿足:', { currentRoom: currentRoom.value, status: currentRoom.value?.status })
+          }
+        }, 100)
+      } else {
+        console.log('[HomeView] 已在 RoomView，無需跳轉')
+      }
     }
   }
 )

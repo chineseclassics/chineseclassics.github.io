@@ -451,6 +451,8 @@ export const useRoomStore = defineStore('room', () => {
         throw new Error('沒有當前房間')
       }
 
+      console.log('[RoomStore] 更新房間狀態:', { roomId: currentRoom.value.id, oldStatus: currentRoom.value.status, newStatus: status })
+
       const { error: updateError } = await supabase
         .from('game_rooms')
         .update({ status })
@@ -459,7 +461,9 @@ export const useRoomStore = defineStore('room', () => {
       if (updateError) throw updateError
 
       if (currentRoom.value) {
+        const oldStatus = currentRoom.value.status
         currentRoom.value.status = status
+        console.log('[RoomStore] 房間狀態已更新:', { oldStatus, newStatus: currentRoom.value.status })
       }
 
       return { success: true }

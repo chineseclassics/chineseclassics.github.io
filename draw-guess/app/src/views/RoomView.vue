@@ -79,110 +79,108 @@
       </div>
 
       <!-- 遊戲進行中 - 參考 Gartic.io 佈局 -->
-      <div v-else-if="isPlaying">
-        <div class="row">
-          <!-- 左側：玩家列表 -->
-          <div class="col-12 col-md-3">
-            <div class="card">
-              <div class="card-body">
-                <h4 class="card-title text-hand-title">玩家列表</h4>
-                <div style="max-height: 400px; overflow-y: auto;">
-                  <PlayerList :show-winner="false" />
-                </div>
+      <div v-else-if="isPlaying" class="row">
+        <!-- 左側：玩家列表 -->
+        <div class="col-12 col-md-3">
+          <div class="card">
+            <div class="card-body">
+              <h4 class="card-title text-hand-title">玩家列表</h4>
+              <div style="max-height: 400px; overflow-y: auto;">
+                <PlayerList :show-winner="false" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 中間：畫布區域 -->
+        <div class="col-12 col-md-6">
+          <!-- 畫布容器 -->
+          <div class="card">
+            <div class="card-body" style="padding: 1rem;">
+              <div class="canvas-paper" style="min-height: 400px; display: flex; align-items: center; justify-content: center; padding: 1rem;">
+                <DrawingCanvas style="width: 100%; height: 100%; max-width: 100%; max-height: 100%;" />
               </div>
             </div>
           </div>
 
-          <!-- 中間：畫布區域 -->
-          <div class="col-12 col-md-6">
-            <!-- 畫布容器 -->
-            <div class="card">
-              <div class="card-body" style="padding: 1rem;">
-                <div class="canvas-paper" style="min-height: 400px; display: flex; align-items: center; justify-content: center; padding: 1rem;">
-                  <DrawingCanvas style="width: 100%; height: 100%; max-width: 100%; max-height: 100%;" />
-                </div>
-              </div>
+          <!-- 進度條（時間進度） -->
+          <div v-if="isCountingDown && timeRemaining !== null" class="margin-top-small">
+            <div class="progress">
+              <div
+                class="bar"
+                :class="timeRemaining <= 10 ? 'bar-danger' : 'bar-success'"
+                :style="{
+                  width: `${(timeRemaining / drawTime) * 100}%`,
+                  backgroundColor: timeRemaining <= 10 ? 'var(--color-danger)' : 'var(--color-secondary)'
+                }"
+              ></div>
             </div>
+          </div>
 
-            <!-- 進度條（時間進度） -->
-            <div v-if="isCountingDown && timeRemaining !== null" class="margin-top-small">
-              <div class="progress">
-                <div
-                  class="bar"
-                  :class="timeRemaining <= 10 ? 'bar-danger' : 'bar-success'"
-                  :style="{
-                    width: `${(timeRemaining / drawTime) * 100}%`,
-                    backgroundColor: timeRemaining <= 10 ? 'var(--color-danger)' : 'var(--color-secondary)'
-                  }"
-                ></div>
-              </div>
-            </div>
-
-            <!-- 底部：輸入區域 -->
-            <div class="row margin-top-small">
-              <!-- 答案輸入區域 -->
-              <div class="col-12 col-md-8">
-                <div class="card">
-                  <div class="card-body">
-                    <h5 class="text-hand-title">答案</h5>
-                    <div class="border margin-bottom-small" style="min-height: 60px; max-height: 100px; overflow-y: auto; padding: 0.5rem; background: #f4f4f4;">
-                      <div v-if="isCurrentDrawer" class="text-center text-hand">
-                        輪到你了！
-                      </div>
-                      <div v-else-if="hasGuessed" class="text-center" style="color: #41b883;">
-                        已猜中！
-                      </div>
-                      <div v-else class="text-center text-small">
-                        等待玩家加入...
-                      </div>
+          <!-- 底部：輸入區域 -->
+          <div class="row margin-top-small">
+            <!-- 答案輸入區域 -->
+            <div class="col-12 col-md-8">
+              <div class="card">
+                <div class="card-body">
+                  <h5 class="text-hand-title">答案</h5>
+                  <div class="border margin-bottom-small" style="min-height: 60px; max-height: 100px; overflow-y: auto; padding: 0.5rem; background: #f4f4f4;">
+                    <div v-if="isCurrentDrawer" class="text-center text-hand">
+                      輪到你了！
                     </div>
-                    <!-- 猜詞輸入（僅非畫家可見） -->
-                    <div v-if="!isCurrentDrawer">
-                      <form @submit.prevent="handleSubmitGuess" class="row flex-middle">
-                        <div class="col-8">
-                          <input
-                            v-model="guessInput"
-                            type="text"
-                            placeholder="輪到你了"
-                            maxlength="32"
-                            :disabled="loading || hasGuessed"
-                          />
-                        </div>
-                        <div class="col-4">
-                          <button
-                            type="submit"
-                            :disabled="loading || hasGuessed || !guessInput.trim()"
-                            class="paper-btn btn-primary btn-block"
-                          >
-                            {{ loading ? '提交中...' : hasGuessed ? '已猜中' : '提交' }}
-                          </button>
-                        </div>
-                      </form>
+                    <div v-else-if="hasGuessed" class="text-center" style="color: #41b883;">
+                      已猜中！
                     </div>
+                    <div v-else class="text-center text-small">
+                      等待玩家加入...
+                    </div>
+                  </div>
+                  <!-- 猜詞輸入（僅非畫家可見） -->
+                  <div v-if="!isCurrentDrawer">
+                    <form @submit.prevent="handleSubmitGuess" class="row flex-middle">
+                      <div class="col-8">
+                        <input
+                          v-model="guessInput"
+                          type="text"
+                          placeholder="輪到你了"
+                          maxlength="32"
+                          :disabled="loading || hasGuessed"
+                        />
+                      </div>
+                      <div class="col-4">
+                        <button
+                          type="submit"
+                          :disabled="loading || hasGuessed || !guessInput.trim()"
+                          class="paper-btn btn-primary btn-block"
+                        >
+                          {{ loading ? '提交中...' : hasGuessed ? '已猜中' : '提交' }}
+                        </button>
+                      </div>
+                    </form>
                   </div>
                 </div>
               </div>
+            </div>
 
-              <!-- 右側：聊天室（暫時簡化） -->
-              <div class="col-12 col-md-4">
-                <div class="card">
-                  <div class="card-body">
-                    <h5 class="text-hand-title">聊天室</h5>
-                    <div class="border" style="min-height: 60px; max-height: 100px; overflow-y: auto; padding: 0.5rem; background: #f4f4f4;">
-                      <div class="text-center text-small">聊天功能即將推出</div>
-                    </div>
+            <!-- 右側：聊天室（暫時簡化） -->
+            <div class="col-12 col-md-4">
+              <div class="card">
+                <div class="card-body">
+                  <h5 class="text-hand-title">聊天室</h5>
+                  <div class="border" style="min-height: 60px; max-height: 100px; overflow-y: auto; padding: 0.5rem; background: #f4f4f4;">
+                    <div class="text-center text-small">聊天功能即將推出</div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
+        </div>
 
-          <!-- 右側：繪畫工具欄 -->
-          <div class="col-12 col-md-3">
-            <div class="card">
-              <div class="card-body">
-                <DrawingToolbar />
-              </div>
+        <!-- 右側：繪畫工具欄 -->
+        <div class="col-12 col-md-3">
+          <div class="card">
+            <div class="card-body">
+              <DrawingToolbar />
             </div>
           </div>
         </div>
