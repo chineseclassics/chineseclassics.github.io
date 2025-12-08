@@ -79,13 +79,13 @@
       </div>
 
       <!-- 遊戲進行中 - 參考 Gartic.io 佈局 -->
-      <div v-else-if="isPlaying" class="row room-layout">
+      <div v-else-if="isPlaying" class="row room-layout room-playing">
         <!-- 左側：玩家列表 -->
         <div class="col-12 col-md-3 room-column">
-          <div class="card room-card">
-            <div class="card-body">
+          <div class="card room-card player-card">
+            <div class="card-body player-body">
               <h4 class="card-title text-hand-title">玩家列表</h4>
-              <div style="max-height: 400px; overflow-y: auto;">
+              <div class="player-scroll">
                 <PlayerList :show-winner="false" />
               </div>
             </div>
@@ -95,8 +95,8 @@
         <!-- 中間：畫布區域 -->
         <div class="col-12 col-md-6 room-column">
           <!-- 畫布容器 -->
-          <div class="card room-card">
-            <div class="card-body canvas-card">
+          <div class="card room-card canvas-card">
+            <div class="card-body canvas-card-body">
               <div class="canvas-paper canvas-wrapper">
                 <DrawingCanvas class="canvas-surface" />
               </div>
@@ -118,11 +118,11 @@
           </div>
 
           <!-- 底部：輸入區域 -->
-          <div class="row margin-top-small">
+          <div class="row margin-top-small guess-chat-row">
             <!-- 答案輸入區域 -->
             <div class="col-12 col-md-8">
-              <div class="card room-card">
-                <div class="card-body">
+              <div class="card room-card guess-card">
+                <div class="card-body guess-card-body">
                   <h5 class="text-hand-title">答案</h5>
                   <div class="border margin-bottom-small" style="min-height: 60px; max-height: 100px; overflow-y: auto; padding: 0.5rem; background: #f4f4f4;">
                     <div v-if="isCurrentDrawer" class="text-center text-hand">
@@ -164,8 +164,8 @@
 
             <!-- 右側：聊天室（暫時簡化） -->
             <div class="col-12 col-md-4">
-              <div class="card room-card">
-                <div class="card-body">
+              <div class="card room-card chat-card">
+                <div class="card-body chat-card-body">
                   <h5 class="text-hand-title">聊天室</h5>
                   <div class="border" style="min-height: 60px; max-height: 100px; overflow-y: auto; padding: 0.5rem; background: #f4f4f4;">
                     <div class="text-center text-small">聊天功能即將推出</div>

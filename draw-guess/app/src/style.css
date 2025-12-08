@@ -312,6 +312,10 @@ input:focus, select:focus, textarea:focus {
   align-items: stretch;
 }
 
+.room-playing {
+  margin-top: 0.5rem;
+}
+
 .room-column {
   display: flex;
 }
@@ -321,9 +325,29 @@ input:focus, select:focus, textarea:focus {
   height: 100%;
 }
 
+.player-card {
+  min-height: 520px;
+}
+
+.player-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  height: 100%;
+}
+
+.player-scroll {
+  flex: 1;
+  overflow-y: auto;
+}
+
 .canvas-card {
   padding: 1rem;
   height: 100%;
+}
+
+.canvas-card-body {
+  padding: 0;
 }
 
 .canvas-wrapper {
@@ -333,6 +357,7 @@ input:focus, select:focus, textarea:focus {
   align-items: center;
   justify-content: center;
   padding: 1rem;
+  aspect-ratio: 16 / 9;
 }
 
 .canvas-surface {
@@ -340,6 +365,18 @@ input:focus, select:focus, textarea:focus {
   height: 100%;
   max-width: 100%;
   max-height: 100%;
+}
+
+.guess-chat-row {
+  align-items: stretch;
+}
+
+.guess-card-body,
+.chat-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  height: 100%;
 }
 
 @media (max-width: 768px) {
