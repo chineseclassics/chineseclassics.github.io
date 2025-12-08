@@ -89,7 +89,7 @@ import { useAuthStore } from '../stores/auth'
 const router = useRouter()
 const { currentRoom, participants, leaveRoom } = useRoom()
 const { startGame } = useGame()
-const { subscribeRoom, unsubscribeRoom } = useRealtime()
+const { subscribeRoom } = useRealtime()
 const authStore = useAuthStore()
 
 const showCreateForm = ref(false)
@@ -152,12 +152,9 @@ watch(
           nickname: authStore.profile?.display_name || '玩家',
         }
       )
-    } else if (!room) {
-      // 沒有房間時，取消訂閱
-      if (currentRoom.value) {
-        unsubscribeRoom(currentRoom.value.code)
-      }
     }
+    // 注意：不在這裡取消訂閱，因為跳轉到 RoomView 時 currentRoom 仍然存在
+    // 只有在真正離開房間（調用 leaveRoom）時才取消訂閱
   },
   { immediate: true }
 )

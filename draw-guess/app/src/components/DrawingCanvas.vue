@@ -37,7 +37,7 @@ void _canvasRef
 
 const roomStore = useRoomStore()
 const authStore = useAuthStore()
-const { subscribeDrawing, unsubscribeRoom } = useRealtime()
+const { subscribeDrawing } = useRealtime()
 
 const canvasElement = ref<HTMLCanvasElement | null>(null)
 
@@ -71,11 +71,15 @@ function handleTouchEnd() {
   stopDrawing()
 }
 
+// 保存取消訂閱函數
+let unsubscribeDrawingCallback: (() => void) | null = null
+
 // 訂閱繪畫數據
 function setupDrawingSubscription() {
   if (!roomStore.currentRoom || !authStore.user) return
 
-  subscribeDrawing(roomStore.currentRoom.code, (stroke: Stroke) => {
+  // subscribeDrawing 現在返回取消訂閱函數
+  unsubscribeDrawingCallback = subscribeDrawing(roomStore.currentRoom.code, (stroke: Stroke) => {
     handleDrawingData(stroke)
   })
 }
@@ -88,8 +92,10 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-  if (roomStore.currentRoom) {
-    unsubscribeRoom(roomStore.currentRoom.code)
+  // 只取消繪畫回調，不取消整個房間訂閱
+  if (unsubscribeDrawingCallback) {
+    unsubscribeDrawingCallback()
+    unsubscribeDrawingCallback = null
   }
 })
 </script>
