@@ -9,6 +9,8 @@ export function useRealtime() {
 
   const channels = ref<Map<string, ReturnType<typeof supabase.channel>>>(new Map())
   const connectionStatus = ref<'connected' | 'disconnected' | 'connecting'>('disconnected')
+  const channelListenersReady = ref<Set<string>>(new Set()) // 確保監聽器只註冊一次
+  const presenceTrackedRooms = ref<Set<string>>(new Set()) // 確保 presence 只追蹤一次
   
   // 重試配置
   const MAX_RETRIES = 3
@@ -208,8 +210,10 @@ export function useRealtime() {
     if (!roomCode || !roomId) return
 
     const channel = getRoomChannel(roomCode)
+    const channelState = (channel as any).state
 
-    // 在同一個 channel 上添加所有監聽器（不重複訂閱）
+    // 在同一個 channel 上添加所有監聽器（僅一次）
+    if (!channelListenersReady.value.has(roomCode)) {
     subscribeRoomChanges(roomCode, roomId)
     subscribeParticipants(roomCode, roomId)
     subscribeRounds(roomCode, roomId)
@@ -229,6 +233,24 @@ export function useRealtime() {
       }
     })
 
+      channelListenersReady.value.add(roomCode)
+    }
+
+    // 如果已加入（例如 HomeView 已經訂閱過），避免重複 subscribe
+    if (channelState === 'joined') {
+      connectionStatus.value = 'connected'
+      retryCounts.value.set(roomCode, 0)
+      clearRetryTimer(roomCode)
+      if (!presenceTrackedRooms.value.has(roomCode)) {
+        channel.track({
+          user_id: userId,
+          ...userData,
+        })
+        presenceTrackedRooms.value.add(roomCode)
+      }
+      return channel
+    }
+
     // 最後統一訂閱 channel（只調用一次）
     channel.subscribe(async (status) => {
       console.log('Realtime 訂閱狀態:', status)
@@ -238,10 +260,13 @@ export function useRealtime() {
         clearRetryTimer(roomCode)
         
         // 訂閱成功後追蹤 presence
+        if (!presenceTrackedRooms.value.has(roomCode)) {
         await channel.track({
           user_id: userId,
           ...userData,
         })
+          presenceTrackedRooms.value.add(roomCode)
+        }
       } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
         connectionStatus.value = 'disconnected'
         console.warn('Realtime 訂閱失敗，嘗試重試，狀態:', status)
@@ -319,6 +344,8 @@ export function useRealtime() {
     // 清除重試計時器
     clearRetryTimer(roomCode)
     retryCounts.value.delete(roomCode)
+    channelListenersReady.value.delete(roomCode)
+    presenceTrackedRooms.value.delete(roomCode)
   }
 
   // 取消所有訂閱

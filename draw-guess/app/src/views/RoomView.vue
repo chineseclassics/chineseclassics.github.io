@@ -79,10 +79,10 @@
       </div>
 
       <!-- 遊戲進行中 - 參考 Gartic.io 佈局 -->
-      <div v-else-if="isPlaying" class="row">
+      <div v-else-if="isPlaying" class="row room-layout">
         <!-- 左側：玩家列表 -->
-        <div class="col-12 col-md-3">
-          <div class="card">
+        <div class="col-12 col-md-3 room-column">
+          <div class="card room-card">
             <div class="card-body">
               <h4 class="card-title text-hand-title">玩家列表</h4>
               <div style="max-height: 400px; overflow-y: auto;">
@@ -93,12 +93,12 @@
         </div>
 
         <!-- 中間：畫布區域 -->
-        <div class="col-12 col-md-6">
+        <div class="col-12 col-md-6 room-column">
           <!-- 畫布容器 -->
-          <div class="card">
-            <div class="card-body" style="padding: 1rem;">
-              <div class="canvas-paper" style="min-height: 400px; display: flex; align-items: center; justify-content: center; padding: 1rem;">
-                <DrawingCanvas style="width: 100%; height: 100%; max-width: 100%; max-height: 100%;" />
+          <div class="card room-card">
+            <div class="card-body canvas-card">
+              <div class="canvas-paper canvas-wrapper">
+                <DrawingCanvas class="canvas-surface" />
               </div>
             </div>
           </div>
@@ -121,7 +121,7 @@
           <div class="row margin-top-small">
             <!-- 答案輸入區域 -->
             <div class="col-12 col-md-8">
-              <div class="card">
+              <div class="card room-card">
                 <div class="card-body">
                   <h5 class="text-hand-title">答案</h5>
                   <div class="border margin-bottom-small" style="min-height: 60px; max-height: 100px; overflow-y: auto; padding: 0.5rem; background: #f4f4f4;">
@@ -164,7 +164,7 @@
 
             <!-- 右側：聊天室（暫時簡化） -->
             <div class="col-12 col-md-4">
-              <div class="card">
+              <div class="card room-card">
                 <div class="card-body">
                   <h5 class="text-hand-title">聊天室</h5>
                   <div class="border" style="min-height: 60px; max-height: 100px; overflow-y: auto; padding: 0.5rem; background: #f4f4f4;">
@@ -177,8 +177,8 @@
         </div>
 
         <!-- 右側：繪畫工具欄 -->
-        <div class="col-12 col-md-3">
-          <div class="card">
+        <div class="col-12 col-md-3 room-column">
+          <div class="card room-card">
             <div class="card-body">
               <DrawingToolbar />
             </div>
