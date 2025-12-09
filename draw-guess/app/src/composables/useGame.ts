@@ -127,15 +127,18 @@ export function useGame() {
     }
 
     summaryTimeRemaining.value = SUMMARY_TIME
+    console.log('[useGame] 開始總結倒計時:', SUMMARY_TIME, '秒')
 
-    summaryTimer = window.setInterval(() => {
+    summaryTimer = window.setInterval(async () => {
       if (summaryTimeRemaining.value !== null && summaryTimeRemaining.value > 0) {
         summaryTimeRemaining.value--
       } else {
         stopSummaryCountdown()
         // 總結結束，房主開始下一輪
-        if (isSummary.value && roomStore.isHost) {
-          continueToNextRound()
+        console.log('[useGame] 總結倒計時結束, isSummary:', isSummary.value, 'isHost:', roomStore.isHost)
+        if (roomStore.isHost) {
+          console.log('[useGame] 房主執行 continueToNextRound')
+          await continueToNextRound()
         }
       }
     }, 1000)
@@ -209,6 +212,8 @@ export function useGame() {
     }
 
     const currentRoundNum = roomStore.currentRoom.current_round || 0
+    // 下一輪的輪次號（用於選擇畫家）
+    const nextRoundNum = currentRoundNum + 1
 
     // 檢查是否所有輪次已完成
     if (currentRoundNum >= totalRounds.value) {
@@ -218,9 +223,12 @@ export function useGame() {
     }
 
     try {
-      // 選擇畫家（輪流）
-      const drawerIndex = currentRoundNum % roomStore.participants.length
+      // 選擇畫家（輪流，使用下一輪的輪次號）
+      // 輪次1: 玩家0, 輪次2: 玩家1, 輪次3: 玩家0...
+      const drawerIndex = (nextRoundNum - 1) % roomStore.participants.length
       const drawer = roomStore.participants[drawerIndex]
+      
+      console.log('[startSelectionPhase] 下一輪:', nextRoundNum, '畫家索引:', drawerIndex, '畫家:', drawer?.nickname)
       
       if (!drawer) {
         throw new Error('無法選擇畫家')
@@ -242,7 +250,7 @@ export function useGame() {
 
       // 廣播狀態給所有玩家
       const { broadcastGameState } = useRealtime()
-      await broadcastGameState(roomStore.currentRoom!.room_code, {
+      await broadcastGameState(roomStore.currentRoom!.code, {
         roundStatus: 'selecting',
         wordOptions: options,
         drawerId: drawer.user_id
@@ -289,7 +297,7 @@ export function useGame() {
 
         // 廣播狀態給所有玩家
         const { broadcastGameState } = useRealtime()
-        await broadcastGameState(roomStore.currentRoom!.room_code, {
+        await broadcastGameState(roomStore.currentRoom!.code, {
           roundStatus: 'drawing',
           wordOptions: [],
           drawerId: drawerId
@@ -337,7 +345,7 @@ export function useGame() {
 
       // 廣播狀態給所有玩家
       const { broadcastGameState } = useRealtime()
-      await broadcastGameState(roomStore.currentRoom!.room_code, {
+      await broadcastGameState(roomStore.currentRoom!.code, {
         roundStatus: 'summary',
         wordOptions: [],
         drawerId: roomStore.currentRoom!.current_drawer_id

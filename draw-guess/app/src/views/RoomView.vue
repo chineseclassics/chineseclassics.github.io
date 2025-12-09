@@ -232,11 +232,6 @@
                 <span class="msg-icon">🎮</span> 遊戲開始！
               </div>
               
-              <!-- 當前詞語提示（僅畫家可見） -->
-              <div v-if="isCurrentDrawer && gameStore.currentWord" class="chat-msg word-hint-msg">
-                <span class="msg-icon">🎨</span> 你要畫：<strong>{{ gameStore.currentWord }}</strong>
-              </div>
-              
               <!-- 猜測記錄和聊天消息 -->
               <div 
                 v-for="guess in sortedGuesses" 
@@ -395,8 +390,8 @@ function getParticipantName(userId: string): string {
 
 // 獲取輸入框提示文字
 const getInputPlaceholder = computed(() => {
-  if (isCurrentDrawer.value) return '你是畫家，請畫畫...'
-  if (hasGuessed.value) return '你已猜中！'
+  if (isCurrentDrawer.value) return '你是畫家，不能打字哦~'
+  if (hasGuessed.value) return '你已猜中！等待其他人...'
   return '輸入你的猜測...'
 })
 
