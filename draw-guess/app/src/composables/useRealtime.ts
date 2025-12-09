@@ -102,85 +102,120 @@ export function useRealtime() {
     globalReconnectTimers.set(roomCode, timerId)
   }
 
-  function subscribeRoom(roomCode: string, roomId: string, userId: string, userData: any) {
-    if (!roomCode || !roomId) {
-      warn('缺少 roomCode 或 roomId')
-      return
-    }
+  // 返回 Promise，等待連接完成
+  function subscribeRoom(roomCode: string, roomId: string, userId: string, userData: any): Promise<ReturnType<typeof supabase.channel>> {
+    return new Promise((resolve, reject) => {
+      if (!roomCode || !roomId) {
+        warn('缺少 roomCode 或 roomId')
+        reject(new Error('缺少 roomCode 或 roomId'))
+        return
+      }
 
-    const channel = getRoomChannel(roomCode)
-    const channelState = (channel as any).state
+      const channel = getRoomChannel(roomCode)
+      const channelState = (channel as any).state
 
-    log('subscribeRoom - roomCode:', roomCode, 'state:', channelState)
+      log('subscribeRoom - roomCode:', roomCode, 'state:', channelState)
 
-    if (channelState === 'joined') {
-      globalConnectionStatus.value = 'connected'
-      return channel
-    }
+      // 已經連接，直接返回
+      if (channelState === 'joined') {
+        globalConnectionStatus.value = 'connected'
+        resolve(channel)
+        return
+      }
 
-    if (channelState === 'joining') {
-      return channel
-    }
+      // 正在連接中，等待結果
+      if (channelState === 'joining') {
+        const checkInterval = setInterval(() => {
+          const state = (channel as any).state
+          if (state === 'joined') {
+            clearInterval(checkInterval)
+            resolve(channel)
+          } else if (state === 'closed' || state === 'errored') {
+            clearInterval(checkInterval)
+            reject(new Error('連接失敗'))
+          }
+        }, 100)
+        
+        // 5秒超時
+        setTimeout(() => {
+          clearInterval(checkInterval)
+          if ((channel as any).state !== 'joined') {
+            reject(new Error('連接超時'))
+          }
+        }, 5000)
+        return
+      }
 
-    if (globalSubscribedRooms.has(roomCode)) {
+      // 如果已經設置過監聽器，只需要訂閱
+      if (globalSubscribedRooms.has(roomCode)) {
+        globalConnectionStatus.value = 'connecting'
+        channel.subscribe((status) => {
+          handleSubscriptionStatus(status, channel, roomCode, userId, userData)
+          if (status === 'SUBSCRIBED') {
+            resolve(channel)
+          } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+            reject(new Error(`訂閱失敗: ${status}`))
+          }
+        })
+        return
+      }
+
+      // 首次設置監聽器
+      channel
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: 'game_rooms',
+          filter: `id=eq.${roomId}`,
+        }, async (payload) => {
+          log('房間狀態變化:', payload.eventType)
+          if (roomStore.currentRoom) {
+            await roomStore.loadRoom(roomStore.currentRoom.id)
+          }
+        })
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: 'room_participants',
+          filter: `room_id=eq.${roomId}`,
+        }, async (payload) => {
+          log('參與者變化:', payload.eventType)
+          await roomStore.loadParticipants(roomId)
+        })
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: 'game_rounds',
+          filter: `room_id=eq.${roomId}`,
+        }, async (payload) => {
+          log('輪次變化:', payload.eventType)
+          if (roomStore.currentRoom) {
+            await gameStore.loadCurrentRound(roomStore.currentRoom.id)
+          }
+        })
+        .on('broadcast', { event: 'drawing' }, (payload) => {
+          const callbacks = globalDrawingCallbacks.get(roomCode)
+          if (callbacks && payload.payload?.stroke) {
+            callbacks.forEach(cb => cb(payload.payload.stroke))
+          }
+        })
+        .on('presence', { event: 'sync' }, () => {
+          const state = channel.presenceState()
+          log('Presence 同步，在線:', Object.keys(state).length)
+        })
+
+      globalSubscribedRooms.add(roomCode)
+
       globalConnectionStatus.value = 'connecting'
       channel.subscribe((status) => {
         handleSubscriptionStatus(status, channel, roomCode, userId, userData)
-      })
-      return channel
-    }
-
-    channel
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'game_rooms',
-        filter: `id=eq.${roomId}`,
-      }, async (payload) => {
-        log('房間狀態變化:', payload.eventType)
-        if (roomStore.currentRoom) {
-          await roomStore.loadRoom(roomStore.currentRoom.id)
+        if (status === 'SUBSCRIBED') {
+          resolve(channel)
+        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          reject(new Error(`訂閱失敗: ${status}`))
         }
       })
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'room_participants',
-        filter: `room_id=eq.${roomId}`,
-      }, async (payload) => {
-        log('參與者變化:', payload.eventType)
-        await roomStore.loadParticipants(roomId)
-      })
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'game_rounds',
-        filter: `room_id=eq.${roomId}`,
-      }, async (payload) => {
-        log('輪次變化:', payload.eventType)
-        if (roomStore.currentRoom) {
-          await gameStore.loadCurrentRound(roomStore.currentRoom.id)
-        }
-      })
-      .on('broadcast', { event: 'drawing' }, (payload) => {
-        const callbacks = globalDrawingCallbacks.get(roomCode)
-        if (callbacks && payload.payload?.stroke) {
-          callbacks.forEach(cb => cb(payload.payload.stroke))
-        }
-      })
-      .on('presence', { event: 'sync' }, () => {
-        const state = channel.presenceState()
-        log('Presence 同步，在線:', Object.keys(state).length)
-      })
-
-    globalSubscribedRooms.add(roomCode)
-
-    globalConnectionStatus.value = 'connecting'
-    channel.subscribe((status) => {
-      handleSubscriptionStatus(status, channel, roomCode, userId, userData)
     })
-
-    return channel
   }
 
   function subscribeDrawing(roomCode: string, onDrawing: (stroke: any) => void) {
@@ -248,8 +283,9 @@ export function useRealtime() {
     const channelState = (channel as any).state
 
     if (channelState !== 'joined') {
-      warn('Channel 未連接，狀態:', channelState)
-      return { error: 'Channel 未連接' }
+      warn('Channel 未連接，狀態:', channelState, '- 狀態將通過數據庫同步')
+      // 不阻塞，狀態會通過 postgres_changes 同步
+      return { warning: 'Channel 未連接' }
     }
 
     try {
@@ -276,7 +312,8 @@ export function useRealtime() {
     const channelState = (channel as any).state
 
     if (channelState !== 'joined') {
-      warn('Channel 未連接，狀態:', channelState)
+      // 繪畫數據丟失比較嚴重，記錄警告
+      warn('Channel 未連接，無法發送繪畫數據，狀態:', channelState)
       return { error: 'Channel 未連接' }
     }
 

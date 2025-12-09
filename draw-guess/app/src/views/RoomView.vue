@@ -552,12 +552,18 @@ onMounted(async () => {
     console.log('[RoomView] 房間狀態:', currentRoom.value.status)
     await gameStore.loadCurrentRound(currentRoom.value.id)
 
-    subscribeRoom(
-      currentRoom.value.code,
-      currentRoom.value.id,
-      authStore.user.id,
-      { nickname: authStore.profile?.display_name || '玩家' }
-    )
+    // 等待 Channel 連接完成
+    try {
+      await subscribeRoom(
+        currentRoom.value.code,
+        currentRoom.value.id,
+        authStore.user.id,
+        { nickname: authStore.profile?.display_name || '玩家' }
+      )
+      console.log('[RoomView] Realtime Channel 連接成功')
+    } catch (err) {
+      console.error('[RoomView] Realtime Channel 連接失敗:', err)
+    }
 
     // 訂閱遊戲狀態廣播（同步 roundStatus、wordOptions 等）
     subscribeGameState(currentRoom.value.code, (state) => {

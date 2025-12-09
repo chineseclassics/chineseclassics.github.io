@@ -105,9 +105,9 @@ export const useGameStore = defineStore('game', () => {
         .eq('room_id', roomId)
         .order('round_number', { ascending: false })
         .limit(1)
-        .single()
+        .maybeSingle()
 
-      if (error && error.code !== 'PGRST116') {
+      if (error) {
         throw error
       }
 
