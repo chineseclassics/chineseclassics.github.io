@@ -136,7 +136,7 @@ const authStore = useAuthStore()
 const myRating = ref(0)
 const hoverRating = ref(0)
 const hasRated = ref(false)
-const ratings = ref<Array<{ user_id: string; rating: number }>>([])
+const ratings = ref<Array<{ rater_id: string; rating: number }>>([])
 
 // 自動倒計時
 const autoCountdown = ref(8)
@@ -162,8 +162,11 @@ async function submitRating(rating: number) {
       .from('drawing_ratings')
       .upsert({
         round_id: props.roundId,
-        user_id: authStore.user.id,
+        rater_id: authStore.user.id,
+        drawer_id: props.drawerId,
         rating: rating
+      }, {
+        onConflict: 'round_id,rater_id'
       })
 
     if (error) throw error
@@ -181,7 +184,7 @@ async function loadRatings() {
   try {
     const { data, error } = await supabase
       .from('drawing_ratings')
-      .select('user_id, rating')
+      .select('rater_id, rating')
       .eq('round_id', props.roundId)
 
     if (error) throw error
@@ -190,7 +193,7 @@ async function loadRatings() {
 
     // 檢查當前用戶是否已評分
     if (authStore.user) {
-      const myExistingRating = ratings.value.find(r => r.user_id === authStore.user!.id)
+      const myExistingRating = ratings.value.find(r => r.rater_id === authStore.user!.id)
       if (myExistingRating) {
         myRating.value = myExistingRating.rating
         hasRated.value = true
