@@ -324,7 +324,7 @@ const router = useRouter()
 const roomStore = useRoomStore()
 const gameStore = useGameStore()
 const authStore = useAuthStore()
-const { subscribeRoom, subscribeGuesses, unsubscribeRoom } = useRealtime()
+const { subscribeRoom, subscribeGuesses, unsubscribeRoom, subscribeGameState } = useRealtime()
 const {
   isPlaying,
   isWaiting,
@@ -558,6 +558,23 @@ onMounted(async () => {
       authStore.user.id,
       { nickname: authStore.profile?.display_name || '玩家' }
     )
+
+    // 訂閱遊戲狀態廣播（同步 roundStatus、wordOptions 等）
+    subscribeGameState(currentRoom.value.code, (state) => {
+      console.log('[RoomView] 收到遊戲狀態廣播:', state)
+      
+      // 更新本地狀態
+      if (state.roundStatus) {
+        gameStore.setRoundStatus(state.roundStatus)
+      }
+      if (state.wordOptions !== undefined) {
+        gameStore.setWordOptions(state.wordOptions)
+      }
+      // 重新載入當前輪次以獲取最新數據
+      if (currentRoom.value) {
+        gameStore.loadCurrentRound(currentRoom.value.id)
+      }
+    })
 
     if (gameStore.currentRound) {
       subscribeGuesses(currentRoom.value.code, gameStore.currentRound.id)
