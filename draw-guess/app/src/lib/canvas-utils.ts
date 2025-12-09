@@ -3,13 +3,12 @@ import type { Stroke } from '../stores/drawing'
 export type { Stroke }
 
 // 獲取 Canvas 坐標（考慮縮放和偏移）
+// 修復：返回 CSS 坐標（不需要額外縮放，因為 ctx 已經 scale 過了）
 export function getCanvasCoordinates(
   canvas: HTMLCanvasElement,
   event: MouseEvent | TouchEvent
 ): { x: number; y: number } | null {
   const rect = canvas.getBoundingClientRect()
-  const scaleX = canvas.width / rect.width
-  const scaleY = canvas.height / rect.height
 
   let clientX: number
   let clientY: number
@@ -24,9 +23,11 @@ export function getCanvasCoordinates(
     return null
   }
 
+  // 返回相對於 canvas CSS 尺寸的坐標
+  // 因為 ctx.scale(dpr, dpr) 已經處理了高 DPI，這裡不需要再縮放
   return {
-    x: (clientX - rect.left) * scaleX,
-    y: (clientY - rect.top) * scaleY,
+    x: clientX - rect.left,
+    y: clientY - rect.top,
   }
 }
 
@@ -75,10 +76,15 @@ export function redrawCanvas(
   const ctx = canvas.getContext('2d')
   if (!ctx) return
 
-  // 清空畫布
+  // 獲取 CSS 尺寸用於填充背景
+  const rect = canvas.getBoundingClientRect()
+
+  // 清空畫布（使用實際像素尺寸）
   ctx.clearRect(0, 0, canvas.width, canvas.height)
+  
+  // 填充白色背景（使用 CSS 尺寸，因為 ctx 已經 scale 過了）
   ctx.fillStyle = '#FFFFFF'
-  ctx.fillRect(0, 0, canvas.width, canvas.height)
+  ctx.fillRect(0, 0, rect.width, rect.height)
 
   // 重繪所有筆觸
   strokes.forEach(stroke => {

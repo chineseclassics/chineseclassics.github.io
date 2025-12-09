@@ -23,27 +23,32 @@
         </div>
       </div>
 
-      <!-- 中間：工具欄 + 畫布 -->
+      <!-- 中間：工具欄 + 畫布 + 聊天面板 -->
       <div class="game-main">
         <!-- 頂部：提示詞區域 -->
         <div class="game-header">
+          <!-- 倒計時顯示 -->
+          <div v-if="isCountingDown && timeRemaining !== null" class="time-display">
+            <span class="time-number" :class="{ 'time-warning': timeRemaining <= 10 }">{{ timeRemaining }}</span>
+          </div>
+          
           <!-- 當前詞語（僅畫家可見） -->
           <div v-if="isCurrentDrawer && gameStore.currentWord" class="word-display">
-            <span class="word-label">提示</span>
+            <span class="word-label">你的詞語</span>
             <span class="word-text">{{ gameStore.currentWord }}</span>
             <button class="skip-btn" @click="handleSkipWord" title="跳過此詞">跳過</button>
           </div>
-          <!-- 非畫家顯示提示 -->
+          <!-- 非畫家顯示提示（字母槽位風格，類似 skribbl.io） -->
           <div v-else class="word-display">
-            <span class="word-hint">猜猜畫的是什麼？</span>
+            <span class="word-slots">{{ getWordHint }}</span>
           </div>
           
           <!-- 離開按鈕 -->
           <button class="leave-btn" @click="handleLeaveRoom" title="離開房間">✕</button>
         </div>
 
-        <!-- 中間區域：工具欄 + 畫布 -->
-        <div class="game-canvas-area">
+        <!-- 主要區域：工具欄 + 畫布 + 聊天 -->
+        <div class="game-content-area">
           <!-- 工具欄（僅畫家顯示完整版） -->
           <div class="game-toolbar">
             <DrawingToolbar :compact="true" />
@@ -61,41 +66,59 @@
               ></div>
             </div>
           </div>
-        </div>
 
-        <!-- 底部：答案區 + 聊天室 -->
-        <div class="game-bottom">
-          <!-- 答案區 -->
-          <div class="game-answer">
-            <div class="answer-header">答案</div>
-            <div class="answer-messages">
-              <div v-if="isCurrentDrawer" class="answer-info">
-                <span class="info-icon">ℹ️</span> 等待玩家加入
+          <!-- 右側聊天面板 -->
+          <div class="game-chat-panel">
+            <div class="chat-messages-container" ref="chatMessagesRef">
+              <!-- 系統消息 -->
+              <div class="chat-msg system-msg">
+                <span class="msg-icon">🎮</span> 遊戲開始！
               </div>
-              <div class="answer-info">
-                <span class="info-icon">✏️</span> {{ isCurrentDrawer ? '輪到你了！' : '輸入你的答案' }}
+              
+              <!-- 當前詞語提示（僅畫家可見） -->
+              <div v-if="isCurrentDrawer && gameStore.currentWord" class="chat-msg word-hint-msg">
+                <span class="msg-icon">🎨</span> 你要畫：<strong>{{ gameStore.currentWord }}</strong>
+              </div>
+              
+              <!-- 猜測記錄和聊天消息 -->
+              <div 
+                v-for="guess in sortedGuesses" 
+                :key="guess.id"
+                class="chat-msg"
+                :class="{ 
+                  'correct-guess': guess.is_correct,
+                  'wrong-guess': !guess.is_correct 
+                }"
+              >
+                <span class="msg-player">{{ getParticipantName(guess.user_id) }}</span>
+                <span v-if="guess.is_correct" class="msg-correct">猜中了！ +{{ guess.score_earned }}</span>
+                <span v-else class="msg-text">{{ guess.guess_text }}</span>
+              </div>
+              
+              <!-- 已猜中提示 -->
+              <div v-if="hasGuessed" class="chat-msg correct-self">
+                <span class="msg-icon">✅</span> 你已猜中答案！
               </div>
             </div>
-            <div class="answer-input">
+            
+            <!-- 輸入區 -->
+            <div class="chat-input-area">
               <input
                 v-model="guessInput"
                 type="text"
-                :placeholder="isCurrentDrawer ? '輪到你了' : '輸入答案...'"
+                :placeholder="getInputPlaceholder"
                 maxlength="32"
                 :disabled="loading || hasGuessed || isCurrentDrawer"
                 @keyup.enter="handleSubmitGuess"
+                class="chat-input-field"
               />
-            </div>
-          </div>
-
-          <!-- 聊天室 -->
-          <div class="game-chat">
-            <div class="chat-header">聊天室</div>
-            <div class="chat-messages">
-              <div class="chat-msg"><span class="chat-icon">ℹ️</span> 歡迎來到遊戲！</div>
-            </div>
-            <div class="chat-input">
-              <input type="text" placeholder="請登入以發送訊息" disabled />
+              <button 
+                @click="handleSubmitGuess"
+                :disabled="loading || hasGuessed || isCurrentDrawer || !guessInput.trim()"
+                class="chat-send-btn"
+              >
+                發送
+              </button>
             </div>
           </div>
         </div>
@@ -158,6 +181,34 @@ const { leaveRoom } = useRoom()
 const currentRoom = computed(() => roomStore.currentRoom)
 const loading = computed(() => guessingLoading.value)
 const errorMessage = ref<string | null>(null)
+const chatMessagesRef = ref<HTMLElement | null>(null)
+
+// 排序後的猜測記錄（按時間排序）
+const sortedGuesses = computed(() => {
+  return [...gameStore.guesses].sort((a, b) => 
+    new Date(a.guessed_at).getTime() - new Date(b.guessed_at).getTime()
+  )
+})
+
+// 獲取參與者名稱
+function getParticipantName(userId: string): string {
+  const participant = roomStore.participants.find(p => p.user_id === userId)
+  return participant?.nickname || '未知玩家'
+}
+
+// 獲取輸入框提示文字
+const getInputPlaceholder = computed(() => {
+  if (isCurrentDrawer.value) return '你是畫家，請畫畫...'
+  if (hasGuessed.value) return '你已猜中！'
+  return '輸入你的猜測...'
+})
+
+// 獲取詞語提示（類似 skribbl.io 的下劃線風格）
+const getWordHint = computed(() => {
+  if (!gameStore.currentWord) return '猜猜畫的是什麼？'
+  // 將每個字替換為下劃線，中間用空格分開
+  return gameStore.currentWord.split('').map(() => '_').join(' ')
+})
 
 // 顯示錯誤訊息
 function showError(message: string) {
@@ -173,6 +224,7 @@ async function handleSubmitGuess() {
     await submitGuess()
   }
 }
+
 
 // 處理開始遊戲
 async function handleStartGame() {
@@ -298,6 +350,29 @@ onUnmounted(() => {
   gap: 0.75rem;
 }
 
+/* 倒計時顯示 */
+.time-display {
+  position: absolute;
+  left: 1rem;
+}
+
+.time-number {
+  font-size: 1.8rem;
+  font-weight: bold;
+  font-family: var(--font-head);
+  color: var(--color-secondary);
+}
+
+.time-number.time-warning {
+  color: var(--color-danger);
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
 .word-label {
   background: var(--color-warning);
   color: var(--text-primary);
@@ -311,6 +386,15 @@ onUnmounted(() => {
   font-size: 1.5rem;
   font-weight: bold;
   font-family: var(--font-head);
+  color: var(--text-primary);
+}
+
+/* 詞語提示槽位（下劃線風格） */
+.word-slots {
+  font-size: 1.5rem;
+  font-weight: bold;
+  font-family: monospace;
+  letter-spacing: 0.3em;
   color: var(--text-primary);
 }
 
@@ -350,8 +434,8 @@ onUnmounted(() => {
   color: var(--color-danger);
 }
 
-/* 畫布區域 */
-.game-canvas-area {
+/* 主要內容區域（工具欄 + 畫布 + 聊天） */
+.game-content-area {
   flex: 1;
   display: flex;
   gap: 0.5rem;
@@ -410,62 +494,8 @@ onUnmounted(() => {
   min-height: 160px;
 }
 
-/* 答案區 */
-.game-answer {
-  flex: 1;
-  background: var(--bg-card);
-  border: 2px solid var(--border-color);
-  border-radius: 8px;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.answer-header, .chat-header {
-  background: var(--color-secondary);
-  color: white;
-  padding: 0.5rem 1rem;
-  font-weight: bold;
-  font-family: var(--font-head);
-  text-align: center;
-}
-
-.answer-messages, .chat-messages {
-  flex: 1;
-  padding: 0.5rem;
-  overflow-y: auto;
-  font-size: 0.9rem;
-}
-
-.answer-info, .chat-msg {
-  padding: 0.25rem 0;
-  color: var(--text-secondary);
-}
-
-.info-icon, .chat-icon {
-  margin-right: 0.25rem;
-}
-
-.answer-input, .chat-input {
-  padding: 0.5rem;
-  border-top: 1px solid var(--border-light);
-}
-
-.answer-input input, .chat-input input {
-  width: 100%;
-  padding: 0.5rem;
-  border: 2px solid var(--border-light);
-  border-radius: 4px;
-  font-family: var(--font-body);
-}
-
-.answer-input input:focus, .chat-input input:focus {
-  border-color: var(--color-secondary);
-  outline: none;
-}
-
-/* 聊天室 */
-.game-chat {
+/* 右側聊天面板（整合猜詞和聊天） */
+.game-chat-panel {
   width: 280px;
   min-width: 280px;
   background: var(--bg-card);
@@ -474,6 +504,122 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  margin-left: 0.5rem;
+}
+
+.chat-messages-container {
+  flex: 1;
+  padding: 0.5rem;
+  overflow-y: auto;
+  font-size: 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.chat-msg {
+  padding: 0.35rem 0.5rem;
+  border-radius: 4px;
+  line-height: 1.4;
+}
+
+.system-msg {
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  text-align: center;
+  font-size: 0.85rem;
+}
+
+.word-hint-msg {
+  background: linear-gradient(135deg, #fff3cd, #ffeeba);
+  color: #856404;
+  border: 1px solid #ffc107;
+}
+
+.correct-guess {
+  background: linear-gradient(135deg, #d4edda, #c3e6cb);
+  color: #155724;
+  border-left: 3px solid #28a745;
+}
+
+.correct-self {
+  background: linear-gradient(135deg, #cce5ff, #b8daff);
+  color: #004085;
+  text-align: center;
+}
+
+.wrong-guess {
+  background: transparent;
+}
+
+.msg-icon {
+  margin-right: 0.25rem;
+}
+
+.msg-player {
+  font-weight: bold;
+  color: var(--color-primary);
+  margin-right: 0.5rem;
+}
+
+.msg-player::after {
+  content: ':';
+}
+
+.msg-correct {
+  color: #28a745;
+  font-weight: bold;
+}
+
+.msg-text {
+  color: var(--text-primary);
+}
+
+/* 輸入區 */
+.chat-input-area {
+  padding: 0.5rem;
+  border-top: 2px solid var(--border-light);
+  display: flex;
+  gap: 0.5rem;
+}
+
+.chat-input-field {
+  flex: 1;
+  padding: 0.5rem;
+  border: 2px solid var(--border-light);
+  border-radius: 4px;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+}
+
+.chat-input-field:focus {
+  border-color: var(--color-secondary);
+  outline: none;
+}
+
+.chat-input-field:disabled {
+  background: var(--bg-secondary);
+  cursor: not-allowed;
+}
+
+.chat-send-btn {
+  padding: 0.5rem 1rem;
+  background: var(--color-secondary);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-weight: bold;
+}
+
+.chat-send-btn:hover:not(:disabled) {
+  background: var(--color-secondary-dark, #0056b3);
+}
+
+.chat-send-btn:disabled {
+  background: var(--bg-tertiary);
+  cursor: not-allowed;
 }
 
 /* 響應式 */
@@ -493,6 +639,7 @@ onUnmounted(() => {
   .game-main {
     margin-left: 0;
     margin-top: 0.5rem;
+    flex-direction: column;
   }
 
   .game-canvas-area {
@@ -504,15 +651,12 @@ onUnmounted(() => {
     min-width: 50px;
   }
 
-  .game-bottom {
-    flex-direction: column;
-    height: auto;
-  }
-
-  .game-chat {
+  .game-chat-panel {
     width: 100%;
     min-width: unset;
-    height: 150px;
+    height: 200px;
+    margin-left: 0;
+    margin-top: 0.5rem;
   }
 }
 </style>

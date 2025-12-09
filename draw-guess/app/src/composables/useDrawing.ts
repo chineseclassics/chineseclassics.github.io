@@ -40,9 +40,10 @@ export function useDrawing() {
     canvas.height = rect.height * dpr
 
     // 縮放上下文以匹配 CSS 尺寸
+    // 這樣繪製時使用 CSS 坐標即可，ctx 會自動縮放到實際像素
     ctx.scale(dpr, dpr)
 
-    // 設置默認樣式
+    // 設置默認樣式（使用 CSS 尺寸）
     ctx.fillStyle = '#FFFFFF'
     ctx.fillRect(0, 0, rect.width, rect.height)
 
@@ -50,6 +51,26 @@ export function useDrawing() {
     if (canvasRef.value) {
       redrawCanvas(canvasRef.value, drawingStore.strokes)
     }
+
+    // 監聽窗口大小變化，重新調整 canvas
+    const resizeObserver = new ResizeObserver(() => {
+      if (!canvasRef.value || !ctxRef.value) return
+      
+      const newRect = canvasRef.value.getBoundingClientRect()
+      const newDpr = window.devicePixelRatio || 1
+      
+      // 重新設置尺寸
+      canvasRef.value.width = newRect.width * newDpr
+      canvasRef.value.height = newRect.height * newDpr
+      ctxRef.value.scale(newDpr, newDpr)
+      
+      // 重繪白色背景和所有筆觸
+      ctxRef.value.fillStyle = '#FFFFFF'
+      ctxRef.value.fillRect(0, 0, newRect.width, newRect.height)
+      redrawCanvas(canvasRef.value, drawingStore.strokes)
+    })
+    
+    resizeObserver.observe(canvas)
   }
 
   // 開始繪畫

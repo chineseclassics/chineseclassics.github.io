@@ -100,18 +100,20 @@ onUnmounted(() => {
   width: 100%;
   height: 100%;
   display: flex;
-  align-items: center;
-  justify-content: center;
+  align-items: stretch;
+  justify-content: stretch;
+  position: relative;
 }
 
 .drawing-canvas {
-  border: 2px solid var(--border-color);
+  width: 100%;
+  height: 100%;
+  border: none;
   background-color: var(--bg-card);
   background-image: none;
   cursor: crosshair;
   touch-action: none; /* 防止觸摸滾動 */
-  max-width: 100%;
-  max-height: 100%;
+  display: block;
 }
 </style>
 
