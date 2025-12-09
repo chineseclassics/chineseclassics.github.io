@@ -26,10 +26,19 @@
       <!-- 中間：工具欄 + 畫布 + 聊天面板 -->
       <div class="game-main">
         <!-- 頂部：提示詞區域 -->
-        <div class="game-header">
+        <div class="game-header" :class="{ 'time-critical': timeRemaining !== null && timeRemaining <= 10 }">
           <!-- 倒計時顯示 -->
           <div v-if="isCountingDown && timeRemaining !== null" class="time-display">
-            <span class="time-number" :class="{ 'time-warning': timeRemaining <= 10 }">{{ timeRemaining }}</span>
+            <span class="time-number" :class="{ 
+              'time-warning': timeRemaining <= 10,
+              'time-critical-pulse': timeRemaining <= 5 
+            }">{{ timeRemaining }}</span>
+            <span class="time-label">秒</span>
+          </div>
+          
+          <!-- 輪次信息 -->
+          <div class="round-info">
+            <span class="round-label">第 {{ currentRoundNumber }} / {{ totalRounds }} 輪</span>
           </div>
           
           <!-- 當前詞語（僅畫家可見） -->
@@ -145,8 +154,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import DrawingCanvas from '../components/DrawingCanvas.vue'
 import DrawingToolbar from '../components/DrawingToolbar.vue'
 import PlayerList from '../components/PlayerList.vue'
@@ -160,6 +169,7 @@ import { useRoom } from '../composables/useRoom'
 import { useGuessing } from '../composables/useGuessing'
 
 const route = useRoute()
+const router = useRouter()
 const roomStore = useRoomStore()
 const gameStore = useGameStore()
 const authStore = useAuthStore()
@@ -172,6 +182,8 @@ const {
   isCountingDown,
   isCurrentDrawer,
   drawTime,
+  currentRoundNumber,
+  totalRounds,
   startGame,
   skipWord,
 } = useGame()
@@ -189,6 +201,18 @@ const sortedGuesses = computed(() => {
     new Date(a.guessed_at).getTime() - new Date(b.guessed_at).getTime()
   )
 })
+
+// 自動滾動到聊天底部
+function scrollToBottom() {
+  if (chatMessagesRef.value) {
+    chatMessagesRef.value.scrollTop = chatMessagesRef.value.scrollHeight
+  }
+}
+
+// 監聽猜測記錄變化，自動滾動
+watch(sortedGuesses, () => {
+  nextTick(scrollToBottom)
+}, { deep: true })
 
 // 獲取參與者名稱
 function getParticipantName(userId: string): string {
@@ -237,6 +261,15 @@ async function handleStartGame() {
 // 處理離開房間
 async function handleLeaveRoom() {
   const result = await leaveRoom()
+  
+  // 取消房間訂閱
+  if (currentRoom.value) {
+    unsubscribeRoom(currentRoom.value.code)
+  }
+  
+  // 無論成功或失敗，都導航回首頁
+  await router.push('/')
+  
   if (!result.success && result.error) {
     showError(result.error)
   }
@@ -348,19 +381,36 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  transition: all 0.3s ease;
+}
+
+/* 時間緊迫時的頂部欄樣式 */
+.game-header.time-critical {
+  background: linear-gradient(135deg, #fff5f5, #ffe0e0);
+  border-color: var(--color-danger);
 }
 
 /* 倒計時顯示 */
 .time-display {
   position: absolute;
   left: 1rem;
+  display: flex;
+  align-items: baseline;
+  gap: 0.25rem;
 }
 
 .time-number {
-  font-size: 1.8rem;
+  font-size: 2rem;
   font-weight: bold;
   font-family: var(--font-head);
   color: var(--color-secondary);
+  min-width: 2.5rem;
+  text-align: center;
+}
+
+.time-label {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
 }
 
 .time-number.time-warning {
@@ -368,9 +418,41 @@ onUnmounted(() => {
   animation: pulse 1s infinite;
 }
 
+.time-number.time-critical-pulse {
+  color: var(--color-danger);
+  animation: critical-pulse 0.5s infinite;
+  font-size: 2.2rem;
+}
+
 @keyframes pulse {
   0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+  50% { opacity: 0.6; }
+}
+
+@keyframes critical-pulse {
+  0%, 100% { 
+    opacity: 1; 
+    transform: scale(1);
+  }
+  50% { 
+    opacity: 0.7; 
+    transform: scale(1.1);
+  }
+}
+
+/* 輪次信息 */
+.round-info {
+  position: absolute;
+  left: 5rem;
+}
+
+.round-label {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  font-family: var(--font-head);
+  background: var(--bg-secondary);
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
 }
 
 .word-label {

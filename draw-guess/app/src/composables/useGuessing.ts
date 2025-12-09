@@ -93,10 +93,8 @@ export function useGuessing() {
         await updatePlayerScore(authStore.user.id, scoreEarned)
       }
 
-      // 如果猜中，清空輸入框
-      if (isCorrect) {
-        guessInput.value = ''
-      }
+      // 每次提交後都清空輸入框，允許繼續猜測
+      guessInput.value = ''
 
       return { success: true, isCorrect, guess: data }
     } catch (err) {
