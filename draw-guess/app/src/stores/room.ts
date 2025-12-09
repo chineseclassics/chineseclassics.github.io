@@ -474,6 +474,35 @@ export const useRoomStore = defineStore('room', () => {
     }
   }
 
+  // 更新當前畫家
+  async function updateRoomDrawer(drawerId: string) {
+    try {
+      if (!currentRoom.value) {
+        throw new Error('沒有當前房間')
+      }
+
+      console.log('[RoomStore] 更新當前畫家:', { roomId: currentRoom.value.id, drawerId })
+
+      const { error: updateError } = await supabase
+        .from('game_rooms')
+        .update({ current_drawer_id: drawerId })
+        .eq('id', currentRoom.value.id)
+
+      if (updateError) throw updateError
+
+      if (currentRoom.value) {
+        currentRoom.value.current_drawer_id = drawerId
+        console.log('[RoomStore] 當前畫家已更新:', drawerId)
+      }
+
+      return { success: true }
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : '更新畫家失敗'
+      console.error('更新畫家錯誤:', err)
+      return { success: false, error: error.value }
+    }
+  }
+
   // 清除房間狀態
   function clearRoom() {
     currentRoom.value = null
@@ -495,6 +524,7 @@ export const useRoomStore = defineStore('room', () => {
     loadParticipants,
     loadRoom,
     updateRoomStatus,
+    updateRoomDrawer,
     clearRoom,
   }
 })

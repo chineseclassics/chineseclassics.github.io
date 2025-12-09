@@ -5,6 +5,26 @@ import { useAuthStore } from './auth'
 import { useRoomStore } from './room'
 import { useScoring } from '../composables/useScoring'
 
+// 輪次狀態類型
+export type RoundStatus = 'selecting' | 'drawing' | 'summary'
+
+// 詞語選項接口
+export interface WordOption {
+  text: string
+  source: 'wordlist' | 'custom'
+  difficulty?: 'easy' | 'medium' | 'hard'
+}
+
+// 評分接口
+export interface DrawingRating {
+  id: string
+  round_id: string
+  rater_id: string
+  drawer_id: string
+  rating: number
+  rated_at: string
+}
+
 // 遊戲輪次接口
 export interface GameRound {
   id: string
@@ -13,6 +33,8 @@ export interface GameRound {
   drawer_id: string
   word_text: string
   word_source: 'wordlist' | 'custom'
+  word_options?: WordOption[]
+  status: RoundStatus
   started_at: string
   ended_at: string | null
 }
@@ -37,6 +59,42 @@ export const useGameStore = defineStore('game', () => {
   const currentWord = ref<string | null>(null) // 當前詞語（僅畫家可見）
   const guesses = ref<Guess[]>([]) // 當前輪次的猜測記錄
   const correctGuesses = computed(() => guesses.value.filter(g => g.is_correct))
+
+  // 輪次狀態管理
+  const roundStatus = ref<RoundStatus>('drawing')
+  const wordOptions = ref<WordOption[]>([])
+  const ratings = ref<DrawingRating[]>([])
+  const averageRating = computed(() => {
+    if (ratings.value.length === 0) return 0
+    const sum = ratings.value.reduce((acc, r) => acc + r.rating, 0)
+    return sum / ratings.value.length
+  })
+
+  // 設置輪次狀態
+  function setRoundStatus(status: RoundStatus) {
+    roundStatus.value = status
+  }
+
+  // 設置詞語選項
+  function setWordOptions(options: WordOption[]) {
+    wordOptions.value = options
+  }
+
+  // 添加評分
+  function addRating(rating: DrawingRating) {
+    // 檢查是否已經評過分
+    const existingIndex = ratings.value.findIndex(r => r.rater_id === rating.rater_id)
+    if (existingIndex >= 0) {
+      ratings.value[existingIndex] = rating
+    } else {
+      ratings.value.push(rating)
+    }
+  }
+
+  // 清除輪次評分
+  function clearRatings() {
+    ratings.value = []
+  }
 
   // 載入當前輪次
   async function loadCurrentRound(roomId: string) {
@@ -172,6 +230,61 @@ export const useGameStore = defineStore('game', () => {
     currentRound.value = null
     currentWord.value = null
     guesses.value = []
+    roundStatus.value = 'drawing'
+    wordOptions.value = []
+    ratings.value = []
+  }
+
+  // 提交評分到數據庫
+  async function submitRating(roundId: string, drawerId: string, rating: number) {
+    if (!authStore.user) {
+      return { success: false, error: '用戶未登錄' }
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('drawing_ratings')
+        .upsert({
+          round_id: roundId,
+          rater_id: authStore.user.id,
+          drawer_id: drawerId,
+          rating: rating,
+        }, {
+          onConflict: 'round_id,rater_id'
+        })
+        .select()
+        .single()
+
+      if (error) throw error
+
+      // 更新本地評分
+      if (data) {
+        addRating(data as DrawingRating)
+      }
+
+      return { success: true, rating: data }
+    } catch (err) {
+      console.error('提交評分錯誤:', err)
+      return { success: false, error: err instanceof Error ? err.message : '提交評分失敗' }
+    }
+  }
+
+  // 載入輪次評分
+  async function loadRatings(roundId: string) {
+    try {
+      const { data, error } = await supabase
+        .from('drawing_ratings')
+        .select('*')
+        .eq('round_id', roundId)
+
+      if (error) throw error
+
+      ratings.value = (data || []) as DrawingRating[]
+      return { success: true, ratings: data }
+    } catch (err) {
+      console.error('載入評分錯誤:', err)
+      return { success: false, error: err instanceof Error ? err.message : '載入評分失敗' }
+    }
   }
 
   return {
@@ -181,6 +294,11 @@ export const useGameStore = defineStore('game', () => {
     guesses,
     correctGuesses,
     isCurrentDrawer,
+    // 輪次狀態
+    roundStatus,
+    wordOptions,
+    ratings,
+    averageRating,
     // 方法
     loadCurrentRound,
     loadGuesses,
@@ -188,6 +306,13 @@ export const useGameStore = defineStore('game', () => {
     hasGuessed,
     endRound,
     clearGame,
+    // 輪次狀態方法
+    setRoundStatus,
+    setWordOptions,
+    addRating,
+    clearRatings,
+    submitRating,
+    loadRatings,
   }
 })
 

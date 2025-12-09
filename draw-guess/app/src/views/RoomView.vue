@@ -27,8 +27,8 @@
       <div class="game-main">
         <!-- 頂部：提示詞區域 -->
         <div class="game-header" :class="{ 'time-critical': timeRemaining !== null && timeRemaining <= 10 }">
-          <!-- 倒計時顯示 -->
-          <div v-if="isCountingDown && timeRemaining !== null" class="time-display">
+          <!-- 倒計時顯示（繪畫階段） -->
+          <div v-if="isDrawing && isCountingDown && timeRemaining !== null" class="time-display">
             <span class="time-number" :class="{ 
               'time-warning': timeRemaining <= 10,
               'time-critical-pulse': timeRemaining <= 5 
@@ -36,48 +36,196 @@
             <span class="time-label">秒</span>
           </div>
           
-          <!-- 輪次信息 -->
-          <div class="round-info">
-            <span class="round-label">第 {{ currentRoundNumber }} / {{ totalRounds }} 輪</span>
+          <!-- 選詞階段倒計時 -->
+          <div v-else-if="isSelecting && selectionTimeRemaining !== null" class="time-display selecting">
+            <span class="time-number time-warning">{{ selectionTimeRemaining }}</span>
+            <span class="time-label">秒選詞</span>
           </div>
           
-          <!-- 當前詞語（僅畫家可見） -->
-          <div v-if="isCurrentDrawer && gameStore.currentWord" class="word-display">
+          <!-- 總結階段倒計時 -->
+          <div v-else-if="isSummary && summaryTimeRemaining !== null" class="time-display summary">
+            <span class="time-number">{{ summaryTimeRemaining }}</span>
+            <span class="time-label">秒後繼續</span>
+          </div>
+          
+          <!-- 輪次信息 -->
+          <div class="round-info">
+            <span class="round-label">第 {{ currentRoundNumber + (isSelecting ? 1 : 0) }} / {{ totalRounds }} 輪</span>
+            <span v-if="isSelecting" class="phase-label">選詞中</span>
+            <span v-else-if="isSummary" class="phase-label">輪次結算</span>
+          </div>
+          
+          <!-- 當前詞語（僅繪畫階段且畫家可見） -->
+          <div v-if="isDrawing && isCurrentDrawer && gameStore.currentWord" class="word-display">
             <span class="word-label">你的詞語</span>
             <span class="word-text">{{ gameStore.currentWord }}</span>
             <button class="skip-btn" @click="handleSkipWord" title="跳過此詞">跳過</button>
           </div>
-          <!-- 非畫家顯示提示（字母槽位風格，類似 skribbl.io） -->
-          <div v-else class="word-display">
+          <!-- 非畫家顯示提示（繪畫階段） -->
+          <div v-else-if="isDrawing" class="word-display">
             <span class="word-slots">{{ getWordHint }}</span>
+          </div>
+          <!-- 選詞階段：畫家正在選詞 -->
+          <div v-else-if="isSelecting" class="word-display">
+            <span class="word-slots">{{ isCurrentDrawerForNextRound ? '請選擇要畫的詞語' : `${currentDrawerName} 正在選詞...` }}</span>
+          </div>
+          <!-- 總結階段：顯示答案 -->
+          <div v-else-if="isSummary && gameStore.currentWord" class="word-display summary-word">
+            <span class="word-label">答案是</span>
+            <span class="word-text revealed">{{ gameStore.currentWord }}</span>
           </div>
           
           <!-- 離開按鈕 -->
           <button class="leave-btn" @click="handleLeaveRoom" title="離開房間">✕</button>
         </div>
 
-        <!-- 主要區域：工具欄 + 畫布 + 聊天 -->
+        <!-- 主要區域 -->
         <div class="game-content-area">
-          <!-- 工具欄（僅畫家顯示完整版） -->
-          <div class="game-toolbar">
-            <DrawingToolbar :compact="true" />
-          </div>
-
-          <!-- 畫布 -->
-          <div class="game-canvas">
-            <DrawingCanvas />
-            <!-- 進度條 -->
-            <div v-if="isCountingDown && timeRemaining !== null" class="time-progress">
-              <div 
-                class="time-bar" 
-                :class="{ 'time-warning': timeRemaining <= 10 }"
-                :style="{ width: `${(timeRemaining / drawTime) * 100}%` }"
-              ></div>
+          <!-- 選詞階段覆蓋層 -->
+          <template v-if="isSelecting">
+            <!-- 工具欄（隱藏或禁用） -->
+            <div class="game-toolbar disabled">
+              <DrawingToolbar :compact="true" />
             </div>
-          </div>
 
-          <!-- 右側聊天面板 -->
-          <div class="game-chat-panel">
+            <!-- 畫布區域顯示選詞界面 -->
+            <div class="game-canvas selection-phase">
+              <!-- 畫家看到選詞界面 -->
+              <WordSelection
+                v-if="isCurrentDrawerForNextRound"
+                :word-options="wordOptions"
+                :round-number="currentRoundNumber + 1"
+                :total-rounds="totalRounds"
+                :selection-time="15"
+                @word-selected="handleWordSelect"
+              />
+              <!-- 非畫家看到上一輪總結（帶等待選詞提示）或純等待提示 -->
+              <RoundSummary
+                v-else-if="lastRoundInfo"
+                :round-number="lastRoundInfo.roundNumber"
+                :total-rounds="totalRounds"
+                :correct-answer="lastRoundInfo.answer"
+                :drawer-name="lastRoundInfo.drawerName"
+                :drawer-id="lastRoundInfo.drawerId"
+                :drawer-score="lastRoundInfo.drawerScore"
+                :correct-guessers="lastRoundInfo.correctGuessers"
+                :round-id="lastRoundInfo.roundId"
+                :is-host="roomStore.isHost"
+                :is-last-round="false"
+                :is-waiting-for-selection="true"
+                :next-drawer-name="currentDrawerName"
+                @rating-submitted="handleRating"
+              />
+              <!-- 第一輪沒有上一輪信息時顯示簡單等待 -->
+              <div v-else class="first-round-waiting">
+                <div class="waiting-card">
+                  <div class="waiting-icon">
+                    <span class="pencil-animate">✏️</span>
+                  </div>
+                  <h2 class="waiting-title">{{ currentDrawerName }} 正在選詞...</h2>
+                  <p class="waiting-hint">第一輪即將開始</p>
+                  <div class="waiting-dots">
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 聊天面板 -->
+            <div class="game-chat-panel">
+              <div class="chat-messages-container" ref="chatMessagesRef">
+                <div class="chat-msg system-msg">
+                  <span class="msg-icon">⏳</span> 等待畫家選詞...
+                </div>
+              </div>
+              <div class="chat-input-area">
+                <input
+                  type="text"
+                  placeholder="等待選詞..."
+                  disabled
+                  class="chat-input-field"
+                />
+                <button disabled class="chat-send-btn">發送</button>
+              </div>
+            </div>
+          </template>
+
+          <!-- 總結階段覆蓋層 -->
+          <template v-else-if="isSummary">
+            <!-- 工具欄（隱藏或禁用） -->
+            <div class="game-toolbar disabled">
+              <DrawingToolbar :compact="true" />
+            </div>
+
+            <!-- 畫布區域顯示總結界面 -->
+            <div class="game-canvas summary-phase">
+              <RoundSummary
+                :round-number="currentRoundNumber"
+                :total-rounds="totalRounds"
+                :correct-answer="gameStore.currentWord || ''"
+                :drawer-name="currentDrawerName"
+                :drawer-id="gameStore.currentRound?.drawer_id || ''"
+                :drawer-score="drawerScoreForRound"
+                :correct-guessers="correctGuessersForSummary"
+                :round-id="gameStore.currentRound?.id || ''"
+                :is-host="roomStore.isHost"
+                :is-last-round="currentRoundNumber >= totalRounds"
+                @rating-submitted="handleRating"
+              />
+            </div>
+
+            <!-- 聊天面板 -->
+            <div class="game-chat-panel">
+              <div class="chat-messages-container" ref="chatMessagesRef">
+                <div class="chat-msg system-msg answer-revealed">
+                  <span class="msg-icon">🎯</span> 答案是：<strong>{{ gameStore.currentWord }}</strong>
+                </div>
+                <!-- 正確猜測列表 -->
+                <div 
+                  v-for="guess in gameStore.correctGuesses" 
+                  :key="guess.id"
+                  class="chat-msg correct-guess"
+                >
+                  <span class="msg-player">{{ getParticipantName(guess.user_id) }}</span>
+                  <span class="msg-correct">猜中了！ +{{ guess.score_earned }}</span>
+                </div>
+              </div>
+              <div class="chat-input-area">
+                <input
+                  type="text"
+                  placeholder="下一輪即將開始..."
+                  disabled
+                  class="chat-input-field"
+                />
+                <button disabled class="chat-send-btn">發送</button>
+              </div>
+            </div>
+          </template>
+
+          <!-- 繪畫階段 -->
+          <template v-else>
+            <!-- 工具欄（僅畫家顯示完整版） -->
+            <div class="game-toolbar">
+              <DrawingToolbar :compact="true" />
+            </div>
+
+            <!-- 畫布 -->
+            <div class="game-canvas">
+              <DrawingCanvas />
+              <!-- 進度條 -->
+              <div v-if="isCountingDown && timeRemaining !== null" class="time-progress">
+                <div 
+                  class="time-bar" 
+                  :class="{ 'time-warning': timeRemaining <= 10 }"
+                  :style="{ width: `${(timeRemaining / drawTime) * 100}%` }"
+                ></div>
+              </div>
+            </div>
+
+            <!-- 右側聊天面板 -->
+            <div class="game-chat-panel">
             <div class="chat-messages-container" ref="chatMessagesRef">
               <!-- 系統消息 -->
               <div class="chat-msg system-msg">
@@ -130,6 +278,7 @@
               </button>
             </div>
           </div>
+          </template>
         </div>
       </div>
     </div>
@@ -160,6 +309,8 @@ import DrawingCanvas from '../components/DrawingCanvas.vue'
 import DrawingToolbar from '../components/DrawingToolbar.vue'
 import PlayerList from '../components/PlayerList.vue'
 import WaitingLobby from '../components/WaitingLobby.vue'
+import WordSelection from '../components/WordSelection.vue'
+import RoundSummary from '../components/RoundSummary.vue'
 import { useRoomStore } from '../stores/room'
 import { useGameStore } from '../stores/game'
 import { useAuthStore } from '../stores/auth'
@@ -186,6 +337,14 @@ const {
   totalRounds,
   startGame,
   skipWord,
+  // 輪次狀態
+  isSelecting,
+  isDrawing,
+  isSummary,
+  wordOptions,
+  selectionTimeRemaining,
+  summaryTimeRemaining,
+  selectWord,
 } = useGame()
 const { hasGuessed, guessInput, submitGuess, loading: guessingLoading } = useGuessing()
 const { leaveRoom } = useRoom()
@@ -194,6 +353,20 @@ const currentRoom = computed(() => roomStore.currentRoom)
 const loading = computed(() => guessingLoading.value)
 const errorMessage = ref<string | null>(null)
 const chatMessagesRef = ref<HTMLElement | null>(null)
+
+// 當前畫家名稱
+const currentDrawerName = computed(() => {
+  const drawerId = currentRoom.value?.current_drawer_id
+  if (!drawerId) return '畫家'
+  const participant = roomStore.participants.find(p => p.user_id === drawerId)
+  return participant?.nickname || '畫家'
+})
+
+// 判斷當前用戶是否是下一輪的畫家（選詞階段用）
+const isCurrentDrawerForNextRound = computed(() => {
+  if (!currentRoom.value || !authStore.user) return false
+  return currentRoom.value.current_drawer_id === authStore.user.id
+})
 
 // 排序後的猜測記錄（按時間排序）
 const sortedGuesses = computed(() => {
@@ -232,6 +405,58 @@ const getWordHint = computed(() => {
   if (!gameStore.currentWord) return '猜猜畫的是什麼？'
   // 將每個字替換為下劃線，中間用空格分開
   return gameStore.currentWord.split('').map(() => '_').join(' ')
+})
+
+// 計算畫家在當前輪次的得分（根據猜中人數）
+const drawerScoreForRound = computed(() => {
+  const correctCount = gameStore.correctGuesses.length
+  // 每個猜中的人給畫家 5 分
+  return correctCount * 5
+})
+
+// 轉換猜中玩家列表為 RoundSummary 需要的格式
+const correctGuessersForSummary = computed(() => {
+  return gameStore.correctGuesses.map(g => ({
+    userId: g.user_id,
+    name: getParticipantName(g.user_id),
+    score: g.score_earned
+  }))
+})
+
+// 上一輪信息（用於選詞階段顯示給非畫家）
+interface LastRoundInfo {
+  roundNumber: number
+  answer: string
+  drawerName: string
+  drawerId: string
+  drawerScore: number
+  correctGuessers: Array<{ userId: string; name: string; score: number }>
+  roundId: string
+}
+
+const lastRoundInfo = ref<LastRoundInfo | null>(null)
+
+// 保存上一輪信息（在輪次結束時調用）
+function saveLastRoundInfo() {
+  if (!gameStore.currentRound || !gameStore.currentWord) return
+  
+  lastRoundInfo.value = {
+    roundNumber: currentRoundNumber.value,
+    answer: gameStore.currentWord,
+    drawerName: currentDrawerName.value,
+    drawerId: gameStore.currentRound.drawer_id,
+    drawerScore: drawerScoreForRound.value,
+    correctGuessers: correctGuessersForSummary.value,
+    roundId: gameStore.currentRound.id
+  }
+}
+
+// 監聯輪次狀態變化，在進入選詞階段前保存上一輪信息
+watch(isSelecting, (newVal, oldVal) => {
+  if (newVal && !oldVal && currentRoundNumber.value > 0) {
+    // 剛剛進入選詞階段，保存上一輪信息
+    saveLastRoundInfo()
+  }
 })
 
 // 顯示錯誤訊息
@@ -278,6 +503,33 @@ async function handleLeaveRoom() {
 // 跳過詞語
 async function handleSkipWord() {
   const result = await skipWord()
+  if (!result.success && result.error) {
+    showError(result.error)
+  }
+}
+
+// 處理選詞
+async function handleWordSelect(word: string) {
+  // 從 wordOptions 中找到對應的選項
+  const option = wordOptions.value.find(opt => opt.text === word)
+  if (option) {
+    const result = await selectWord(option)
+    if (!result.success && result.error) {
+      showError(result.error)
+    }
+  }
+}
+
+// 處理評分
+async function handleRating(rating: number) {
+  if (!gameStore.currentRound) return
+  
+  const result = await gameStore.submitRating(
+    gameStore.currentRound.id,
+    gameStore.currentRound.drawer_id,
+    rating
+  )
+  
   if (!result.success && result.error) {
     showError(result.error)
   }
@@ -739,6 +991,98 @@ onUnmounted(() => {
     height: 200px;
     margin-left: 0;
     margin-top: 0.5rem;
+  }
+}
+
+/* ============================================
+   第一輪等待選詞樣式
+   ============================================ */
+.first-round-waiting {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--bg-primary), var(--bg-secondary));
+  padding: 1rem;
+}
+
+.first-round-waiting .waiting-card {
+  background: var(--bg-card);
+  border: 3px solid var(--border-color);
+  border-radius: 16px;
+  padding: 2rem;
+  max-width: 400px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.first-round-waiting .waiting-icon {
+  margin-bottom: 1rem;
+  font-size: 3rem;
+}
+
+.first-round-waiting .pencil-animate {
+  display: inline-block;
+  animation: pencil-write 1s ease-in-out infinite;
+}
+
+@keyframes pencil-write {
+  0%, 100% {
+    transform: rotate(-10deg) translateY(0);
+  }
+  50% {
+    transform: rotate(10deg) translateY(-3px);
+  }
+}
+
+.first-round-waiting .waiting-title {
+  font-size: 1.3rem;
+  font-weight: bold;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.first-round-waiting .waiting-hint {
+  color: var(--text-secondary);
+  margin-bottom: 1rem;
+}
+
+.first-round-waiting .waiting-dots {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.first-round-waiting .dot {
+  width: 8px;
+  height: 8px;
+  background: var(--color-secondary);
+  border-radius: 50%;
+  animation: dot-bounce 1.4s ease-in-out infinite;
+}
+
+.first-round-waiting .dot:nth-child(1) {
+  animation-delay: 0s;
+}
+
+.first-round-waiting .dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.first-round-waiting .dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes dot-bounce {
+  0%, 80%, 100% {
+    opacity: 0.3;
+    transform: scale(0.8);
+  }
+  40% {
+    opacity: 1;
+    transform: scale(1);
   }
 }
 </style>
