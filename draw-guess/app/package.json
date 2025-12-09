@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vue-tsc -b && vite build",
+    "clean": "rm -rf ../assets ../index.html ../vite.svg",
+    "build": "npm run clean && vue-tsc -b && vite build",
+    "build:quick": "npm run clean && vite build",
     "preview": "vite preview"
   },
   "dependencies": {

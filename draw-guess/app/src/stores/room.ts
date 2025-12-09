@@ -510,6 +510,14 @@ export const useRoomStore = defineStore('room', () => {
     error.value = null
   }
 
+  // 設置當前畫家（只更新本地狀態，用於廣播同步）
+  function setCurrentDrawer(drawerId: string) {
+    if (currentRoom.value) {
+      currentRoom.value.current_drawer_id = drawerId
+      console.log('[RoomStore] 本地更新當前畫家:', drawerId)
+    }
+  }
+
   return {
     // 狀態
     currentRoom,
@@ -525,6 +533,7 @@ export const useRoomStore = defineStore('room', () => {
     loadRoom,
     updateRoomStatus,
     updateRoomDrawer,
+    setCurrentDrawer,
     clearRoom,
   }
 })

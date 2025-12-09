@@ -382,6 +382,14 @@ watch(sortedGuesses, () => {
   nextTick(scrollToBottom)
 }, { deep: true })
 
+// 監聽輪次變化，重新訂閱猜測
+watch(() => gameStore.currentRound?.id, (newRoundId, oldRoundId) => {
+  if (newRoundId && newRoundId !== oldRoundId && currentRoom.value) {
+    console.log('[RoomView] 輪次變化，重新訂閱猜測:', newRoundId)
+    subscribeGuesses(currentRoom.value.code, newRoundId)
+  }
+})
+
 // 獲取參與者名稱
 function getParticipantName(userId: string): string {
   const participant = roomStore.participants.find(p => p.user_id === userId)
@@ -561,19 +569,31 @@ onMounted(async () => {
     }
 
     // 訂閱遊戲狀態廣播（同步 roundStatus、wordOptions 等）
-    subscribeGameState(currentRoom.value.code, (state) => {
+    subscribeGameState(currentRoom.value.code, async (state) => {
       console.log('[RoomView] 收到遊戲狀態廣播:', state)
       
       // 更新本地狀態
       if (state.roundStatus) {
         gameStore.setRoundStatus(state.roundStatus)
+        
+        // 如果進入選詞階段，清空畫布
+        if (state.roundStatus === 'selecting') {
+          // 清空畫布（通過事件）
+          window.dispatchEvent(new CustomEvent('clearCanvas'))
+        }
       }
       if (state.wordOptions !== undefined) {
         gameStore.setWordOptions(state.wordOptions)
       }
-      // 重新載入當前輪次以獲取最新數據
+      // 更新當前畫家 ID
+      if (state.drawerId && currentRoom.value) {
+        // 直接更新本地房間狀態
+        roomStore.setCurrentDrawer(state.drawerId)
+      }
+      // 重新載入房間和輪次以獲取最新數據
       if (currentRoom.value) {
-        gameStore.loadCurrentRound(currentRoom.value.id)
+        await roomStore.loadRoom(currentRoom.value.id)
+        await gameStore.loadCurrentRound(currentRoom.value.id)
       }
     })
 

@@ -28,6 +28,7 @@ const {
   draw,
   stopDrawing,
   handleDrawingData,
+  clearCanvas,
 } = useDrawing()
 
 const roomStore = useRoomStore()
@@ -35,6 +36,12 @@ const authStore = useAuthStore()
 const { subscribeDrawing } = useRealtime()
 
 const canvasElement = ref<HTMLCanvasElement | null>(null)
+
+// 監聽清空畫布事件
+function handleClearCanvasEvent() {
+  console.log('[DrawingCanvas] 收到清空畫布事件')
+  clearCanvas()
+}
 
 // 鼠標事件處理
 function handleMouseDown(event: MouseEvent) {
@@ -84,6 +91,9 @@ onMounted(() => {
     initCanvas(canvasElement.value)
   }
   setupDrawingSubscription()
+  
+  // 監聽清空畫布事件
+  window.addEventListener('clearCanvas', handleClearCanvasEvent)
 })
 
 onUnmounted(() => {
@@ -92,6 +102,9 @@ onUnmounted(() => {
     unsubscribeDrawingCallback()
     unsubscribeDrawingCallback = null
   }
+  
+  // 移除清空畫布事件監聽
+  window.removeEventListener('clearCanvas', handleClearCanvasEvent)
 })
 </script>
 
