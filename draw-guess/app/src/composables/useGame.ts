@@ -1,6 +1,7 @@
 import { ref, computed, onUnmounted } from 'vue'
 import { useRoomStore } from '../stores/room'
 import { useGameStore, type WordOption } from '../stores/game'
+import { useRealtime } from './useRealtime'
 
 // 選詞時間（秒）
 const SELECTION_TIME = 15
@@ -10,6 +11,7 @@ const SUMMARY_TIME = 8
 export function useGame() {
   const roomStore = useRoomStore()
   const gameStore = useGameStore()
+  const { broadcastGameState, subscribeGameState } = useRealtime()
 
   // 倒計時相關
   const timeRemaining = ref<number | null>(null) // 剩餘時間（秒）
@@ -238,6 +240,14 @@ export function useGame() {
       // 更新房間當前畫家
       await roomStore.updateRoomDrawer(drawer.user_id)
 
+      // 廣播狀態給所有玩家
+      const { broadcastGameState } = useRealtime()
+      await broadcastGameState(roomStore.currentRoom!.room_code, {
+        roundStatus: 'selecting',
+        wordOptions: options,
+        drawerId: drawer.user_id
+      })
+
       // 開始選詞倒計時
       startSelectionCountdown()
 
@@ -276,6 +286,14 @@ export function useGame() {
         // 進入繪畫階段
         gameStore.setRoundStatus('drawing')
         gameStore.setWordOptions([])
+
+        // 廣播狀態給所有玩家
+        const { broadcastGameState } = useRealtime()
+        await broadcastGameState(roomStore.currentRoom!.room_code, {
+          roundStatus: 'drawing',
+          wordOptions: [],
+          drawerId: drawerId
+        })
 
         // 開始繪畫倒計時
         startCountdown(drawTime.value)
@@ -316,6 +334,14 @@ export function useGame() {
 
       // 進入總結階段
       gameStore.setRoundStatus('summary')
+
+      // 廣播狀態給所有玩家
+      const { broadcastGameState } = useRealtime()
+      await broadcastGameState(roomStore.currentRoom!.room_code, {
+        roundStatus: 'summary',
+        wordOptions: [],
+        drawerId: roomStore.currentRoom!.current_drawer_id
+      })
 
       // 開始總結倒計時
       startSummaryCountdown()

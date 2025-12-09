@@ -114,7 +114,21 @@ export const useGameStore = defineStore('game', () => {
       if (data) {
         currentRound.value = data as GameRound
         currentWord.value = data.word_text
+        
+        // 同步輪次狀態
+        if (data.status) {
+          roundStatus.value = data.status as RoundStatus
+        }
+        
+        // 同步詞語選項（如果有）
+        if (data.word_options && Array.isArray(data.word_options)) {
+          wordOptions.value = data.word_options as WordOption[]
+        }
+        
         await loadGuesses(data.id)
+      } else {
+        // 沒有輪次，可能是選詞階段
+        // 不重置 roundStatus，讓它保持當前狀態
       }
 
       return { success: true, round: data }

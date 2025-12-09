@@ -218,6 +218,59 @@ export function useRealtime() {
     return channel
   }
 
+  // 訂閱遊戲狀態廣播
+  function subscribeGameState(roomCode: string, onGameState: (state: any) => void) {
+    const channel = getRoomChannel(roomCode)
+    
+    const listenerKey = `gameState:${roomCode}`
+    if ((channel as any)[listenerKey]) {
+      return channel
+    }
+
+    channel.on('broadcast', { event: 'game_state' }, (payload) => {
+      log('收到遊戲狀態廣播:', payload.payload)
+      onGameState(payload.payload)
+    })
+
+    ;(channel as any)[listenerKey] = true
+    return channel
+  }
+
+  // 廣播遊戲狀態
+  async function broadcastGameState(roomCode: string, state: {
+    roundStatus: string
+    drawerId?: string
+    drawerName?: string
+    wordOptions?: any[]
+    roundNumber?: number
+  }) {
+    const channel = getRoomChannel(roomCode)
+    const channelState = (channel as any).state
+
+    if (channelState !== 'joined') {
+      warn('Channel 未連接，狀態:', channelState)
+      return { error: 'Channel 未連接' }
+    }
+
+    try {
+      log('廣播遊戲狀態:', state)
+      const result = await channel.send({
+        type: 'broadcast',
+        event: 'game_state',
+        payload: state,
+      })
+
+      if (result === 'error') {
+        warn('發送遊戲狀態失敗')
+        return { error: '發送失敗' }
+      }
+      return result
+    } catch (error) {
+      warn('發送遊戲狀態錯誤:', error)
+      return { error: error instanceof Error ? error.message : '發送失敗' }
+    }
+  }
+
   async function sendDrawing(roomCode: string, stroke: any) {
     const channel = getRoomChannel(roomCode)
     const channelState = (channel as any).state
@@ -278,7 +331,9 @@ export function useRealtime() {
     subscribeRoom,
     subscribeDrawing,
     subscribeGuesses,
+    subscribeGameState,
     sendDrawing,
+    broadcastGameState,
     unsubscribeRoom,
     unsubscribeAll,
     getConnectionStatus,
