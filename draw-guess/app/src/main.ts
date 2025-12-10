@@ -2,7 +2,13 @@ import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import App from './App.vue'
 import router from './router'
+
+// 引入 PaperCSS（NPM 包）
+import 'papercss/dist/paper.min.css'
+
+// 引入自定義樣式（放在 PaperCSS 後面以便覆蓋）
 import './style.css'
+
 import { useAuthStore } from './stores/auth'
 
 const app = createApp(App)

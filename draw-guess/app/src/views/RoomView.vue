@@ -17,7 +17,7 @@
     <!-- 遊戲進行中 - 參考 Gartic.io 佈局 -->
     <div v-else-if="isPlaying" class="game-layout">
       <!-- 左側：玩家列表 -->
-      <div class="game-sidebar game-players">
+      <div class="game-sidebar game-players border">
         <div class="player-list-container">
           <PlayerList :show-winner="false" />
         </div>
@@ -26,7 +26,7 @@
       <!-- 中間：工具欄 + 畫布 + 聊天面板 -->
       <div class="game-main">
         <!-- 頂部：提示詞區域 -->
-        <div class="game-header" :class="{ 'time-critical': timeRemaining !== null && timeRemaining <= 10 }">
+        <div class="game-header border border-2" :class="{ 'time-critical': timeRemaining !== null && timeRemaining <= 10 }">
           <!-- 倒計時顯示（繪畫階段） -->
           <div v-if="isDrawing && isCountingDown && timeRemaining !== null" class="time-display">
             <span class="time-number" :class="{ 
@@ -74,7 +74,7 @@
         <div class="game-content-area">
           <!-- 畫布區域 - DrawingCanvas 始終存在 -->
           <div class="game-canvas-wrapper">
-            <div class="game-canvas">
+            <div class="game-canvas border">
               <!-- 畫布始終渲染，確保 watch 持續有效 -->
               <DrawingCanvas />
               
@@ -107,13 +107,13 @@
             </div>
             
             <!-- 工具欄 - 橫向放在畫布下方 -->
-            <div class="game-toolbar" :class="{ disabled: isSummary }">
+            <div class="game-toolbar border border-4" :class="{ disabled: isSummary }">
               <DrawingToolbar :horizontal="true" />
             </div>
           </div>
 
           <!-- 聊天面板 - 始終顯示所有猜測記錄，不因總結階段改變 -->
-          <div class="game-chat-panel">
+          <div class="game-chat-panel border border-3">
             <div class="chat-messages-container" ref="chatMessagesRef">
               <!-- 系統消息 -->
               <div class="chat-msg system-msg">
@@ -593,11 +593,6 @@ onUnmounted(() => {
   width: 280px;
   min-width: 280px;
   background: var(--bg-card);
-  border: 2px solid var(--border-color);
-  border-bottom-left-radius: 15px 255px;
-  border-bottom-right-radius: 225px 15px;
-  border-top-left-radius: 255px 15px;
-  border-top-right-radius: 15px 225px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -634,11 +629,6 @@ onUnmounted(() => {
   gap: 1rem;
   padding: 0.75rem 1rem;
   background: var(--bg-card);
-  border: 2px solid var(--border-color);
-  border-bottom-left-radius: 185px 25px;
-  border-bottom-right-radius: 20px 205px;
-  border-top-left-radius: 125px 25px;
-  border-top-right-radius: 10px 205px;
   position: relative;
   box-shadow: 3px 3px 0 var(--shadow-color);
   transition: all 0.3s ease;
@@ -829,11 +819,6 @@ onUnmounted(() => {
 /* 工具欄 - 橫向在畫布下方 */
 .game-toolbar {
   background: var(--bg-card);
-  border: 2px solid var(--border-color);
-  border-bottom-left-radius: 25px 115px;
-  border-bottom-right-radius: 155px 25px;
-  border-top-left-radius: 15px 225px;
-  border-top-right-radius: 25px 150px;
   padding: 0.5rem;
   box-shadow: 3px 3px 0 var(--shadow-color);
   transition: all 0.3s ease;
@@ -847,11 +832,6 @@ onUnmounted(() => {
 .game-canvas {
   flex: 1;
   background: white;
-  border: 2px solid var(--border-color);
-  border-bottom-left-radius: 15px 255px;
-  border-bottom-right-radius: 225px 15px;
-  border-top-left-radius: 255px 15px;
-  border-top-right-radius: 15px 225px;
   position: relative;
   display: flex;
   align-items: center;
@@ -938,11 +918,6 @@ onUnmounted(() => {
   width: 280px;
   min-width: 280px;
   background: var(--bg-card);
-  border: 2px solid var(--border-color);
-  border-bottom-left-radius: 225px 15px;
-  border-bottom-right-radius: 15px 255px;
-  border-top-left-radius: 15px 225px;
-  border-top-right-radius: 255px 15px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
