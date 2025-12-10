@@ -158,7 +158,7 @@ async function handleKick(userId: string, playerName: string) {
   padding: 0.6rem;
   border-bottom: 2px dashed var(--border-light);
   transition: all 0.2s ease;
-  border-radius: 15px 225px 25px 115px / 225px 150px 155px 25px;
+  border-radius: 8px;
   margin-bottom: 2px;
 }
 
@@ -308,7 +308,7 @@ async function handleKick(userId: string, playerName: string) {
   margin-top: 1rem;
   padding: 1.25rem;
   background: linear-gradient(135deg, var(--color-success), #6fb86f);
-  border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
+  border-radius: 15px 225px 15px 255px / 225px 15px 255px 15px;
   display: flex;
   align-items: center;
   gap: 0.875rem;

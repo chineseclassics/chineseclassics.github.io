@@ -144,7 +144,7 @@ async function handleClear() {
   gap: 0.25rem;
   padding: 0.6rem;
   border: 2px solid var(--border-color);
-  border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
+  border-radius: 8px;
   background: var(--bg-card);
   cursor: pointer;
   transition: all 0.2s ease;
@@ -213,7 +213,7 @@ async function handleClear() {
   min-width: 20px;
   min-height: 20px;
   border: 2px solid var(--border-light);
-  border-radius: 125px 25px 185px 25px / 25px 205px 25px 205px;
+  border-radius: 6px;
   cursor: pointer;
   box-sizing: border-box;
   transition: all 0.15s ease;

@@ -593,8 +593,8 @@ onUnmounted(() => {
   width: 280px;
   min-width: 280px;
   background: var(--bg-card);
-  border: 3px solid var(--border-color);
-  border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
+  border: 2px solid var(--border-color);
+  border-radius: 15px 225px 15px 255px / 225px 15px 255px 15px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -630,8 +630,8 @@ onUnmounted(() => {
   gap: 1rem;
   padding: 0.75rem 1rem;
   background: var(--bg-card);
-  border: 3px solid var(--border-color);
-  border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
+  border: 2px solid var(--border-color);
+  border-radius: 15px 225px 15px 255px / 225px 15px 255px 15px;
   position: relative;
   box-shadow: 3px 3px 0 var(--shadow-color);
   transition: all 0.3s ease;
@@ -813,8 +813,8 @@ onUnmounted(() => {
 /* 工具欄 - 橫向在畫布下方 */
 .game-toolbar {
   background: var(--bg-card);
-  border: 3px solid var(--border-color);
-  border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
+  border: 2px solid var(--border-color);
+  border-radius: 15px 225px 15px 255px / 225px 15px 255px 15px;
   padding: 0.5rem;
   box-shadow: 3px 3px 0 var(--shadow-color);
   transition: all 0.3s ease;
@@ -828,8 +828,8 @@ onUnmounted(() => {
 .game-canvas {
   flex: 1;
   background: white;
-  border: 3px solid var(--border-color);
-  border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
+  border: 2px solid var(--border-color);
+  border-radius: 15px 225px 15px 255px / 225px 15px 255px 15px;
   position: relative;
   display: flex;
   align-items: center;
@@ -915,8 +915,8 @@ onUnmounted(() => {
   width: 280px;
   min-width: 280px;
   background: var(--bg-card);
-  border: 3px solid var(--border-color);
-  border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
+  border: 2px solid var(--border-color);
+  border-radius: 15px 225px 15px 255px / 225px 15px 255px 15px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -941,7 +941,7 @@ onUnmounted(() => {
 
 .chat-msg {
   padding: 0.5rem 0.75rem;
-  border-radius: 15px 225px 25px 115px / 225px 150px 155px 25px;
+  border-radius: 8px;
   line-height: 1.4;
   animation: slideInMsg 0.3s ease-out;
 }
@@ -1026,7 +1026,7 @@ onUnmounted(() => {
   flex: 1;
   padding: 0.6rem 0.75rem;
   border: 2px solid var(--border-light);
-  border-radius: 125px 25px 185px 25px / 25px 205px 25px 205px;
+  border-radius: 8px;
   font-family: var(--font-body);
   font-size: 0.9rem;
   background: var(--bg-card);
@@ -1049,7 +1049,7 @@ onUnmounted(() => {
   background: var(--color-secondary);
   color: white;
   border: 2px solid var(--border-color);
-  border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
+  border-radius: 8px;
   cursor: pointer;
   font-family: var(--font-body);
   font-weight: bold;
