@@ -267,8 +267,8 @@ watch(() => props.roundId, () => {
 
 .summary-card {
   background: var(--bg-card);
-  border: 2px solid var(--border-color);
-  border-radius: 8px;
+  border: 4px solid var(--border-color);
+  border-radius: 16px;
   padding: 1.25rem 1.5rem;
   box-shadow: 6px 6px 0 var(--shadow-color);
   position: relative;
@@ -330,9 +330,9 @@ watch(() => props.roundId, () => {
   text-align: center;
   padding: 0.875rem;
   background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
-  border-radius: 8px;
+  border-radius: 10px;
   margin-bottom: 0.875rem;
-  border: 2px solid var(--color-success);
+  border: 3px solid var(--color-success);
   animation: revealPulse 0.6s ease-out;
 }
 
@@ -497,7 +497,7 @@ watch(() => props.roundId, () => {
   text-align: center;
   padding: 0.75rem;
   border: 2px dashed var(--border-light);
-  border-radius: 8px;
+  border-radius: 10px;
   margin-bottom: 0.875rem;
   background: var(--bg-secondary);
   transition: all 0.3s ease;
@@ -625,7 +625,7 @@ watch(() => props.roundId, () => {
 .selection-waiting-banner {
   background: linear-gradient(135deg, #e3f2fd, #bbdefb);
   border: 2px solid var(--color-secondary);
-  border-radius: 8px;
+  border-radius: 10px;
   padding: 0.75rem 1rem;
   margin-bottom: 0.875rem;
   display: flex;
@@ -716,7 +716,7 @@ watch(() => props.roundId, () => {
   margin-top: 0.875rem;
   padding: 0.6rem 0.875rem;
   background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
-  border-radius: 8px;
+  border-radius: 10px;
   text-align: center;
   border: 2px solid var(--color-success);
   animation: fadeInUp 0.4s ease-out 0.2s both;
@@ -749,7 +749,7 @@ watch(() => props.roundId, () => {
   margin-top: 0.875rem;
   padding: 0.6rem 0.875rem;
   background: linear-gradient(135deg, #fff8e1, #ffecb3);
-  border-radius: 8px;
+  border-radius: 10px;
   text-align: center;
   border: 2px solid var(--color-warning);
   animation: celebratePulse 1.5s ease-in-out infinite;

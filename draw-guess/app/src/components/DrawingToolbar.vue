@@ -143,8 +143,8 @@ async function handleClear() {
   justify-content: center;
   gap: 0.25rem;
   padding: 0.6rem;
-  border: 2px solid var(--border-color);
-  border-radius: 8px;
+  border: 3px solid var(--border-color);
+  border-radius: 10px;
   background: var(--bg-card);
   cursor: pointer;
   transition: all 0.2s ease;
@@ -226,7 +226,7 @@ async function handleClear() {
 }
 
 .color-cell.selected {
-  border: 2px solid var(--text-primary);
+  border: 3px solid var(--text-primary);
   box-shadow: 0 0 0 2px white inset, 0 2px 8px rgba(0,0,0,0.3);
   transform: scale(1.1);
 }

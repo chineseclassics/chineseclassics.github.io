@@ -3,10 +3,7 @@ import { createPinia } from 'pinia'
 import App from './App.vue'
 import router from './router'
 
-// 引入 Wired Elements（手繪風格 UI 組件庫）
-import 'wired-elements'
-
-// 引入 PaperCSS（NPM 包）作為備用樣式
+// 引入 PaperCSS（NPM 包）
 import 'papercss/dist/paper.min.css'
 
 // 引入自定義樣式（放在 PaperCSS 後面以便覆蓋）

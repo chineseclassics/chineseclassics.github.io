@@ -1,6 +1,5 @@
 /* PaperCSS 手繪風格全局樣式 - 溫馨畫室配色方案 */
 /* 注意：不再使用 Tailwind，完全使用 PaperCSS */
-/* Wired Elements 手繪風格 UI 組件庫全局配置 */
 
 /* LXGW 文楷繁體版 - 本地字體 */
 @font-face {
@@ -51,45 +50,6 @@
   --accent-gold: #F0C078;        /* 裝飾杏黃（與警告色統一） */
   --bg-highlight: #FFF9E6;       /* 高亮背景 */
   --color-warning-light: #FFF8E1; /* 淺警告色 */
-}
-
-/* ========== Wired Elements 全局配置 ========== */
-/* 優化 Wired Elements 的手繪風格與性能 */
-:root {
-  /* Wired Elements 默認顏色 */
-  --wired-default-ink-color: var(--text-primary, #2C2416);
-  --wired-default-stroke-width: 1.5;
-  
-  /* 優化渲染性能 */
-  --wired-render-padding: 5;
-}
-
-/* Wired Elements 動畫優化 */
-wired-button,
-wired-input,
-wired-textarea,
-wired-card,
-wired-badge {
-  /* 啟用 GPU 加速 */
-  will-change: transform;
-  /* 優化渲染性能 */
-  transform: translateZ(0);
-  /* 平滑過渡 */
-  transition: transform 0.15s ease, opacity 0.15s ease;
-}
-
-/* Wired Elements 交互效果 */
-wired-button:hover:not(:disabled) {
-  transform: translateZ(0) translate(-1px, -1px);
-}
-
-wired-button:active:not(:disabled) {
-  transform: translateZ(0) translate(1px, 1px);
-}
-
-/* 減少不必要的重繪 */
-wired-card {
-  contain: layout style paint;
 }
 
 body {

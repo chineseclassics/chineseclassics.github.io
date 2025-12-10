@@ -1,6 +1,6 @@
 <template>
   <div class="guessing-panel">
-    <WiredCard elevation="2">
+    <div class="wired-card">
       <div class="guessing-panel-content">
         <!-- 當前詞語（僅畫家可見） -->
         <div
@@ -14,26 +14,26 @@
         <!-- 猜詞輸入（非畫家） -->
         <div v-else class="guessing-input-section">
           <form @submit.prevent="handleSubmit" class="guessing-form">
-            <WiredInput
-              v-model="guessInput"
-              label="輸入您的猜測"
-              placeholder="輸入詞語..."
-              :maxlength="32"
-              :disabled="loading || hasGuessed"
-              type="text"
-              :hint="`${guessInput.length} / 32 字符`"
-              @input="clearError"
-            />
-            <WiredButton
+            <div class="wired-input-wrapper">
+              <label class="wired-input-label">輸入您的猜測</label>
+              <input
+                v-model="guessInput"
+                type="text"
+                class="wired-input"
+                placeholder="輸入詞語..."
+                :maxlength="32"
+                :disabled="loading || hasGuessed"
+                @input="clearError"
+              />
+              <span class="wired-input-hint">{{ guessInput.length }} / 32 字符</span>
+            </div>
+            <button
               type="submit"
               :disabled="loading || hasGuessed || !guessInput.trim()"
-              :loading="loading"
-              variant="primary"
-              block
-              class="submit-guess-button"
+              class="wired-button wired-button-primary submit-guess-button"
             >
               {{ loading ? '提交中' : hasGuessed ? '已猜中' : '提交' }}
-            </WiredButton>
+            </button>
           </form>
         </div>
 
@@ -51,21 +51,20 @@
               :key="guess.id"
               class="guess-item"
             >
-              <WiredBadge variant="secondary" class="guess-rank">{{ index + 1 }}</WiredBadge>
+              <span class="wired-badge guess-rank">{{ index + 1 }}</span>
               <div class="guess-name">{{ getParticipantName(guess.user_id) }}</div>
               <div class="guess-score">+{{ guess.score_earned }} 分</div>
             </div>
           </div>
         </div>
       </div>
-    </WiredCard>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { useGuessing } from '../composables/useGuessing'
 import { useRoomStore } from '../stores/room'
-import { WiredCard, WiredInput, WiredButton, WiredBadge } from './wired'
 
 const {
   guessInput,
@@ -106,12 +105,112 @@ async function handleSubmit() {
   gap: 1rem;
 }
 
+/* 手繪風格卡片 */
+.wired-card {
+  background: var(--bg-card);
+  border: 3px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 4px 4px 0 var(--shadow-color);
+}
+
+/* 手繪風格輸入框 */
+.wired-input-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.wired-input-label {
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.wired-input {
+  padding: 0.75rem 1rem;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  border: 3px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  transition: all 0.2s ease;
+}
+
+.wired-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 3px 3px 0 var(--shadow-color);
+}
+
+.wired-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.wired-input-hint {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+}
+
+/* 手繪風格按鈕 */
+.wired-button {
+  display: block;
+  width: 100%;
+  padding: 0.75rem 1.5rem;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-weight: 600;
+  border: 3px solid var(--border-color);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 3px 3px 0 var(--shadow-color);
+}
+
+.wired-button:hover:not(:disabled) {
+  transform: translate(-2px, -2px);
+  box-shadow: 5px 5px 0 var(--shadow-color);
+}
+
+.wired-button:active:not(:disabled) {
+  transform: translate(1px, 1px);
+  box-shadow: 2px 2px 0 var(--shadow-color);
+}
+
+.wired-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.wired-button-primary {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+}
+
+/* 手繪風格徽章 */
+.wired-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: var(--color-secondary);
+  color: white;
+  border-radius: 4px;
+  border: 2px solid var(--border-color);
+}
+
 /* 當前詞語卡片 */
 .current-word-card {
   padding: 1rem;
   background: linear-gradient(135deg, var(--bg-secondary), var(--color-warning-light));
   border: 2px dashed var(--color-secondary);
-  border-radius: 8px;
+  border-radius: 12px;
   text-align: center;
   animation: pulse 2s ease-in-out infinite;
 }

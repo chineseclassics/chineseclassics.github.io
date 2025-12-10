@@ -593,8 +593,8 @@ onUnmounted(() => {
   width: 280px;
   min-width: 280px;
   background: var(--bg-card);
-  border: 2px solid var(--border-color);
-  border-radius: 8px;
+  border: 3px solid var(--border-color);
+  border-radius: 12px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -630,8 +630,8 @@ onUnmounted(() => {
   gap: 1rem;
   padding: 0.75rem 1rem;
   background: var(--bg-card);
-  border: 2px solid var(--border-color);
-  border-radius: 8px;
+  border: 3px solid var(--border-color);
+  border-radius: 12px;
   position: relative;
   box-shadow: 3px 3px 0 var(--shadow-color);
   transition: all 0.3s ease;
@@ -813,8 +813,8 @@ onUnmounted(() => {
 /* 工具欄 - 橫向在畫布下方 */
 .game-toolbar {
   background: var(--bg-card);
-  border: 2px solid var(--border-color);
-  border-radius: 8px;
+  border: 3px solid var(--border-color);
+  border-radius: 12px;
   padding: 0.5rem;
   box-shadow: 3px 3px 0 var(--shadow-color);
   transition: all 0.3s ease;
@@ -828,8 +828,8 @@ onUnmounted(() => {
 .game-canvas {
   flex: 1;
   background: white;
-  border: 2px solid var(--border-color);
-  border-radius: 8px;
+  border: 3px solid var(--border-color);
+  border-radius: 12px;
   position: relative;
   display: flex;
   align-items: center;
@@ -915,8 +915,8 @@ onUnmounted(() => {
   width: 280px;
   min-width: 280px;
   background: var(--bg-card);
-  border: 2px solid var(--border-color);
-  border-radius: 8px;
+  border: 3px solid var(--border-color);
+  border-radius: 12px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -1025,7 +1025,7 @@ onUnmounted(() => {
 .chat-input-field {
   flex: 1;
   padding: 0.6rem 0.75rem;
-  border: 2px solid var(--border-light);
+  border: 3px solid var(--border-light);
   border-radius: 8px;
   font-family: var(--font-body);
   font-size: 0.9rem;
@@ -1048,7 +1048,7 @@ onUnmounted(() => {
   padding: 0.6rem 1.25rem;
   background: var(--color-secondary);
   color: white;
-  border: 2px solid var(--border-color);
+  border: 3px solid var(--border-color);
   border-radius: 8px;
   cursor: pointer;
   font-family: var(--font-body);
@@ -1155,8 +1155,8 @@ onUnmounted(() => {
 
 .first-round-waiting .waiting-card {
   background: var(--bg-card);
-  border: 2px solid var(--border-color);
-  border-radius: 8px;
+  border: 3px solid var(--border-color);
+  border-radius: 16px;
   padding: 2rem;
   max-width: 400px;
   width: 100%;

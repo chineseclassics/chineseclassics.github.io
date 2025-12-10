@@ -1,70 +1,66 @@
 <template>
   <div class="room-join">
-    <WiredCard elevation="3">
-      <div class="room-join-content">
-        <h2 class="text-hand-title room-join-title">加入房間</h2>
+    <div class="card">
+      <div class="card-body">
+        <h2 class="card-title text-hand-title">加入房間</h2>
 
-        <form @submit.prevent="handleSubmit" class="room-join-form">
+        <form @submit.prevent="handleSubmit">
           <!-- 房間碼 -->
           <div class="form-group">
-            <WiredInput
+            <label>房間碼</label>
+            <input
               v-model="form.code"
-              label="房間碼"
-              placeholder="000000"
-              :maxlength="6"
               type="text"
-              hint="輸入 6 位數字房間碼"
-              class="room-code-input"
-              @update:modelValue="handleCodeInput"
+              class="text-center"
+              style="font-size: 2rem; letter-spacing: 0.5rem;"
+              placeholder="000000"
+              maxlength="6"
+              pattern="[0-9]{6}"
+              required
+              @input="handleCodeInput"
             />
+            <div class="text-small">
+              輸入 6 位數字房間碼
+            </div>
           </div>
 
           <!-- 暱稱 -->
           <div class="form-group">
-            <WiredInput
+            <label>暱稱</label>
+            <input
               v-model="form.nickname"
-              label="暱稱"
-              placeholder="輸入您的暱稱"
-              :maxlength="20"
               type="text"
+              placeholder="輸入您的暱稱"
+              maxlength="20"
+              required
             />
           </div>
 
           <!-- 錯誤提示 -->
-          <div v-if="error" class="error-message">
+          <div v-if="error" class="alert alert-danger">
             {{ error }}
           </div>
 
           <!-- 提交按鈕 -->
-          <div class="form-actions">
+          <div class="row flex-spaces margin-top-medium">
             <button
               type="submit"
               :disabled="loading || !isFormValid"
-              style="display: none;"
-              aria-hidden="true"
-            />
-            <WiredButton
-              :disabled="loading || !isFormValid"
-              :loading="loading"
-              variant="primary"
-              block
-              class="submit-button"
-              @click="handleSubmit"
+              class="paper-btn btn-primary"
             >
-              {{ loading ? '加入中' : '加入房間' }}
-            </WiredButton>
-            <WiredButton
-              :disabled="loading"
-              variant="secondary"
-              block
+              {{ loading ? '加入中...' : '加入房間' }}
+            </button>
+            <button
+              type="button"
               @click="$emit('cancel')"
+              class="paper-btn btn-secondary"
             >
               取消
-            </WiredButton>
+            </button>
           </div>
         </form>
       </div>
-    </WiredCard>
+    </div>
   </div>
 </template>
 
@@ -72,7 +68,6 @@
 import { ref, computed } from 'vue'
 import { useRoom } from '../composables/useRoom'
 import { useAuthStore } from '../stores/auth'
-import { WiredCard, WiredInput, WiredButton } from './wired'
 
 const emit = defineEmits<{
   cancel: []
@@ -90,11 +85,9 @@ const form = ref({
 const error = ref<string | null>(null)
 
 // 處理房間碼輸入（只允許數字）
-function handleCodeInput(value: string) {
-  const filteredValue = value.replace(/\D/g, '').slice(0, 6)
-  if (filteredValue !== value) {
-    form.value.code = filteredValue
-  }
+function handleCodeInput(event: Event) {
+  const target = event.target as HTMLInputElement
+  form.value.code = target.value.replace(/\D/g, '').slice(0, 6)
   error.value = null
 }
 
@@ -130,72 +123,6 @@ async function handleSubmit() {
   width: 100%;
   max-width: 500px;
   margin: 0 auto;
-}
-
-.room-join-content {
-  padding: 0;
-}
-
-.room-join-title {
-  font-size: 1.75rem;
-  margin-bottom: 1.5rem;
-  text-align: center;
-  color: var(--text-primary);
-}
-
-.room-join-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.room-code-input :deep(wired-input) {
-  font-size: 2rem;
-  letter-spacing: 0.5rem;
-  text-align: center;
-  font-weight: bold;
-}
-
-.form-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  margin-top: 0.5rem;
-}
-
-.error-message {
-  padding: 0.75rem;
-  background-color: var(--color-danger);
-  color: white;
-  border-radius: 8px;
-  font-family: var(--font-body);
-  font-size: 0.9rem;
-  text-align: center;
-  animation: shake 0.3s ease;
-}
-
-@keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-5px); }
-  75% { transform: translateX(5px); }
-}
-
-/* 響應式設計 */
-@media (max-width: 640px) {
-  .room-join-title {
-    font-size: 1.5rem;
-  }
-  
-  .room-code-input :deep(wired-input) {
-    font-size: 1.5rem;
-    letter-spacing: 0.3rem;
-  }
 }
 </style>
 

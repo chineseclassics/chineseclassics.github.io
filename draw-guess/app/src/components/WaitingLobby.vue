@@ -1,6 +1,6 @@
 <template>
   <div class="waiting-lobby">
-    <WiredCard elevation="3">
+    <div class="wired-card">
       <div class="waiting-lobby-content">
         <!-- 房間信息 -->
         <div class="room-info">
@@ -31,9 +31,9 @@
               <div class="player-info">
                 <div class="player-name">
                   {{ participant.nickname }}
-                  <WiredBadge v-if="isParticipantHost(participant.user_id)" variant="warning" class="host-badge">
+                  <span v-if="isParticipantHost(participant.user_id)" class="wired-badge host-badge">
                     房主
-                  </WiredBadge>
+                  </span>
                 </div>
               </div>
             </div>
@@ -55,28 +55,24 @@
 
         <!-- 操作按鈕 -->
         <div class="lobby-actions">
-          <WiredButton
+          <button
             v-if="isCurrentUserHost && canStartGame"
             :disabled="loading"
-            :loading="loading"
-            variant="primary"
-            block
+            class="wired-button wired-button-primary"
             @click="handleStartGame"
           >
             {{ loading ? '開始中' : '開始遊戲' }}
-          </WiredButton>
+          </button>
           <div v-else-if="isCurrentUserHost" class="warning-text">
             至少需要 2 個玩家才能開始遊戲
           </div>
-          <WiredButton
+          <button
             :disabled="loading"
-            :loading="loading"
-            variant="secondary"
-            block
+            class="wired-button wired-button-secondary"
             @click="handleLeaveRoom"
           >
             {{ loading ? '離開中' : '離開房間' }}
-          </WiredButton>
+          </button>
         </div>
 
         <!-- 錯誤提示 -->
@@ -84,7 +80,7 @@
           {{ error }}
         </div>
       </div>
-    </WiredCard>
+    </div>
   </div>
 </template>
 
@@ -92,7 +88,6 @@
 import { useRoom } from '../composables/useRoom'
 import { useGame } from '../composables/useGame'
 import type { GameRoom, RoomParticipant } from '../stores/room'
-import { WiredCard, WiredButton, WiredBadge } from './wired'
 
 const props = defineProps<{
   room: GameRoom | null
@@ -180,6 +175,69 @@ async function handleLeaveRoom() {
   border-radius: 4px;
 }
 
+/* 手繪風格卡片 */
+.wired-card {
+  background: var(--bg-card);
+  border: 3px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 4px 4px 0 var(--shadow-color);
+}
+
+/* 手繪風格按鈕 */
+.wired-button {
+  display: block;
+  width: 100%;
+  padding: 0.75rem 1.5rem;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-weight: 600;
+  border: 3px solid var(--border-color);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 3px 3px 0 var(--shadow-color);
+}
+
+.wired-button:hover:not(:disabled) {
+  transform: translate(-2px, -2px);
+  box-shadow: 5px 5px 0 var(--shadow-color);
+}
+
+.wired-button:active:not(:disabled) {
+  transform: translate(1px, 1px);
+  box-shadow: 2px 2px 0 var(--shadow-color);
+}
+
+.wired-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.wired-button-primary {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+}
+
+.wired-button-secondary {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border-color: var(--border-color);
+}
+
+/* 手繪風格徽章 */
+.wired-badge {
+  display: inline-block;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: var(--color-warning);
+  color: white;
+  border-radius: 4px;
+  border: 2px solid var(--border-color);
+}
+
 /* 玩家列表 */
 .players-section {
   border-top: 2px dashed var(--border-light);
@@ -205,7 +263,7 @@ async function handleLeaveRoom() {
   gap: 0.75rem;
   padding: 0.75rem;
   background: var(--bg-secondary);
-  border-radius: 8px;
+  border-radius: 12px;
   transition: all 0.2s ease;
   animation: fadeIn 0.3s ease;
 }
