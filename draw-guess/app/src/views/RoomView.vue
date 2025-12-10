@@ -132,8 +132,7 @@
 
             <!-- 畫布 -->
             <div class="game-canvas">
-              <!-- 使用 key 強制每輪重新創建組件，確保畫布被清空 -->
-              <DrawingCanvas :key="gameStore.currentRound?.id || 'default'" />
+              <DrawingCanvas />
               <!-- 進度條 -->
               <div v-if="isCountingDown && timeRemaining !== null" class="time-progress">
                 <div 
@@ -543,12 +542,9 @@ onMounted(async () => {
           // 清除評分
           gameStore.clearRatings()
           
-          // 畫布清空由 DrawingCanvas 組件處理（組件有 key，每輪重新掛載時自動清空）
-          // 這裡發送事件作為備用（給手動清空按鈕用）
-          window.dispatchEvent(new Event('clearCanvas'))
+          // 畫布清空由 DrawingCanvas 組件的 watch 自動處理
           
           // 本地開始倒計時，直接使用房間設定的時間
-          // 網絡延遲造成的 1-2 秒差異可忽略，每輪都重新開始不會累積
           console.log('[RoomView] 開始倒計時:', drawTime.value, '秒')
           startCountdown(drawTime.value)
         }

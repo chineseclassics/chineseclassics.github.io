@@ -15,12 +15,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { useDrawing } from '../composables/useDrawing'
 import { useRealtime } from '../composables/useRealtime'
 import { useRoomStore } from '../stores/room'
 import { useAuthStore } from '../stores/auth'
 import { useDrawingStore } from '../stores/drawing'
+import { useGameStore } from '../stores/game'
 import type { Stroke } from '../stores/drawing'
 
 const {
@@ -34,6 +35,7 @@ const {
 const roomStore = useRoomStore()
 const authStore = useAuthStore()
 const drawingStore = useDrawingStore()
+const gameStore = useGameStore()
 const { subscribeDrawing } = useRealtime()
 
 const canvasElement = ref<HTMLCanvasElement | null>(null)
@@ -73,7 +75,19 @@ function localClearCanvas() {
   console.log('[DrawingCanvas] 畫布已清空')
 }
 
-// 監聽全局清空畫布事件
+// 監聽 roundStatus 變化，進入繪畫階段時清空畫布
+watch(
+  () => gameStore.roundStatus,
+  (newStatus, oldStatus) => {
+    // 當進入繪畫階段時清空畫布（從任何狀態進入 drawing）
+    if (newStatus === 'drawing' && oldStatus !== 'drawing') {
+      console.log('[DrawingCanvas] 進入繪畫階段，清空畫布')
+      localClearCanvas()
+    }
+  }
+)
+
+// 監聽全局清空畫布事件（用於手動清空按鈕）
 function handleClearCanvasEvent() {
   console.log('[DrawingCanvas] 收到 clearCanvas 事件')
   localClearCanvas()
