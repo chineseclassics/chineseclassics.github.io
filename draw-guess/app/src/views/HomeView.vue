@@ -113,11 +113,12 @@ function handleRoomJoined() {
   }
 }
 
-// 處理開始遊戲
-// 注意：startGame() 已經在 WaitingLobby 中調用過了
-// 這裡只需要處理跳轉，不要重複調用 startGame()
+// 處理開始遊戲事件
+// 注意：由於狀態變化會導致 WaitingLobby 被卸載，這個事件可能不會被觸發
+// 實際跳轉由上方的 watch 處理
 function handleStartGame() {
-  console.log('[HomeView] 收到遊戲開始事件，房主跳轉到 RoomView')
+  console.log('[HomeView] 收到遊戲開始事件')
+  // 跳轉已由 watch 處理，這裡作為備用
   if (currentRoom.value) {
     router.push(`/room/${currentRoom.value.code}`)
   }
@@ -154,7 +155,8 @@ watch(
 )
 
 // 監聯房間狀態變化，當狀態變為 playing 或 finished 時自動跳轉到 RoomView
-// 這主要用於非房主玩家（被動接收狀態變化）
+// 所有玩家（包括房主）都通過這個 watch 來處理跳轉
+// 注意：房主原本依賴 WaitingLobby 的 emit 事件，但因為狀態變化會導致 WaitingLobby 被卸載，emit 無法被接收
 watch(
   () => currentRoom.value?.status,
   async (status, oldStatus) => {
@@ -163,16 +165,10 @@ watch(
     // 當狀態變為 playing 或 finished 時跳轉到 RoomView
     // 檢查當前路由，避免重複跳轉
     if (currentRoom.value && (status === 'playing' || status === 'finished')) {
-      // 房主在 handleStartGame 中已經跳轉了，這裡只處理非房主
-      if (isHost.value) {
-        console.log('[HomeView] 房主，跳過 watch 中的跳轉（已在 handleStartGame 中處理）')
-        return
-      }
-      
       const currentRoute = router.currentRoute.value
       // 如果當前不在 RoomView，則跳轉
       if (currentRoute.name !== 'room' || currentRoute.params.code !== currentRoom.value.code) {
-        console.log('[HomeView] 非房主，準備跳轉到 RoomView:', currentRoom.value.code)
+        console.log('[HomeView] 準備跳轉到 RoomView:', currentRoom.value.code, '(isHost:', isHost.value, ')')
         const targetPath = `/room/${currentRoom.value.code}`
         
         try {
