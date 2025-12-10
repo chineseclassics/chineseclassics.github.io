@@ -246,8 +246,11 @@ export function useGame() {
       // 進入繪畫階段
       gameStore.setRoundStatus('drawing')
       gameStore.clearRatings()
+      
+      // 房主清空畫布（房主收不到自己的廣播，需要直接清空）
+      window.dispatchEvent(new CustomEvent('clearCanvas'))
 
-      // 廣播狀態給所有玩家
+      // 廣播狀態給所有玩家（非房主會在收到廣播後清空畫布）
       const { broadcastGameState } = useRealtime()
       await broadcastGameState(roomStore.currentRoom!.code, {
         roundStatus: 'drawing',

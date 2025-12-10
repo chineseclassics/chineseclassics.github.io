@@ -479,8 +479,8 @@ onMounted(async () => {
         console.log('[RoomView] 更新輪次狀態:', state.roundStatus)
         gameStore.setRoundStatus(state.roundStatus)
         
-        // 非房主：收到廣播後啟動倒計時
-        // 房主：已經在 startDrawingPhase/endRound 中啟動了倒計時，不需要重複啟動
+        // 非房主：收到廣播後啟動倒計時和清空畫布
+        // 房主：收不到自己的廣播（Supabase broadcast self: false），所以這裡只處理非房主
         if (!roomStore.isHost) {
           // 如果進入繪畫階段，清空畫布並開始繪畫倒計時
           if (state.roundStatus === 'drawing') {
@@ -496,12 +496,8 @@ onMounted(async () => {
           if (state.roundStatus === 'summary') {
             startSummaryCountdown()
           }
-        } else {
-          // 房主：只在進入繪畫階段時清空畫布
-          if (state.roundStatus === 'drawing') {
-            window.dispatchEvent(new CustomEvent('clearCanvas'))
-          }
         }
+        // 注意：房主的倒計時和畫布清空都在 useGame.ts 的 startDrawingPhase/endRound 中處理
       }
       
       // 重新載入房間和輪次以獲取最新數據
