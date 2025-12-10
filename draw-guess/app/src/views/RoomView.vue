@@ -594,7 +594,10 @@ onUnmounted(() => {
   min-width: 280px;
   background: var(--bg-card);
   border: 2px solid var(--border-color);
-  border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
+  border-bottom-left-radius: 15px 255px;
+  border-bottom-right-radius: 225px 15px;
+  border-top-left-radius: 255px 15px;
+  border-top-right-radius: 15px 225px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -632,7 +635,10 @@ onUnmounted(() => {
   padding: 0.75rem 1rem;
   background: var(--bg-card);
   border: 2px solid var(--border-color);
-  border-radius: 125px 25px 185px 25px / 25px 205px 25px 205px;
+  border-bottom-left-radius: 185px 25px;
+  border-bottom-right-radius: 20px 205px;
+  border-top-left-radius: 125px 25px;
+  border-top-right-radius: 10px 205px;
   position: relative;
   box-shadow: 3px 3px 0 var(--shadow-color);
   transition: all 0.3s ease;
@@ -730,14 +736,20 @@ onUnmounted(() => {
   font-family: var(--font-head);
   background: var(--bg-secondary);
   padding: 0.25rem 0.5rem;
-  border-radius: 28px 125px 15px 225px / 125px 30px 205px 225px;
+  border-bottom-left-radius: 15px 225px;
+  border-bottom-right-radius: 20px 205px;
+  border-top-left-radius: 28px 125px;
+  border-top-right-radius: 100px 30px;
 }
 
 .word-label {
   background: var(--color-warning);
   color: var(--text-primary);
   padding: 0.25rem 0.75rem;
-  border-radius: 250px 15px 20px 115px / 15px 80px 105px 115px;
+  border-bottom-left-radius: 20px 115px;
+  border-bottom-right-radius: 15px 105px;
+  border-top-left-radius: 250px 15px;
+  border-top-right-radius: 25px 80px;
   font-weight: bold;
   font-family: var(--font-head);
 }
@@ -768,7 +780,10 @@ onUnmounted(() => {
   background: var(--bg-secondary);
   border: 2px solid var(--border-color);
   padding: 0.25rem 0.75rem;
-  border-radius: 15px 225px 15px 255px / 255px 15px 225px 15px;
+  border-bottom-left-radius: 225px 15px;
+  border-bottom-right-radius: 15px 255px;
+  border-top-left-radius: 15px 225px;
+  border-top-right-radius: 255px 15px;
   cursor: pointer;
   font-family: var(--font-body);
 }
@@ -815,7 +830,10 @@ onUnmounted(() => {
 .game-toolbar {
   background: var(--bg-card);
   border: 2px solid var(--border-color);
-  border-radius: 15px 225px 25px 115px / 225px 150px 155px 25px;
+  border-bottom-left-radius: 25px 115px;
+  border-bottom-right-radius: 155px 25px;
+  border-top-left-radius: 15px 225px;
+  border-top-right-radius: 25px 150px;
   padding: 0.5rem;
   box-shadow: 3px 3px 0 var(--shadow-color);
   transition: all 0.3s ease;
@@ -830,7 +848,10 @@ onUnmounted(() => {
   flex: 1;
   background: white;
   border: 2px solid var(--border-color);
-  border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
+  border-bottom-left-radius: 15px 255px;
+  border-bottom-right-radius: 225px 15px;
+  border-top-left-radius: 255px 15px;
+  border-top-right-radius: 15px 225px;
   position: relative;
   display: flex;
   align-items: center;
@@ -918,7 +939,10 @@ onUnmounted(() => {
   min-width: 280px;
   background: var(--bg-card);
   border: 2px solid var(--border-color);
-  border-radius: 15px 225px 15px 255px / 255px 15px 225px 15px;
+  border-bottom-left-radius: 225px 15px;
+  border-bottom-right-radius: 15px 255px;
+  border-top-left-radius: 15px 225px;
+  border-top-right-radius: 255px 15px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -944,7 +968,10 @@ onUnmounted(() => {
 
 .chat-msg {
   padding: 0.5rem 0.75rem;
-  border-radius: 15px 225px 25px 115px / 225px 150px 155px 25px;
+  border-bottom-left-radius: 25px 115px;
+  border-bottom-right-radius: 155px 25px;
+  border-top-left-radius: 15px 225px;
+  border-top-right-radius: 25px 150px;
   line-height: 1.4;
   animation: slideInMsg 0.3s ease-out;
 }
@@ -1029,7 +1056,10 @@ onUnmounted(() => {
   flex: 1;
   padding: 0.6rem 0.75rem;
   border: 2px solid var(--border-light);
-  border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
+  border-bottom-left-radius: 15px 255px;
+  border-bottom-right-radius: 225px 15px;
+  border-top-left-radius: 255px 15px;
+  border-top-right-radius: 15px 225px;
   font-family: var(--font-body);
   font-size: 0.9rem;
   background: var(--bg-card);
@@ -1052,7 +1082,10 @@ onUnmounted(() => {
   background: var(--color-secondary);
   color: white;
   border: 2px solid var(--border-color);
-  border-radius: 125px 25px 185px 25px / 25px 205px 25px 205px;
+  border-bottom-left-radius: 185px 25px;
+  border-bottom-right-radius: 20px 205px;
+  border-top-left-radius: 125px 25px;
+  border-top-right-radius: 10px 205px;
   cursor: pointer;
   font-family: var(--font-body);
   font-weight: bold;
@@ -1159,7 +1192,10 @@ onUnmounted(() => {
 .first-round-waiting .waiting-card {
   background: var(--bg-card);
   border: 3px solid var(--border-color);
-  border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
+  border-bottom-left-radius: 15px 255px;
+  border-bottom-right-radius: 225px 15px;
+  border-top-left-radius: 255px 15px;
+  border-top-right-radius: 15px 225px;
   padding: 2rem;
   max-width: 400px;
   width: 100%;

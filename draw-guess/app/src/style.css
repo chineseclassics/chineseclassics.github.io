@@ -393,33 +393,57 @@ input:focus, select:focus, textarea:focus {
 
 /* ========================================
    PaperCSS 手繪風格邊框系統
-   使用不對稱的 border-radius 創造手繪感
+   使用 PaperCSS 官方的 border-style mixin 值
    ======================================== */
 
-/* 手繪邊框基礎樣式 - 6 種變體 */
+/* 手繪邊框基礎樣式 - 使用 PaperCSS 官方的 6 種變體 */
+/* 變體 1（默認）：經典手繪感 */
 .sketchy-border,
 .sketchy-border-1 {
-  border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
+  border-bottom-left-radius: 15px 255px;
+  border-bottom-right-radius: 225px 15px;
+  border-top-left-radius: 255px 15px;
+  border-top-right-radius: 15px 225px;
 }
 
+/* 變體 2 */
 .sketchy-border-2 {
-  border-radius: 125px 25px 185px 25px / 25px 205px 25px 205px;
+  border-bottom-left-radius: 185px 25px;
+  border-bottom-right-radius: 20px 205px;
+  border-top-left-radius: 125px 25px;
+  border-top-right-radius: 10px 205px;
 }
 
+/* 變體 3：變體 1 的鏡像 */
 .sketchy-border-3 {
-  border-radius: 15px 225px 15px 255px / 255px 15px 225px 15px;
+  border-bottom-left-radius: 225px 15px;
+  border-bottom-right-radius: 15px 255px;
+  border-top-left-radius: 15px 225px;
+  border-top-right-radius: 255px 15px;
 }
 
+/* 變體 4 */
 .sketchy-border-4 {
-  border-radius: 15px 225px 25px 115px / 225px 150px 155px 25px;
+  border-bottom-left-radius: 25px 115px;
+  border-bottom-right-radius: 155px 25px;
+  border-top-left-radius: 15px 225px;
+  border-top-right-radius: 25px 150px;
 }
 
+/* 變體 5 */
 .sketchy-border-5 {
-  border-radius: 250px 15px 20px 115px / 15px 80px 105px 115px;
+  border-bottom-left-radius: 20px 115px;
+  border-bottom-right-radius: 15px 105px;
+  border-top-left-radius: 250px 15px;
+  border-top-right-radius: 25px 80px;
 }
 
+/* 變體 6 */
 .sketchy-border-6 {
-  border-radius: 28px 125px 15px 225px / 125px 30px 205px 225px;
+  border-bottom-left-radius: 15px 225px;
+  border-bottom-right-radius: 20px 205px;
+  border-top-left-radius: 28px 125px;
+  border-top-right-radius: 100px 30px;
 }
 
 /* 手繪陰影效果 */

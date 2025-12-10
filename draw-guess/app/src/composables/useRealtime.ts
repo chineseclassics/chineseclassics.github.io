@@ -189,8 +189,12 @@ export function useRealtime() {
           filter: `room_id=eq.${roomId}`,
         }, async (payload) => {
           log('輪次變化:', payload.eventType, payload.new)
-          if (roomStore.currentRoom) {
+          // 在總結階段不自動載入新輪次，避免在 summary 狀態時載入下一輪數據導致閃爍
+          // 輪次數據會在收到 'drawing' 狀態廣播後由 subscribeGameState 回調統一載入
+          if (roomStore.currentRoom && gameStore.roundStatus !== 'summary') {
             await gameStore.loadCurrentRound(roomStore.currentRoom.id)
+          } else {
+            log('跳過載入輪次（當前狀態:', gameStore.roundStatus, '）')
           }
         })
         // 訂閱整個房間的猜測記錄（通過 game_rounds 關聯）
