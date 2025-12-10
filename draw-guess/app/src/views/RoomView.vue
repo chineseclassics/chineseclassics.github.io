@@ -55,7 +55,7 @@
           </div>
           <!-- 非畫家顯示提示和畫家名稱（繪畫階段） -->
           <div v-else-if="isDrawing" class="word-display">
-            <span class="drawer-hint">🎨 {{ currentDrawerName }} 正在畫</span>
+            <span class="drawer-hint"><PhPaintBrush :size="18" weight="fill" class="hint-icon" /> {{ currentDrawerName }} 正在畫</span>
             <span class="word-slots">{{ getWordHint }}</span>
           </div>
           <!-- 總結階段：顯示答案 -->
@@ -65,46 +65,50 @@
           </div>
           
           <!-- 離開按鈕 -->
-          <button class="leave-btn" @click="handleLeaveRoom" title="離開房間">✕</button>
+          <button class="leave-btn" @click="handleLeaveRoom" title="離開房間">
+            <PhX :size="20" weight="bold" />
+          </button>
         </div>
 
         <!-- 主要區域 -->
         <div class="game-content-area">
-          <!-- 工具欄 -->
-          <div class="game-toolbar" :class="{ disabled: isSummary }">
-            <DrawingToolbar :compact="true" />
-          </div>
-
           <!-- 畫布區域 - DrawingCanvas 始終存在 -->
-          <div class="game-canvas">
-            <!-- 畫布始終渲染，確保 watch 持續有效 -->
-            <DrawingCanvas />
-            
-            <!-- 進度條（繪畫階段顯示） -->
-            <div v-if="!isSummary && isCountingDown && timeRemaining !== null" class="time-progress">
-              <div 
-                class="time-bar" 
-                :class="{ 'time-warning': timeRemaining <= 10 }"
-                :style="{ width: `${(timeRemaining / drawTime) * 100}%` }"
-              ></div>
+          <div class="game-canvas-wrapper">
+            <div class="game-canvas">
+              <!-- 畫布始終渲染，確保 watch 持續有效 -->
+              <DrawingCanvas />
+              
+              <!-- 進度條（繪畫階段顯示） -->
+              <div v-if="!isSummary && isCountingDown && timeRemaining !== null" class="time-progress">
+                <div 
+                  class="time-bar" 
+                  :class="{ 'time-warning': timeRemaining <= 10 }"
+                  :style="{ width: `${(timeRemaining / drawTime) * 100}%` }"
+                ></div>
+              </div>
+              
+              <!-- 總結階段覆蓋層 -->
+              <div v-if="isSummary" class="summary-overlay">
+                <RoundSummary
+                  :round-number="currentRoundNumber"
+                  :total-rounds="totalRounds"
+                  :correct-answer="gameStore.currentWord || ''"
+                  :drawer-name="currentDrawerName"
+                  :drawer-id="gameStore.currentRound?.drawer_id || ''"
+                  :drawer-score="drawerScoreForRound"
+                  :correct-guessers="correctGuessersForSummary"
+                  :round-id="gameStore.currentRound?.id || ''"
+                  :is-host="roomStore.isHost"
+                  :is-last-round="isLastRound"
+                  :next-drawer-name="isLastRound ? '' : nextDrawerName"
+                  @rating-submitted="handleRating"
+                />
+              </div>
             </div>
             
-            <!-- 總結階段覆蓋層 -->
-            <div v-if="isSummary" class="summary-overlay">
-              <RoundSummary
-                :round-number="currentRoundNumber"
-                :total-rounds="totalRounds"
-                :correct-answer="gameStore.currentWord || ''"
-                :drawer-name="currentDrawerName"
-                :drawer-id="gameStore.currentRound?.drawer_id || ''"
-                :drawer-score="drawerScoreForRound"
-                :correct-guessers="correctGuessersForSummary"
-                :round-id="gameStore.currentRound?.id || ''"
-                :is-host="roomStore.isHost"
-                :is-last-round="isLastRound"
-                :next-drawer-name="isLastRound ? '' : nextDrawerName"
-                @rating-submitted="handleRating"
-              />
+            <!-- 工具欄 - 橫向放在畫布下方 -->
+            <div class="game-toolbar" :class="{ disabled: isSummary }">
+              <DrawingToolbar :horizontal="true" />
             </div>
           </div>
 
@@ -113,7 +117,7 @@
             <div class="chat-messages-container" ref="chatMessagesRef">
               <!-- 系統消息 -->
               <div class="chat-msg system-msg">
-                <span class="msg-icon">🎮</span> 遊戲開始！
+                <PhGameController :size="16" weight="fill" class="msg-icon" /> 遊戲開始！
               </div>
               
               <!-- 猜測記錄 - 始終顯示所有猜測 -->
@@ -133,7 +137,7 @@
               
               <!-- 已猜中提示 -->
               <div v-if="hasGuessed" class="chat-msg correct-self">
-                <span class="msg-icon">✅</span> 你已猜中答案！
+                <PhCheckCircle :size="16" weight="fill" class="msg-icon" /> 你已猜中答案！
               </div>
             </div>
             
@@ -167,7 +171,7 @@
         <div class="col-12 col-md-8">
           <div class="card">
             <div class="card-body text-center">
-              <h2 class="card-title text-hand-title">🎉 遊戲結束</h2>
+              <h2 class="card-title text-hand-title"><PhConfetti :size="28" weight="fill" class="title-icon" /> 遊戲結束</h2>
               <PlayerList :show-winner="true" />
               <button @click="handleLeaveRoom" class="paper-btn btn-primary margin-top-medium">
                 返回首頁
@@ -183,6 +187,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { PhPaintBrush, PhGameController, PhCheckCircle, PhX, PhConfetti } from '@phosphor-icons/vue'
 import DrawingCanvas from '../components/DrawingCanvas.vue'
 import DrawingToolbar from '../components/DrawingToolbar.vue'
 import PlayerList from '../components/PlayerList.vue'
@@ -579,8 +584,8 @@ onUnmounted(() => {
 
 /* 左側玩家列表 */
 .game-players {
-  width: 180px;
-  min-width: 180px;
+  width: 220px;
+  min-width: 220px;
   background: var(--bg-card);
   border: 2px solid var(--border-color);
   border-radius: 8px;
@@ -757,7 +762,7 @@ onUnmounted(() => {
   color: var(--color-danger);
 }
 
-/* 主要內容區域（工具欄 + 畫布 + 聊天） */
+/* 主要內容區域（畫布 + 聊天） */
 .game-content-area {
   flex: 1;
   display: flex;
@@ -765,15 +770,21 @@ onUnmounted(() => {
   min-height: 0;
 }
 
-/* 工具欄 */
+/* 畫布包裝（畫布 + 工具欄） */
+.game-canvas-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+/* 工具欄 - 橫向在畫布下方 */
 .game-toolbar {
-  width: 60px;
-  min-width: 60px;
   background: var(--bg-card);
   border: 2px solid var(--border-color);
   border-radius: 8px;
-  overflow-y: auto;
-  padding: 0.5rem;
+  padding: 0.25rem;
 }
 
 /* 畫布 */
@@ -787,6 +798,7 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  min-height: 300px;
 }
 
 /* 總結階段覆蓋層 */

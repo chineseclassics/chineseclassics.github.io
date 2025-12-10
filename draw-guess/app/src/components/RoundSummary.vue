@@ -4,7 +4,7 @@
       <!-- 等待選詞狀態的頂部提示 -->
       <div v-if="isWaitingForSelection" class="selection-waiting-banner">
         <div class="waiting-icon">
-          <span class="pencil-animate">✏️</span>
+          <span class="pencil-animate"><PhPencil :size="24" weight="duotone" /></span>
         </div>
         <div class="waiting-text">
           <span class="next-drawer-name">{{ nextDrawerName }}</span> 正在選詞...
@@ -18,7 +18,11 @@
 
       <!-- 標題 -->
       <div class="summary-header">
-        <h2 class="summary-title">{{ isWaitingForSelection ? '📋 上一輪回顧' : '🎨 輪次結束' }}</h2>
+        <h2 class="summary-title">
+          <PhClipboardText v-if="isWaitingForSelection" :size="24" weight="duotone" class="title-icon" />
+          <PhPaintBrush v-else :size="24" weight="duotone" class="title-icon" />
+          {{ isWaitingForSelection ? '上一輪回顧' : '輪次結束' }}
+        </h2>
         <div class="round-info">第 {{ roundNumber }} / {{ totalRounds }} 輪</div>
       </div>
 
@@ -41,7 +45,7 @@
       <div class="guessers-section">
         <div class="section-title">猜中的玩家</div>
         <div v-if="correctGuessers.length === 0" class="no-guessers">
-          沒有人猜中 😢
+          沒有人猜中 <PhSmileySad :size="18" weight="duotone" />
         </div>
         <div v-else class="guessers-list">
           <div 
@@ -70,7 +74,7 @@
             @click="submitRating(star)"
             :disabled="hasRated"
           >
-            ⭐
+            <PhStar :size="24" :weight="star <= (hoverRating || myRating) ? 'fill' : 'duotone'" />
           </button>
         </div>
         <div class="rating-info">
@@ -83,19 +87,21 @@
       <div class="average-rating" v-if="totalRatings > 0">
         <span class="avg-label">平均評分</span>
         <span class="avg-score">{{ averageRating.toFixed(1) }}</span>
-        <span class="avg-stars">{{ '⭐'.repeat(Math.round(averageRating)) }}</span>
+        <span class="avg-stars">
+          <PhStar v-for="n in Math.round(averageRating)" :key="n" :size="16" weight="fill" class="star-icon" />
+        </span>
         <span class="avg-count">({{ totalRatings }} 人已評)</span>
       </div>
 
       <!-- 下一位畫手提示 -->
       <div class="next-drawer-info" v-if="nextDrawerName && !isLastRound">
         <div class="next-drawer-label">下一輪畫手</div>
-        <div class="next-drawer-name-display">✏️ {{ nextDrawerName }}</div>
+        <div class="next-drawer-name-display"><PhPencil :size="18" weight="duotone" /> {{ nextDrawerName }}</div>
       </div>
 
       <!-- 最後一輪提示 -->
       <div class="game-ending-info" v-if="isLastRound">
-        <div class="ending-label">🎉 這是最後一輪！</div>
+        <div class="ending-label"><PhConfetti :size="20" weight="duotone" /> 這是最後一輪！</div>
       </div>
 
       <!-- 倒計時由外部控制，組件內不再顯示 -->
@@ -105,6 +111,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { PhPencil, PhClipboardText, PhPaintBrush, PhSmileySad, PhStar, PhConfetti } from '@phosphor-icons/vue'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../stores/auth'
 
@@ -261,6 +268,14 @@ watch(() => props.roundId, () => {
   font-size: 1.5rem;
   font-family: var(--font-head);
   margin: 0 0 0.5rem 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.title-icon {
+  color: var(--color-primary);
 }
 
 .round-info {
@@ -403,27 +418,33 @@ watch(() => props.roundId, () => {
 }
 
 .star-btn {
-  font-size: 1.8rem;
   background: none;
   border: none;
   cursor: pointer;
-  filter: grayscale(100%);
+  color: var(--text-secondary);
   transition: all 0.2s;
   padding: 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .star-btn:hover:not(:disabled),
 .star-btn.active {
-  filter: grayscale(0%);
+  color: #f5c518;
   transform: scale(1.1);
 }
 
 .star-btn.selected {
-  filter: grayscale(0%);
+  color: #f5c518;
 }
 
 .star-btn:disabled {
   cursor: default;
+}
+
+.star-icon {
+  color: #f5c518;
 }
 
 .rating-info {

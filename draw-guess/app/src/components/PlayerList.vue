@@ -27,8 +27,8 @@
       <div class="player-info">
         <div class="player-name">
           {{ getParticipantName(player.user_id) }}
-          <span v-if="isCurrentDrawer(player.user_id)" class="drawer-badge">✏️</span>
-          <span v-if="isHost(player.user_id)" class="host-badge">👑</span>
+          <span v-if="isCurrentDrawer(player.user_id)" class="drawer-badge"><PhPencil :size="14" weight="duotone" /></span>
+          <span v-if="isHost(player.user_id)" class="host-badge"><PhCrown :size="14" weight="duotone" /></span>
         </div>
         <div class="player-score">{{ player.score }} 分</div>
       </div>
@@ -40,13 +40,13 @@
         @click="handleKick(player.user_id, getParticipantName(player.user_id))"
         title="踢出玩家"
       >
-        ✕
+        <PhX :size="16" weight="bold" />
       </button>
     </div>
 
     <!-- 獲勝者標識（遊戲結束時） -->
     <div v-if="showWinner && winner" class="winner-banner">
-      <div class="winner-icon">🏆</div>
+      <div class="winner-icon"><PhTrophy :size="32" weight="duotone" /></div>
       <div class="winner-text">
         <div class="winner-title">獲勝者</div>
         <div class="winner-name">{{ getParticipantName(winner.user_id) }}</div>
@@ -58,6 +58,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { PhPencil, PhCrown, PhTrophy, PhX } from '@phosphor-icons/vue'
 import { useRoomStore } from '../stores/room'
 import { useGameStore } from '../stores/game'
 import { useAuthStore } from '../stores/auth'

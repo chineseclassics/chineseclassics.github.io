@@ -3,7 +3,7 @@
     <!-- 等待狀態：選詞後等待其他玩家查看結果 -->
     <div v-if="isWaiting" class="waiting-overlay">
       <div class="waiting-card">
-        <div class="waiting-icon">⏳</div>
+        <div class="waiting-icon"><PhHourglass :size="48" weight="duotone" /></div>
         <h2 class="waiting-title">已選擇「{{ selectedWord }}」</h2>
         <p class="waiting-text">請稍等，其他玩家正在查看結果...</p>
         <div class="waiting-spinner"></div>
@@ -14,7 +14,7 @@
     <div v-else class="selection-card">
       <!-- 標題 -->
       <div class="selection-header">
-        <h2 class="selection-title">🎨 輪到你畫畫了！</h2>
+        <h2 class="selection-title"><PhPaintBrush :size="24" weight="duotone" class="title-icon" /> 輪到你畫畫了！</h2>
         <div class="round-info">第 {{ roundNumber }} / {{ totalRounds }} 輪</div>
       </div>
 
@@ -59,6 +59,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
+import { PhPaintBrush, PhHourglass } from '@phosphor-icons/vue'
 
 const props = defineProps<{
   wordOptions: Array<{ text: string; source: 'wordlist' | 'custom' }>

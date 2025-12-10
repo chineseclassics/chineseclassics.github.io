@@ -1,15 +1,14 @@
 <template>
-  <div :class="['drawing-toolbar', { 'toolbar-compact': compact }]">
+  <div :class="['drawing-toolbar', { 'toolbar-horizontal': horizontal }]">
     <!-- 工具按鈕 -->
-    <div class="toolbar-section">
+    <div class="toolbar-section tools-section">
       <!-- 畫筆 -->
       <button
         @click="setTool('pen')"
         :class="['tool-btn', { active: tool === 'pen' }]"
         title="畫筆"
       >
-        <span class="tool-icon">✏️</span>
-        <span v-if="!compact" class="tool-label">畫筆</span>
+        <PhPencilSimple :size="20" weight="bold" />
       </button>
 
       <!-- 橡皮擦 -->
@@ -18,14 +17,18 @@
         :class="['tool-btn', { active: tool === 'eraser', eraser: true }]"
         title="橡皮擦"
       >
-        <span class="tool-icon">🧹</span>
-        <span v-if="!compact" class="tool-label">橡皮擦</span>
+        <PhEraser :size="20" weight="bold" />
+      </button>
+
+      <!-- 清空按鈕 -->
+      <button @click="handleClear" class="tool-btn clear-btn" title="清空畫布">
+        <PhTrash :size="20" weight="bold" />
       </button>
     </div>
 
     <!-- 顏色調色板 -->
     <div v-if="tool === 'pen'" class="toolbar-section colors-section">
-      <div :class="['color-grid', { 'color-grid-compact': compact }]">
+      <div :class="['color-grid', { 'color-grid-horizontal': horizontal }]">
         <div
           v-for="c in colors"
           :key="c"
@@ -39,7 +42,7 @@
 
     <!-- 畫筆大小 -->
     <div class="toolbar-section size-section">
-      <div class="size-dots">
+      <div :class="['size-dots', { 'size-dots-horizontal': horizontal }]">
         <div 
           v-for="size in [2, 5, 10, 15]" 
           :key="size"
@@ -50,24 +53,18 @@
         ></div>
       </div>
     </div>
-
-    <!-- 清空按鈕 -->
-    <div class="toolbar-section">
-      <button @click="handleClear" class="tool-btn clear-btn" title="清空畫布">
-        <span class="tool-icon">🗑️</span>
-        <span v-if="!compact" class="tool-label">清空</span>
-      </button>
-    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { PhPencilSimple, PhEraser, PhTrash } from '@phosphor-icons/vue'
 import { useDrawingStore } from '../stores/drawing'
 import { useDrawing } from '../composables/useDrawing'
 
 defineProps<{
   compact?: boolean
+  horizontal?: boolean
 }>()
 
 const drawingStore = useDrawingStore()
@@ -115,8 +112,13 @@ async function handleClear() {
   padding: 0.25rem;
 }
 
-.toolbar-compact {
+/* 橫向佈局 */
+.toolbar-horizontal {
+  flex-direction: row;
   align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 0.5rem;
 }
 
 .toolbar-section {
@@ -125,8 +127,13 @@ async function handleClear() {
   gap: 0.25rem;
 }
 
-.toolbar-compact .toolbar-section {
+.toolbar-horizontal .toolbar-section {
+  flex-direction: row;
   align-items: center;
+}
+
+.toolbar-horizontal .tools-section {
+  gap: 0.25rem;
 }
 
 /* 工具按鈕 */
@@ -142,12 +149,8 @@ async function handleClear() {
   cursor: pointer;
   transition: all 0.2s;
   font-family: var(--font-body);
-}
-
-.toolbar-compact .tool-btn {
   width: 40px;
   height: 40px;
-  padding: 0;
 }
 
 .tool-btn:hover {
@@ -171,20 +174,17 @@ async function handleClear() {
 
 .tool-btn.clear-btn:hover {
   background: var(--color-danger);
+  border-color: var(--color-danger);
   color: white;
-}
-
-.tool-icon {
-  font-size: 1.2rem;
-}
-
-.tool-label {
-  font-size: 0.85rem;
 }
 
 /* 顏色網格 */
 .colors-section {
   padding: 0.25rem 0;
+}
+
+.toolbar-horizontal .colors-section {
+  padding: 0;
 }
 
 .color-grid {
@@ -193,15 +193,16 @@ async function handleClear() {
   gap: 3px;
 }
 
-.color-grid-compact {
-  grid-template-columns: repeat(2, 1fr);
+.color-grid-horizontal {
+  grid-template-columns: repeat(12, 1fr);
+  grid-template-rows: repeat(2, 1fr);
 }
 
 .color-cell {
   width: 100%;
   aspect-ratio: 1;
-  min-width: 16px;
-  min-height: 16px;
+  min-width: 18px;
+  min-height: 18px;
   border: 2px solid var(--border-light);
   border-radius: 3px;
   cursor: pointer;
@@ -225,6 +226,14 @@ async function handleClear() {
   border-bottom: 1px solid var(--border-light);
 }
 
+.toolbar-horizontal .size-section {
+  padding: 0 0.5rem;
+  border-top: none;
+  border-bottom: none;
+  border-left: 1px solid var(--border-light);
+  border-right: 1px solid var(--border-light);
+}
+
 .size-dots {
   display: flex;
   flex-direction: column;
@@ -232,8 +241,8 @@ async function handleClear() {
   gap: 0.5rem;
 }
 
-.toolbar-compact .size-dots {
-  flex-direction: column;
+.size-dots-horizontal {
+  flex-direction: row;
 }
 
 .size-dot {
