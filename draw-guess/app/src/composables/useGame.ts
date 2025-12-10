@@ -89,24 +89,31 @@ export function useGame() {
     timeRemaining.value = null
   }
 
-  // 開始選詞倒計時
+  // 開始選詞倒計時（只有畫家才有倒計時）
   function startSelectionCountdown() {
+    // 只有畫家才啟動選詞倒計時
+    const currentDrawerId = roomStore.currentRoom?.current_drawer_id
+    const isDrawer = currentDrawerId === authStore.user?.id
+    
+    if (!isDrawer) {
+      console.log('[useGame] 非畫家，不啟動選詞倒計時')
+      return
+    }
+    
     if (selectionTimer) {
       clearInterval(selectionTimer)
     }
 
     selectionTimeRemaining.value = SELECTION_TIME
+    console.log('[useGame] 畫家開始選詞倒計時:', SELECTION_TIME, '秒')
 
     selectionTimer = window.setInterval(() => {
       if (selectionTimeRemaining.value !== null && selectionTimeRemaining.value > 0) {
         selectionTimeRemaining.value--
       } else {
         stopSelectionCountdown()
-        // 選詞超時，只讓當前畫家自動選擇第一個詞
-        // 注意：只有當畫家自己超時時才選詞，不是房主代替選詞
-        const currentDrawerId = roomStore.currentRoom?.current_drawer_id
-        const isCurrentDrawer = currentDrawerId === authStore.user?.id
-        if (isSelecting.value && isCurrentDrawer && wordOptions.value.length > 0) {
+        // 選詞超時，畫家自動選擇第一個詞
+        if (isSelecting.value && wordOptions.value.length > 0) {
           console.log('[useGame] 選詞超時，畫家自動選擇第一個詞')
           const firstOption = wordOptions.value[0]
           if (firstOption) {
@@ -126,23 +133,22 @@ export function useGame() {
     selectionTimeRemaining.value = null
   }
 
-  // 開始總結倒計時
+  // 開始總結倒計時（所有人都看到總結倒計時）
   function startSummaryCountdown() {
     if (summaryTimer) {
       clearInterval(summaryTimer)
     }
 
     summaryTimeRemaining.value = SUMMARY_TIME
-    console.log('[useGame] 開始總結倒計時:', SUMMARY_TIME, '秒', '是否房主:', roomStore.isHost)
+    console.log('[useGame] 開始總結倒計時:', SUMMARY_TIME, '秒')
 
     summaryTimer = window.setInterval(async () => {
       if (summaryTimeRemaining.value !== null && summaryTimeRemaining.value > 0) {
         summaryTimeRemaining.value--
       } else {
         stopSummaryCountdown()
-        // 總結結束，只有房主開始下一輪
-        console.log('[useGame] 總結倒計時結束, isSummary:', isSummary.value, 'isHost:', roomStore.isHost)
-        // 只有房主才能執行下一輪的操作，非房主等待廣播
+        console.log('[useGame] 總結倒計時結束, isHost:', roomStore.isHost)
+        // 只有房主執行下一輪操作，其他人等待廣播
         if (roomStore.isHost) {
           console.log('[useGame] 房主執行 continueToNextRound')
           await continueToNextRound()

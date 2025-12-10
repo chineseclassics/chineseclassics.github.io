@@ -191,12 +191,20 @@ export function useRealtime() {
           log('輪次變化:', payload.eventType, payload.new)
           if (roomStore.currentRoom) {
             await gameStore.loadCurrentRound(roomStore.currentRoom.id)
-            // 當新輪次創建時，自動訂閱猜測記錄
-            if (payload.eventType === 'INSERT' && payload.new && (payload.new as any).id) {
-              const newRoundId = (payload.new as any).id
-              log('新輪次創建，自動訂閱猜測記錄:', newRoundId)
-              subscribeGuesses(roomCode, newRoundId)
-            }
+          }
+        })
+        // 訂閱整個房間的猜測記錄（通過 game_rounds 關聯）
+        .on('postgres_changes', {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'guesses',
+        }, async (payload) => {
+          // 檢查這個猜測是否屬於當前房間
+          const newGuess = payload.new as any
+          if (newGuess && gameStore.currentRound) {
+            log('收到新猜測:', newGuess)
+            // 載入該輪次的猜測（會追加到現有記錄）
+            await gameStore.loadGuesses(newGuess.round_id)
           }
         })
         .on('broadcast', { event: 'drawing' }, (payload) => {

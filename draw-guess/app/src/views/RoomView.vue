@@ -182,9 +182,9 @@
                 <div class="chat-msg system-msg answer-revealed">
                   <span class="msg-icon">🎯</span> 答案是：<strong>{{ gameStore.currentWord }}</strong>
                 </div>
-                <!-- 正確猜測列表 -->
+                <!-- 當前輪次的正確猜測列表 -->
                 <div 
-                  v-for="guess in gameStore.correctGuesses" 
+                  v-for="guess in gameStore.currentRoundCorrectGuesses" 
                   :key="guess.id"
                   class="chat-msg correct-guess"
                 >
@@ -319,7 +319,7 @@ const router = useRouter()
 const roomStore = useRoomStore()
 const gameStore = useGameStore()
 const authStore = useAuthStore()
-const { subscribeRoom, subscribeGuesses, unsubscribeRoom, subscribeGameState } = useRealtime()
+const { subscribeRoom, unsubscribeRoom, subscribeGameState } = useRealtime()
 const {
   isPlaying,
   isWaiting,
@@ -387,14 +387,6 @@ watch(sortedGuesses, () => {
   nextTick(scrollToBottom)
 }, { deep: true })
 
-// 監聽輪次變化，重新訂閱猜測
-watch(() => gameStore.currentRound?.id, (newRoundId, oldRoundId) => {
-  if (newRoundId && newRoundId !== oldRoundId && currentRoom.value) {
-    console.log('[RoomView] 輪次變化，重新訂閱猜測:', newRoundId)
-    subscribeGuesses(currentRoom.value.code, newRoundId)
-  }
-})
-
 // 監聽參與者列表變化，檢測是否被踢出
 watch(() => roomStore.participants, (newParticipants) => {
   if (!authStore.user || !currentRoom.value) return
@@ -432,14 +424,14 @@ const getWordHint = computed(() => {
 
 // 計算畫家在當前輪次的得分（根據猜中人數）
 const drawerScoreForRound = computed(() => {
-  const correctCount = gameStore.correctGuesses.length
+  const correctCount = gameStore.currentRoundCorrectGuesses.length
   // 每個猜中的人給畫家 5 分
   return correctCount * 5
 })
 
-// 轉換猜中玩家列表為 RoundSummary 需要的格式
+// 轉換猜中玩家列表為 RoundSummary 需要的格式（當前輪次）
 const correctGuessersForSummary = computed(() => {
-  return gameStore.correctGuesses.map(g => ({
+  return gameStore.currentRoundCorrectGuesses.map(g => ({
     userId: g.user_id,
     name: getParticipantName(g.user_id),
     score: g.score_earned
@@ -596,33 +588,26 @@ onMounted(async () => {
       if (state.roundStatus) {
         gameStore.setRoundStatus(state.roundStatus)
         
-        // 如果進入選詞階段，清空畫布並開始選詞倒計時
+        // 如果進入選詞階段，清空畫布
         if (state.roundStatus === 'selecting') {
           // 清空畫布（通過事件）
           window.dispatchEvent(new CustomEvent('clearCanvas'))
           // 停止之前的倒計時
           stopSummaryCountdown()
-          // 非房主也需要啟動選詞倒計時（用於顯示）
-          if (!roomStore.isHost) {
-            startSelectionCountdown()
-          }
+          // 只有畫家才啟動選詞倒計時（useGame.startSelectionCountdown 內部會判斷）
+          startSelectionCountdown()
         }
         
         // 如果進入繪畫階段，停止選詞倒計時，開始繪畫倒計時
         if (state.roundStatus === 'drawing') {
           stopSelectionCountdown()
-          // 非房主也需要啟動繪畫倒計時（用於顯示）
-          if (!roomStore.isHost) {
-            startCountdown(drawTime.value)
-          }
+          // 所有人都啟動繪畫倒計時（用於顯示）
+          startCountdown(drawTime.value)
         }
         
-        // 如果進入總結階段，停止繪畫倒計時，開始總結倒計時
+        // 如果進入總結階段，開始總結倒計時（所有人都看到）
         if (state.roundStatus === 'summary') {
-          // 非房主也需要啟動總結倒計時（用於顯示，但不會觸發下一輪）
-          if (!roomStore.isHost) {
-            startSummaryCountdown()
-          }
+          startSummaryCountdown()
         }
       }
       if (state.wordOptions !== undefined) {
@@ -637,18 +622,11 @@ onMounted(async () => {
       if (currentRoom.value) {
         await roomStore.loadRoom(currentRoom.value.id)
         await gameStore.loadCurrentRound(currentRoom.value.id)
-        
-        // 當進入繪畫階段時，重新訂閱猜測記錄
-        if (state.roundStatus === 'drawing' && gameStore.currentRound) {
-          console.log('[RoomView] 繪畫階段，訂閱猜測記錄:', gameStore.currentRound.id)
-          subscribeGuesses(currentRoom.value.code, gameStore.currentRound.id)
-        }
       }
     })
 
-    if (gameStore.currentRound) {
-      subscribeGuesses(currentRoom.value.code, gameStore.currentRound.id)
-    }
+    // 載入整場遊戲的所有猜測記錄
+    await gameStore.loadAllGuesses(currentRoom.value.id)
   }
 })
 

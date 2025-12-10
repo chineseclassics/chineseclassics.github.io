@@ -57,8 +57,14 @@ export const useGameStore = defineStore('game', () => {
   // 當前輪次
   const currentRound = ref<GameRound | null>(null)
   const currentWord = ref<string | null>(null) // 當前詞語（僅畫家可見）
-  const guesses = ref<Guess[]>([]) // 當前輪次的猜測記錄
+  const guesses = ref<Guess[]>([]) // 整場遊戲的猜測記錄（累積所有輪次）
   const correctGuesses = computed(() => guesses.value.filter(g => g.is_correct))
+  // 當前輪次的猜測記錄
+  const currentRoundGuesses = computed(() => {
+    if (!currentRound.value) return []
+    return guesses.value.filter(g => g.round_id === currentRound.value!.id)
+  })
+  const currentRoundCorrectGuesses = computed(() => currentRoundGuesses.value.filter(g => g.is_correct))
 
   // 輪次狀態管理
   const roundStatus = ref<RoundStatus>('drawing')
@@ -143,7 +149,7 @@ export const useGameStore = defineStore('game', () => {
     }
   }
 
-  // 載入猜測記錄
+  // 載入猜測記錄（追加到現有記錄，不覆蓋）
   async function loadGuesses(roundId: string) {
     try {
       const { data, error } = await supabase
@@ -154,9 +160,48 @@ export const useGameStore = defineStore('game', () => {
 
       if (error) throw error
 
-      guesses.value = (data || []) as Guess[]
+      // 追加新的猜測記錄，避免重複
+      const newGuesses = (data || []) as Guess[]
+      const existingIds = new Set(guesses.value.map(g => g.id))
+      const uniqueNewGuesses = newGuesses.filter(g => !existingIds.has(g.id))
+      if (uniqueNewGuesses.length > 0) {
+        guesses.value = [...guesses.value, ...uniqueNewGuesses]
+      }
     } catch (err) {
       console.error('載入猜測記錄錯誤:', err)
+    }
+  }
+
+  // 載入整場遊戲的所有猜測記錄
+  async function loadAllGuesses(roomId: string) {
+    try {
+      // 先獲取該房間的所有輪次 ID
+      const { data: rounds, error: roundsError } = await supabase
+        .from('game_rounds')
+        .select('id')
+        .eq('room_id', roomId)
+
+      if (roundsError) throw roundsError
+
+      if (!rounds || rounds.length === 0) {
+        guesses.value = []
+        return
+      }
+
+      const roundIds = rounds.map(r => r.id)
+
+      // 獲取所有輪次的猜測記錄
+      const { data, error } = await supabase
+        .from('guesses')
+        .select('*')
+        .in('round_id', roundIds)
+        .order('guessed_at', { ascending: true })
+
+      if (error) throw error
+
+      guesses.value = (data || []) as Guess[]
+    } catch (err) {
+      console.error('載入所有猜測記錄錯誤:', err)
     }
   }
 
@@ -185,7 +230,7 @@ export const useGameStore = defineStore('game', () => {
 
       currentRound.value = data as GameRound
       currentWord.value = wordText
-      guesses.value = []
+      // 不清空猜測記錄，整場遊戲累積
 
       // 更新房間當前輪次
       await supabase
@@ -203,9 +248,10 @@ export const useGameStore = defineStore('game', () => {
     }
   }
 
-  // 檢查是否已猜中
+  // 檢查當前輪次是否已猜中
   function hasGuessed(userId: string): boolean {
-    return guesses.value.some(g => g.user_id === userId && g.is_correct)
+    if (!currentRound.value) return false
+    return guesses.value.some(g => g.round_id === currentRound.value!.id && g.user_id === userId && g.is_correct)
   }
 
   // 檢查是否為當前畫家
@@ -312,6 +358,8 @@ export const useGameStore = defineStore('game', () => {
     currentWord,
     guesses,
     correctGuesses,
+    currentRoundGuesses,
+    currentRoundCorrectGuesses,
     isCurrentDrawer,
     // 輪次狀態
     roundStatus,
@@ -321,6 +369,7 @@ export const useGameStore = defineStore('game', () => {
     // 方法
     loadCurrentRound,
     loadGuesses,
+    loadAllGuesses,
     createRound,
     hasGuessed,
     endRound,
