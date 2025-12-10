@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
 // 繪畫工具類型
-export type DrawingTool = 'pen' | 'eraser'
+export type DrawingTool = 'pen' | 'eraser' | 'fill'
 
 // 筆觸數據接口
 export interface Stroke {
@@ -12,6 +12,8 @@ export interface Stroke {
   lineWidth: number
   points: Array<{ x: number; y: number }>
   timestamp: number
+  // fill 工具專用：畫布尺寸
+  canvasSize?: { width: number; height: number }
 }
 
 export const useDrawingStore = defineStore('drawing', () => {

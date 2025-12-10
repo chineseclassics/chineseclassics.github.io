@@ -36,9 +36,22 @@ export function drawStroke(
   ctx: CanvasRenderingContext2D,
   stroke: Stroke
 ) {
-  if (stroke.points.length < 2) return
-
   ctx.save()
+
+  // 填充工具：填充整個畫布
+  if (stroke.tool === 'fill') {
+    if (stroke.canvasSize) {
+      ctx.fillStyle = stroke.color
+      ctx.fillRect(0, 0, stroke.canvasSize.width, stroke.canvasSize.height)
+    }
+    ctx.restore()
+    return
+  }
+
+  if (stroke.points.length < 2) {
+    ctx.restore()
+    return
+  }
 
   if (stroke.tool === 'pen') {
     ctx.strokeStyle = stroke.color

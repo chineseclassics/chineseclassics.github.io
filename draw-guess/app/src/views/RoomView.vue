@@ -521,9 +521,18 @@ onMounted(async () => {
           
           // 畫布清空由 DrawingCanvas 組件的 watch 自動處理
           
-          // 本地開始倒計時，直接使用房間設定的時間
-          console.log('[RoomView] 開始倒計時:', drawTime.value, '秒')
-          startCountdown(drawTime.value)
+          // 根據服務器時間戳計算剩餘時間，確保所有玩家倒計時同步
+          let remaining = drawTime.value
+          if (state.startedAt) {
+            const startTime = new Date(state.startedAt).getTime()
+            const now = Date.now()
+            const elapsed = Math.floor((now - startTime) / 1000)
+            remaining = Math.max(0, drawTime.value - elapsed)
+            console.log('[RoomView] 根據服務器時間計算剩餘時間:', remaining, '秒 (elapsed:', elapsed, '秒)')
+          }
+          
+          console.log('[RoomView] 開始倒計時:', remaining, '秒')
+          startCountdown(remaining)
         }
         
         // 進入總結階段

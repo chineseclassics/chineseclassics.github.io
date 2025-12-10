@@ -71,7 +71,7 @@ defineProps<{
 }>()
 
 const drawingStore = useDrawingStore()
-const { setTool: setDrawingTool, setColor: setDrawingColor, setLineWidth: setDrawingLineWidth } = useDrawing()
+const { setTool: setDrawingTool, setColor: setDrawingColor, setLineWidth: setDrawingLineWidth, clearCanvas } = useDrawing()
 
 // 24色調色板（參考 Gartic.io）
 const colors = [
@@ -100,10 +100,9 @@ function setLineWidthValue(size: number) {
   setDrawingLineWidth(size)
 }
 
-function handleClear() {
+async function handleClear() {
   if (confirm('確定要清空畫布嗎？')) {
-    // 使用全局事件清空畫布
-    window.dispatchEvent(new Event('clearCanvas'))
+    await clearCanvas()
   }
 }
 </script>

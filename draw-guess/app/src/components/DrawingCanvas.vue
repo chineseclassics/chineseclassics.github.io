@@ -90,13 +90,7 @@ watch(
   }
 )
 
-// 監聽全局清空畫布事件（用於手動清空按鈕）
-function handleClearCanvasEvent() {
-  console.log('[DrawingCanvas] 收到 clearCanvas 事件')
-  localClearCanvas()
-}
-
-// 暴露清空方法給父組件或全局事件
+// 暴露清空方法給父組件
 defineExpose({
   clearCanvas: localClearCanvas
 })
@@ -153,9 +147,6 @@ onMounted(() => {
   }
   
   setupDrawingSubscription()
-  
-  // 監聽全局清空畫布事件（用於手動清空按鈕）
-  window.addEventListener('clearCanvas', handleClearCanvasEvent)
 })
 
 onUnmounted(() => {
@@ -164,9 +155,6 @@ onUnmounted(() => {
     unsubscribeDrawingCallback()
     unsubscribeDrawingCallback = null
   }
-  
-  // 移除全局事件監聽
-  window.removeEventListener('clearCanvas', handleClearCanvasEvent)
 })
 </script>
 

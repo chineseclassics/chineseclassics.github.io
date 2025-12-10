@@ -189,30 +189,16 @@ export function useDrawing() {
   }
 
   // 接收繪畫數據（來自其他玩家）
-  function handleDrawingData(data: (Stroke & { userId?: string }) | { type: 'clear'; userId: string }) {
-    console.log('[handleDrawingData] 收到數據:', JSON.stringify(data))
-    
-    if (!canvasRef.value || !ctxRef.value) {
-      console.warn('[handleDrawingData] canvas 或 ctx 不存在')
-      return
-    }
+  function handleDrawingData(stroke: Stroke & { userId?: string }) {
+    if (!canvasRef.value || !ctxRef.value) return
 
     // 過濾自己發送的消息
-    if (data.userId && authStore.user && data.userId === authStore.user.id) {
-      console.log('[handleDrawingData] 忽略自己的數據')
+    if (stroke.userId && authStore.user && stroke.userId === authStore.user.id) {
+      console.log('[handleDrawingData] 忽略自己的筆觸:', stroke.id)
       return
     }
 
-    // 處理清空畫布指令
-    if ('type' in data && data.type === 'clear') {
-      console.log('[handleDrawingData] 收到清空畫布指令，執行清空')
-      clearCanvasLocal()
-      return
-    }
-
-    // 處理普通筆觸
-    const stroke = data as Stroke
-    console.log('[handleDrawingData] 接收到其他玩家的筆觸:', stroke.id)
+    console.log('[handleDrawingData] 接收到其他玩家的筆觸:', stroke.id, stroke.tool)
 
     // 添加到筆觸列表
     drawingStore.addStroke(stroke)
@@ -247,25 +233,42 @@ export function useDrawing() {
     console.log('[useDrawing] 畫布已清空')
   }
 
-  // 清空畫布（畫家使用，會廣播給其他玩家）
+  // 清空畫布（畫家使用，發送一個 fill 白色筆觸，會同步給其他玩家）
   async function clearCanvas() {
     console.log('[useDrawing] clearCanvas 被調用')
     
-    // 先本地清空
-    clearCanvasLocal()
+    if (!canvasRef.value || !ctxRef.value || !roomStore.currentRoom || !authStore.user) {
+      console.warn('[useDrawing] clearCanvas: 缺少必要條件')
+      return
+    }
+
+    const rect = canvasRef.value.getBoundingClientRect()
     
-    // 如果是畫家，廣播清空指令給其他玩家
-    if (isCurrentDrawer.value && roomStore.currentRoom && authStore.user) {
-      console.log('[useDrawing] 畫家清空畫布，廣播給其他玩家, roomCode:', roomStore.currentRoom.code)
-      try {
-        const result = await sendDrawing(roomStore.currentRoom.code, {
-          type: 'clear',
-          userId: authStore.user.id,
-        })
-        console.log('[useDrawing] 清空畫布廣播結果:', result)
-      } catch (error) {
-        console.error('[useDrawing] 廣播清空指令失敗:', error)
+    // 創建一個 fill 白色的筆觸
+    const fillStroke: Stroke = {
+      id: generateStrokeId(),
+      tool: 'fill',
+      color: '#FFFFFF',
+      lineWidth: 0,
+      points: [],
+      timestamp: Date.now(),
+      canvasSize: { width: rect.width, height: rect.height },
+    }
+
+    // 本地繪製
+    drawStroke(ctxRef.value, fillStroke)
+    drawingStore.addStroke(fillStroke)
+
+    // 廣播給其他玩家（作為普通筆觸同步）
+    try {
+      const strokeWithUser = {
+        ...fillStroke,
+        userId: authStore.user.id,
       }
+      await sendDrawing(roomStore.currentRoom.code, strokeWithUser)
+      console.log('[useDrawing] 清空畫布筆觸已廣播')
+    } catch (error) {
+      console.error('[useDrawing] 廣播清空筆觸失敗:', error)
     }
   }
 

@@ -251,13 +251,15 @@ export function useGame() {
       }
 
       // 廣播狀態給所有玩家（包括房主自己，統一在回調中處理）
+      // 使用服務器返回的 started_at 時間戳，確保所有玩家倒計時同步
       const { broadcastGameState } = useRealtime()
       await broadcastGameState(roomStore.currentRoom!.code, {
         roundStatus: 'drawing',
         wordOptions: [],
         drawerId: drawer.user_id,
         drawerName: drawer.nickname,
-        roundNumber: nextRoundNum
+        roundNumber: nextRoundNum,
+        startedAt: result.round.started_at,  // 服務器時間戳
       })
 
       return { success: true, drawerId: drawer.user_id, word: word.text }

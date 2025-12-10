@@ -226,13 +226,9 @@ export function useRealtime() {
           }
         })
         .on('broadcast', { event: 'drawing' }, (payload) => {
-          console.log('[Realtime] 收到 drawing 廣播:', JSON.stringify(payload))
           const callbacks = globalDrawingCallbacks.get(roomCode)
           if (callbacks && payload.payload?.stroke) {
-            console.log('[Realtime] 分發給', callbacks.size, '個回調')
             callbacks.forEach(cb => cb(payload.payload.stroke))
-          } else {
-            console.log('[Realtime] 沒有回調或 stroke 為空, callbacks:', callbacks?.size, 'stroke:', payload.payload?.stroke)
           }
         })
         .on('presence', { event: 'sync' }, () => {
