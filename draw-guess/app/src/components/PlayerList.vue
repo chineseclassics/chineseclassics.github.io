@@ -93,7 +93,9 @@ function isHost(userId: string): boolean {
 }
 
 function isCurrentDrawer(userId: string): boolean {
-  return gameStore.currentRound?.drawer_id === userId
+  // 檢查當前輪次的畫家，或者房間設定的當前畫家
+  return gameStore.currentRound?.drawer_id === userId || 
+         roomStore.currentRoom?.current_drawer_id === userId
 }
 
 // 判斷是否可以踢此玩家（房主可踢非自己的玩家）

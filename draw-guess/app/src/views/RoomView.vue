@@ -53,8 +53,9 @@
             <span class="word-label">你的詞語</span>
             <span class="word-text">{{ gameStore.currentWord }}</span>
           </div>
-          <!-- 非畫家顯示提示（繪畫階段） -->
+          <!-- 非畫家顯示提示和畫家名稱（繪畫階段） -->
           <div v-else-if="isDrawing" class="word-display">
+            <span class="drawer-hint">🎨 {{ currentDrawerName }} 正在畫</span>
             <span class="word-slots">{{ getWordHint }}</span>
           </div>
           <!-- 總結階段：顯示答案 -->
@@ -465,7 +466,7 @@ onMounted(async () => {
 
     // 訂閱遊戲狀態廣播（同步 roundStatus、wordOptions 等）
     subscribeGameState(currentRoom.value.code, async (state) => {
-      console.log('[RoomView] 收到遊戲狀態廣播:', state)
+      console.log('[RoomView] 收到遊戲狀態廣播:', state, '是否房主:', roomStore.isHost)
       
       // 先更新當前畫家 ID
       if (state.drawerId && currentRoom.value) {
@@ -478,19 +479,28 @@ onMounted(async () => {
         console.log('[RoomView] 更新輪次狀態:', state.roundStatus)
         gameStore.setRoundStatus(state.roundStatus)
         
-        // 如果進入繪畫階段，清空畫布並開始繪畫倒計時
-        if (state.roundStatus === 'drawing') {
-          // 清空畫布
-          window.dispatchEvent(new CustomEvent('clearCanvas'))
-          // 停止之前的倒計時
-          stopSummaryCountdown()
-          // 所有人都啟動繪畫倒計時
-          startCountdown(drawTime.value)
-        }
-        
-        // 如果進入總結階段，開始總結倒計時
-        if (state.roundStatus === 'summary') {
-          startSummaryCountdown()
+        // 非房主：收到廣播後啟動倒計時
+        // 房主：已經在 startDrawingPhase/endRound 中啟動了倒計時，不需要重複啟動
+        if (!roomStore.isHost) {
+          // 如果進入繪畫階段，清空畫布並開始繪畫倒計時
+          if (state.roundStatus === 'drawing') {
+            // 清空畫布
+            window.dispatchEvent(new CustomEvent('clearCanvas'))
+            // 停止之前的倒計時
+            stopSummaryCountdown()
+            // 啟動繪畫倒計時
+            startCountdown(drawTime.value)
+          }
+          
+          // 如果進入總結階段，開始總結倒計時
+          if (state.roundStatus === 'summary') {
+            startSummaryCountdown()
+          }
+        } else {
+          // 房主：只在進入繪畫階段時清空畫布
+          if (state.roundStatus === 'drawing') {
+            window.dispatchEvent(new CustomEvent('clearCanvas'))
+          }
         }
       }
       

@@ -6,6 +6,7 @@ import { useRoomStore } from '../stores/room'
 const GUESS_BASE_SCORE = 100 // 猜中基礎分數
 const DRAWING_BASE_SCORE = 50 // 繪畫基礎分數
 const DRAWING_BONUS_PER_GUESS = 10 // 每個猜中玩家的額外加分
+const RATING_BONUS_PER_STAR = 10 // 每顆星的額外加分（平均評分 × 10）
 const WINNER_BONUS = 100 // 獲勝獎勵
 
 // 猜中順序係數（根據順序：100%, 80%, 60%, 40%, 20%...）
@@ -23,13 +24,25 @@ export function useScoring() {
     return score
   }
 
-  // 計算繪畫得分（根據猜中玩家數量）
-  function calculateDrawingScore(correctGuessCount: number): number {
+  // 計算繪畫得分（根據猜中玩家數量和平均評分）
+  function calculateDrawingScore(correctGuessCount: number, averageRating: number = 0): number {
     if (correctGuessCount === 0) {
       return 0 // 沒有人猜中，繪畫得分為 0
     }
-    const score = DRAWING_BASE_SCORE + (correctGuessCount * DRAWING_BONUS_PER_GUESS)
+    // 基礎分 + 猜中獎勵 + 評分獎勵
+    const guessBonus = correctGuessCount * DRAWING_BONUS_PER_GUESS
+    const ratingBonus = Math.round(averageRating * RATING_BONUS_PER_STAR)
+    const score = DRAWING_BASE_SCORE + guessBonus + ratingBonus
     return score
+  }
+
+  // 更新畫家分數（輪次結束時調用）
+  async function updateDrawerScore(drawerId: string, correctGuessCount: number, averageRating: number = 0): Promise<boolean> {
+    const drawingScore = calculateDrawingScore(correctGuessCount, averageRating)
+    if (drawingScore === 0) {
+      return true // 沒有人猜中，不需要更新
+    }
+    return await updatePlayerScore(drawerId, drawingScore)
   }
 
   // 更新玩家分數（累加到總分）
@@ -72,15 +85,6 @@ export function useScoring() {
       console.error('更新玩家分數錯誤:', err)
       return false
     }
-  }
-
-  // 更新畫家分數（輪次結束時調用）
-  async function updateDrawerScore(drawerId: string, correctGuessCount: number): Promise<boolean> {
-    const drawingScore = calculateDrawingScore(correctGuessCount)
-    if (drawingScore === 0) {
-      return true // 沒有人猜中，不需要更新
-    }
-    return await updatePlayerScore(drawerId, drawingScore)
   }
 
   // 計算獲勝者（遊戲結束時調用）

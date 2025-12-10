@@ -267,11 +267,13 @@ export const useGameStore = defineStore('game', () => {
     }
 
     try {
-      // 計算畫家得分
+      // 計算畫家得分（基於猜中人數和平均評分）
       const correctCount = correctGuesses.value.length
+      const avgRating = averageRating.value
       const { updateDrawerScore } = useScoring()
       
-      await updateDrawerScore(currentRound.value.drawer_id, correctCount)
+      console.log('[endRound] 猜中人數:', correctCount, '平均評分:', avgRating)
+      await updateDrawerScore(currentRound.value.drawer_id, correctCount, avgRating)
 
       // 更新輪次結束時間
       const { error } = await supabase
