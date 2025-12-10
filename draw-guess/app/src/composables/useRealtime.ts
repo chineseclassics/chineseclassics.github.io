@@ -285,6 +285,13 @@ export function useRealtime() {
       onGameState(payload.payload)
     })
 
+    // 同時訂閱「所有人都猜對了」事件
+    channel.on('broadcast', { event: 'all_guessed' }, (payload) => {
+      log('收到所有人猜對廣播:', payload.payload)
+      // 觸發一個特殊的 game_state 事件
+      onGameState({ ...payload.payload, allGuessed: true })
+    })
+
     ;(channel as any)[listenerKey] = true
     return channel
   }
@@ -322,6 +329,35 @@ export function useRealtime() {
       return result
     } catch (error) {
       warn('發送遊戲狀態錯誤:', error)
+      return { error: error instanceof Error ? error.message : '發送失敗' }
+    }
+  }
+
+  // 廣播「所有人都猜對了」事件
+  async function broadcastAllGuessed(roomCode: string) {
+    const channel = getRoomChannel(roomCode)
+    const channelState = (channel as any).state
+
+    if (channelState !== 'joined') {
+      warn('Channel 未連接，無法廣播所有人猜對')
+      return { error: 'Channel 未連接' }
+    }
+
+    try {
+      log('廣播所有人猜對事件')
+      const result = await channel.send({
+        type: 'broadcast',
+        event: 'all_guessed',
+        payload: { timestamp: Date.now() },
+      })
+
+      if (result === 'error') {
+        warn('發送所有人猜對事件失敗')
+        return { error: '發送失敗' }
+      }
+      return result
+    } catch (error) {
+      warn('發送所有人猜對事件錯誤:', error)
       return { error: error instanceof Error ? error.message : '發送失敗' }
     }
   }
@@ -390,6 +426,7 @@ export function useRealtime() {
     subscribeGameState,
     sendDrawing,
     broadcastGameState,
+    broadcastAllGuessed,
     unsubscribeRoom,
     unsubscribeAll,
     getConnectionStatus,

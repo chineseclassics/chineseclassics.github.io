@@ -236,7 +236,7 @@ const router = useRouter()
 const roomStore = useRoomStore()
 const gameStore = useGameStore()
 const authStore = useAuthStore()
-const { subscribeRoom, unsubscribeRoom, subscribeGameState } = useRealtime()
+const { subscribeRoom, unsubscribeRoom, subscribeGameState, broadcastAllGuessed } = useRealtime()
 const {
   isPlaying,
   isWaiting,
@@ -390,7 +390,13 @@ function showError(message: string) {
 // 提交猜測
 async function handleSubmitGuess() {
   if (!isCurrentDrawer.value && guessInput.value.trim()) {
-    await submitGuess()
+    const result = await submitGuess()
+    
+    // 如果所有非畫家都猜對了，廣播事件讓房主結束輪次
+    if (result.success && result.allGuessersCorrect && currentRoom.value) {
+      console.log('[RoomView] 所有人都猜對了，廣播事件')
+      await broadcastAllGuessed(currentRoom.value.code)
+    }
   }
 }
 
@@ -460,8 +466,14 @@ onMounted(async () => {
       console.log('[RoomView] 檢測到進行中的輪次:', { 
         roundNumber: round.round_number, 
         startedAt: round.started_at, 
-        endedAt: round.ended_at 
+        endedAt: round.ended_at,
+        drawerId: round.drawer_id
       })
+      
+      // 確保當前畫家 ID 被設置（用於 PlayerList 顯示畫家 badge）
+      if (round.drawer_id) {
+        roomStore.setCurrentDrawer(round.drawer_id)
+      }
       
       // 如果輪次已開始但未結束，應該是繪畫階段
       if (round.started_at && !round.ended_at) {
@@ -469,6 +481,9 @@ onMounted(async () => {
         
         // 設置 roundStatus 為 drawing
         gameStore.setRoundStatus('drawing')
+        
+        // 清空畫布（確保新輪次開始時畫布是乾淨的）
+        window.dispatchEvent(new CustomEvent('clearCanvas'))
         
         // 計算剩餘時間並啟動倒計時
         const startTime = new Date(round.started_at).getTime()
@@ -511,6 +526,14 @@ onMounted(async () => {
     // 現在 broadcast self: true，所有人（包括房主）都會收到廣播，統一處理
     subscribeGameState(currentRoom.value.code, async (state) => {
       console.log('[RoomView] 收到遊戲狀態廣播:', state)
+      
+      // 處理「所有人都猜對了」事件（只有房主需要處理）
+      if (state.allGuessed && roomStore.isHost) {
+        console.log('[RoomView] 房主收到所有人猜對事件，提前結束輪次')
+        const { endRound } = useGame()
+        await endRound()
+        return // 不需要處理其他狀態
+      }
       
       // 先更新當前畫家 ID
       if (state.drawerId && currentRoom.value) {
