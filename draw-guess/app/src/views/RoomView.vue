@@ -340,6 +340,7 @@ const {
   selectionTimeRemaining,
   summaryTimeRemaining,
   selectWord,
+  stopSelectionCountdown,
 } = useGame()
 const { hasGuessed, guessInput, submitGuess, loading: guessingLoading } = useGuessing()
 const { leaveRoom } = useRoom()
@@ -389,6 +390,21 @@ watch(() => gameStore.currentRound?.id, (newRoundId, oldRoundId) => {
     subscribeGuesses(currentRoom.value.code, newRoundId)
   }
 })
+
+// 監聽參與者列表變化，檢測是否被踢出
+watch(() => roomStore.participants, (newParticipants) => {
+  if (!authStore.user || !currentRoom.value) return
+  
+  // 檢查當前用戶是否還在參與者列表中
+  const isStillInRoom = newParticipants.some(p => p.user_id === authStore.user!.id)
+  if (!isStillInRoom && currentRoom.value) {
+    console.log('[RoomView] 檢測到被踢出房間')
+    alert('你已被房主踢出房間')
+    // 清理並返回首頁
+    roomStore.clearRoom()
+    router.push('/')
+  }
+}, { deep: true })
 
 // 獲取參與者名稱
 function getParticipantName(userId: string): string {
@@ -580,6 +596,11 @@ onMounted(async () => {
         if (state.roundStatus === 'selecting') {
           // 清空畫布（通過事件）
           window.dispatchEvent(new CustomEvent('clearCanvas'))
+        }
+        
+        // 如果進入繪畫階段，停止選詞倒計時（給非畫家用）
+        if (state.roundStatus === 'drawing') {
+          stopSelectionCountdown()
         }
       }
       if (state.wordOptions !== undefined) {

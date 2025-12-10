@@ -100,8 +100,12 @@ export function useGame() {
         selectionTimeRemaining.value--
       } else {
         stopSelectionCountdown()
-        // 選詞超時，只讓房主自動選擇第一個詞
-        if (isSelecting.value && roomStore.isHost && wordOptions.value.length > 0) {
+        // 選詞超時，只讓當前畫家自動選擇第一個詞
+        // 注意：只有當畫家自己超時時才選詞，不是房主代替選詞
+        const currentDrawerId = roomStore.currentRoom?.current_drawer_id
+        const isCurrentDrawer = currentDrawerId === authStore.user?.id
+        if (isSelecting.value && isCurrentDrawer && wordOptions.value.length > 0) {
+          console.log('[useGame] 選詞超時，畫家自動選擇第一個詞')
           const firstOption = wordOptions.value[0]
           if (firstOption) {
             selectWord(firstOption)
@@ -272,16 +276,30 @@ export function useGame() {
       return { success: false, error: '沒有當前房間' }
     }
 
+    // 獲取當前畫家
+    const drawerId = roomStore.currentRoom.current_drawer_id
+    if (!drawerId) {
+      return { success: false, error: '沒有當前畫家' }
+    }
+
+    // 只有畫家本人可以選詞
+    if (drawerId !== authStore.user?.id) {
+      console.log('[selectWord] 非畫家嘗試選詞，忽略')
+      return { success: false, error: '只有畫家可以選詞' }
+    }
+
+    // 防止重複選詞
+    if (gameStore.roundStatus !== 'selecting') {
+      console.log('[selectWord] 當前不是選詞階段，忽略')
+      return { success: false, error: '當前不是選詞階段' }
+    }
+
     // 停止選詞倒計時
     stopSelectionCountdown()
 
-    try {
-      // 獲取當前畫家
-      const drawerId = roomStore.currentRoom.current_drawer_id
-      if (!drawerId) {
-        throw new Error('沒有當前畫家')
-      }
+    console.log('[selectWord] 畫家選擇詞語:', option.text)
 
+    try {
       // 創建新輪次
       const result = await gameStore.createRound(
         roomStore.currentRoom.id,
@@ -475,6 +493,7 @@ export function useGame() {
     skipWord,
     startCountdown,
     stopCountdown,
+    stopSelectionCountdown,
     resetCountdown,
   }
 }

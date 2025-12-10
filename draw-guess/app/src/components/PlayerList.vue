@@ -32,6 +32,16 @@
         </div>
         <div class="player-score">{{ player.score }} 分</div>
       </div>
+
+      <!-- 踢人按鈕（只有房主可見，不能踢自己） -->
+      <button
+        v-if="canKick(player.user_id)"
+        class="kick-btn"
+        @click="handleKick(player.user_id, getParticipantName(player.user_id))"
+        title="踢出玩家"
+      >
+        ✕
+      </button>
     </div>
 
     <!-- 獲勝者標識（遊戲結束時） -->
@@ -47,7 +57,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRoomStore } from '../stores/room'
 import { useGameStore } from '../stores/game'
 import { useAuthStore } from '../stores/auth'
@@ -57,12 +67,17 @@ defineProps<{
   showWinner?: boolean
 }>()
 
+const emit = defineEmits<{
+  (e: 'player-kicked', userId: string): void
+}>()
+
 const roomStore = useRoomStore()
 const gameStore = useGameStore()
 const authStore = useAuthStore()
 const { playerRankings, winner } = useScoring()
 
 const rankings = computed(() => playerRankings.value)
+const kicking = ref(false)
 
 function getParticipantName(userId: string): string {
   const participant = roomStore.participants.find(p => p.user_id === userId)
@@ -79,6 +94,35 @@ function isHost(userId: string): boolean {
 
 function isCurrentDrawer(userId: string): boolean {
   return gameStore.currentRound?.drawer_id === userId
+}
+
+// 判斷是否可以踢此玩家（房主可踢非自己的玩家）
+function canKick(userId: string): boolean {
+  return roomStore.isHost && !isCurrentUser(userId)
+}
+
+// 處理踢人
+async function handleKick(userId: string, playerName: string) {
+  if (kicking.value) return
+  
+  // 確認對話框
+  const confirmed = window.confirm(`確定要踢出 ${playerName} 嗎？`)
+  if (!confirmed) return
+
+  kicking.value = true
+  try {
+    const result = await roomStore.kickPlayer(userId)
+    if (result.success) {
+      emit('player-kicked', userId)
+    } else {
+      alert(result.error || '踢出玩家失敗')
+    }
+  } catch (err) {
+    console.error('踢人失敗:', err)
+    alert('踢出玩家失敗')
+  } finally {
+    kicking.value = false
+  }
 }
 </script>
 
@@ -181,6 +225,34 @@ function isCurrentDrawer(userId: string): boolean {
 .player-score {
   font-size: 0.75rem;
   color: var(--text-secondary);
+}
+
+/* 踢人按鈕 */
+.kick-btn {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-tertiary);
+  font-size: 0.8rem;
+  cursor: pointer;
+  opacity: 0;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.player-item:hover .kick-btn {
+  opacity: 1;
+}
+
+.kick-btn:hover {
+  background: var(--color-danger, #f44336);
+  color: white;
 }
 
 /* 獲勝者 */

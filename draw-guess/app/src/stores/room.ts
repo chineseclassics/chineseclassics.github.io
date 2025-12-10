@@ -518,6 +518,52 @@ export const useRoomStore = defineStore('room', () => {
     }
   }
 
+  // 踢出玩家（只有房主可以執行）
+  async function kickPlayer(targetUserId: string) {
+    try {
+      if (!currentRoom.value) {
+        return { success: false, error: '沒有當前房間' }
+      }
+
+      if (!isHost.value) {
+        return { success: false, error: '只有房主可以踢人' }
+      }
+
+      const authStore = useAuthStore()
+      if (targetUserId === authStore.user?.id) {
+        return { success: false, error: '不能踢出自己' }
+      }
+
+      loading.value = true
+      error.value = null
+
+      // 調用資料庫函數踢人
+      const { data, error: rpcError } = await supabase.rpc('kick_player', {
+        p_room_id: currentRoom.value.id,
+        p_target_user_id: targetUserId
+      })
+
+      if (rpcError) {
+        throw new Error(rpcError.message)
+      }
+
+      if (data && !data.success) {
+        throw new Error(data.error || '踢出玩家失敗')
+      }
+
+      // 重新載入參與者列表
+      await loadParticipants(currentRoom.value.id)
+
+      return { success: true }
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : '踢出玩家失敗'
+      console.error('踢出玩家錯誤:', err)
+      return { success: false, error: error.value }
+    } finally {
+      loading.value = false
+    }
+  }
+
   return {
     // 狀態
     currentRoom,
@@ -529,6 +575,7 @@ export const useRoomStore = defineStore('room', () => {
     createRoom,
     joinRoom,
     leaveRoom,
+    kickPlayer,
     loadParticipants,
     loadRoom,
     updateRoomStatus,

@@ -115,9 +115,14 @@ export const useGameStore = defineStore('game', () => {
         currentRound.value = data as GameRound
         currentWord.value = data.word_text
         
-        // 同步輪次狀態
+        // 同步輪次狀態，但如果當前是選詞階段且資料庫返回的是已完成的輪次，不要覆蓋
+        // 因為選詞階段時新輪次還沒創建，會返回上一輪的 completed 狀態
         if (data.status) {
-          roundStatus.value = data.status as RoundStatus
+          const isSelectingPhase = roundStatus.value === 'selecting'
+          const isCompletedRound = data.status === 'completed'
+          if (!(isSelectingPhase && isCompletedRound)) {
+            roundStatus.value = data.status as RoundStatus
+          }
         }
         
         // 同步詞語選項（如果有）
