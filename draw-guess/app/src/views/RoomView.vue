@@ -108,22 +108,17 @@
             </div>
           </div>
 
-          <!-- 聊天面板 -->
+          <!-- 聊天面板 - 始終顯示所有猜測記錄，不因總結階段改變 -->
           <div class="game-chat-panel">
             <div class="chat-messages-container" ref="chatMessagesRef">
-              <!-- 總結階段顯示答案 -->
-              <div v-if="isSummary" class="chat-msg system-msg answer-revealed">
-                <span class="msg-icon">🎯</span> 答案是：<strong>{{ gameStore.currentWord }}</strong>
-              </div>
-              
-              <!-- 系統消息（繪畫階段） -->
-              <div v-if="!isSummary" class="chat-msg system-msg">
+              <!-- 系統消息 -->
+              <div class="chat-msg system-msg">
                 <span class="msg-icon">🎮</span> 遊戲開始！
               </div>
               
-              <!-- 猜測記錄 -->
+              <!-- 猜測記錄 - 始終顯示所有猜測 -->
               <div 
-                v-for="guess in (isSummary ? gameStore.currentRoundCorrectGuesses : sortedGuesses)" 
+                v-for="guess in sortedGuesses" 
                 :key="guess.id"
                 class="chat-msg"
                 :class="{ 
@@ -136,23 +131,15 @@
                 <span v-else class="msg-text">{{ guess.guess_text }}</span>
               </div>
               
-              <!-- 已猜中提示（繪畫階段） -->
-              <div v-if="!isSummary && hasGuessed" class="chat-msg correct-self">
+              <!-- 已猜中提示 -->
+              <div v-if="hasGuessed" class="chat-msg correct-self">
                 <span class="msg-icon">✅</span> 你已猜中答案！
               </div>
             </div>
             
-            <!-- 輸入區 -->
+            <!-- 輸入區 - 總結階段也可以輸入 -->
             <div class="chat-input-area">
               <input
-                v-if="isSummary"
-                type="text"
-                placeholder="下一輪即將開始..."
-                disabled
-                class="chat-input-field"
-              />
-              <input
-                v-else
                 v-model="guessInput"
                 type="text"
                 :placeholder="getInputPlaceholder"
@@ -163,7 +150,7 @@
               />
               <button 
                 @click="handleSubmitGuess"
-                :disabled="isSummary || loading || hasGuessed || isCurrentDrawer || !guessInput.trim()"
+                :disabled="loading || hasGuessed || isCurrentDrawer || !guessInput.trim()"
                 class="chat-send-btn"
               >
                 發送
