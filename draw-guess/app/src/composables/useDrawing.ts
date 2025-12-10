@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useDrawingStore } from '../stores/drawing'
 import { getCanvasCoordinates, drawStroke, generateStrokeId, redrawCanvas, type Stroke } from '../lib/canvas-utils'
 import { useRoomStore } from '../stores/room'
@@ -10,6 +10,12 @@ export function useDrawing() {
   const roomStore = useRoomStore()
   const authStore = useAuthStore()
   const { sendDrawing } = useRealtime()
+  
+  // 判斷當前用戶是否為畫家
+  const isCurrentDrawer = computed(() => {
+    if (!authStore.user || !roomStore.currentRoom) return false
+    return roomStore.currentRoom.current_drawer_id === authStore.user.id
+  })
 
   const canvasRef = ref<HTMLCanvasElement | null>(null)
   const ctxRef = ref<CanvasRenderingContext2D | null>(null)
@@ -76,6 +82,12 @@ export function useDrawing() {
   // 開始繪畫
   function startDrawing(event: MouseEvent | TouchEvent) {
     if (!canvasRef.value) return
+    
+    // 只有當前畫家可以繪畫
+    if (!isCurrentDrawer.value) {
+      console.log('[useDrawing] 非畫家不能繪畫')
+      return
+    }
 
     event.preventDefault()
     drawingStore.setDrawing(true)

@@ -6,22 +6,29 @@ import { useRealtime } from './useRealtime'
 // 總結頁面顯示時間（秒）
 const SUMMARY_TIME = 3
 
+// ========== 全局單例狀態（所有 useGame() 調用共享） ==========
+// 倒計時相關
+const globalTimeRemaining = ref<number | null>(null) // 剩餘時間（秒）
+const globalIsCountingDown = ref(false)
+let globalCountdownTimer: number | null = null
+
+// 總結倒計時
+const globalSummaryTimeRemaining = ref<number | null>(null)
+let globalSummaryTimer: number | null = null
+
+// 已使用的詞語索引（用於避免重複）
+const globalUsedWordIndices = ref<Set<number>>(new Set())
+
+// ========== useGame composable ==========
 export function useGame() {
   const roomStore = useRoomStore()
   const gameStore = useGameStore()
   const { broadcastGameState: _broadcastGameState, subscribeGameState: _subscribeGameState } = useRealtime()
 
-  // 倒計時相關
-  const timeRemaining = ref<number | null>(null) // 剩餘時間（秒）
-  const isCountingDown = ref(false)
-  let countdownTimer: number | null = null
-
-  // 總結倒計時
-  const summaryTimeRemaining = ref<number | null>(null)
-  let summaryTimer: number | null = null
-  
-  // 已使用的詞語索引（用於避免重複）
-  const usedWordIndices = ref<Set<number>>(new Set())
+  // 暴露全局狀態（只讀引用）
+  const timeRemaining = globalTimeRemaining
+  const isCountingDown = globalIsCountingDown
+  const summaryTimeRemaining = globalSummaryTimeRemaining
 
   // 遊戲狀態
   const gameStatus = computed(() => roomStore.currentRoom?.status || 'waiting')
@@ -45,20 +52,23 @@ export function useGame() {
 
   // 開始倒計時
   function startCountdown(duration: number) {
-    if (countdownTimer) {
-      clearInterval(countdownTimer)
+    console.log('[useGame] startCountdown 開始，時長:', duration, '秒')
+    
+    if (globalCountdownTimer) {
+      clearInterval(globalCountdownTimer)
     }
 
-    timeRemaining.value = duration
-    isCountingDown.value = true
+    globalTimeRemaining.value = duration
+    globalIsCountingDown.value = true
 
-    countdownTimer = window.setInterval(() => {
-      if (timeRemaining.value !== null && timeRemaining.value > 0) {
-        timeRemaining.value--
+    globalCountdownTimer = window.setInterval(() => {
+      if (globalTimeRemaining.value !== null && globalTimeRemaining.value > 0) {
+        globalTimeRemaining.value--
       } else {
         stopCountdown()
         // 倒計時結束，只讓房主自動結束輪次（避免競爭條件）
         if (isPlaying.value && currentRound.value && roomStore.isHost) {
+          console.log('[useGame] 倒計時結束，房主執行 endRound')
           endRound()
         }
       }
@@ -67,31 +77,34 @@ export function useGame() {
 
   // 停止倒計時
   function stopCountdown() {
-    if (countdownTimer) {
-      clearInterval(countdownTimer)
-      countdownTimer = null
+    if (globalCountdownTimer) {
+      clearInterval(globalCountdownTimer)
+      globalCountdownTimer = null
     }
-    isCountingDown.value = false
+    globalIsCountingDown.value = false
   }
 
   // 重置倒計時
   function resetCountdown() {
     stopCountdown()
-    timeRemaining.value = null
+    globalTimeRemaining.value = null
   }
 
   // 開始總結倒計時（每輪結束後顯示 3 秒總結）
   function startSummaryCountdown() {
-    if (summaryTimer) {
-      clearInterval(summaryTimer)
+    console.log('[useGame] startSummaryCountdown 開始')
+    
+    if (globalSummaryTimer) {
+      clearInterval(globalSummaryTimer)
     }
 
-    summaryTimeRemaining.value = SUMMARY_TIME
+    globalSummaryTimeRemaining.value = SUMMARY_TIME
     console.log('[useGame] 開始總結倒計時:', SUMMARY_TIME, '秒')
 
-    summaryTimer = window.setInterval(async () => {
-      if (summaryTimeRemaining.value !== null && summaryTimeRemaining.value > 0) {
-        summaryTimeRemaining.value--
+    globalSummaryTimer = window.setInterval(async () => {
+      if (globalSummaryTimeRemaining.value !== null && globalSummaryTimeRemaining.value > 0) {
+        globalSummaryTimeRemaining.value--
+        console.log('[useGame] 總結倒計時:', globalSummaryTimeRemaining.value)
       } else {
         stopSummaryCountdown()
         console.log('[useGame] 總結倒計時結束, isHost:', roomStore.isHost)
@@ -106,11 +119,12 @@ export function useGame() {
 
   // 停止總結倒計時
   function stopSummaryCountdown() {
-    if (summaryTimer) {
-      clearInterval(summaryTimer)
-      summaryTimer = null
+    console.log('[useGame] stopSummaryCountdown')
+    if (globalSummaryTimer) {
+      clearInterval(globalSummaryTimer)
+      globalSummaryTimer = null
     }
-    summaryTimeRemaining.value = null
+    globalSummaryTimeRemaining.value = null
   }
 
   // 獲取下一個詞語（優先使用未用過的，如果都用過則允許重複）
@@ -123,7 +137,7 @@ export function useGame() {
     // 找出未使用的詞語索引
     const unusedIndices: number[] = []
     for (let i = 0; i < words.length; i++) {
-      if (!usedWordIndices.value.has(i)) {
+      if (!globalUsedWordIndices.value.has(i)) {
         unusedIndices.push(i)
       }
     }
@@ -136,12 +150,12 @@ export function useGame() {
     } else {
       // 所有詞語都用過了，重置並隨機選一個
       console.log('[useGame] 所有詞語都用過了，重置並重新選擇')
-      usedWordIndices.value.clear()
+      globalUsedWordIndices.value.clear()
       selectedIndex = Math.floor(Math.random() * words.length)
     }
 
     // 標記為已使用
-    usedWordIndices.value.add(selectedIndex)
+    globalUsedWordIndices.value.add(selectedIndex)
     return words[selectedIndex] ?? null
   }
 
@@ -161,7 +175,7 @@ export function useGame() {
 
     try {
       // 重置已使用詞語
-      usedWordIndices.value.clear()
+      globalUsedWordIndices.value.clear()
       
       // 更新房間狀態為 playing
       const statusResult = await roomStore.updateRoomStatus('playing')
