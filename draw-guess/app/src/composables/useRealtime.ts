@@ -189,12 +189,8 @@ export function useRealtime() {
           filter: `room_id=eq.${roomId}`,
         }, async (payload) => {
           log('輪次變化:', payload.eventType, payload.new)
-          // 在總結階段不自動載入新輪次，避免在 summary 狀態時載入下一輪數據導致閃爍
-          // 輪次數據會在收到 'drawing' 狀態廣播後由 subscribeGameState 回調統一載入
-          if (roomStore.currentRoom && gameStore.roundStatus !== 'summary') {
+          if (roomStore.currentRoom) {
             await gameStore.loadCurrentRound(roomStore.currentRoom.id)
-          } else {
-            log('跳過載入輪次（當前狀態:', gameStore.roundStatus, '）')
           }
         })
         // 訂閱整個房間的猜測記錄（通過 game_rounds 關聯）
@@ -230,9 +226,13 @@ export function useRealtime() {
           }
         })
         .on('broadcast', { event: 'drawing' }, (payload) => {
+          console.log('[Realtime] 收到 drawing 廣播:', JSON.stringify(payload))
           const callbacks = globalDrawingCallbacks.get(roomCode)
           if (callbacks && payload.payload?.stroke) {
+            console.log('[Realtime] 分發給', callbacks.size, '個回調')
             callbacks.forEach(cb => cb(payload.payload.stroke))
+          } else {
+            console.log('[Realtime] 沒有回調或 stroke 為空, callbacks:', callbacks?.size, 'stroke:', payload.payload?.stroke)
           }
         })
         .on('presence', { event: 'sync' }, () => {

@@ -17,7 +17,7 @@
     <!-- 遊戲進行中 - 參考 Gartic.io 佈局 -->
     <div v-else-if="isPlaying" class="game-layout">
       <!-- 左側：玩家列表 -->
-      <div class="game-sidebar game-players border">
+      <div class="game-sidebar game-players">
         <div class="player-list-container">
           <PlayerList :show-winner="false" />
         </div>
@@ -26,7 +26,7 @@
       <!-- 中間：工具欄 + 畫布 + 聊天面板 -->
       <div class="game-main">
         <!-- 頂部：提示詞區域 -->
-        <div class="game-header border border-2" :class="{ 'time-critical': timeRemaining !== null && timeRemaining <= 10 }">
+        <div class="game-header" :class="{ 'time-critical': timeRemaining !== null && timeRemaining <= 10 }">
           <!-- 倒計時顯示（繪畫階段） -->
           <div v-if="isDrawing && isCountingDown && timeRemaining !== null" class="time-display">
             <span class="time-number" :class="{ 
@@ -74,7 +74,7 @@
         <div class="game-content-area">
           <!-- 畫布區域 - DrawingCanvas 始終存在 -->
           <div class="game-canvas-wrapper">
-            <div class="game-canvas border">
+            <div class="game-canvas">
               <!-- 畫布始終渲染，確保 watch 持續有效 -->
               <DrawingCanvas />
               
@@ -107,13 +107,13 @@
             </div>
             
             <!-- 工具欄 - 橫向放在畫布下方 -->
-            <div class="game-toolbar border border-4" :class="{ disabled: isSummary }">
+            <div class="game-toolbar" :class="{ disabled: isSummary }">
               <DrawingToolbar :horizontal="true" />
             </div>
           </div>
 
           <!-- 聊天面板 - 始終顯示所有猜測記錄，不因總結階段改變 -->
-          <div class="game-chat-panel border border-3">
+          <div class="game-chat-panel">
             <div class="chat-messages-container" ref="chatMessagesRef">
               <!-- 系統消息 -->
               <div class="chat-msg system-msg">
@@ -593,16 +593,17 @@ onUnmounted(() => {
   width: 280px;
   min-width: 280px;
   background: var(--bg-card);
+  border: 3px solid var(--border-color);
+  border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
   box-shadow: 4px 4px 0 var(--shadow-color);
-  transition: box-shadow 0.3s ease, transform 0.3s ease;
+  transition: box-shadow 0.3s ease;
 }
 
 .game-players:hover {
-  box-shadow: 5px 5px 0 var(--shadow-color);
-  transform: translate(-0.5px, -0.5px);
+  box-shadow: 6px 6px 0 var(--shadow-color);
 }
 
 .player-list-container {
@@ -629,6 +630,8 @@ onUnmounted(() => {
   gap: 1rem;
   padding: 0.75rem 1rem;
   background: var(--bg-card);
+  border: 3px solid var(--border-color);
+  border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
   position: relative;
   box-shadow: 3px 3px 0 var(--shadow-color);
   transition: all 0.3s ease;
@@ -726,20 +729,14 @@ onUnmounted(() => {
   font-family: var(--font-head);
   background: var(--bg-secondary);
   padding: 0.25rem 0.5rem;
-  border-bottom-left-radius: 15px 225px;
-  border-bottom-right-radius: 20px 205px;
-  border-top-left-radius: 28px 125px;
-  border-top-right-radius: 100px 30px;
+  border-radius: 4px;
 }
 
 .word-label {
   background: var(--color-warning);
   color: var(--text-primary);
   padding: 0.25rem 0.75rem;
-  border-bottom-left-radius: 20px 115px;
-  border-bottom-right-radius: 15px 105px;
-  border-top-left-radius: 250px 15px;
-  border-top-right-radius: 25px 80px;
+  border-radius: 4px;
   font-weight: bold;
   font-family: var(--font-head);
 }
@@ -770,10 +767,7 @@ onUnmounted(() => {
   background: var(--bg-secondary);
   border: 2px solid var(--border-color);
   padding: 0.25rem 0.75rem;
-  border-bottom-left-radius: 225px 15px;
-  border-bottom-right-radius: 15px 255px;
-  border-top-left-radius: 15px 225px;
-  border-top-right-radius: 255px 15px;
+  border-radius: 4px;
   cursor: pointer;
   font-family: var(--font-body);
 }
@@ -819,6 +813,8 @@ onUnmounted(() => {
 /* 工具欄 - 橫向在畫布下方 */
 .game-toolbar {
   background: var(--bg-card);
+  border: 3px solid var(--border-color);
+  border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
   padding: 0.5rem;
   box-shadow: 3px 3px 0 var(--shadow-color);
   transition: all 0.3s ease;
@@ -832,6 +828,8 @@ onUnmounted(() => {
 .game-canvas {
   flex: 1;
   background: white;
+  border: 3px solid var(--border-color);
+  border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
   position: relative;
   display: flex;
   align-items: center;
@@ -839,12 +837,11 @@ onUnmounted(() => {
   overflow: hidden;
   min-height: 300px;
   box-shadow: 4px 4px 0 var(--shadow-color);
-  transition: box-shadow 0.3s ease, transform 0.3s ease;
+  transition: box-shadow 0.3s ease;
 }
 
 .game-canvas:hover {
   box-shadow: 5px 5px 0 var(--shadow-color);
-  transform: translate(-0.5px, -0.5px);
 }
 
 /* 總結階段覆蓋層 - 毛玻璃效果 */
@@ -918,17 +915,18 @@ onUnmounted(() => {
   width: 280px;
   min-width: 280px;
   background: var(--bg-card);
+  border: 3px solid var(--border-color);
+  border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
   margin-left: 0.5rem;
   box-shadow: 4px 4px 0 var(--shadow-color);
-  transition: box-shadow 0.3s ease, transform 0.3s ease;
+  transition: box-shadow 0.3s ease;
 }
 
 .game-chat-panel:hover {
   box-shadow: 5px 5px 0 var(--shadow-color);
-  transform: translate(-0.5px, -0.5px);
 }
 
 .chat-messages-container {
@@ -943,10 +941,7 @@ onUnmounted(() => {
 
 .chat-msg {
   padding: 0.5rem 0.75rem;
-  border-bottom-left-radius: 25px 115px;
-  border-bottom-right-radius: 155px 25px;
-  border-top-left-radius: 15px 225px;
-  border-top-right-radius: 25px 150px;
+  border-radius: 15px 225px 25px 115px / 225px 150px 155px 25px;
   line-height: 1.4;
   animation: slideInMsg 0.3s ease-out;
 }
@@ -1021,7 +1016,7 @@ onUnmounted(() => {
 /* 輸入區 */
 .chat-input-area {
   padding: 0.75rem;
-  border-top: 2px dashed var(--border-light);
+  border-top: 3px solid var(--border-light);
   display: flex;
   gap: 0.5rem;
   background: var(--bg-secondary);
@@ -1031,10 +1026,7 @@ onUnmounted(() => {
   flex: 1;
   padding: 0.6rem 0.75rem;
   border: 2px solid var(--border-light);
-  border-bottom-left-radius: 15px 255px;
-  border-bottom-right-radius: 225px 15px;
-  border-top-left-radius: 255px 15px;
-  border-top-right-radius: 15px 225px;
+  border-radius: 125px 25px 185px 25px / 25px 205px 25px 205px;
   font-family: var(--font-body);
   font-size: 0.9rem;
   background: var(--bg-card);
@@ -1057,10 +1049,7 @@ onUnmounted(() => {
   background: var(--color-secondary);
   color: white;
   border: 2px solid var(--border-color);
-  border-bottom-left-radius: 185px 25px;
-  border-bottom-right-radius: 20px 205px;
-  border-top-left-radius: 125px 25px;
-  border-top-right-radius: 10px 205px;
+  border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
   cursor: pointer;
   font-family: var(--font-body);
   font-weight: bold;
@@ -1167,15 +1156,12 @@ onUnmounted(() => {
 .first-round-waiting .waiting-card {
   background: var(--bg-card);
   border: 3px solid var(--border-color);
-  border-bottom-left-radius: 15px 255px;
-  border-bottom-right-radius: 225px 15px;
-  border-top-left-radius: 255px 15px;
-  border-top-right-radius: 15px 225px;
+  border-radius: 16px;
   padding: 2rem;
   max-width: 400px;
   width: 100%;
   text-align: center;
-  box-shadow: 6px 6px 0 var(--shadow-color);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
 }
 
 .first-round-waiting .waiting-icon {

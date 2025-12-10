@@ -153,11 +153,11 @@ onUnmounted(() => {
 .selection-card {
   background: var(--bg-card);
   border: 3px solid var(--border-color);
-  border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
+  border-radius: 16px;
   padding: 2rem;
   max-width: 450px;
   width: 100%;
-  box-shadow: 6px 6px 0 var(--shadow-color);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
 }
 
 .selection-header {
@@ -239,8 +239,8 @@ onUnmounted(() => {
   gap: 0.5rem;
   padding: 1rem 1.5rem;
   background: var(--bg-secondary);
-  border: 2px solid var(--border-light);
-  border-radius: 125px 25px 185px 25px / 25px 205px 25px 205px;
+  border: 3px solid var(--border-light);
+  border-radius: 12px;
   font-size: 1.2rem;
   font-family: var(--font-head);
   cursor: pointer;
@@ -273,7 +273,7 @@ onUnmounted(() => {
   background: var(--color-warning);
   color: var(--text-primary);
   padding: 0.15rem 0.4rem;
-  border-radius: 28px 125px 15px 225px / 125px 30px 205px 225px;
+  border-radius: 4px;
 }
 
 /* 確認按鈕 */
@@ -286,7 +286,7 @@ onUnmounted(() => {
   color: white;
   border: none;
   padding: 0.875rem 2.5rem;
-  border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
+  border-radius: 8px;
   font-size: 1.1rem;
   font-family: var(--font-head);
   cursor: pointer;
@@ -317,12 +317,12 @@ onUnmounted(() => {
 .waiting-card {
   background: var(--bg-card);
   border: 3px solid var(--color-secondary);
-  border-radius: 15px 225px 15px 255px / 255px 15px 225px 15px;
+  border-radius: 16px;
   padding: 2.5rem;
   max-width: 400px;
   width: 100%;
   text-align: center;
-  box-shadow: 6px 6px 0 var(--shadow-color);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
 }
 
 .waiting-icon {

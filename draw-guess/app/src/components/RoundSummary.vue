@@ -268,10 +268,7 @@ watch(() => props.roundId, () => {
 .summary-card {
   background: var(--bg-card);
   border: 3px solid var(--border-color);
-  border-bottom-left-radius: 15px 255px;
-  border-bottom-right-radius: 225px 15px;
-  border-top-left-radius: 255px 15px;
-  border-top-right-radius: 15px 225px;
+  border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
   padding: 1.25rem 1.5rem;
   box-shadow: 6px 6px 0 var(--shadow-color);
   position: relative;
@@ -325,10 +322,7 @@ watch(() => props.roundId, () => {
   background: var(--bg-secondary);
   display: inline-block;
   padding: 0.2rem 0.6rem;
-  border-bottom-left-radius: 15px 225px;
-  border-bottom-right-radius: 20px 205px;
-  border-top-left-radius: 28px 125px;
-  border-top-right-radius: 100px 30px;
+  border-radius: 28px 100px 20px 15px / 125px 30px 205px 225px;
 }
 
 /* 答案顯示 */
@@ -336,10 +330,7 @@ watch(() => props.roundId, () => {
   text-align: center;
   padding: 0.875rem;
   background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
-  border-bottom-left-radius: 15px 255px;
-  border-bottom-right-radius: 225px 15px;
-  border-top-left-radius: 255px 15px;
-  border-top-right-radius: 15px 225px;
+  border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
   margin-bottom: 0.875rem;
   border: 2px solid var(--color-success);
   animation: revealPulse 0.6s ease-out;
@@ -370,10 +361,7 @@ watch(() => props.roundId, () => {
   text-align: center;
   padding: 0.6rem;
   background: var(--bg-secondary);
-  border-bottom-left-radius: 185px 25px;
-  border-bottom-right-radius: 20px 205px;
-  border-top-left-radius: 125px 25px;
-  border-top-right-radius: 10px 205px;
+  border-radius: 125px 10px 20px 185px / 25px 205px 205px 25px;
   margin-bottom: 0.875rem;
   border: 2px dashed var(--border-light);
 }
@@ -400,10 +388,7 @@ watch(() => props.roundId, () => {
   background: var(--color-warning);
   color: var(--text-primary);
   padding: 0.15rem 0.5rem;
-  border-bottom-left-radius: 15px 225px;
-  border-bottom-right-radius: 20px 205px;
-  border-top-left-radius: 28px 125px;
-  border-top-right-radius: 100px 30px;
+  border-radius: 28px 100px 20px 15px / 125px 30px 205px 225px;
   font-size: 0.85rem;
   font-weight: bold;
   animation: scorePopIn 0.4s ease-out 0.3s both;
@@ -432,10 +417,7 @@ watch(() => props.roundId, () => {
   color: var(--text-tertiary);
   padding: 0.5rem;
   background: var(--bg-secondary);
-  border-bottom-left-radius: 25px 115px;
-  border-bottom-right-radius: 155px 25px;
-  border-top-left-radius: 15px 225px;
-  border-top-right-radius: 25px 150px;
+  border-radius: 15px 25px 155px 115px / 225px 150px 25px 115px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -456,10 +438,7 @@ watch(() => props.roundId, () => {
   align-items: center;
   padding: 0.4rem 0.6rem;
   background: var(--bg-secondary);
-  border-bottom-left-radius: 20px 115px;
-  border-bottom-right-radius: 15px 105px;
-  border-top-left-radius: 250px 15px;
-  border-top-right-radius: 25px 80px;
+  border-radius: 250px 25px 15px 20px / 15px 80px 105px 115px;
   animation: guesserSlideIn 0.3s ease-out both;
   border: 2px solid transparent;
   transition: all 0.2s ease;
@@ -518,10 +497,7 @@ watch(() => props.roundId, () => {
   text-align: center;
   padding: 0.75rem;
   border: 2px dashed var(--border-light);
-  border-bottom-left-radius: 225px 15px;
-  border-bottom-right-radius: 15px 255px;
-  border-top-left-radius: 15px 225px;
-  border-top-right-radius: 255px 15px;
+  border-radius: 15px 255px 15px 225px / 225px 15px 255px 15px;
   margin-bottom: 0.875rem;
   background: var(--bg-secondary);
   transition: all 0.3s ease;
@@ -587,10 +563,7 @@ watch(() => props.roundId, () => {
   gap: 0.5rem;
   padding: 0.6rem;
   background: linear-gradient(135deg, #fff8e1, #ffecb3);
-  border-bottom-left-radius: 185px 25px;
-  border-bottom-right-radius: 20px 205px;
-  border-top-left-radius: 125px 25px;
-  border-top-right-radius: 10px 205px;
+  border-radius: 125px 10px 20px 185px / 25px 205px 205px 25px;
   margin-bottom: 0.875rem;
   border: 2px solid var(--color-warning);
 }
@@ -634,10 +607,7 @@ watch(() => props.roundId, () => {
   color: white;
   border: none;
   padding: 0.75rem 2rem;
-  border-bottom-left-radius: 15px 255px;
-  border-bottom-right-radius: 225px 15px;
-  border-top-left-radius: 255px 15px;
-  border-top-right-radius: 15px 225px;
+  border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
   font-size: 1rem;
   font-family: var(--font-head);
   cursor: pointer;
@@ -655,10 +625,7 @@ watch(() => props.roundId, () => {
 .selection-waiting-banner {
   background: linear-gradient(135deg, #e3f2fd, #bbdefb);
   border: 2px solid var(--color-secondary);
-  border-bottom-left-radius: 25px 115px;
-  border-bottom-right-radius: 155px 25px;
-  border-top-left-radius: 15px 225px;
-  border-top-right-radius: 25px 150px;
+  border-radius: 15px 25px 155px 115px / 225px 150px 25px 115px;
   padding: 0.75rem 1rem;
   margin-bottom: 0.875rem;
   display: flex;
@@ -749,10 +716,7 @@ watch(() => props.roundId, () => {
   margin-top: 0.875rem;
   padding: 0.6rem 0.875rem;
   background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
-  border-bottom-left-radius: 15px 255px;
-  border-bottom-right-radius: 225px 15px;
-  border-top-left-radius: 255px 15px;
-  border-top-right-radius: 15px 225px;
+  border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
   text-align: center;
   border: 2px solid var(--color-success);
   animation: fadeInUp 0.4s ease-out 0.2s both;
@@ -785,10 +749,7 @@ watch(() => props.roundId, () => {
   margin-top: 0.875rem;
   padding: 0.6rem 0.875rem;
   background: linear-gradient(135deg, #fff8e1, #ffecb3);
-  border-bottom-left-radius: 185px 25px;
-  border-bottom-right-radius: 20px 205px;
-  border-top-left-radius: 125px 25px;
-  border-top-right-radius: 10px 205px;
+  border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
   text-align: center;
   border: 2px solid var(--color-warning);
   animation: celebratePulse 1.5s ease-in-out infinite;
