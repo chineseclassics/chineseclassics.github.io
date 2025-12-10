@@ -189,15 +189,24 @@ export function useDrawing() {
   }
 
   // 接收繪畫數據（來自其他玩家）
-  function handleDrawingData(stroke: Stroke & { userId?: string }) {
+  function handleDrawingData(data: (Stroke & { userId?: string }) | { type: 'clear'; userId: string }) {
     if (!canvasRef.value || !ctxRef.value) return
 
     // 過濾自己發送的消息
-    if (stroke.userId && authStore.user && stroke.userId === authStore.user.id) {
-      console.log('[handleDrawingData] 忽略自己的筆觸:', stroke.id)
+    if (data.userId && authStore.user && data.userId === authStore.user.id) {
+      console.log('[handleDrawingData] 忽略自己的數據')
       return
     }
 
+    // 處理清空畫布指令
+    if ('type' in data && data.type === 'clear') {
+      console.log('[handleDrawingData] 收到清空畫布指令')
+      clearCanvasLocal()
+      return
+    }
+
+    // 處理普通筆觸
+    const stroke = data as Stroke
     console.log('[handleDrawingData] 接收到其他玩家的筆觸:', stroke.id)
 
     // 添加到筆觸列表
@@ -207,12 +216,12 @@ export function useDrawing() {
     drawStroke(ctxRef.value, stroke)
   }
 
-  // 清空畫布
-  function clearCanvas() {
-    console.log('[useDrawing] clearCanvas 被調用, canvasRef:', !!canvasRef.value, 'ctxRef:', !!ctxRef.value)
+  // 本地清空畫布（不廣播，用於輪次切換等）
+  function clearCanvasLocal() {
+    console.log('[useDrawing] clearCanvasLocal 被調用')
     
     if (!canvasRef.value || !ctxRef.value) {
-      console.warn('[useDrawing] clearCanvas: canvas 或 ctx 不存在，無法清空')
+      console.warn('[useDrawing] clearCanvasLocal: canvas 或 ctx 不存在')
       return
     }
 
@@ -230,7 +239,28 @@ export function useDrawing() {
 
     // 清空筆觸記錄
     drawingStore.clearStrokes()
-    console.log('[useDrawing] 畫布已清空，strokes 數量:', drawingStore.strokes.length)
+    console.log('[useDrawing] 畫布已清空')
+  }
+
+  // 清空畫布（畫家使用，會廣播給其他玩家）
+  async function clearCanvas() {
+    console.log('[useDrawing] clearCanvas 被調用')
+    
+    // 先本地清空
+    clearCanvasLocal()
+    
+    // 如果是畫家，廣播清空指令給其他玩家
+    if (isCurrentDrawer.value && roomStore.currentRoom && authStore.user) {
+      console.log('[useDrawing] 畫家清空畫布，廣播給其他玩家')
+      try {
+        await sendDrawing(roomStore.currentRoom.code, {
+          type: 'clear',
+          userId: authStore.user.id,
+        })
+      } catch (error) {
+        console.error('[useDrawing] 廣播清空指令失敗:', error)
+      }
+    }
   }
 
   // 設置工具
@@ -261,6 +291,7 @@ export function useDrawing() {
     draw,
     stopDrawing,
     clearCanvas,
+    clearCanvasLocal,
     setTool,
     setColor,
     setLineWidth,
