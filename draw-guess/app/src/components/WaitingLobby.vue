@@ -21,7 +21,7 @@
               v-for="participant in participants"
               :key="participant.id"
               class="row flex-middle margin-bottom-small"
-              style="padding: 0.5rem; background: var(--bg-secondary); border-radius: 8px;"
+              style="padding: 0.5rem; background: var(--bg-secondary); border-radius: 15px 225px 25px 115px / 225px 150px 155px 25px;"
             >
               <div style="flex-shrink: 0; margin-right: 0.75rem;">
                 <div

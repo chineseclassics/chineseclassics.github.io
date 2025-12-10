@@ -246,9 +246,11 @@ watch(() => props.roundId, () => {
 <style scoped>
 .round-summary {
   width: 100%;
-  max-width: 520px;
+  max-width: 480px;
   margin: 0 auto;
-  padding: 1.5rem;
+  padding: 0.5rem;
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
   animation: summaryPopIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
@@ -265,9 +267,9 @@ watch(() => props.roundId, () => {
 
 .summary-card {
   background: var(--bg-card);
-  border: 4px solid var(--border-color);
-  border-radius: 16px;
-  padding: 2rem;
+  border: 3px solid var(--border-color);
+  border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
+  padding: 1.25rem 1.5rem;
   box-shadow: 6px 6px 0 var(--shadow-color);
   position: relative;
   overflow: hidden;
@@ -289,14 +291,14 @@ watch(() => props.roundId, () => {
 
 .summary-header {
   text-align: center;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
   position: relative;
 }
 
 .summary-title {
-  font-size: 1.6rem;
+  font-size: 1.4rem;
   font-family: var(--font-head);
-  margin: 0 0 0.5rem 0;
+  margin: 0 0 0.35rem 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -316,21 +318,21 @@ watch(() => props.roundId, () => {
 
 .round-info {
   color: var(--text-secondary);
-  font-size: 0.95rem;
+  font-size: 0.85rem;
   background: var(--bg-secondary);
   display: inline-block;
-  padding: 0.25rem 0.75rem;
-  border-radius: 20px;
+  padding: 0.2rem 0.6rem;
+  border-radius: 28px 125px 15px 225px / 125px 30px 205px 225px;
 }
 
 /* 答案顯示 */
 .answer-reveal {
   text-align: center;
-  padding: 1.25rem;
+  padding: 0.875rem;
   background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
-  border-radius: 12px;
-  margin-bottom: 1.25rem;
-  border: 3px solid var(--color-success);
+  border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
+  margin-bottom: 0.875rem;
+  border: 2px solid var(--color-success);
   animation: revealPulse 0.6s ease-out;
 }
 
@@ -341,13 +343,13 @@ watch(() => props.roundId, () => {
 }
 
 .answer-label {
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   color: var(--text-secondary);
-  margin-bottom: 0.35rem;
+  margin-bottom: 0.25rem;
 }
 
 .answer-text {
-  font-size: 2.2rem;
+  font-size: 1.8rem;
   font-weight: bold;
   font-family: var(--font-head);
   color: #2e7d32;
@@ -357,10 +359,10 @@ watch(() => props.roundId, () => {
 /* 畫家信息 */
 .drawer-section {
   text-align: center;
-  padding: 0.875rem;
+  padding: 0.6rem;
   background: var(--bg-secondary);
-  border-radius: 10px;
-  margin-bottom: 1.25rem;
+  border-radius: 125px 25px 185px 25px / 25px 205px 25px 205px;
+  margin-bottom: 0.875rem;
   border: 2px dashed var(--border-light);
 }
 
@@ -368,26 +370,26 @@ watch(() => props.roundId, () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.6rem;
+  gap: 0.5rem;
 }
 
 .drawer-label {
   color: var(--text-secondary);
-  font-size: 0.95rem;
+  font-size: 0.85rem;
 }
 
 .drawer-name {
   font-weight: bold;
   font-family: var(--font-head);
-  font-size: 1.1rem;
+  font-size: 1rem;
 }
 
 .drawer-score {
   background: var(--color-warning);
   color: var(--text-primary);
-  padding: 0.2rem 0.6rem;
-  border-radius: 6px;
-  font-size: 0.9rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 28px 125px 15px 225px / 125px 30px 205px 225px;
+  font-size: 0.85rem;
   font-weight: bold;
   animation: scorePopIn 0.4s ease-out 0.3s both;
 }
@@ -399,41 +401,44 @@ watch(() => props.roundId, () => {
 
 /* 猜中玩家 */
 .guessers-section {
-  margin-bottom: 1.25rem;
+  margin-bottom: 0.875rem;
 }
 
 .section-title {
   font-weight: bold;
   font-family: var(--font-head);
-  margin-bottom: 0.6rem;
+  margin-bottom: 0.4rem;
   color: var(--text-primary);
-  font-size: 1rem;
+  font-size: 0.9rem;
 }
 
 .no-guessers {
   text-align: center;
   color: var(--text-tertiary);
-  padding: 0.75rem;
+  padding: 0.5rem;
   background: var(--bg-secondary);
-  border-radius: 8px;
+  border-radius: 15px 225px 25px 115px / 225px 150px 155px 25px;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
+  font-size: 0.9rem;
 }
 
 .guessers-list {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  gap: 0.25rem;
+  max-height: 120px;
+  overflow-y: auto;
 }
 
 .guesser-item {
   display: flex;
   align-items: center;
-  padding: 0.6rem 0.75rem;
+  padding: 0.4rem 0.6rem;
   background: var(--bg-secondary);
-  border-radius: 8px;
+  border-radius: 250px 15px 20px 115px / 15px 80px 105px 115px;
   animation: guesserSlideIn 0.3s ease-out both;
   border: 2px solid transparent;
   transition: all 0.2s ease;
@@ -456,17 +461,17 @@ watch(() => props.roundId, () => {
 }
 
 .guesser-rank {
-  width: 26px;
-  height: 26px;
+  width: 22px;
+  height: 22px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: var(--color-secondary);
   color: white;
   border-radius: 50%;
-  font-size: 0.85rem;
+  font-size: 0.75rem;
   font-weight: bold;
-  margin-right: 0.6rem;
+  margin-right: 0.5rem;
 }
 
 .guesser-item:first-child .guesser-rank {
@@ -478,22 +483,22 @@ watch(() => props.roundId, () => {
 .guesser-name {
   flex: 1;
   font-family: var(--font-head);
-  font-size: 0.95rem;
+  font-size: 0.85rem;
 }
 
 .guesser-score {
   color: var(--color-success);
   font-weight: bold;
-  font-size: 0.95rem;
+  font-size: 0.85rem;
 }
 
 /* 評分區域 */
 .rating-section {
   text-align: center;
-  padding: 1.25rem;
-  border: 3px dashed var(--border-light);
-  border-radius: 12px;
-  margin-bottom: 1.25rem;
+  padding: 0.75rem;
+  border: 2px dashed var(--border-light);
+  border-radius: 15px 225px 15px 255px / 255px 15px 225px 15px;
+  margin-bottom: 0.875rem;
   background: var(--bg-secondary);
   transition: all 0.3s ease;
 }
@@ -506,8 +511,8 @@ watch(() => props.roundId, () => {
 .star-rating {
   display: flex;
   justify-content: center;
-  gap: 0.6rem;
-  margin: 0.6rem 0;
+  gap: 0.4rem;
+  margin: 0.4rem 0;
 }
 
 .star-btn {
@@ -516,7 +521,7 @@ watch(() => props.roundId, () => {
   cursor: pointer;
   color: var(--text-secondary);
   transition: all 0.2s;
-  padding: 0.3rem;
+  padding: 0.2rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -541,7 +546,7 @@ watch(() => props.roundId, () => {
 }
 
 .rating-info {
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   color: var(--text-secondary);
 }
 
@@ -555,33 +560,33 @@ watch(() => props.roundId, () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.6rem;
-  padding: 0.875rem;
+  gap: 0.5rem;
+  padding: 0.6rem;
   background: linear-gradient(135deg, #fff8e1, #ffecb3);
-  border-radius: 10px;
-  margin-bottom: 1.25rem;
+  border-radius: 125px 25px 185px 25px / 25px 205px 25px 205px;
+  margin-bottom: 0.875rem;
   border: 2px solid var(--color-warning);
 }
 
 .avg-label {
   color: var(--text-secondary);
-  font-size: 0.95rem;
+  font-size: 0.85rem;
 }
 
 .avg-score {
-  font-size: 1.6rem;
+  font-size: 1.3rem;
   font-weight: bold;
   color: #f57c00;
 }
 
 .avg-stars {
-  font-size: 1rem;
+  font-size: 0.9rem;
   display: flex;
   gap: 2px;
 }
 
 .avg-count {
-  font-size: 0.85rem;
+  font-size: 0.75rem;
   color: var(--text-tertiary);
 }
 
@@ -602,7 +607,7 @@ watch(() => props.roundId, () => {
   color: white;
   border: none;
   padding: 0.75rem 2rem;
-  border-radius: 8px;
+  border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
   font-size: 1rem;
   font-family: var(--font-head);
   cursor: pointer;
@@ -619,14 +624,14 @@ watch(() => props.roundId, () => {
 
 .selection-waiting-banner {
   background: linear-gradient(135deg, #e3f2fd, #bbdefb);
-  border: 3px solid var(--color-secondary);
-  border-radius: 14px;
-  padding: 1.25rem;
-  margin-bottom: 1.25rem;
+  border: 2px solid var(--color-secondary);
+  border-radius: 15px 225px 25px 115px / 225px 150px 155px 25px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.875rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.875rem;
+  gap: 0.6rem;
   animation: waitingPulse 2s ease-in-out infinite;
 }
 
@@ -637,7 +642,7 @@ watch(() => props.roundId, () => {
   }
   50% {
     border-color: #5a9ea1;
-    box-shadow: 0 0 12px 4px rgba(107, 175, 178, 0.25);
+    box-shadow: 0 0 8px 2px rgba(107, 175, 178, 0.2);
   }
 }
 
@@ -655,12 +660,12 @@ watch(() => props.roundId, () => {
     transform: rotate(-10deg) translateY(0);
   }
   50% {
-    transform: rotate(10deg) translateY(-4px);
+    transform: rotate(10deg) translateY(-3px);
   }
 }
 
 .waiting-text {
-  font-size: 1.05rem;
+  font-size: 0.95rem;
   color: var(--text-primary);
   font-family: var(--font-head);
 }
@@ -672,7 +677,7 @@ watch(() => props.roundId, () => {
 
 .waiting-dots {
   display: flex;
-  gap: 0.3rem;
+  gap: 0.25rem;
 }
 
 .waiting-dots .dot {
@@ -708,10 +713,10 @@ watch(() => props.roundId, () => {
 
 /* 下一位畫手提示 */
 .next-drawer-info {
-  margin-top: 1.25rem;
-  padding: 1rem 1.25rem;
+  margin-top: 0.875rem;
+  padding: 0.6rem 0.875rem;
   background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
-  border-radius: 12px;
+  border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
   text-align: center;
   border: 2px solid var(--color-success);
   animation: fadeInUp 0.4s ease-out 0.2s both;
@@ -723,28 +728,28 @@ watch(() => props.roundId, () => {
 }
 
 .next-drawer-label {
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   color: var(--text-secondary);
-  margin-bottom: 0.35rem;
+  margin-bottom: 0.2rem;
 }
 
 .next-drawer-name-display {
-  font-size: 1.15rem;
+  font-size: 1rem;
   font-weight: bold;
   color: var(--color-success);
   font-family: var(--font-head);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
+  gap: 0.4rem;
 }
 
 /* 最後一輪提示 */
 .game-ending-info {
-  margin-top: 1.25rem;
-  padding: 1rem 1.25rem;
+  margin-top: 0.875rem;
+  padding: 0.6rem 0.875rem;
   background: linear-gradient(135deg, #fff8e1, #ffecb3);
-  border-radius: 12px;
+  border-radius: 125px 25px 185px 25px / 25px 205px 25px 205px;
   text-align: center;
   border: 2px solid var(--color-warning);
   animation: celebratePulse 1.5s ease-in-out infinite;
@@ -756,13 +761,13 @@ watch(() => props.roundId, () => {
 }
 
 .ending-label {
-  font-size: 1.15rem;
+  font-size: 1rem;
   font-weight: bold;
   color: #f57c00;
   font-family: var(--font-head);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
+  gap: 0.4rem;
 }
 </style>
