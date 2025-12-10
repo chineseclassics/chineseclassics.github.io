@@ -15,12 +15,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useDrawing } from '../composables/useDrawing'
 import { useRealtime } from '../composables/useRealtime'
 import { useRoomStore } from '../stores/room'
 import { useAuthStore } from '../stores/auth'
-import { useGameStore } from '../stores/game'
+import { useDrawingStore } from '../stores/drawing'
 import type { Stroke } from '../stores/drawing'
 
 const {
@@ -29,33 +29,60 @@ const {
   draw,
   stopDrawing,
   handleDrawingData,
-  clearCanvas,
 } = useDrawing()
 
 const roomStore = useRoomStore()
 const authStore = useAuthStore()
-const gameStore = useGameStore()
+const drawingStore = useDrawingStore()
 const { subscribeDrawing } = useRealtime()
 
 const canvasElement = ref<HTMLCanvasElement | null>(null)
 
-// 監聽輪次變化，自動清空畫布
-watch(
-  () => gameStore.currentRound?.id,
-  (newRoundId, oldRoundId) => {
-    console.log('[DrawingCanvas] watch 觸發:', { oldRoundId, newRoundId })
-    // 當輪次 ID 變化時（進入新輪次），清空畫布
-    // 也包括從 undefined 變成有值的情況（第一輪）
-    if (newRoundId && newRoundId !== oldRoundId) {
-      console.log('[DrawingCanvas] 輪次變化，準備清空畫布')
-      // 使用 nextTick 確保 DOM 已更新
-      setTimeout(() => {
-        clearCanvas()
-      }, 0)
-    }
-  },
-  { immediate: true }  // 立即執行一次，處理組件掛載時已有輪次的情況
-)
+// 本地清空畫布函數 - 直接操作當前組件的 canvas 元素
+function localClearCanvas() {
+  console.log('[DrawingCanvas] localClearCanvas 被調用')
+  
+  if (!canvasElement.value) {
+    console.warn('[DrawingCanvas] canvas 元素不存在')
+    return
+  }
+  
+  const canvas = canvasElement.value
+  const ctx = canvas.getContext('2d')
+  if (!ctx) {
+    console.warn('[DrawingCanvas] 無法獲取 ctx')
+    return
+  }
+  
+  // 使用 CSS 尺寸清空
+  const rect = canvas.getBoundingClientRect()
+  const dpr = window.devicePixelRatio || 1
+  
+  // 重置 canvas 尺寸（這會自動清空內容）
+  canvas.width = rect.width * dpr
+  canvas.height = rect.height * dpr
+  ctx.scale(dpr, dpr)
+  
+  // 填充白色背景
+  ctx.fillStyle = '#FFFFFF'
+  ctx.fillRect(0, 0, rect.width, rect.height)
+  
+  // 清空筆觸記錄
+  drawingStore.clearStrokes()
+  
+  console.log('[DrawingCanvas] 畫布已清空')
+}
+
+// 監聽全局清空畫布事件
+function handleClearCanvasEvent() {
+  console.log('[DrawingCanvas] 收到 clearCanvas 事件')
+  localClearCanvas()
+}
+
+// 暴露清空方法給父組件或全局事件
+defineExpose({
+  clearCanvas: localClearCanvas
+})
 
 // 鼠標事件處理
 function handleMouseDown(event: MouseEvent) {
@@ -105,6 +132,9 @@ onMounted(() => {
     initCanvas(canvasElement.value)
   }
   setupDrawingSubscription()
+  
+  // 監聽全局清空畫布事件
+  window.addEventListener('clearCanvas', handleClearCanvasEvent)
 })
 
 onUnmounted(() => {
@@ -113,6 +143,9 @@ onUnmounted(() => {
     unsubscribeDrawingCallback()
     unsubscribeDrawingCallback = null
   }
+  
+  // 移除全局事件監聽
+  window.removeEventListener('clearCanvas', handleClearCanvasEvent)
 })
 </script>
 

@@ -551,28 +551,19 @@ onMounted(async () => {
         
         // 進入繪畫階段
         if (state.roundStatus === 'drawing') {
-          // 畫布清空由 DrawingCanvas 組件監聯 currentRound 變化自動處理
           // 停止之前的總結倒計時
           stopSummaryCountdown()
           // 清除評分
           gameStore.clearRatings()
           
-          // 根據 startedAt 計算剩餘時間，確保所有玩家同步
-          let countdownDuration = drawTime.value
-          if (state.startedAt) {
-            const startTime = new Date(state.startedAt).getTime()
-            const now = Date.now()
-            const elapsed = Math.floor((now - startTime) / 1000)
-            countdownDuration = Math.max(0, drawTime.value - elapsed)
-            console.log('[RoomView] 根據 startedAt 計算倒計時:', { 
-              startedAt: state.startedAt, 
-              elapsed, 
-              countdownDuration 
-            })
-          }
+          // 發送全局事件清空畫布（簡單可靠）
+          console.log('[RoomView] 發送 clearCanvas 事件')
+          window.dispatchEvent(new Event('clearCanvas'))
           
-          // 啟動繪畫倒計時
-          startCountdown(countdownDuration)
+          // 直接使用房間設定的繪畫時間開始倒計時（簡單可靠）
+          // 網絡延遲通常只有幾十到幾百毫秒，對 60 秒倒計時影響很小
+          console.log('[RoomView] 開始倒計時:', drawTime.value, '秒')
+          startCountdown(drawTime.value)
         }
         
         // 進入總結階段
