@@ -89,7 +89,8 @@
                 :correct-guessers="correctGuessersForSummary"
                 :round-id="gameStore.currentRound?.id || ''"
                 :is-host="roomStore.isHost"
-                :is-last-round="currentRoundNumber >= totalRounds"
+                :is-last-round="isLastRound"
+                :next-drawer-name="isLastRound ? '' : nextDrawerName"
                 @rating-submitted="handleRating"
               />
             </div>
@@ -271,6 +272,23 @@ const currentDrawerName = computed(() => {
   if (!drawerId) return '畫家'
   const participant = roomStore.participants.find(p => p.user_id === drawerId)
   return participant?.nickname || '畫家'
+})
+
+// 下一位畫手名稱（用於總結畫面顯示）
+const nextDrawerName = computed(() => {
+  if (!currentRoom.value || roomStore.participants.length === 0) return ''
+  
+  const currentRoundNum = currentRoom.value.current_round || 0
+  // 下一輪的畫家索引
+  const nextDrawerIndex = currentRoundNum % roomStore.participants.length
+  const nextDrawer = roomStore.participants[nextDrawerIndex]
+  
+  return nextDrawer?.nickname || '下一位畫家'
+})
+
+// 是否是最後一輪
+const isLastRound = computed(() => {
+  return currentRoundNumber.value >= totalRounds.value
 })
 
 // 排序後的猜測記錄（按時間排序）
@@ -476,8 +494,7 @@ onMounted(async () => {
         // 設置 roundStatus 為 drawing
         gameStore.setRoundStatus('drawing')
         
-        // 清空畫布（確保新輪次開始時畫布是乾淨的）
-        window.dispatchEvent(new CustomEvent('clearCanvas'))
+        // 畫布清空由 DrawingCanvas 組件監聽 currentRound 變化自動處理
         
         // 計算剩餘時間並啟動倒計時
         const startTime = new Date(round.started_at).getTime()
@@ -534,8 +551,7 @@ onMounted(async () => {
         
         // 進入繪畫階段
         if (state.roundStatus === 'drawing') {
-          // 清空畫布
-          window.dispatchEvent(new CustomEvent('clearCanvas'))
+          // 畫布清空由 DrawingCanvas 組件監聽 currentRound 變化自動處理
           // 停止之前的總結倒計時
           stopSummaryCountdown()
           // 清除評分
@@ -548,14 +564,14 @@ onMounted(async () => {
         if (state.roundStatus === 'summary') {
           // 停止繪畫倒計時
           stopCountdown()
-          // 如果是最後一輪，3秒後結束遊戲；否則開始總結倒計時
+          // 如果是最後一輪，5秒後結束遊戲；否則開始總結倒計時
           if (state.isLastRound) {
-            // 最後一輪，3秒後由房主結束遊戲
+            // 最後一輪，5秒後由房主結束遊戲
             if (roomStore.isHost) {
               setTimeout(async () => {
                 const { endGame } = useGame()
                 await endGame()
-              }, 3000)
+              }, 5000)
             }
           } else {
             // 還有下一輪，開始總結倒計時

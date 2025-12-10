@@ -15,11 +15,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { useDrawing } from '../composables/useDrawing'
 import { useRealtime } from '../composables/useRealtime'
 import { useRoomStore } from '../stores/room'
 import { useAuthStore } from '../stores/auth'
+import { useGameStore } from '../stores/game'
 import type { Stroke } from '../stores/drawing'
 
 const {
@@ -33,15 +34,22 @@ const {
 
 const roomStore = useRoomStore()
 const authStore = useAuthStore()
+const gameStore = useGameStore()
 const { subscribeDrawing } = useRealtime()
 
 const canvasElement = ref<HTMLCanvasElement | null>(null)
 
-// 監聽清空畫布事件
-function handleClearCanvasEvent() {
-  console.log('[DrawingCanvas] 收到清空畫布事件')
-  clearCanvas()
-}
+// 監聯輪次變化，自動清空畫布
+watch(
+  () => gameStore.currentRound?.id,
+  (newRoundId, oldRoundId) => {
+    // 當輪次 ID 變化時（進入新輪次），清空畫布
+    if (newRoundId && newRoundId !== oldRoundId) {
+      console.log('[DrawingCanvas] 輪次變化，清空畫布:', { oldRoundId, newRoundId })
+      clearCanvas()
+    }
+  }
+)
 
 // 鼠標事件處理
 function handleMouseDown(event: MouseEvent) {
@@ -91,9 +99,6 @@ onMounted(() => {
     initCanvas(canvasElement.value)
   }
   setupDrawingSubscription()
-  
-  // 監聽清空畫布事件
-  window.addEventListener('clearCanvas', handleClearCanvasEvent)
 })
 
 onUnmounted(() => {
@@ -102,9 +107,6 @@ onUnmounted(() => {
     unsubscribeDrawingCallback()
     unsubscribeDrawingCallback = null
   }
-  
-  // 移除清空畫布事件監聽
-  window.removeEventListener('clearCanvas', handleClearCanvasEvent)
 })
 </script>
 

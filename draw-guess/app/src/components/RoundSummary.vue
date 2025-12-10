@@ -87,6 +87,17 @@
         <span class="avg-count">({{ totalRatings }} 人已評)</span>
       </div>
 
+      <!-- 下一位畫手提示 -->
+      <div class="next-drawer-info" v-if="nextDrawerName && !isLastRound">
+        <div class="next-drawer-label">下一輪畫手</div>
+        <div class="next-drawer-name-display">✏️ {{ nextDrawerName }}</div>
+      </div>
+
+      <!-- 最後一輪提示 -->
+      <div class="game-ending-info" v-if="isLastRound">
+        <div class="ending-label">🎉 這是最後一輪！</div>
+      </div>
+
       <!-- 倒計時由外部控制，組件內不再顯示 -->
     </div>
   </div>
@@ -575,5 +586,41 @@ watch(() => props.roundId, () => {
     opacity: 1;
     transform: scale(1);
   }
+}
+
+/* 下一位畫手提示 */
+.next-drawer-info {
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+  border-radius: 12px;
+  text-align: center;
+}
+
+.next-drawer-label {
+  font-size: 0.85rem;
+  color: #666;
+  margin-bottom: 0.25rem;
+}
+
+.next-drawer-name-display {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #5c6bc0;
+}
+
+/* 最後一輪提示 */
+.game-ending-info {
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  background: linear-gradient(135deg, #fff8e1 0%, #ffecb3 100%);
+  border-radius: 12px;
+  text-align: center;
+}
+
+.ending-label {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #f57c00;
 }
 </style>
