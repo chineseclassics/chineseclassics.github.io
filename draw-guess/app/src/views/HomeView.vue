@@ -75,7 +75,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import UserAuth from '../components/UserAuth.vue'
 import RoomCreate from '../components/RoomCreate.vue'
@@ -176,13 +176,11 @@ watch(
         const targetPath = `/room/${currentRoom.value.code}`
         console.log('[HomeView] 跳轉目標路徑:', targetPath)
         
-        try {
-          // 直接跳轉，不使用 setTimeout
-          const navigationResult = await router.push(targetPath)
-          console.log('[HomeView] 路由跳轉結果:', navigationResult)
-        } catch (err) {
-          console.error('[HomeView] 路由跳轉錯誤:', err)
-        }
+        // 使用 nextTick 確保 Vue 更新完成後再跳轉
+        await nextTick()
+        
+        // 使用 location.href 強制跳轉（繞過 Vue Router 的可能阻塞）
+        window.location.href = window.location.origin + '/draw-guess' + targetPath
       } else {
         console.log('[HomeView] 已在 RoomView，無需跳轉')
       }
