@@ -1,18 +1,14 @@
 import { ref, computed, onUnmounted } from 'vue'
 import { useRoomStore } from '../stores/room'
-import { useGameStore, type WordOption } from '../stores/game'
-import { useAuthStore } from '../stores/auth'
+import { useGameStore } from '../stores/game'
 import { useRealtime } from './useRealtime'
 
-// 選詞時間（秒）- 畫家最多有 5 秒選詞
-const SELECTION_TIME = 5
-// 最小等待時間（秒）- 其他玩家至少看 3 秒總結
-const MIN_WAIT_TIME = 3
+// 總結頁面顯示時間（秒）
+const SUMMARY_TIME = 3
 
 export function useGame() {
   const roomStore = useRoomStore()
   const gameStore = useGameStore()
-  const authStore = useAuthStore()
   const { broadcastGameState: _broadcastGameState, subscribeGameState: _subscribeGameState } = useRealtime()
 
   // 倒計時相關
@@ -20,19 +16,12 @@ export function useGame() {
   const isCountingDown = ref(false)
   let countdownTimer: number | null = null
 
-  // 選詞倒計時
-  const selectionTimeRemaining = ref<number | null>(null)
-  let selectionTimer: number | null = null
-  
-  // 選詞階段開始時間（用於計算最小等待時間）
-  let selectionPhaseStartTime: number | null = null
-  
-  // 畫家選詞後是否在等待中
-  const isWaitingAfterSelection = ref(false)
-
   // 總結倒計時
   const summaryTimeRemaining = ref<number | null>(null)
   let summaryTimer: number | null = null
+  
+  // 已使用的詞語索引（用於避免重複）
+  const usedWordIndices = ref<Set<number>>(new Set())
 
   // 遊戲狀態
   const gameStatus = computed(() => roomStore.currentRoom?.status || 'waiting')
@@ -40,9 +29,8 @@ export function useGame() {
   const isWaiting = computed(() => gameStatus.value === 'waiting')
   const isFinished = computed(() => gameStatus.value === 'finished')
 
-  // 輪次狀態
+  // 輪次狀態（簡化：只有 drawing 和 summary 兩種狀態）
   const roundStatus = computed(() => gameStore.roundStatus)
-  const isSelecting = computed(() => roundStatus.value === 'selecting')
   const isDrawing = computed(() => roundStatus.value === 'drawing')
   const isSummary = computed(() => roundStatus.value === 'summary')
 
@@ -51,9 +39,6 @@ export function useGame() {
   const currentRoundNumber = computed(() => roomStore.currentRoom?.current_round || 0)
   const totalRounds = computed(() => roomStore.currentRoom?.settings.rounds || 0)
   const drawTime = computed(() => roomStore.currentRoom?.settings.draw_time || 60)
-
-  // 詞語選項
-  const wordOptions = computed(() => gameStore.wordOptions)
 
   // 是否為當前畫家
   const isCurrentDrawer = computed(() => gameStore.isCurrentDrawer)
@@ -95,58 +80,14 @@ export function useGame() {
     timeRemaining.value = null
   }
 
-  // 開始選詞倒計時（只有畫家才有倒計時）
-  function startSelectionCountdown() {
-    // 只有畫家才啟動選詞倒計時
-    const currentDrawerId = roomStore.currentRoom?.current_drawer_id
-    const isDrawer = currentDrawerId === authStore.user?.id
-    
-    if (!isDrawer) {
-      console.log('[useGame] 非畫家，不啟動選詞倒計時')
-      return
-    }
-    
-    if (selectionTimer) {
-      clearInterval(selectionTimer)
-    }
-
-    selectionTimeRemaining.value = SELECTION_TIME
-    console.log('[useGame] 畫家開始選詞倒計時:', SELECTION_TIME, '秒')
-
-    selectionTimer = window.setInterval(() => {
-      if (selectionTimeRemaining.value !== null && selectionTimeRemaining.value > 0) {
-        selectionTimeRemaining.value--
-      } else {
-        stopSelectionCountdown()
-        // 選詞超時，畫家自動選擇第一個詞
-        if (isSelecting.value && wordOptions.value.length > 0) {
-          console.log('[useGame] 選詞超時，畫家自動選擇第一個詞')
-          const firstOption = wordOptions.value[0]
-          if (firstOption) {
-            selectWord(firstOption)
-          }
-        }
-      }
-    }, 1000)
-  }
-
-  // 停止選詞倒計時
-  function stopSelectionCountdown() {
-    if (selectionTimer) {
-      clearInterval(selectionTimer)
-      selectionTimer = null
-    }
-    selectionTimeRemaining.value = null
-  }
-
-  // 開始總結倒計時（只在遊戲最後一輪結束時使用）
+  // 開始總結倒計時（每輪結束後顯示 3 秒總結）
   function startSummaryCountdown() {
     if (summaryTimer) {
       clearInterval(summaryTimer)
     }
 
-    summaryTimeRemaining.value = MIN_WAIT_TIME
-    console.log('[useGame] 開始總結倒計時:', MIN_WAIT_TIME, '秒')
+    summaryTimeRemaining.value = SUMMARY_TIME
+    console.log('[useGame] 開始總結倒計時:', SUMMARY_TIME, '秒')
 
     summaryTimer = window.setInterval(async () => {
       if (summaryTimeRemaining.value !== null && summaryTimeRemaining.value > 0) {
@@ -172,26 +113,36 @@ export function useGame() {
     summaryTimeRemaining.value = null
   }
 
-  // 生成詞語選項（從剩餘詞庫中隨機選取3個）
-  function generateWordOptions(): WordOption[] {
-    if (!roomStore.currentRoom) return []
+  // 獲取下一個詞語（優先使用未用過的，如果都用過則允許重複）
+  function getNextWord(): { text: string; source: 'wordlist' | 'custom' } | null {
+    if (!roomStore.currentRoom) return null
 
     const words = roomStore.currentRoom.words as Array<{ text: string; source: 'wordlist' | 'custom' }>
-    const currentRoundNum = roomStore.currentRoom.current_round || 0
-    
-    // 獲取剩餘的詞語
-    const remainingWords = words.slice(currentRoundNum)
-    
-    if (remainingWords.length === 0) return []
+    if (words.length === 0) return null
 
-    // 隨機打亂並選取最多3個
-    const shuffled = [...remainingWords].sort(() => Math.random() - 0.5)
-    const selected = shuffled.slice(0, Math.min(3, shuffled.length))
+    // 找出未使用的詞語索引
+    const unusedIndices: number[] = []
+    for (let i = 0; i < words.length; i++) {
+      if (!usedWordIndices.value.has(i)) {
+        unusedIndices.push(i)
+      }
+    }
 
-    return selected.map(w => ({
-      text: w.text,
-      source: w.source,
-    }))
+    let selectedIndex: number = 0
+    if (unusedIndices.length > 0) {
+      // 隨機選一個未使用的
+      const randomIdx = Math.floor(Math.random() * unusedIndices.length)
+      selectedIndex = unusedIndices[randomIdx] ?? 0
+    } else {
+      // 所有詞語都用過了，重置並隨機選一個
+      console.log('[useGame] 所有詞語都用過了，重置並重新選擇')
+      usedWordIndices.value.clear()
+      selectedIndex = Math.floor(Math.random() * words.length)
+    }
+
+    // 標記為已使用
+    usedWordIndices.value.add(selectedIndex)
+    return words[selectedIndex] ?? null
   }
 
   // 開始遊戲
@@ -209,14 +160,17 @@ export function useGame() {
     }
 
     try {
+      // 重置已使用詞語
+      usedWordIndices.value.clear()
+      
       // 更新房間狀態為 playing
       const statusResult = await roomStore.updateRoomStatus('playing')
       if (!statusResult.success) {
         return statusResult
       }
 
-      // 開始第一輪的選詞階段
-      const roundResult = await startSelectionPhase()
+      // 直接開始第一輪繪畫（不再有選詞階段）
+      const roundResult = await startDrawingPhase()
       return roundResult
     } catch (err) {
       console.error('開始遊戲錯誤:', err)
@@ -224,14 +178,14 @@ export function useGame() {
     }
   }
 
-  // 開始選詞階段
-  async function startSelectionPhase() {
+  // 開始繪畫階段（系統自動分配畫家和詞語）
+  async function startDrawingPhase() {
     if (!roomStore.currentRoom) {
       return { success: false, error: '沒有當前房間' }
     }
 
     const currentRoundNum = roomStore.currentRoom.current_round || 0
-    // 下一輪的輪次號（用於選擇畫家）
+    // 下一輪的輪次號
     const nextRoundNum = currentRoundNum + 1
 
     // 檢查是否所有輪次已完成
@@ -242,138 +196,70 @@ export function useGame() {
     }
 
     try {
-      // 選擇畫家（輪流，使用下一輪的輪次號）
-      // 輪次1: 玩家0, 輪次2: 玩家1, 輪次3: 玩家0...
+      // 選擇畫家（輪流）
       const drawerIndex = (nextRoundNum - 1) % roomStore.participants.length
       const drawer = roomStore.participants[drawerIndex]
       
-      console.log('[startSelectionPhase] 下一輪:', nextRoundNum, '畫家索引:', drawerIndex, '畫家:', drawer?.nickname)
+      console.log('[startDrawingPhase] 第', nextRoundNum, '輪，畫家:', drawer?.nickname)
       
       if (!drawer) {
         throw new Error('無法選擇畫家')
       }
 
-      // 生成詞語選項
-      const options = generateWordOptions()
-      if (options.length === 0) {
+      // 獲取下一個詞語
+      const word = getNextWord()
+      if (!word) {
         throw new Error('沒有可用的詞語')
       }
-
-      // 更新 store
-      gameStore.setWordOptions(options)
-      gameStore.setRoundStatus('selecting')
-      gameStore.clearRatings()
+      
+      console.log('[startDrawingPhase] 分配詞語:', word.text)
 
       // 更新房間當前畫家
       await roomStore.updateRoomDrawer(drawer.user_id)
 
+      // 創建新輪次
+      const result = await gameStore.createRound(
+        roomStore.currentRoom.id,
+        drawer.user_id,
+        word.text,
+        word.source
+      )
+
+      if (!result.success || !result.round) {
+        throw new Error('創建輪次失敗')
+      }
+
+      // 進入繪畫階段
+      gameStore.setRoundStatus('drawing')
+      gameStore.clearRatings()
+
       // 廣播狀態給所有玩家
       const { broadcastGameState } = useRealtime()
       await broadcastGameState(roomStore.currentRoom!.code, {
-        roundStatus: 'selecting',
-        wordOptions: options,
+        roundStatus: 'drawing',
+        wordOptions: [],
         drawerId: drawer.user_id,
         drawerName: drawer.nickname,
         roundNumber: nextRoundNum
       })
 
-      // 記錄選詞階段開始時間（用於計算最小等待時間）
-      selectionPhaseStartTime = Date.now()
+      // 開始繪畫倒計時
+      startCountdown(drawTime.value)
 
-      // 開始選詞倒計時
-      startSelectionCountdown()
-
-      return { success: true, drawerId: drawer.user_id, options }
+      return { success: true, drawerId: drawer.user_id, word: word.text }
     } catch (err) {
-      console.error('開始選詞階段錯誤:', err)
-      return { success: false, error: err instanceof Error ? err.message : '開始選詞階段失敗' }
+      console.error('開始繪畫階段錯誤:', err)
+      return { success: false, error: err instanceof Error ? err.message : '開始繪畫階段失敗' }
     }
   }
 
-  // 選擇詞語（畫家選擇後調用）
-  async function selectWord(option: WordOption) {
-    if (!roomStore.currentRoom) {
-      return { success: false, error: '沒有當前房間' }
-    }
-
-    // 獲取當前畫家
-    const drawerId = roomStore.currentRoom.current_drawer_id
-    if (!drawerId) {
-      return { success: false, error: '沒有當前畫家' }
-    }
-
-    // 只有畫家本人可以選詞
-    if (drawerId !== authStore.user?.id) {
-      console.log('[selectWord] 非畫家嘗試選詞，忽略')
-      return { success: false, error: '只有畫家可以選詞' }
-    }
-
-    // 防止重複選詞
-    if (gameStore.roundStatus !== 'selecting') {
-      console.log('[selectWord] 當前不是選詞階段，忽略')
-      return { success: false, error: '當前不是選詞階段' }
-    }
-
-    // 停止選詞倒計時
-    stopSelectionCountdown()
-
-    console.log('[selectWord] 畫家選擇詞語:', option.text)
-
-    try {
-      // 創建新輪次
-      const result = await gameStore.createRound(
-        roomStore.currentRoom.id,
-        drawerId,
-        option.text,
-        option.source
-      )
-
-      if (result.success && result.round) {
-        // 計算需要等待的時間（確保其他玩家至少看 MIN_WAIT_TIME 秒總結）
-        let waitTime = 0
-        if (selectionPhaseStartTime) {
-          const elapsed = (Date.now() - selectionPhaseStartTime) / 1000
-          waitTime = Math.max(0, MIN_WAIT_TIME - elapsed)
-          console.log(`[selectWord] 已過 ${elapsed.toFixed(1)}秒，需等待 ${waitTime.toFixed(1)}秒`)
-        }
-
-        // 如果需要等待，顯示等待狀態
-        if (waitTime > 0) {
-          isWaitingAfterSelection.value = true
-          await new Promise(resolve => setTimeout(resolve, waitTime * 1000))
-          isWaitingAfterSelection.value = false
-        }
-
-        // 進入繪畫階段
-        gameStore.setRoundStatus('drawing')
-        gameStore.setWordOptions([])
-
-        // 廣播狀態給所有玩家
-        const { broadcastGameState } = useRealtime()
-        await broadcastGameState(roomStore.currentRoom!.code, {
-          roundStatus: 'drawing',
-          wordOptions: [],
-          drawerId: drawerId
-        })
-
-        // 開始繪畫倒計時
-        startCountdown(drawTime.value)
-      }
-
-      return result
-    } catch (err) {
-      console.error('選擇詞語錯誤:', err)
-      return { success: false, error: err instanceof Error ? err.message : '選擇詞語失敗' }
-    }
-  }
-
-  // 開始下一輪（兼容舊代碼，內部調用選詞階段）
+  // 開始下一輪（直接進入繪畫階段）
   async function startNextRound() {
-    return await startSelectionPhase()
+    return await startDrawingPhase()
   }
 
   // 結束當前輪次（只應由房主調用，避免競爭條件）
-  // 新流程：結束輪次後直接進入選詞階段，畫家選詞和其他人看總結同時進行
+  // 新流程：結束輪次 → 顯示 3 秒總結 → 自動開始下一輪繪畫
   async function endRound() {
     if (!currentRound.value || !roomStore.currentRoom) {
       return { success: false, error: '沒有當前輪次' }
@@ -394,26 +280,27 @@ export function useGame() {
         return endResult
       }
 
+      // 進入總結階段
+      gameStore.setRoundStatus('summary')
+      const { broadcastGameState } = useRealtime()
+      await broadcastGameState(roomStore.currentRoom!.code, {
+        roundStatus: 'summary',
+        wordOptions: [],
+        drawerId: roomStore.currentRoom!.current_drawer_id ?? undefined
+      })
+
       // 檢查是否還有下一輪
       const currentRoundNum = roomStore.currentRoom.current_round || 0
       if (currentRoundNum >= totalRounds.value) {
-        // 所有輪次完成，進入總結階段然後結束遊戲
-        gameStore.setRoundStatus('summary')
-        const { broadcastGameState } = useRealtime()
-        await broadcastGameState(roomStore.currentRoom!.code, {
-          roundStatus: 'summary',
-          wordOptions: [],
-          drawerId: roomStore.currentRoom!.current_drawer_id ?? undefined
-        })
-        // 3 秒後結束遊戲
+        // 所有輪次完成，3 秒後結束遊戲
         setTimeout(async () => {
           await endGame()
-        }, MIN_WAIT_TIME * 1000)
+        }, SUMMARY_TIME * 1000)
         return { success: true, gameEnded: true }
       }
 
-      // 還有下一輪，直接開始選詞階段（不再有單獨的總結階段）
-      await startSelectionPhase()
+      // 還有下一輪，開始 3 秒總結倒計時
+      startSummaryCountdown()
 
       return { success: true, gameEnded: false }
     } catch (err) {
@@ -438,8 +325,8 @@ export function useGame() {
       await endGame()
       return { success: true, gameEnded: true }
     } else {
-      // 開始下一輪選詞階段
-      await startSelectionPhase()
+      // 直接開始下一輪繪畫
+      await startDrawingPhase()
       return { success: true, gameEnded: false }
     }
   }
@@ -464,30 +351,6 @@ export function useGame() {
     }
   }
 
-  // 跳過當前詞語（僅畫家可用）
-  async function skipWord() {
-    if (!currentRound.value || !roomStore.currentRoom) {
-      return { success: false, error: '沒有當前輪次' }
-    }
-
-    // 只允許當前畫家跳過
-    if (!isCurrentDrawer.value) {
-      return { success: false, error: '只有畫家可以跳過詞語' }
-    }
-
-    try {
-      // 結束當前輪次（不計分）
-      stopCountdown()
-
-      // 直接開始下一輪
-      const roundResult = await startNextRound()
-      return roundResult
-    } catch (err) {
-      console.error('跳過詞語錯誤:', err)
-      return { success: false, error: err instanceof Error ? err.message : '跳過詞語失敗' }
-    }
-  }
-
   // 格式化倒計時顯示
   const formattedTime = computed(() => {
     if (timeRemaining.value === null) return '--:--'
@@ -499,7 +362,6 @@ export function useGame() {
   // 清理資源
   onUnmounted(() => {
     stopCountdown()
-    stopSelectionCountdown()
     stopSummaryCountdown()
   })
 
@@ -517,31 +379,22 @@ export function useGame() {
     timeRemaining,
     isCountingDown,
     formattedTime,
-    // 輪次狀態
+    // 輪次狀態（簡化：只有 drawing 和 summary）
     roundStatus,
-    isSelecting,
     isDrawing,
     isSummary,
-    wordOptions,
-    selectionTimeRemaining,
     summaryTimeRemaining,
-    isWaitingAfterSelection,
     // 方法
     startGame,
     startNextRound,
-    startSelectionPhase,
-    selectWord,
+    startDrawingPhase,
     endRound,
     continueToNextRound,
     endGame,
-    skipWord,
     startCountdown,
     stopCountdown,
-    startSelectionCountdown,
-    stopSelectionCountdown,
     startSummaryCountdown,
     stopSummaryCountdown,
     resetCountdown,
   }
 }
-

@@ -133,7 +133,7 @@ const form = ref({
   name: '',
   wordsText: '',
   settings: {
-    draw_time: 120,
+    draw_time: 60,
     rounds: 5,
     word_count_per_round: 3,
     hints_count: 2,
