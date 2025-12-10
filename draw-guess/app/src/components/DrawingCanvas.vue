@@ -75,16 +75,27 @@ function localClearCanvas() {
   console.log('[DrawingCanvas] 畫布已清空')
 }
 
-// 監聽 roundStatus 變化，進入繪畫階段時清空畫布
+// 監聽 currentRound.id 變化，新輪次開始時清空畫布
+// 這是「新一輪開始」的真正標誌
+// 使用 immediate: true 確保組件掛載時也能觸發
+let lastRoundId: string | null = null
+
 watch(
-  () => gameStore.roundStatus,
-  (newStatus, oldStatus) => {
-    // 當進入繪畫階段時清空畫布（從任何狀態進入 drawing）
-    if (newStatus === 'drawing' && oldStatus !== 'drawing') {
-      console.log('[DrawingCanvas] 進入繪畫階段，清空畫布')
-      localClearCanvas()
+  () => gameStore.currentRound?.id,
+  (newRoundId) => {
+    console.log('[DrawingCanvas] watch currentRound.id:', { lastRoundId, newRoundId })
+    
+    // 如果輪次 ID 變化了（或首次設置），清空畫布
+    if (newRoundId && newRoundId !== lastRoundId) {
+      console.log('[DrawingCanvas] 新輪次開始，清空畫布')
+      lastRoundId = newRoundId
+      // 使用 setTimeout 確保 canvas 已經渲染
+      setTimeout(() => {
+        localClearCanvas()
+      }, 0)
     }
-  }
+  },
+  { immediate: true }
 )
 
 // 監聽全局清空畫布事件（用於手動清空按鈕）
