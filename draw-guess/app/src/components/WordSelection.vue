@@ -1,6 +1,17 @@
 <template>
   <div class="word-selection">
-    <div class="selection-card">
+    <!-- 等待狀態：選詞後等待其他玩家查看結果 -->
+    <div v-if="isWaiting" class="waiting-overlay">
+      <div class="waiting-card">
+        <div class="waiting-icon">⏳</div>
+        <h2 class="waiting-title">已選擇「{{ selectedWord }}」</h2>
+        <p class="waiting-text">請稍等，其他玩家正在查看結果...</p>
+        <div class="waiting-spinner"></div>
+      </div>
+    </div>
+    
+    <!-- 選詞界面 -->
+    <div v-else class="selection-card">
       <!-- 標題 -->
       <div class="selection-header">
         <h2 class="selection-title">🎨 輪到你畫畫了！</h2>
@@ -54,6 +65,7 @@ const props = defineProps<{
   roundNumber: number
   totalRounds: number
   selectionTime: number // 選詞時間（秒）
+  isWaiting?: boolean  // 選詞後等待狀態
 }>()
 
 const emit = defineEmits<{
@@ -288,5 +300,59 @@ onUnmounted(() => {
 .confirm-btn:disabled {
   background: var(--bg-tertiary);
   cursor: not-allowed;
+}
+
+/* 等待狀態樣式 */
+.waiting-overlay {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--bg-primary), var(--bg-secondary));
+  padding: 1rem;
+}
+
+.waiting-card {
+  background: var(--bg-card);
+  border: 3px solid var(--color-secondary);
+  border-radius: 16px;
+  padding: 2.5rem;
+  max-width: 400px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.waiting-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.waiting-title {
+  font-size: 1.5rem;
+  font-family: var(--font-head);
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.waiting-text {
+  font-size: 1rem;
+  color: var(--text-secondary);
+  margin-bottom: 1.5rem;
+}
+
+.waiting-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid var(--border-color);
+  border-top-color: var(--color-secondary);
+  border-radius: 50%;
+  margin: 0 auto;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 </style>

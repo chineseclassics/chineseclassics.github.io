@@ -4,10 +4,10 @@ import { useGameStore, type WordOption } from '../stores/game'
 import { useAuthStore } from '../stores/auth'
 import { useRealtime } from './useRealtime'
 
-// 選詞時間（秒）
-const SELECTION_TIME = 15
-// 總結時間（秒）
-const SUMMARY_TIME = 8
+// 選詞時間（秒）- 畫家最多有 5 秒選詞
+const SELECTION_TIME = 5
+// 最小等待時間（秒）- 其他玩家至少看 3 秒總結
+const MIN_WAIT_TIME = 3
 
 export function useGame() {
   const roomStore = useRoomStore()
@@ -23,6 +23,12 @@ export function useGame() {
   // 選詞倒計時
   const selectionTimeRemaining = ref<number | null>(null)
   let selectionTimer: number | null = null
+  
+  // 選詞階段開始時間（用於計算最小等待時間）
+  let selectionPhaseStartTime: number | null = null
+  
+  // 畫家選詞後是否在等待中
+  const isWaitingAfterSelection = ref(false)
 
   // 總結倒計時
   const summaryTimeRemaining = ref<number | null>(null)
@@ -133,14 +139,14 @@ export function useGame() {
     selectionTimeRemaining.value = null
   }
 
-  // 開始總結倒計時（所有人都看到總結倒計時）
+  // 開始總結倒計時（只在遊戲最後一輪結束時使用）
   function startSummaryCountdown() {
     if (summaryTimer) {
       clearInterval(summaryTimer)
     }
 
-    summaryTimeRemaining.value = SUMMARY_TIME
-    console.log('[useGame] 開始總結倒計時:', SUMMARY_TIME, '秒')
+    summaryTimeRemaining.value = MIN_WAIT_TIME
+    console.log('[useGame] 開始總結倒計時:', MIN_WAIT_TIME, '秒')
 
     summaryTimer = window.setInterval(async () => {
       if (summaryTimeRemaining.value !== null && summaryTimeRemaining.value > 0) {
@@ -271,6 +277,9 @@ export function useGame() {
         roundNumber: nextRoundNum
       })
 
+      // 記錄選詞階段開始時間（用於計算最小等待時間）
+      selectionPhaseStartTime = Date.now()
+
       // 開始選詞倒計時
       startSelectionCountdown()
 
@@ -320,6 +329,21 @@ export function useGame() {
       )
 
       if (result.success && result.round) {
+        // 計算需要等待的時間（確保其他玩家至少看 MIN_WAIT_TIME 秒總結）
+        let waitTime = 0
+        if (selectionPhaseStartTime) {
+          const elapsed = (Date.now() - selectionPhaseStartTime) / 1000
+          waitTime = Math.max(0, MIN_WAIT_TIME - elapsed)
+          console.log(`[selectWord] 已過 ${elapsed.toFixed(1)}秒，需等待 ${waitTime.toFixed(1)}秒`)
+        }
+
+        // 如果需要等待，顯示等待狀態
+        if (waitTime > 0) {
+          isWaitingAfterSelection.value = true
+          await new Promise(resolve => setTimeout(resolve, waitTime * 1000))
+          isWaitingAfterSelection.value = false
+        }
+
         // 進入繪畫階段
         gameStore.setRoundStatus('drawing')
         gameStore.setWordOptions([])
@@ -349,6 +373,7 @@ export function useGame() {
   }
 
   // 結束當前輪次（只應由房主調用，避免競爭條件）
+  // 新流程：結束輪次後直接進入選詞階段，畫家選詞和其他人看總結同時進行
   async function endRound() {
     if (!currentRound.value || !roomStore.currentRoom) {
       return { success: false, error: '沒有當前輪次' }
@@ -369,19 +394,26 @@ export function useGame() {
         return endResult
       }
 
-      // 進入總結階段
-      gameStore.setRoundStatus('summary')
+      // 檢查是否還有下一輪
+      const currentRoundNum = roomStore.currentRoom.current_round || 0
+      if (currentRoundNum >= totalRounds.value) {
+        // 所有輪次完成，進入總結階段然後結束遊戲
+        gameStore.setRoundStatus('summary')
+        const { broadcastGameState } = useRealtime()
+        await broadcastGameState(roomStore.currentRoom!.code, {
+          roundStatus: 'summary',
+          wordOptions: [],
+          drawerId: roomStore.currentRoom!.current_drawer_id ?? undefined
+        })
+        // 3 秒後結束遊戲
+        setTimeout(async () => {
+          await endGame()
+        }, MIN_WAIT_TIME * 1000)
+        return { success: true, gameEnded: true }
+      }
 
-      // 廣播狀態給所有玩家
-      const { broadcastGameState } = useRealtime()
-      await broadcastGameState(roomStore.currentRoom!.code, {
-        roundStatus: 'summary',
-        wordOptions: [],
-        drawerId: roomStore.currentRoom!.current_drawer_id ?? undefined
-      })
-
-      // 開始總結倒計時
-      startSummaryCountdown()
+      // 還有下一輪，直接開始選詞階段（不再有單獨的總結階段）
+      await startSelectionPhase()
 
       return { success: true, gameEnded: false }
     } catch (err) {
@@ -493,6 +525,7 @@ export function useGame() {
     wordOptions,
     selectionTimeRemaining,
     summaryTimeRemaining,
+    isWaitingAfterSelection,
     // 方法
     startGame,
     startNextRound,

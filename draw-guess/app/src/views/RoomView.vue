@@ -96,7 +96,8 @@
                 :word-options="wordOptions"
                 :round-number="currentRoundNumber + 1"
                 :total-rounds="totalRounds"
-                :selection-time="15"
+                :selection-time="5"
+                :is-waiting="isWaitingAfterSelection"
                 @word-selected="handleWordSelect"
               />
               <!-- 非畫家看到上一輪總結（帶等待選詞提示）或純等待提示 -->
@@ -339,6 +340,7 @@ const {
   wordOptions,
   selectionTimeRemaining,
   summaryTimeRemaining,
+  isWaitingAfterSelection,
   selectWord,
   stopSelectionCountdown,
   startSelectionCountdown,
