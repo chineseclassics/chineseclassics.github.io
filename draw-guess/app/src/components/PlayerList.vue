@@ -135,75 +135,110 @@ async function handleKick(userId: string, playerName: string) {
 }
 
 .player-list-header {
-  padding: 0.75rem;
-  background: var(--color-secondary);
+  padding: 0.875rem;
+  background: linear-gradient(135deg, var(--color-secondary), #5a9ea1);
   color: white;
   font-weight: bold;
   font-family: var(--font-head);
   text-align: center;
-  border-radius: 6px 6px 0 0;
+  border-radius: 8px 8px 0 0;
   margin: -0.5rem -0.5rem 0.5rem -0.5rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .player-count {
-  font-size: 0.9rem;
+  font-size: 0.95rem;
+  letter-spacing: 1px;
 }
 
 .player-item {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem;
-  border-bottom: 1px solid var(--border-light);
-  transition: background 0.2s;
+  gap: 0.6rem;
+  padding: 0.6rem;
+  border-bottom: 2px dashed var(--border-light);
+  transition: all 0.2s ease;
+  border-radius: 6px;
+  margin-bottom: 2px;
 }
 
 .player-item:last-child {
   border-bottom: none;
 }
 
+.player-item:hover {
+  background: var(--bg-hover);
+  transform: translateX(3px);
+}
+
 .player-item.is-current {
   background: var(--bg-highlight);
+  border: 2px solid var(--color-warning);
+  border-bottom: 2px solid var(--color-warning);
 }
 
 .player-item.is-drawer {
-  background: var(--color-warning-light, #fff8e1);
+  background: linear-gradient(135deg, var(--color-warning-light), #fff3cd);
+  animation: drawerGlow 2s ease-in-out infinite;
+}
+
+@keyframes drawerGlow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(240, 192, 120, 0); }
+  50% { box-shadow: 0 0 8px 2px rgba(240, 192, 120, 0.4); }
 }
 
 .player-rank {
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: bold;
   color: var(--text-tertiary);
+  background: var(--bg-secondary);
+  border-radius: 50%;
+}
+
+.player-item:nth-child(1) .player-rank {
+  background: linear-gradient(135deg, #ffd700, #ffb300);
+  color: #333;
+}
+
+.player-item:nth-child(2) .player-rank {
+  background: linear-gradient(135deg, #c0c0c0, #a8a8a8);
+  color: #333;
+}
+
+.player-item:nth-child(3) .player-rank {
+  background: linear-gradient(135deg, #cd7f32, #b8722e);
+  color: white;
 }
 
 .player-avatar {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
-  background: var(--bg-secondary);
+  background: linear-gradient(135deg, var(--bg-secondary), var(--bg-primary));
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.9rem;
+  font-size: 1rem;
   font-weight: bold;
   color: var(--text-primary);
-  border: 2px solid var(--border-light);
+  border: 3px solid var(--border-light);
+  transition: all 0.3s ease;
 }
 
 .player-avatar.drawing {
-  background: var(--color-warning);
+  background: linear-gradient(135deg, var(--color-warning), #e5ac5a);
   border-color: var(--color-warning);
-  animation: pulse 1.5s infinite;
+  animation: avatarPulse 1.5s ease-in-out infinite;
 }
 
-@keyframes pulse {
+@keyframes avatarPulse {
   0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.05); }
+  50% { transform: scale(1.08); }
 }
 
 .player-info {
@@ -212,37 +247,45 @@ async function handleKick(userId: string, playerName: string) {
 }
 
 .player-name {
-  font-size: 0.85rem;
-  font-weight: 500;
+  font-size: 0.9rem;
+  font-weight: 600;
   color: var(--text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
 }
 
 .drawer-badge, .host-badge {
-  font-size: 0.7rem;
-  margin-left: 0.25rem;
+  display: inline-flex;
+  align-items: center;
+  color: var(--color-warning);
+}
+
+.host-badge {
+  color: var(--color-primary);
 }
 
 .player-score {
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   color: var(--text-secondary);
+  font-family: var(--font-head);
 }
 
 /* 踢人按鈕 */
 .kick-btn {
-  width: 24px;
-  height: 24px;
+  width: 26px;
+  height: 26px;
   padding: 0;
-  border: none;
+  border: 2px solid transparent;
   border-radius: 50%;
   background: transparent;
   color: var(--text-tertiary);
-  font-size: 0.8rem;
   cursor: pointer;
   opacity: 0;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -254,24 +297,44 @@ async function handleKick(userId: string, playerName: string) {
 }
 
 .kick-btn:hover {
-  background: var(--color-danger, #f44336);
+  background: var(--color-danger);
+  border-color: var(--color-danger);
   color: white;
+  transform: scale(1.1);
 }
 
 /* 獲勝者 */
 .winner-banner {
   margin-top: 1rem;
-  padding: 1rem;
-  background: linear-gradient(135deg, var(--color-success), var(--color-secondary));
-  border-radius: 8px;
+  padding: 1.25rem;
+  background: linear-gradient(135deg, var(--color-success), #6fb86f);
+  border-radius: 12px;
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.875rem;
   color: white;
+  box-shadow: 4px 4px 0 rgba(0,0,0,0.1);
+  animation: winnerSlideIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes winnerSlideIn {
+  from { 
+    opacity: 0; 
+    transform: translateY(20px) scale(0.9);
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0) scale(1);
+  }
 }
 
 .winner-icon {
-  font-size: 2rem;
+  animation: trophyBounce 1s ease-in-out infinite;
+}
+
+@keyframes trophyBounce {
+  0%, 100% { transform: translateY(0) rotate(-5deg); }
+  50% { transform: translateY(-5px) rotate(5deg); }
 }
 
 .winner-text {
@@ -279,18 +342,19 @@ async function handleKick(userId: string, playerName: string) {
 }
 
 .winner-title {
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   opacity: 0.9;
+  letter-spacing: 1px;
 }
 
 .winner-name {
-  font-size: 1.1rem;
+  font-size: 1.2rem;
   font-weight: bold;
   font-family: var(--font-head);
 }
 
 .winner-score {
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   opacity: 0.9;
 }
 </style>

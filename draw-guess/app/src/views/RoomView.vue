@@ -580,18 +580,30 @@ onUnmounted(() => {
   gap: 0;
   padding: 0.5rem;
   box-sizing: border-box;
+  animation: fadeIn 0.4s ease-out;
 }
 
-/* 左側玩家列表 */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* 左側玩家列表 - 加寬 */
 .game-players {
-  width: 220px;
-  min-width: 220px;
+  width: 240px;
+  min-width: 240px;
   background: var(--bg-card);
-  border: 2px solid var(--border-color);
-  border-radius: 8px;
+  border: 3px solid var(--border-color);
+  border-radius: 12px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  box-shadow: 4px 4px 0 var(--shadow-color);
+  transition: box-shadow 0.3s ease;
+}
+
+.game-players:hover {
+  box-shadow: 6px 6px 0 var(--shadow-color);
 }
 
 .player-list-container {
@@ -608,6 +620,8 @@ onUnmounted(() => {
   margin-left: 0.5rem;
   gap: 0.5rem;
   min-width: 0;
+  /* 稍微縮窄主區域 */
+  max-width: calc(100% - 580px);
 }
 
 /* 頂部提示區 */
@@ -616,11 +630,17 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   gap: 1rem;
-  padding: 0.5rem 1rem;
+  padding: 0.75rem 1rem;
   background: var(--bg-card);
-  border: 2px solid var(--border-color);
-  border-radius: 8px;
+  border: 3px solid var(--border-color);
+  border-radius: 12px;
   position: relative;
+  box-shadow: 3px 3px 0 var(--shadow-color);
+  transition: all 0.3s ease;
+}
+
+.game-header:hover {
+  box-shadow: 4px 4px 0 var(--shadow-color);
 }
 
 .word-display {
@@ -628,12 +648,25 @@ onUnmounted(() => {
   align-items: center;
   gap: 0.75rem;
   transition: all 0.3s ease;
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 /* 時間緊迫時的頂部欄樣式 */
 .game-header.time-critical {
   background: linear-gradient(135deg, #fff5f5, #ffe0e0);
   border-color: var(--color-danger);
+  animation: shake 0.5s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-2px); }
+  75% { transform: translateX(2px); }
 }
 
 /* 倒計時顯示 */
@@ -777,42 +810,72 @@ onUnmounted(() => {
   flex-direction: column;
   gap: 0.5rem;
   min-width: 0;
+  /* 限制畫布區域最大寬度 */
+  max-width: calc(100% - 320px);
 }
 
 /* 工具欄 - 橫向在畫布下方 */
 .game-toolbar {
   background: var(--bg-card);
-  border: 2px solid var(--border-color);
-  border-radius: 8px;
-  padding: 0.25rem;
+  border: 3px solid var(--border-color);
+  border-radius: 12px;
+  padding: 0.5rem;
+  box-shadow: 3px 3px 0 var(--shadow-color);
+  transition: all 0.3s ease;
+}
+
+.game-toolbar:hover {
+  box-shadow: 4px 4px 0 var(--shadow-color);
 }
 
 /* 畫布 */
 .game-canvas {
   flex: 1;
   background: white;
-  border: 2px solid var(--border-color);
-  border-radius: 8px;
+  border: 3px solid var(--border-color);
+  border-radius: 12px;
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
   min-height: 300px;
+  box-shadow: 4px 4px 0 var(--shadow-color);
+  transition: box-shadow 0.3s ease;
 }
 
-/* 總結階段覆蓋層 */
+.game-canvas:hover {
+  box-shadow: 5px 5px 0 var(--shadow-color);
+}
+
+/* 總結階段覆蓋層 - 毛玻璃效果 */
 .summary-overlay {
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(255, 255, 255, 0.95);
+  background: rgba(250, 248, 243, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 10;
+  z-index: 1000;
+  animation: fadeInOverlay 0.4s ease-out;
+}
+
+@keyframes fadeInOverlay {
+  from { 
+    opacity: 0;
+    backdrop-filter: blur(0);
+    -webkit-backdrop-filter: blur(0);
+  }
+  to { 
+    opacity: 1;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
 }
 
 /* 工具欄禁用狀態 */
@@ -851,31 +914,43 @@ onUnmounted(() => {
 
 /* 右側聊天面板（整合猜詞和聊天） */
 .game-chat-panel {
-  width: 280px;
-  min-width: 280px;
+  width: 300px;
+  min-width: 300px;
   background: var(--bg-card);
-  border: 2px solid var(--border-color);
-  border-radius: 8px;
+  border: 3px solid var(--border-color);
+  border-radius: 12px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
   margin-left: 0.5rem;
+  box-shadow: 4px 4px 0 var(--shadow-color);
+  transition: box-shadow 0.3s ease;
+}
+
+.game-chat-panel:hover {
+  box-shadow: 5px 5px 0 var(--shadow-color);
 }
 
 .chat-messages-container {
   flex: 1;
-  padding: 0.5rem;
+  padding: 0.75rem;
   overflow-y: auto;
   font-size: 0.9rem;
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.35rem;
 }
 
 .chat-msg {
-  padding: 0.35rem 0.5rem;
-  border-radius: 4px;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
   line-height: 1.4;
+  animation: slideInMsg 0.3s ease-out;
+}
+
+@keyframes slideInMsg {
+  from { opacity: 0; transform: translateX(-10px); }
+  to { opacity: 1; transform: translateX(0); }
 }
 
 .system-msg {
@@ -883,28 +958,38 @@ onUnmounted(() => {
   color: var(--text-secondary);
   text-align: center;
   font-size: 0.85rem;
+  border: 2px dashed var(--border-light);
 }
 
 .word-hint-msg {
   background: linear-gradient(135deg, #fff3cd, #ffeeba);
   color: #856404;
-  border: 1px solid #ffc107;
+  border: 2px solid var(--color-warning);
 }
 
 .correct-guess {
   background: linear-gradient(135deg, #d4edda, #c3e6cb);
   color: #155724;
-  border-left: 3px solid #28a745;
+  border-left: 4px solid var(--color-success);
+  animation: correctPop 0.4s ease-out;
+}
+
+@keyframes correctPop {
+  0% { transform: scale(0.9); opacity: 0; }
+  50% { transform: scale(1.02); }
+  100% { transform: scale(1); opacity: 1; }
 }
 
 .correct-self {
   background: linear-gradient(135deg, #cce5ff, #b8daff);
   color: #004085;
   text-align: center;
+  border: 2px solid var(--color-secondary);
 }
 
 .wrong-guess {
   background: transparent;
+  border-left: 3px solid var(--border-light);
 }
 
 .msg-icon {
@@ -932,24 +1017,28 @@ onUnmounted(() => {
 
 /* 輸入區 */
 .chat-input-area {
-  padding: 0.5rem;
-  border-top: 2px solid var(--border-light);
+  padding: 0.75rem;
+  border-top: 3px solid var(--border-light);
   display: flex;
   gap: 0.5rem;
+  background: var(--bg-secondary);
 }
 
 .chat-input-field {
   flex: 1;
-  padding: 0.5rem;
-  border: 2px solid var(--border-light);
-  border-radius: 4px;
+  padding: 0.6rem 0.75rem;
+  border: 3px solid var(--border-light);
+  border-radius: 8px;
   font-family: var(--font-body);
   font-size: 0.9rem;
+  background: var(--bg-card);
+  transition: all 0.3s ease;
 }
 
 .chat-input-field:focus {
   border-color: var(--color-secondary);
   outline: none;
+  box-shadow: 0 0 0 3px rgba(107, 175, 178, 0.2);
 }
 
 .chat-input-field:disabled {
@@ -958,26 +1047,72 @@ onUnmounted(() => {
 }
 
 .chat-send-btn {
-  padding: 0.5rem 1rem;
+  padding: 0.6rem 1.25rem;
   background: var(--color-secondary);
   color: white;
-  border: none;
-  border-radius: 4px;
+  border: 3px solid var(--border-color);
+  border-radius: 8px;
   cursor: pointer;
   font-family: var(--font-body);
   font-weight: bold;
+  box-shadow: 2px 2px 0 var(--shadow-color);
+  transition: all 0.2s ease;
 }
 
 .chat-send-btn:hover:not(:disabled) {
-  background: var(--color-secondary-dark, #0056b3);
+  background: #5a9ea1;
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 var(--shadow-color);
+}
+
+.chat-send-btn:active:not(:disabled) {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0 var(--shadow-color);
 }
 
 .chat-send-btn:disabled {
   background: var(--bg-tertiary);
   cursor: not-allowed;
+  box-shadow: none;
 }
 
 /* 響應式 */
+@media (max-width: 1200px) {
+  .game-main {
+    max-width: calc(100% - 540px);
+  }
+  
+  .game-players {
+    width: 220px;
+    min-width: 220px;
+  }
+  
+  .game-chat-panel {
+    width: 280px;
+    min-width: 280px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .game-main {
+    max-width: calc(100% - 480px);
+  }
+  
+  .game-players {
+    width: 200px;
+    min-width: 200px;
+  }
+  
+  .game-chat-panel {
+    width: 260px;
+    min-width: 260px;
+  }
+  
+  .game-canvas-wrapper {
+    max-width: calc(100% - 280px);
+  }
+}
+
 @media (max-width: 768px) {
   .game-layout {
     flex-direction: column;
@@ -995,6 +1130,11 @@ onUnmounted(() => {
     margin-left: 0;
     margin-top: 0.5rem;
     flex-direction: column;
+    max-width: 100%;
+  }
+  
+  .game-canvas-wrapper {
+    max-width: 100%;
   }
 
   .game-canvas-area {
@@ -1002,8 +1142,8 @@ onUnmounted(() => {
   }
 
   .game-toolbar {
-    width: 50px;
-    min-width: 50px;
+    width: 100%;
+    min-width: unset;
   }
 
   .game-chat-panel {
@@ -1012,6 +1152,10 @@ onUnmounted(() => {
     height: 200px;
     margin-left: 0;
     margin-top: 0.5rem;
+  }
+  
+  .summary-overlay {
+    padding: 1rem;
   }
 }
 

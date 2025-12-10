@@ -117,8 +117,8 @@ async function handleClear() {
   flex-direction: row;
   align-items: center;
   justify-content: center;
-  gap: 1rem;
-  padding: 0.5rem;
+  gap: 1.25rem;
+  padding: 0.6rem 1rem;
 }
 
 .toolbar-section {
@@ -133,7 +133,7 @@ async function handleClear() {
 }
 
 .toolbar-horizontal .tools-section {
-  gap: 0.25rem;
+  gap: 0.35rem;
 }
 
 /* 工具按鈕 */
@@ -142,25 +142,34 @@ async function handleClear() {
   align-items: center;
   justify-content: center;
   gap: 0.25rem;
-  padding: 0.5rem;
-  border: 2px solid var(--border-color);
-  border-radius: 6px;
+  padding: 0.6rem;
+  border: 3px solid var(--border-color);
+  border-radius: 10px;
   background: var(--bg-card);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
   font-family: var(--font-body);
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
+  box-shadow: 2px 2px 0 var(--shadow-color);
 }
 
 .tool-btn:hover {
   background: var(--bg-hover);
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 var(--shadow-color);
+}
+
+.tool-btn:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0 var(--shadow-color);
 }
 
 .tool-btn.active {
   background: var(--color-secondary);
   border-color: var(--color-secondary);
   color: white;
+  box-shadow: inset 2px 2px 4px rgba(0,0,0,0.2);
 }
 
 .tool-btn.active.eraser {
@@ -190,7 +199,7 @@ async function handleClear() {
 .color-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 3px;
+  gap: 4px;
 }
 
 .color-grid-horizontal {
@@ -201,44 +210,47 @@ async function handleClear() {
 .color-cell {
   width: 100%;
   aspect-ratio: 1;
-  min-width: 18px;
-  min-height: 18px;
+  min-width: 20px;
+  min-height: 20px;
   border: 2px solid var(--border-light);
-  border-radius: 3px;
+  border-radius: 4px;
   cursor: pointer;
   box-sizing: border-box;
-  transition: transform 0.1s;
+  transition: all 0.15s ease;
 }
 
 .color-cell:hover {
-  transform: scale(1.1);
+  transform: scale(1.15);
+  z-index: 1;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
 }
 
 .color-cell.selected {
   border: 3px solid var(--text-primary);
-  box-shadow: 0 0 0 1px white inset;
+  box-shadow: 0 0 0 2px white inset, 0 2px 8px rgba(0,0,0,0.3);
+  transform: scale(1.1);
 }
 
 /* 畫筆大小 */
 .size-section {
   padding: 0.5rem 0;
-  border-top: 1px solid var(--border-light);
-  border-bottom: 1px solid var(--border-light);
+  border-top: 2px dashed var(--border-light);
+  border-bottom: 2px dashed var(--border-light);
 }
 
 .toolbar-horizontal .size-section {
-  padding: 0 0.5rem;
+  padding: 0 0.75rem;
   border-top: none;
   border-bottom: none;
-  border-left: 1px solid var(--border-light);
-  border-right: 1px solid var(--border-light);
+  border-left: 2px dashed var(--border-light);
+  border-right: 2px dashed var(--border-light);
 }
 
 .size-dots {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.6rem;
 }
 
 .size-dots-horizontal {
@@ -249,17 +261,18 @@ async function handleClear() {
   background: var(--text-primary);
   border-radius: 50%;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
   border: 2px solid transparent;
 }
 
 .size-dot:hover {
   opacity: 0.7;
+  transform: scale(1.1);
 }
 
 .size-dot.active {
   border-color: var(--color-secondary);
-  box-shadow: 0 0 0 2px var(--bg-card), 0 0 0 4px var(--color-secondary);
+  box-shadow: 0 0 0 3px var(--bg-card), 0 0 0 5px var(--color-secondary);
 }
 </style>
 
