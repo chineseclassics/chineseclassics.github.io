@@ -1,23 +1,23 @@
 <template>
   <div class="waiting-lobby">
-    <div class="wired-card">
-      <div class="waiting-lobby-content">
+    <div class="card">
+      <div class="card-body">
         <!-- 房間信息 -->
-        <div class="room-info">
-          <h2 class="text-hand-title room-name">{{ room?.name }}</h2>
+        <div class="room-info text-center margin-bottom-medium">
+          <h2 class="card-title text-hand-title">{{ room?.name }}</h2>
           <div class="room-details">
-            <div class="detail-item">
-              房間碼：<span class="room-code">{{ room?.code }}</span>
+            <div class="detail-item margin-bottom-small">
+              房間碼：<span class="badge badge-secondary">{{ room?.code }}</span>
             </div>
             <div class="detail-item">
-              狀態：{{ getStatusText(room?.status) }}
+              狀態：<span class="badge">{{ getStatusText(room?.status) }}</span>
             </div>
           </div>
         </div>
 
         <!-- 玩家列表 -->
-        <div class="players-section">
-          <h4 class="text-hand-title players-title">玩家列表 ({{ participants.length }})</h4>
+        <div class="players-section margin-bottom-medium">
+          <h4 class="text-hand-title margin-bottom-small">玩家列表 ({{ participants.length }})</h4>
           <div class="players-list">
             <div
               v-for="participant in participants"
@@ -31,7 +31,7 @@
               <div class="player-info">
                 <div class="player-name">
                   {{ participant.nickname }}
-                  <span v-if="isParticipantHost(participant.user_id)" class="wired-badge host-badge">
+                  <span v-if="isParticipantHost(participant.user_id)" class="badge badge-warning">
                     房主
                   </span>
                 </div>
@@ -41,7 +41,7 @@
         </div>
 
         <!-- 房間設置 -->
-        <div class="room-settings">
+        <div class="room-settings margin-bottom-medium">
           <div class="setting-item">
             繪畫時間：<strong>{{ room?.settings.draw_time }}</strong> 秒
           </div>
@@ -58,17 +58,17 @@
           <button
             v-if="isCurrentUserHost && canStartGame"
             :disabled="loading"
-            class="wired-button wired-button-primary"
+            class="paper-btn btn-primary btn-block margin-bottom-small"
             @click="handleStartGame"
           >
             {{ loading ? '開始中' : '開始遊戲' }}
           </button>
-          <div v-else-if="isCurrentUserHost" class="warning-text">
+          <div v-else-if="isCurrentUserHost" class="alert alert-warning text-center">
             至少需要 2 個玩家才能開始遊戲
           </div>
           <button
             :disabled="loading"
-            class="wired-button wired-button-secondary"
+            class="paper-btn btn-secondary btn-block"
             @click="handleLeaveRoom"
           >
             {{ loading ? '離開中' : '離開房間' }}
@@ -76,7 +76,7 @@
         </div>
 
         <!-- 錯誤提示 -->
-        <div v-if="error" class="error-message">
+        <div v-if="error" class="alert alert-danger margin-top-small">
           {{ error }}
         </div>
       </div>
@@ -137,22 +137,9 @@ async function handleLeaveRoom() {
   margin: 0 auto;
 }
 
-.waiting-lobby-content {
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
 /* 房間信息 */
 .room-info {
   text-align: center;
-}
-
-.room-name {
-  font-size: 1.75rem;
-  margin-bottom: 0.75rem;
-  color: var(--text-primary);
 }
 
 .room-details {
@@ -164,78 +151,12 @@ async function handleLeaveRoom() {
   font-family: var(--font-body);
 }
 
-.room-code {
-  font-family: monospace;
-  font-size: 1.1em;
-  font-weight: bold;
-  color: var(--text-primary);
-  letter-spacing: 0.1em;
-  padding: 0.2em 0.4em;
-  background: var(--bg-secondary);
-  border-radius: 4px;
-}
-
-/* 手繪風格卡片 */
-.wired-card {
-  background: var(--bg-card);
-  border: 3px solid var(--border-color);
-  border-radius: 12px;
-  padding: 1.5rem;
-  box-shadow: 4px 4px 0 var(--shadow-color);
-}
-
-/* 手繪風格按鈕 */
-.wired-button {
-  display: block;
-  width: 100%;
-  padding: 0.75rem 1.5rem;
-  font-family: var(--font-body);
-  font-size: 1rem;
-  font-weight: 600;
-  border: 3px solid var(--border-color);
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 3px 3px 0 var(--shadow-color);
-}
-
-.wired-button:hover:not(:disabled) {
-  transform: translate(-2px, -2px);
-  box-shadow: 5px 5px 0 var(--shadow-color);
-}
-
-.wired-button:active:not(:disabled) {
-  transform: translate(1px, 1px);
-  box-shadow: 2px 2px 0 var(--shadow-color);
-}
-
-.wired-button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.wired-button-primary {
-  background: var(--color-primary);
-  color: white;
-  border-color: var(--color-primary);
-}
-
-.wired-button-secondary {
-  background: var(--bg-card);
-  color: var(--text-primary);
-  border-color: var(--border-color);
-}
-
-/* 手繪風格徽章 */
-.wired-badge {
-  display: inline-block;
-  padding: 0.2rem 0.5rem;
-  font-size: 0.75rem;
-  font-weight: 600;
-  background: var(--color-warning);
-  color: white;
-  border-radius: 4px;
-  border: 2px solid var(--border-color);
+.detail-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
 /* 玩家列表 */
@@ -243,12 +164,6 @@ async function handleLeaveRoom() {
   border-top: 2px dashed var(--border-light);
   border-bottom: 2px dashed var(--border-light);
   padding: 1rem 0;
-}
-
-.players-title {
-  font-size: 1.25rem;
-  margin-bottom: 1rem;
-  color: var(--text-primary);
 }
 
 .players-list {
@@ -263,14 +178,14 @@ async function handleLeaveRoom() {
   gap: 0.75rem;
   padding: 0.75rem;
   background: var(--bg-secondary);
-  border-radius: 12px;
+  border-radius: 8px;
   transition: all 0.2s ease;
   animation: fadeIn 0.3s ease;
 }
 
 .player-item:hover {
   background: var(--bg-hover);
-  transform: translateX(3px);
+  transform: translateX(2px);
 }
 
 .player-item.is-host {
@@ -302,12 +217,10 @@ async function handleLeaveRoom() {
   font-size: 1.1rem;
   border: 2px solid var(--border-light);
   flex-shrink: 0;
-  box-shadow: 2px 2px 0 var(--shadow-color);
 }
 
 .player-item.is-host .player-avatar {
   border-color: var(--color-warning);
-  box-shadow: 2px 2px 0 var(--color-warning);
 }
 
 .player-info {
@@ -323,11 +236,6 @@ async function handleLeaveRoom() {
   align-items: center;
   gap: 0.5rem;
   flex-wrap: wrap;
-}
-
-.host-badge {
-  font-size: 0.7rem;
-  padding: 0.15rem 0.4rem;
 }
 
 /* 房間設置 */
@@ -363,41 +271,10 @@ async function handleLeaveRoom() {
   gap: 0.75rem;
 }
 
-.warning-text {
-  text-align: center;
-  font-size: 0.9rem;
-  color: var(--text-secondary);
-  font-family: var(--font-body);
-  padding: 0.75rem;
-  background: var(--bg-secondary);
-  border-radius: 8px;
-}
-
-.error-message {
-  padding: 0.75rem;
-  background-color: var(--color-danger);
-  color: white;
-  border-radius: 8px;
-  font-family: var(--font-body);
-  font-size: 0.9rem;
-  text-align: center;
-  animation: shake 0.3s ease;
-}
-
-@keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-5px); }
-  75% { transform: translateX(5px); }
-}
-
 /* 響應式設計 */
 @media (max-width: 640px) {
-  .room-name {
+  .card-title {
     font-size: 1.5rem;
-  }
-  
-  .players-title {
-    font-size: 1.1rem;
   }
 }
 </style>

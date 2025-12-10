@@ -74,11 +74,11 @@ h1, h2, h3, h4, h5, h6, .card-title, .brand {
   background-color: var(--bg-primary);
 }
 
-/* 按鈕 Hover 時的輕微抖動效果 */
+/* 按鈕 Hover 時的輕微抖動效果（適度手繪風格） */
 @keyframes wiggle {
   0% { transform: rotate(0deg); }
-  25% { transform: rotate(1deg); }
-  75% { transform: rotate(-1deg); }
+  25% { transform: rotate(0.5deg); }
+  75% { transform: rotate(-0.5deg); }
   100% { transform: rotate(0deg); }
 }
 

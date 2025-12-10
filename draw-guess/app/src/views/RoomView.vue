@@ -17,8 +17,8 @@
     <!-- 遊戲進行中 - 參考 Gartic.io 佈局 -->
     <div v-else-if="isPlaying" class="game-layout">
       <!-- 左側：玩家列表 -->
-      <div class="game-sidebar game-players">
-        <div class="player-list-container">
+      <div class="game-sidebar game-players card">
+        <div class="card-body player-list-container">
           <PlayerList :show-winner="false" />
         </div>
       </div>
@@ -26,7 +26,7 @@
       <!-- 中間：工具欄 + 畫布 + 聊天面板 -->
       <div class="game-main">
         <!-- 頂部：提示詞區域 -->
-        <div class="game-header" :class="{ 'time-critical': timeRemaining !== null && timeRemaining <= 10 }">
+        <div class="game-header card" :class="{ 'time-critical': timeRemaining !== null && timeRemaining <= 10 }">
           <!-- 倒計時顯示（繪畫階段） -->
           <div v-if="isDrawing && isCountingDown && timeRemaining !== null" class="time-display">
             <span class="time-number" :class="{ 
@@ -107,14 +107,16 @@
             </div>
             
             <!-- 工具欄 - 橫向放在畫布下方 -->
-            <div class="game-toolbar" :class="{ disabled: isSummary }">
-              <DrawingToolbar :horizontal="true" />
+            <div class="game-toolbar card" :class="{ disabled: isSummary }">
+              <div class="card-body" style="padding: 0.5rem;">
+                <DrawingToolbar :horizontal="true" />
+              </div>
             </div>
           </div>
 
           <!-- 聊天面板 - 始終顯示所有猜測記錄，不因總結階段改變 -->
-          <div class="game-chat-panel">
-            <div class="chat-messages-container" ref="chatMessagesRef">
+          <div class="game-chat-panel card">
+            <div class="card-body chat-messages-container" ref="chatMessagesRef" style="flex: 1; padding: 0.75rem; overflow-y: auto;">
               <!-- 系統消息 -->
               <div class="chat-msg system-msg">
                 <PhGameController :size="16" weight="fill" class="msg-icon" /> 遊戲開始！
@@ -142,7 +144,7 @@
             </div>
             
             <!-- 輸入區 - 總結階段也可以輸入 -->
-            <div class="chat-input-area">
+            <div class="chat-input-area card-body" style="padding: 0.75rem; border-top: 3px solid var(--border-light); display: flex; gap: 0.5rem; background: var(--bg-secondary);">
               <input
                 v-model="guessInput"
                 type="text"
@@ -151,11 +153,12 @@
                 :disabled="loading || hasGuessed || isCurrentDrawer"
                 @keyup.enter="handleSubmitGuess"
                 class="chat-input-field"
+                style="flex: 1;"
               />
               <button 
                 @click="handleSubmitGuess"
                 :disabled="loading || hasGuessed || isCurrentDrawer || !guessInput.trim()"
-                class="chat-send-btn"
+                class="paper-btn btn-secondary chat-send-btn"
               >
                 發送
               </button>
@@ -171,7 +174,9 @@
         <div class="col-12 col-md-8">
           <div class="card">
             <div class="card-body text-center">
-              <h2 class="card-title text-hand-title"><PhConfetti :size="28" weight="fill" class="title-icon" /> 遊戲結束</h2>
+              <h2 class="card-title text-hand-title">
+                <PhConfetti :size="28" weight="fill" class="title-icon" style="margin-right: 0.5rem;" /> 遊戲結束
+              </h2>
               <PlayerList :show-winner="true" />
               <button @click="handleLeaveRoom" class="paper-btn btn-primary margin-top-medium">
                 返回首頁
@@ -592,18 +597,9 @@ onUnmounted(() => {
 .game-players {
   width: 280px;
   min-width: 280px;
-  background: var(--bg-card);
-  border: 3px solid var(--border-color);
-  border-radius: 12px;
-  overflow: hidden;
   display: flex;
   flex-direction: column;
-  box-shadow: 4px 4px 0 var(--shadow-color);
-  transition: box-shadow 0.3s ease;
-}
-
-.game-players:hover {
-  box-shadow: 6px 6px 0 var(--shadow-color);
+  overflow: hidden;
 }
 
 .player-list-container {
@@ -629,16 +625,7 @@ onUnmounted(() => {
   justify-content: center;
   gap: 1rem;
   padding: 0.75rem 1rem;
-  background: var(--bg-card);
-  border: 3px solid var(--border-color);
-  border-radius: 12px;
   position: relative;
-  box-shadow: 3px 3px 0 var(--shadow-color);
-  transition: all 0.3s ease;
-}
-
-.game-header:hover {
-  box-shadow: 4px 4px 0 var(--shadow-color);
 }
 
 .word-display {
@@ -812,16 +799,7 @@ onUnmounted(() => {
 
 /* 工具欄 - 橫向在畫布下方 */
 .game-toolbar {
-  background: var(--bg-card);
-  border: 3px solid var(--border-color);
-  border-radius: 12px;
-  padding: 0.5rem;
-  box-shadow: 3px 3px 0 var(--shadow-color);
-  transition: all 0.3s ease;
-}
-
-.game-toolbar:hover {
-  box-shadow: 4px 4px 0 var(--shadow-color);
+  /* PaperCSS card 樣式已提供基礎樣式 */
 }
 
 /* 畫布 */
@@ -914,25 +892,13 @@ onUnmounted(() => {
 .game-chat-panel {
   width: 280px;
   min-width: 280px;
-  background: var(--bg-card);
-  border: 3px solid var(--border-color);
-  border-radius: 12px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
   margin-left: 0.5rem;
-  box-shadow: 4px 4px 0 var(--shadow-color);
-  transition: box-shadow 0.3s ease;
-}
-
-.game-chat-panel:hover {
-  box-shadow: 5px 5px 0 var(--shadow-color);
 }
 
 .chat-messages-container {
-  flex: 1;
-  padding: 0.75rem;
-  overflow-y: auto;
   font-size: 0.9rem;
   display: flex;
   flex-direction: column;
@@ -1014,22 +980,10 @@ onUnmounted(() => {
 }
 
 /* 輸入區 */
-.chat-input-area {
-  padding: 0.75rem;
-  border-top: 3px solid var(--border-light);
-  display: flex;
-  gap: 0.5rem;
-  background: var(--bg-secondary);
-}
-
 .chat-input-field {
-  flex: 1;
   padding: 0.6rem 0.75rem;
-  border: 3px solid var(--border-light);
-  border-radius: 8px;
   font-family: var(--font-body);
   font-size: 0.9rem;
-  background: var(--bg-card);
   transition: all 0.3s ease;
 }
 
@@ -1045,33 +999,8 @@ onUnmounted(() => {
 }
 
 .chat-send-btn {
+  /* PaperCSS paper-btn 樣式已提供基礎樣式 */
   padding: 0.6rem 1.25rem;
-  background: var(--color-secondary);
-  color: white;
-  border: 3px solid var(--border-color);
-  border-radius: 8px;
-  cursor: pointer;
-  font-family: var(--font-body);
-  font-weight: bold;
-  box-shadow: 2px 2px 0 var(--shadow-color);
-  transition: all 0.2s ease;
-}
-
-.chat-send-btn:hover:not(:disabled) {
-  background: #5a9ea1;
-  transform: translate(-1px, -1px);
-  box-shadow: 3px 3px 0 var(--shadow-color);
-}
-
-.chat-send-btn:active:not(:disabled) {
-  transform: translate(1px, 1px);
-  box-shadow: 1px 1px 0 var(--shadow-color);
-}
-
-.chat-send-btn:disabled {
-  background: var(--bg-tertiary);
-  cursor: not-allowed;
-  box-shadow: none;
 }
 
 /* 響應式 */
