@@ -128,12 +128,23 @@ function setupDrawingSubscription() {
 }
 
 onMounted(() => {
+  console.log('[DrawingCanvas] onMounted - 組件掛載')
+  
   if (canvasElement.value) {
     initCanvas(canvasElement.value)
+    
+    // 組件掛載時立即清空畫布！
+    // 這是最可靠的方式，因為每次進入新輪次，組件都會重新掛載
+    // 使用 setTimeout 確保 initCanvas 完成後再清空
+    setTimeout(() => {
+      console.log('[DrawingCanvas] 組件掛載後清空畫布')
+      localClearCanvas()
+    }, 50)
   }
+  
   setupDrawingSubscription()
   
-  // 監聽全局清空畫布事件
+  // 監聽全局清空畫布事件（用於手動清空按鈕）
   window.addEventListener('clearCanvas', handleClearCanvasEvent)
 })
 

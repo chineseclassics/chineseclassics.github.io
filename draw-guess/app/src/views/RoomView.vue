@@ -132,7 +132,8 @@
 
             <!-- 畫布 -->
             <div class="game-canvas">
-              <DrawingCanvas />
+              <!-- 使用 key 強制每輪重新創建組件，確保畫布被清空 -->
+              <DrawingCanvas :key="gameStore.currentRound?.id || 'default'" />
               <!-- 進度條 -->
               <div v-if="isCountingDown && timeRemaining !== null" class="time-progress">
                 <div 
@@ -494,24 +495,17 @@ onMounted(async () => {
         // 設置 roundStatus 為 drawing
         gameStore.setRoundStatus('drawing')
         
-        // 畫布清空由 DrawingCanvas 組件監聽 currentRound 變化自動處理
-        
         // 計算剩餘時間並啟動倒計時
+        // 使用 started_at 計算，確保與其他玩家同步
         const startTime = new Date(round.started_at).getTime()
         const now = Date.now()
         const elapsed = Math.floor((now - startTime) / 1000)
         const remaining = Math.max(0, drawTime.value - elapsed)
         
-        console.log('[RoomView] 倒計時計算:', { drawTime: drawTime.value, elapsed, remaining })
+        console.log('[RoomView] 初始化倒計時:', { drawTime: drawTime.value, elapsed, remaining })
         
-        if (remaining > 0) {
-          // 還有剩餘時間，啟動倒計時
-          startCountdown(remaining)
-        } else {
-          // 時間已到，但輪次還沒結束（可能是房主還沒處理）
-          // 房主會處理結束輪次，這裡只需要顯示 0
-          startCountdown(0)
-        }
+        // 啟動倒計時（使用計算出的剩餘時間）
+        startCountdown(remaining)
       } else if (round.ended_at) {
         // 輪次已結束，應該是總結階段（但因為錯過廣播，可能沒設置）
         // 這種情況比較少見，暫時不處理
@@ -556,14 +550,27 @@ onMounted(async () => {
           // 清除評分
           gameStore.clearRatings()
           
-          // 發送全局事件清空畫布（簡單可靠）
+          // 發送全局事件清空畫布（備用，主要靠組件掛載時清空）
           console.log('[RoomView] 發送 clearCanvas 事件')
           window.dispatchEvent(new Event('clearCanvas'))
           
-          // 直接使用房間設定的繪畫時間開始倒計時（簡單可靠）
-          // 網絡延遲通常只有幾十到幾百毫秒，對 60 秒倒計時影響很小
-          console.log('[RoomView] 開始倒計時:', drawTime.value, '秒')
-          startCountdown(drawTime.value)
+          // 使用 startedAt 計算剩餘時間，確保所有玩家同步
+          let countdownDuration = drawTime.value
+          if (state.startedAt) {
+            const startTime = new Date(state.startedAt).getTime()
+            const now = Date.now()
+            const elapsed = Math.floor((now - startTime) / 1000)
+            countdownDuration = Math.max(0, drawTime.value - elapsed)
+            console.log('[RoomView] 根據 startedAt 計算倒計時:', { 
+              startedAt: state.startedAt, 
+              elapsed, 
+              countdownDuration 
+            })
+          } else {
+            console.log('[RoomView] 無 startedAt，使用默認時間:', countdownDuration)
+          }
+          
+          startCountdown(countdownDuration)
         }
         
         // 進入總結階段
