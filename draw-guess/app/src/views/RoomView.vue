@@ -70,15 +70,27 @@
 
         <!-- 主要區域 -->
         <div class="game-content-area">
-          <!-- 總結階段覆蓋層 -->
-          <template v-if="isSummary">
-            <!-- 工具欄（隱藏或禁用） -->
-            <div class="game-toolbar disabled">
-              <DrawingToolbar :compact="true" />
-            </div>
+          <!-- 工具欄 -->
+          <div class="game-toolbar" :class="{ disabled: isSummary }">
+            <DrawingToolbar :compact="true" />
+          </div>
 
-            <!-- 畫布區域顯示總結界面 -->
-            <div class="game-canvas summary-phase">
+          <!-- 畫布區域 - DrawingCanvas 始終存在 -->
+          <div class="game-canvas">
+            <!-- 畫布始終渲染，確保 watch 持續有效 -->
+            <DrawingCanvas />
+            
+            <!-- 進度條（繪畫階段顯示） -->
+            <div v-if="!isSummary && isCountingDown && timeRemaining !== null" class="time-progress">
+              <div 
+                class="time-bar" 
+                :class="{ 'time-warning': timeRemaining <= 10 }"
+                :style="{ width: `${(timeRemaining / drawTime) * 100}%` }"
+              ></div>
+            </div>
+            
+            <!-- 總結階段覆蓋層 -->
+            <div v-if="isSummary" class="summary-overlay">
               <RoundSummary
                 :round-number="currentRoundNumber"
                 :total-rounds="totalRounds"
@@ -94,66 +106,24 @@
                 @rating-submitted="handleRating"
               />
             </div>
+          </div>
 
-            <!-- 聊天面板 -->
-            <div class="game-chat-panel">
-              <div class="chat-messages-container" ref="chatMessagesRef">
-                <div class="chat-msg system-msg answer-revealed">
-                  <span class="msg-icon">🎯</span> 答案是：<strong>{{ gameStore.currentWord }}</strong>
-                </div>
-                <!-- 當前輪次的正確猜測列表 -->
-                <div 
-                  v-for="guess in gameStore.currentRoundCorrectGuesses" 
-                  :key="guess.id"
-                  class="chat-msg correct-guess"
-                >
-                  <span class="msg-player">{{ getParticipantName(guess.user_id) }}</span>
-                  <span class="msg-correct">猜中了！ +{{ guess.score_earned }}</span>
-                </div>
-              </div>
-              <div class="chat-input-area">
-                <input
-                  type="text"
-                  placeholder="下一輪即將開始..."
-                  disabled
-                  class="chat-input-field"
-                />
-                <button disabled class="chat-send-btn">發送</button>
-              </div>
-            </div>
-          </template>
-
-          <!-- 繪畫階段 -->
-          <template v-else>
-            <!-- 工具欄（僅畫家顯示完整版） -->
-            <div class="game-toolbar">
-              <DrawingToolbar :compact="true" />
-            </div>
-
-            <!-- 畫布 -->
-            <div class="game-canvas">
-              <DrawingCanvas />
-              <!-- 進度條 -->
-              <div v-if="isCountingDown && timeRemaining !== null" class="time-progress">
-                <div 
-                  class="time-bar" 
-                  :class="{ 'time-warning': timeRemaining <= 10 }"
-                  :style="{ width: `${(timeRemaining / drawTime) * 100}%` }"
-                ></div>
-              </div>
-            </div>
-
-            <!-- 右側聊天面板 -->
-            <div class="game-chat-panel">
+          <!-- 聊天面板 -->
+          <div class="game-chat-panel">
             <div class="chat-messages-container" ref="chatMessagesRef">
-              <!-- 系統消息 -->
-              <div class="chat-msg system-msg">
+              <!-- 總結階段顯示答案 -->
+              <div v-if="isSummary" class="chat-msg system-msg answer-revealed">
+                <span class="msg-icon">🎯</span> 答案是：<strong>{{ gameStore.currentWord }}</strong>
+              </div>
+              
+              <!-- 系統消息（繪畫階段） -->
+              <div v-if="!isSummary" class="chat-msg system-msg">
                 <span class="msg-icon">🎮</span> 遊戲開始！
               </div>
               
-              <!-- 猜測記錄和聊天消息 -->
+              <!-- 猜測記錄 -->
               <div 
-                v-for="guess in sortedGuesses" 
+                v-for="guess in (isSummary ? gameStore.currentRoundCorrectGuesses : sortedGuesses)" 
                 :key="guess.id"
                 class="chat-msg"
                 :class="{ 
@@ -166,8 +136,8 @@
                 <span v-else class="msg-text">{{ guess.guess_text }}</span>
               </div>
               
-              <!-- 已猜中提示 -->
-              <div v-if="hasGuessed" class="chat-msg correct-self">
+              <!-- 已猜中提示（繪畫階段） -->
+              <div v-if="!isSummary && hasGuessed" class="chat-msg correct-self">
                 <span class="msg-icon">✅</span> 你已猜中答案！
               </div>
             </div>
@@ -175,6 +145,14 @@
             <!-- 輸入區 -->
             <div class="chat-input-area">
               <input
+                v-if="isSummary"
+                type="text"
+                placeholder="下一輪即將開始..."
+                disabled
+                class="chat-input-field"
+              />
+              <input
+                v-else
                 v-model="guessInput"
                 type="text"
                 :placeholder="getInputPlaceholder"
@@ -185,14 +163,13 @@
               />
               <button 
                 @click="handleSubmitGuess"
-                :disabled="loading || hasGuessed || isCurrentDrawer || !guessInput.trim()"
+                :disabled="isSummary || loading || hasGuessed || isCurrentDrawer || !guessInput.trim()"
                 class="chat-send-btn"
               >
                 發送
               </button>
             </div>
           </div>
-          </template>
         </div>
       </div>
     </div>
@@ -814,6 +791,26 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   overflow: hidden;
+}
+
+/* 總結階段覆蓋層 */
+.summary-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.95);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+/* 工具欄禁用狀態 */
+.game-toolbar.disabled {
+  opacity: 0.5;
+  pointer-events: none;
 }
 
 /* 時間進度條 */
