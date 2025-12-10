@@ -39,16 +39,22 @@ const { subscribeDrawing } = useRealtime()
 
 const canvasElement = ref<HTMLCanvasElement | null>(null)
 
-// 監聯輪次變化，自動清空畫布
+// 監聽輪次變化，自動清空畫布
 watch(
   () => gameStore.currentRound?.id,
   (newRoundId, oldRoundId) => {
+    console.log('[DrawingCanvas] watch 觸發:', { oldRoundId, newRoundId })
     // 當輪次 ID 變化時（進入新輪次），清空畫布
+    // 也包括從 undefined 變成有值的情況（第一輪）
     if (newRoundId && newRoundId !== oldRoundId) {
-      console.log('[DrawingCanvas] 輪次變化，清空畫布:', { oldRoundId, newRoundId })
-      clearCanvas()
+      console.log('[DrawingCanvas] 輪次變化，準備清空畫布')
+      // 使用 nextTick 確保 DOM 已更新
+      setTimeout(() => {
+        clearCanvas()
+      }, 0)
     }
-  }
+  },
+  { immediate: true }  // 立即執行一次，處理組件掛載時已有輪次的情況
 )
 
 // 鼠標事件處理

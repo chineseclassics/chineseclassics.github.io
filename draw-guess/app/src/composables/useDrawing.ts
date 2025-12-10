@@ -29,6 +29,8 @@ export function useDrawing() {
 
   // 初始化 Canvas
   function initCanvas(canvas: HTMLCanvasElement) {
+    console.log('[useDrawing] initCanvas 被調用')
+    
     canvasRef.value = canvas
     const ctx = canvas.getContext('2d', { willReadFrequently: true })
     if (!ctx) {
@@ -50,14 +52,14 @@ export function useDrawing() {
     // 這樣繪製時使用 CSS 坐標即可，ctx 會自動縮放到實際像素
     ctx.scale(dpr, dpr)
 
-    // 設置默認樣式（使用 CSS 尺寸）
+    // 設置默認樣式（使用 CSS 尺寸）- 乾淨的白色畫布
     ctx.fillStyle = '#FFFFFF'
     ctx.fillRect(0, 0, rect.width, rect.height)
-
-    // 重繪已有筆觸
-    if (canvasRef.value) {
-      redrawCanvas(canvasRef.value, drawingStore.strokes)
-    }
+    
+    // 初始化時清空筆觸記錄，確保新遊戲不會有舊筆觸
+    // 注意：不在這裡重繪 strokes，因為每輪開始都應該是乾淨的畫布
+    drawingStore.clearStrokes()
+    console.log('[useDrawing] Canvas 初始化完成，筆觸已清空')
 
     // 監聽窗口大小變化，重新調整 canvas
     const resizeObserver = new ResizeObserver(() => {
@@ -207,16 +209,28 @@ export function useDrawing() {
 
   // 清空畫布
   function clearCanvas() {
-    if (!canvasRef.value || !ctxRef.value) return
+    console.log('[useDrawing] clearCanvas 被調用, canvasRef:', !!canvasRef.value, 'ctxRef:', !!ctxRef.value)
+    
+    if (!canvasRef.value || !ctxRef.value) {
+      console.warn('[useDrawing] clearCanvas: canvas 或 ctx 不存在，無法清空')
+      return
+    }
 
     const ctx = ctxRef.value
     const canvas = canvasRef.value
+    
+    // 使用 CSS 尺寸（因為 ctx 已經被 scale 過）
+    const rect = canvas.getBoundingClientRect()
+    
+    console.log('[useDrawing] 清空畫布，尺寸:', rect.width, 'x', rect.height)
 
-    ctx.clearRect(0, 0, canvas.width, canvas.height)
+    ctx.clearRect(0, 0, rect.width, rect.height)
     ctx.fillStyle = '#FFFFFF'
-    ctx.fillRect(0, 0, canvas.width, canvas.height)
+    ctx.fillRect(0, 0, rect.width, rect.height)
 
+    // 清空筆觸記錄
     drawingStore.clearStrokes()
+    console.log('[useDrawing] 畫布已清空，strokes 數量:', drawingStore.strokes.length)
   }
 
   // 設置工具

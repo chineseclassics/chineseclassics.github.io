@@ -4,7 +4,7 @@ import { useGameStore } from '../stores/game'
 import { useRealtime } from './useRealtime'
 
 // 總結頁面顯示時間（秒）
-const SUMMARY_TIME = 5
+const SUMMARY_TIME = 6
 
 // ========== 全局單例狀態（所有 useGame() 調用共享） ==========
 // 倒計時相關
