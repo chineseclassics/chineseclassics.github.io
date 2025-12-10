@@ -236,7 +236,7 @@ const router = useRouter()
 const roomStore = useRoomStore()
 const gameStore = useGameStore()
 const authStore = useAuthStore()
-const { subscribeRoom, unsubscribeRoom, subscribeGameState, broadcastAllGuessed } = useRealtime()
+const { subscribeRoom, unsubscribeRoom, subscribeGameState } = useRealtime()
 const {
   isPlaying,
   isWaiting,
@@ -390,13 +390,7 @@ function showError(message: string) {
 // 提交猜測
 async function handleSubmitGuess() {
   if (!isCurrentDrawer.value && guessInput.value.trim()) {
-    const result = await submitGuess()
-    
-    // 如果所有非畫家都猜對了，廣播事件讓房主結束輪次
-    if (result.success && result.allGuessersCorrect && currentRoom.value) {
-      console.log('[RoomView] 所有人都猜對了，廣播事件')
-      await broadcastAllGuessed(currentRoom.value.code)
-    }
+    await submitGuess()
   }
 }
 
@@ -526,14 +520,6 @@ onMounted(async () => {
     // 現在 broadcast self: true，所有人（包括房主）都會收到廣播，統一處理
     subscribeGameState(currentRoom.value.code, async (state) => {
       console.log('[RoomView] 收到遊戲狀態廣播:', state)
-      
-      // 處理「所有人都猜對了」事件（只有房主需要處理）
-      if (state.allGuessed && roomStore.isHost) {
-        console.log('[RoomView] 房主收到所有人猜對事件，提前結束輪次')
-        const { endRound } = useGame()
-        await endRound()
-        return // 不需要處理其他狀態
-      }
       
       // 先更新當前畫家 ID
       if (state.drawerId && currentRoom.value) {

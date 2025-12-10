@@ -2,13 +2,11 @@ import { ref, computed } from 'vue'
 import { supabase } from '../lib/supabase'
 import { useGameStore } from '../stores/game'
 import { useAuthStore } from '../stores/auth'
-import { useRoomStore } from '../stores/room'
 import { useScoring } from './useScoring'
 
 export function useGuessing() {
   const gameStore = useGameStore()
   const authStore = useAuthStore()
-  const roomStore = useRoomStore()
   const { calculateGuessScore, updatePlayerScore } = useScoring()
 
   const guessInput = ref('')
@@ -95,13 +93,10 @@ export function useGuessing() {
         await updatePlayerScore(authStore.user.id, scoreEarned)
       }
 
-      // 檢查是否所有非畫家都猜對了
-      const allGuessersCorrect = checkAllGuessersCorrect()
-
       // 每次提交後都清空輸入框，允許繼續猜測
       guessInput.value = ''
 
-      return { success: true, isCorrect, guess: data, allGuessersCorrect }
+      return { success: true, isCorrect, guess: data }
     } catch (err) {
       error.value = err instanceof Error ? err.message : '提交猜測失敗'
       console.error('提交猜測錯誤:', err)
@@ -119,35 +114,6 @@ export function useGuessing() {
 
     // 精確匹配（中文無大小寫，但預留處理）
     return normalizedGuess === normalizedCorrect
-  }
-
-  // 檢查是否所有非畫家都猜對了
-  function checkAllGuessersCorrect(): boolean {
-    if (!gameStore.currentRound) return false
-    
-    const drawerId = gameStore.currentRound.drawer_id
-    const participants = roomStore.participants
-    
-    // 獲取所有非畫家玩家
-    const guessers = participants.filter(p => p.user_id !== drawerId)
-    
-    if (guessers.length === 0) return false
-    
-    // 獲取當前輪次的正確猜測
-    const currentRoundCorrectUserIds = new Set(
-      gameStore.currentRoundCorrectGuesses.map(g => g.user_id)
-    )
-    
-    // 檢查每個非畫家是否都猜對了
-    const allCorrect = guessers.every(g => currentRoundCorrectUserIds.has(g.user_id))
-    
-    console.log('[useGuessing] 檢查所有人猜對:', {
-      guessersCount: guessers.length,
-      correctCount: currentRoundCorrectUserIds.size,
-      allCorrect
-    })
-    
-    return allCorrect
   }
 
   // 清除錯誤
