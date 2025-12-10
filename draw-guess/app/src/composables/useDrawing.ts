@@ -5,6 +5,12 @@ import { useRoomStore } from '../stores/room'
 import { useAuthStore } from '../stores/auth'
 import { useRealtime } from './useRealtime'
 
+// 模組級單例 - 確保所有 useDrawing() 調用共享同一個 canvas 引用
+const canvasRef = ref<HTMLCanvasElement | null>(null)
+const ctxRef = ref<CanvasRenderingContext2D | null>(null)
+const currentStroke = ref<Stroke | null>(null)
+const lastPoint = ref<{ x: number; y: number } | null>(null)
+
 export function useDrawing() {
   const drawingStore = useDrawingStore()
   const roomStore = useRoomStore()
@@ -16,11 +22,6 @@ export function useDrawing() {
     if (!authStore.user || !roomStore.currentRoom) return false
     return roomStore.currentRoom.current_drawer_id === authStore.user.id
   })
-
-  const canvasRef = ref<HTMLCanvasElement | null>(null)
-  const ctxRef = ref<CanvasRenderingContext2D | null>(null)
-  const currentStroke = ref<Stroke | null>(null)
-  const lastPoint = ref<{ x: number; y: number } | null>(null)
 
   // 節流相關
   let throttleTimer: number | null = null

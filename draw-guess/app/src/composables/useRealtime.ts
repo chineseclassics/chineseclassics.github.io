@@ -315,6 +315,7 @@ export function useRealtime() {
     wordOptions?: any[]
     roundNumber?: number
     isLastRound?: boolean
+    startedAt?: string  // ISO 時間戳，用於同步倒計時
   }) {
     const channel = getRoomChannel(roomCode)
     const channelState = (channel as any).state

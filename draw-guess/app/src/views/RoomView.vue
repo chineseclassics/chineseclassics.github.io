@@ -551,13 +551,28 @@ onMounted(async () => {
         
         // 進入繪畫階段
         if (state.roundStatus === 'drawing') {
-          // 畫布清空由 DrawingCanvas 組件監聽 currentRound 變化自動處理
+          // 畫布清空由 DrawingCanvas 組件監聯 currentRound 變化自動處理
           // 停止之前的總結倒計時
           stopSummaryCountdown()
           // 清除評分
           gameStore.clearRatings()
+          
+          // 根據 startedAt 計算剩餘時間，確保所有玩家同步
+          let countdownDuration = drawTime.value
+          if (state.startedAt) {
+            const startTime = new Date(state.startedAt).getTime()
+            const now = Date.now()
+            const elapsed = Math.floor((now - startTime) / 1000)
+            countdownDuration = Math.max(0, drawTime.value - elapsed)
+            console.log('[RoomView] 根據 startedAt 計算倒計時:', { 
+              startedAt: state.startedAt, 
+              elapsed, 
+              countdownDuration 
+            })
+          }
+          
           // 啟動繪畫倒計時
-          startCountdown(drawTime.value)
+          startCountdown(countdownDuration)
         }
         
         // 進入總結階段
