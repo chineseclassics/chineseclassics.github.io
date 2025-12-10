@@ -341,6 +341,10 @@ const {
   summaryTimeRemaining,
   selectWord,
   stopSelectionCountdown,
+  startSelectionCountdown,
+  startSummaryCountdown,
+  stopSummaryCountdown,
+  startCountdown,
 } = useGame()
 const { hasGuessed, guessInput, submitGuess, loading: guessingLoading } = useGuessing()
 const { leaveRoom } = useRoom()
@@ -592,15 +596,33 @@ onMounted(async () => {
       if (state.roundStatus) {
         gameStore.setRoundStatus(state.roundStatus)
         
-        // 如果進入選詞階段，清空畫布
+        // 如果進入選詞階段，清空畫布並開始選詞倒計時
         if (state.roundStatus === 'selecting') {
           // 清空畫布（通過事件）
           window.dispatchEvent(new CustomEvent('clearCanvas'))
+          // 停止之前的倒計時
+          stopSummaryCountdown()
+          // 非房主也需要啟動選詞倒計時（用於顯示）
+          if (!roomStore.isHost) {
+            startSelectionCountdown()
+          }
         }
         
-        // 如果進入繪畫階段，停止選詞倒計時（給非畫家用）
+        // 如果進入繪畫階段，停止選詞倒計時，開始繪畫倒計時
         if (state.roundStatus === 'drawing') {
           stopSelectionCountdown()
+          // 非房主也需要啟動繪畫倒計時（用於顯示）
+          if (!roomStore.isHost) {
+            startCountdown(drawTime.value)
+          }
+        }
+        
+        // 如果進入總結階段，停止繪畫倒計時，開始總結倒計時
+        if (state.roundStatus === 'summary') {
+          // 非房主也需要啟動總結倒計時（用於顯示，但不會觸發下一輪）
+          if (!roomStore.isHost) {
+            startSummaryCountdown()
+          }
         }
       }
       if (state.wordOptions !== undefined) {
@@ -615,6 +637,12 @@ onMounted(async () => {
       if (currentRoom.value) {
         await roomStore.loadRoom(currentRoom.value.id)
         await gameStore.loadCurrentRound(currentRoom.value.id)
+        
+        // 當進入繪畫階段時，重新訂閱猜測記錄
+        if (state.roundStatus === 'drawing' && gameStore.currentRound) {
+          console.log('[RoomView] 繪畫階段，訂閱猜測記錄:', gameStore.currentRound.id)
+          subscribeGuesses(currentRoom.value.code, gameStore.currentRound.id)
+        }
       }
     })
 

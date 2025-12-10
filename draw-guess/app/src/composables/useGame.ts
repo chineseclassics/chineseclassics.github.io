@@ -133,15 +133,16 @@ export function useGame() {
     }
 
     summaryTimeRemaining.value = SUMMARY_TIME
-    console.log('[useGame] 開始總結倒計時:', SUMMARY_TIME, '秒')
+    console.log('[useGame] 開始總結倒計時:', SUMMARY_TIME, '秒', '是否房主:', roomStore.isHost)
 
     summaryTimer = window.setInterval(async () => {
       if (summaryTimeRemaining.value !== null && summaryTimeRemaining.value > 0) {
         summaryTimeRemaining.value--
       } else {
         stopSummaryCountdown()
-        // 總結結束，房主開始下一輪
+        // 總結結束，只有房主開始下一輪
         console.log('[useGame] 總結倒計時結束, isSummary:', isSummary.value, 'isHost:', roomStore.isHost)
+        // 只有房主才能執行下一輪的操作，非房主等待廣播
         if (roomStore.isHost) {
           console.log('[useGame] 房主執行 continueToNextRound')
           await continueToNextRound()
@@ -259,7 +260,9 @@ export function useGame() {
       await broadcastGameState(roomStore.currentRoom!.code, {
         roundStatus: 'selecting',
         wordOptions: options,
-        drawerId: drawer.user_id
+        drawerId: drawer.user_id,
+        drawerName: drawer.nickname,
+        roundNumber: nextRoundNum
       })
 
       // 開始選詞倒計時
@@ -495,7 +498,10 @@ export function useGame() {
     skipWord,
     startCountdown,
     stopCountdown,
+    startSelectionCountdown,
     stopSelectionCountdown,
+    startSummaryCountdown,
+    stopSummaryCountdown,
     resetCountdown,
   }
 }

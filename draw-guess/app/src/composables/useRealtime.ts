@@ -188,9 +188,15 @@ export function useRealtime() {
           table: 'game_rounds',
           filter: `room_id=eq.${roomId}`,
         }, async (payload) => {
-          log('輪次變化:', payload.eventType)
+          log('輪次變化:', payload.eventType, payload.new)
           if (roomStore.currentRoom) {
             await gameStore.loadCurrentRound(roomStore.currentRoom.id)
+            // 當新輪次創建時，自動訂閱猜測記錄
+            if (payload.eventType === 'INSERT' && payload.new && (payload.new as any).id) {
+              const newRoundId = (payload.new as any).id
+              log('新輪次創建，自動訂閱猜測記錄:', newRoundId)
+              subscribeGuesses(roomCode, newRoundId)
+            }
           }
         })
         .on('broadcast', { event: 'drawing' }, (payload) => {
@@ -236,16 +242,20 @@ export function useRealtime() {
 
     const listenerKey = `guesses:${roundId}`
     if ((channel as any)[listenerKey]) {
+      log('猜測訂閱已存在，跳過:', roundId)
       return channel
     }
 
+    log('訂閱猜測記錄:', roundId)
+    
     channel.on('postgres_changes', {
       event: 'INSERT',
       schema: 'public',
       table: 'guesses',
       filter: `round_id=eq.${roundId}`,
     }, async (payload) => {
-      log('猜測記錄變化:', payload.eventType)
+      log('收到新猜測記錄:', payload.eventType, payload.new)
+      // 立即更新本地狀態
       await gameStore.loadGuesses(roundId)
     })
 
