@@ -255,6 +255,7 @@ const {
   startSummaryCountdown,
   stopSummaryCountdown,
   startCountdown,
+  stopCountdown,
 } = useGame()
 const { hasGuessed, guessInput, submitGuess, loading: guessingLoading } = useGuessing()
 const { leaveRoom } = useRoom()
@@ -465,8 +466,9 @@ onMounted(async () => {
     }
 
     // 訂閱遊戲狀態廣播（同步 roundStatus、wordOptions 等）
+    // 現在 broadcast self: true，所有人（包括房主）都會收到廣播，統一處理
     subscribeGameState(currentRoom.value.code, async (state) => {
-      console.log('[RoomView] 收到遊戲狀態廣播:', state, '是否房主:', roomStore.isHost)
+      console.log('[RoomView] 收到遊戲狀態廣播:', state)
       
       // 先更新當前畫家 ID
       if (state.drawerId && currentRoom.value) {
@@ -474,30 +476,41 @@ onMounted(async () => {
         roomStore.setCurrentDrawer(state.drawerId)
       }
       
-      // 更新輪次狀態
+      // 更新輪次狀態 - 所有人統一處理
       if (state.roundStatus) {
         console.log('[RoomView] 更新輪次狀態:', state.roundStatus)
         gameStore.setRoundStatus(state.roundStatus)
         
-        // 非房主：收到廣播後啟動倒計時和清空畫布
-        // 房主：收不到自己的廣播（Supabase broadcast self: false），所以這裡只處理非房主
-        if (!roomStore.isHost) {
-          // 如果進入繪畫階段，清空畫布並開始繪畫倒計時
-          if (state.roundStatus === 'drawing') {
-            // 清空畫布
-            window.dispatchEvent(new CustomEvent('clearCanvas'))
-            // 停止之前的倒計時
-            stopSummaryCountdown()
-            // 啟動繪畫倒計時
-            startCountdown(drawTime.value)
-          }
-          
-          // 如果進入總結階段，開始總結倒計時
-          if (state.roundStatus === 'summary') {
+        // 進入繪畫階段
+        if (state.roundStatus === 'drawing') {
+          // 清空畫布
+          window.dispatchEvent(new CustomEvent('clearCanvas'))
+          // 停止之前的總結倒計時
+          stopSummaryCountdown()
+          // 清除評分
+          gameStore.clearRatings()
+          // 啟動繪畫倒計時
+          startCountdown(drawTime.value)
+        }
+        
+        // 進入總結階段
+        if (state.roundStatus === 'summary') {
+          // 停止繪畫倒計時
+          stopCountdown()
+          // 如果是最後一輪，3秒後結束遊戲；否則開始總結倒計時
+          if (state.isLastRound) {
+            // 最後一輪，3秒後由房主結束遊戲
+            if (roomStore.isHost) {
+              setTimeout(async () => {
+                const { endGame } = useGame()
+                await endGame()
+              }, 3000)
+            }
+          } else {
+            // 還有下一輪，開始總結倒計時
             startSummaryCountdown()
           }
         }
-        // 注意：房主的倒計時和畫布清空都在 useGame.ts 的 startDrawingPhase/endRound 中處理
       }
       
       // 重新載入房間和輪次以獲取最新數據

@@ -35,7 +35,7 @@ export function useRealtime() {
     const channel = supabase.channel(channelKey, {
       config: {
         presence: { key: 'user' },
-        broadcast: { self: false },
+        broadcast: { self: true },  // 房主也收到自己的廣播，統一處理邏輯
       },
     })
 
@@ -296,6 +296,7 @@ export function useRealtime() {
     drawerName?: string
     wordOptions?: any[]
     roundNumber?: number
+    isLastRound?: boolean
   }) {
     const channel = getRoomChannel(roomCode)
     const channelState = (channel as any).state

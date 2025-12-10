@@ -193,9 +193,16 @@ export function useGame() {
   }
 
   // 開始繪畫階段（系統自動分配畫家和詞語）
+  // 只有房主調用此函數，負責準備數據並廣播
+  // 所有人（包括房主）在收到廣播後統一執行狀態更新
   async function startDrawingPhase() {
     if (!roomStore.currentRoom) {
       return { success: false, error: '沒有當前房間' }
+    }
+    
+    // 只有房主可以發起新輪次
+    if (!roomStore.isHost) {
+      return { success: false, error: '只有房主可以發起新輪次' }
     }
 
     const currentRoundNum = roomStore.currentRoom.current_round || 0
@@ -243,14 +250,7 @@ export function useGame() {
         throw new Error('創建輪次失敗')
       }
 
-      // 進入繪畫階段
-      gameStore.setRoundStatus('drawing')
-      gameStore.clearRatings()
-      
-      // 房主清空畫布（房主收不到自己的廣播，需要直接清空）
-      window.dispatchEvent(new CustomEvent('clearCanvas'))
-
-      // 廣播狀態給所有玩家（非房主會在收到廣播後清空畫布）
+      // 廣播狀態給所有玩家（包括房主自己，統一在回調中處理）
       const { broadcastGameState } = useRealtime()
       await broadcastGameState(roomStore.currentRoom!.code, {
         roundStatus: 'drawing',
@@ -259,9 +259,6 @@ export function useGame() {
         drawerName: drawer.nickname,
         roundNumber: nextRoundNum
       })
-
-      // 開始繪畫倒計時
-      startCountdown(drawTime.value)
 
       return { success: true, drawerId: drawer.user_id, word: word.text }
     } catch (err) {
@@ -276,7 +273,8 @@ export function useGame() {
   }
 
   // 結束當前輪次（只應由房主調用，避免競爭條件）
-  // 新流程：結束輪次 → 顯示 3 秒總結 → 自動開始下一輪繪畫
+  // 房主負責：更新數據庫 + 發廣播
+  // 所有人（包括房主）在收到廣播後統一執行狀態更新
   async function endRound() {
     if (!currentRound.value || !roomStore.currentRoom) {
       return { success: false, error: '沒有當前輪次' }
@@ -288,52 +286,42 @@ export function useGame() {
     }
 
     try {
-      // 停止倒計時
-      stopCountdown()
-
       // 更新輪次結束時間（gameStore.endRound 內部會計算畫家得分）
       const endResult = await gameStore.endRound()
       if (!endResult.success) {
         return endResult
       }
 
-      // 進入總結階段
-      gameStore.setRoundStatus('summary')
+      // 檢查是否是最後一輪
+      const currentRoundNum = roomStore.currentRoom.current_round || 0
+      const isLastRound = currentRoundNum >= totalRounds.value
+
+      // 廣播進入總結階段（所有人包括房主在回調中統一處理）
       const { broadcastGameState } = useRealtime()
       await broadcastGameState(roomStore.currentRoom!.code, {
         roundStatus: 'summary',
         wordOptions: [],
-        drawerId: roomStore.currentRoom!.current_drawer_id ?? undefined
+        drawerId: roomStore.currentRoom!.current_drawer_id ?? undefined,
+        isLastRound: isLastRound
       })
 
-      // 檢查是否還有下一輪
-      const currentRoundNum = roomStore.currentRoom.current_round || 0
-      if (currentRoundNum >= totalRounds.value) {
-        // 所有輪次完成，3 秒後結束遊戲
-        setTimeout(async () => {
-          await endGame()
-        }, SUMMARY_TIME * 1000)
-        return { success: true, gameEnded: true }
-      }
-
-      // 還有下一輪，開始 3 秒總結倒計時
-      startSummaryCountdown()
-
-      return { success: true, gameEnded: false }
+      return { success: true, gameEnded: isLastRound }
     } catch (err) {
       console.error('結束輪次錯誤:', err)
       return { success: false, error: err instanceof Error ? err.message : '結束輪次失敗' }
     }
   }
 
-  // 從總結階段繼續到下一輪
+  // 從總結階段繼續到下一輪（只有房主調用）
   async function continueToNextRound() {
     if (!roomStore.currentRoom) {
       return { success: false, error: '沒有當前房間' }
     }
-
-    // 停止總結倒計時
-    stopSummaryCountdown()
+    
+    // 只有房主可以發起下一輪
+    if (!roomStore.isHost) {
+      return { success: false, error: '只有房主可以發起下一輪' }
+    }
 
     // 檢查是否還有下一輪
     const currentRoundNum = roomStore.currentRoom.current_round || 0
