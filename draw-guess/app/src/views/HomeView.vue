@@ -75,7 +75,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch, nextTick } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import UserAuth from '../components/UserAuth.vue'
 import RoomCreate from '../components/RoomCreate.vue'
@@ -87,7 +87,7 @@ import { useRealtime } from '../composables/useRealtime'
 import { useAuthStore } from '../stores/auth'
 
 const router = useRouter()
-const { currentRoom, participants, leaveRoom } = useRoom()
+const { currentRoom, participants, leaveRoom, isHost } = useRoom()
 const { startGame } = useGame()
 const { subscribeRoom } = useRealtime()
 const authStore = useAuthStore()
@@ -122,9 +122,9 @@ async function handleStartGame() {
   console.log('[HomeView] 開始遊戲結果:', result, '當前狀態:', currentRoom.value?.status)
   
   if (result.success && currentRoom.value) {
-    // 遊戲開始成功，直接跳轉到 RoomView
-    console.log('[HomeView] 遊戲開始成功，直接跳轉到 RoomView')
-    await router.push(`/room/${currentRoom.value.code}`)
+    // 遊戲開始成功，房主直接跳轉到 RoomView
+    console.log('[HomeView] 遊戲開始成功，房主直接跳轉到 RoomView')
+    router.push(`/room/${currentRoom.value.code}`)
   } else if (result.error) {
     console.error('開始遊戲失敗:', result.error)
   }
@@ -161,26 +161,33 @@ watch(
 )
 
 // 監聯房間狀態變化，當狀態變為 playing 或 finished 時自動跳轉到 RoomView
+// 這主要用於非房主玩家（被動接收狀態變化）
 watch(
   () => currentRoom.value?.status,
   async (status, oldStatus) => {
-    console.log('[HomeView] 房間狀態變化:', { oldStatus, newStatus: status, currentRoute: router.currentRoute.value.name })
+    console.log('[HomeView] 房間狀態變化:', { oldStatus, newStatus: status, currentRoute: router.currentRoute.value.name, isHost: isHost.value })
     
     // 當狀態變為 playing 或 finished 時跳轉到 RoomView
     // 檢查當前路由，避免重複跳轉
     if (currentRoom.value && (status === 'playing' || status === 'finished')) {
+      // 房主在 handleStartGame 中已經跳轉了，這裡只處理非房主
+      if (isHost.value) {
+        console.log('[HomeView] 房主，跳過 watch 中的跳轉（已在 handleStartGame 中處理）')
+        return
+      }
+      
       const currentRoute = router.currentRoute.value
       // 如果當前不在 RoomView，則跳轉
       if (currentRoute.name !== 'room' || currentRoute.params.code !== currentRoom.value.code) {
-        console.log('[HomeView] 準備跳轉到 RoomView:', currentRoom.value.code)
+        console.log('[HomeView] 非房主，準備跳轉到 RoomView:', currentRoom.value.code)
         const targetPath = `/room/${currentRoom.value.code}`
-        console.log('[HomeView] 跳轉目標路徑:', targetPath)
         
-        // 使用 nextTick 確保 Vue 更新完成後再跳轉
-        await nextTick()
-        
-        // 使用 location.href 強制跳轉（繞過 Vue Router 的可能阻塞）
-        window.location.href = window.location.origin + '/draw-guess' + targetPath
+        try {
+          await router.push(targetPath)
+          console.log('[HomeView] 路由跳轉成功')
+        } catch (err) {
+          console.error('[HomeView] 路由跳轉錯誤:', err)
+        }
       } else {
         console.log('[HomeView] 已在 RoomView，無需跳轉')
       }
