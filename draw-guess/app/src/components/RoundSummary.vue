@@ -87,19 +87,7 @@
         <span class="avg-count">({{ totalRatings }} 人已評)</span>
       </div>
 
-      <!-- 倒計時和操作按鈕 - 等待選詞時隱藏 -->
-      <div class="summary-footer" v-if="!isWaitingForSelection">
-        <div class="countdown" v-if="autoCountdown > 0">
-          {{ autoCountdown }} 秒後自動進入下一輪
-        </div>
-        <button 
-          v-if="isHost" 
-          class="next-btn"
-          @click="$emit('next-round')"
-        >
-          {{ isLastRound ? '查看結果' : '下一輪' }}
-        </button>
-      </div>
+      <!-- 倒計時由外部控制，組件內不再顯示 -->
     </div>
   </div>
 </template>
@@ -126,7 +114,6 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (e: 'next-round'): void
   (e: 'rating-submitted', rating: number): void
 }>()
 
@@ -137,10 +124,6 @@ const myRating = ref(0)
 const hoverRating = ref(0)
 const hasRated = ref(false)
 const ratings = ref<Array<{ rater_id: string; rating: number }>>([])
-
-// 自動倒計時
-const autoCountdown = ref(8)
-let countdownTimer: number | null = null
 
 // 計算屬性
 const isDrawer = computed(() => authStore.user?.id === props.drawerId)
@@ -223,35 +206,14 @@ function subscribeRatings() {
   }
 }
 
-// 開始自動倒計時
-function startAutoCountdown() {
-  countdownTimer = window.setInterval(() => {
-    if (autoCountdown.value > 0) {
-      autoCountdown.value--
-    } else {
-      if (countdownTimer) {
-        clearInterval(countdownTimer)
-      }
-      // 倒計時結束，如果是房主則觸發下一輪
-      if (props.isHost) {
-        emit('next-round')
-      }
-    }
-  }, 1000)
-}
-
 let unsubscribe: (() => void) | null = null
 
 onMounted(() => {
   loadRatings()
   unsubscribe = subscribeRatings()
-  startAutoCountdown()
 })
 
 onUnmounted(() => {
-  if (countdownTimer) {
-    clearInterval(countdownTimer)
-  }
   if (unsubscribe) {
     unsubscribe()
   }
@@ -260,7 +222,6 @@ onUnmounted(() => {
 // 監聽 roundId 變化，重新載入
 watch(() => props.roundId, () => {
   loadRatings()
-  autoCountdown.value = 8
 })
 </script>
 

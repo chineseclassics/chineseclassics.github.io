@@ -584,8 +584,21 @@ onMounted(async () => {
     subscribeGameState(currentRoom.value.code, async (state) => {
       console.log('[RoomView] 收到遊戲狀態廣播:', state)
       
-      // 更新本地狀態
+      // 先更新當前畫家 ID（在處理狀態之前，確保 isCurrentDrawerForNextRound 正確）
+      if (state.drawerId && currentRoom.value) {
+        console.log('[RoomView] 更新畫家 ID:', state.drawerId)
+        roomStore.setCurrentDrawer(state.drawerId)
+      }
+      
+      // 更新詞語選項
+      if (state.wordOptions !== undefined) {
+        console.log('[RoomView] 更新詞語選項:', state.wordOptions.length, '個')
+        gameStore.setWordOptions(state.wordOptions)
+      }
+      
+      // 更新輪次狀態
       if (state.roundStatus) {
+        console.log('[RoomView] 更新輪次狀態:', state.roundStatus, '當前用戶是否是畫家:', currentRoom.value?.current_drawer_id === authStore.user?.id)
         gameStore.setRoundStatus(state.roundStatus)
         
         // 如果進入選詞階段，清空畫布
@@ -610,14 +623,7 @@ onMounted(async () => {
           startSummaryCountdown()
         }
       }
-      if (state.wordOptions !== undefined) {
-        gameStore.setWordOptions(state.wordOptions)
-      }
-      // 更新當前畫家 ID
-      if (state.drawerId && currentRoom.value) {
-        // 直接更新本地房間狀態
-        roomStore.setCurrentDrawer(state.drawerId)
-      }
+      
       // 重新載入房間和輪次以獲取最新數據
       if (currentRoom.value) {
         await roomStore.loadRoom(currentRoom.value.id)
