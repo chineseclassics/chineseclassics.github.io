@@ -452,6 +452,48 @@ onMounted(async () => {
     console.log('[RoomView] 房間狀態:', currentRoom.value.status)
     await gameStore.loadCurrentRound(currentRoom.value.id)
 
+    // ========== 初始化遊戲狀態（修復錯過廣播的問題） ==========
+    // 如果房間正在遊戲中，且有當前輪次，需要初始化 roundStatus 和倒計時
+    // 這是因為玩家可能在廣播發送後才進入 RoomView，錯過了廣播
+    if (currentRoom.value.status === 'playing' && gameStore.currentRound) {
+      const round = gameStore.currentRound
+      console.log('[RoomView] 檢測到進行中的輪次:', { 
+        roundNumber: round.round_number, 
+        startedAt: round.started_at, 
+        endedAt: round.ended_at 
+      })
+      
+      // 如果輪次已開始但未結束，應該是繪畫階段
+      if (round.started_at && !round.ended_at) {
+        console.log('[RoomView] 輪次進行中，初始化繪畫階段')
+        
+        // 設置 roundStatus 為 drawing
+        gameStore.setRoundStatus('drawing')
+        
+        // 計算剩餘時間並啟動倒計時
+        const startTime = new Date(round.started_at).getTime()
+        const now = Date.now()
+        const elapsed = Math.floor((now - startTime) / 1000)
+        const remaining = Math.max(0, drawTime.value - elapsed)
+        
+        console.log('[RoomView] 倒計時計算:', { drawTime: drawTime.value, elapsed, remaining })
+        
+        if (remaining > 0) {
+          // 還有剩餘時間，啟動倒計時
+          startCountdown(remaining)
+        } else {
+          // 時間已到，但輪次還沒結束（可能是房主還沒處理）
+          // 房主會處理結束輪次，這裡只需要顯示 0
+          startCountdown(0)
+        }
+      } else if (round.ended_at) {
+        // 輪次已結束，應該是總結階段（但因為錯過廣播，可能沒設置）
+        // 這種情況比較少見，暫時不處理
+        console.log('[RoomView] 輪次已結束，可能是總結階段')
+      }
+    }
+    // ========== 初始化遊戲狀態結束 ==========
+
     // 等待 Channel 連接完成
     try {
       await subscribeRoom(
