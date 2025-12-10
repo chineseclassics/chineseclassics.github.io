@@ -1,6 +1,7 @@
 import { ref, computed, onUnmounted } from 'vue'
 import { useRoomStore } from '../stores/room'
 import { useGameStore, type WordOption } from '../stores/game'
+import { useAuthStore } from '../stores/auth'
 import { useRealtime } from './useRealtime'
 
 // 選詞時間（秒）
@@ -11,7 +12,8 @@ const SUMMARY_TIME = 8
 export function useGame() {
   const roomStore = useRoomStore()
   const gameStore = useGameStore()
-  const { broadcastGameState, subscribeGameState } = useRealtime()
+  const authStore = useAuthStore()
+  const { broadcastGameState: _broadcastGameState, subscribeGameState: _subscribeGameState } = useRealtime()
 
   // 倒計時相關
   const timeRemaining = ref<number | null>(null) // 剩餘時間（秒）
@@ -366,7 +368,7 @@ export function useGame() {
       await broadcastGameState(roomStore.currentRoom!.code, {
         roundStatus: 'summary',
         wordOptions: [],
-        drawerId: roomStore.currentRoom!.current_drawer_id
+        drawerId: roomStore.currentRoom!.current_drawer_id ?? undefined
       })
 
       // 開始總結倒計時
