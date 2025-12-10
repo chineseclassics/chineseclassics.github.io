@@ -190,7 +190,12 @@ export function useDrawing() {
 
   // 接收繪畫數據（來自其他玩家）
   function handleDrawingData(data: (Stroke & { userId?: string }) | { type: 'clear'; userId: string }) {
-    if (!canvasRef.value || !ctxRef.value) return
+    console.log('[handleDrawingData] 收到數據:', JSON.stringify(data))
+    
+    if (!canvasRef.value || !ctxRef.value) {
+      console.warn('[handleDrawingData] canvas 或 ctx 不存在')
+      return
+    }
 
     // 過濾自己發送的消息
     if (data.userId && authStore.user && data.userId === authStore.user.id) {
@@ -200,7 +205,7 @@ export function useDrawing() {
 
     // 處理清空畫布指令
     if ('type' in data && data.type === 'clear') {
-      console.log('[handleDrawingData] 收到清空畫布指令')
+      console.log('[handleDrawingData] 收到清空畫布指令，執行清空')
       clearCanvasLocal()
       return
     }
@@ -251,12 +256,13 @@ export function useDrawing() {
     
     // 如果是畫家，廣播清空指令給其他玩家
     if (isCurrentDrawer.value && roomStore.currentRoom && authStore.user) {
-      console.log('[useDrawing] 畫家清空畫布，廣播給其他玩家')
+      console.log('[useDrawing] 畫家清空畫布，廣播給其他玩家, roomCode:', roomStore.currentRoom.code)
       try {
-        await sendDrawing(roomStore.currentRoom.code, {
+        const result = await sendDrawing(roomStore.currentRoom.code, {
           type: 'clear',
           userId: authStore.user.id,
         })
+        console.log('[useDrawing] 清空畫布廣播結果:', result)
       } catch (error) {
         console.error('[useDrawing] 廣播清空指令失敗:', error)
       }
