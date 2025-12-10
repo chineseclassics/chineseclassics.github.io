@@ -82,13 +82,11 @@ import RoomCreate from '../components/RoomCreate.vue'
 import RoomJoin from '../components/RoomJoin.vue'
 import WaitingLobby from '../components/WaitingLobby.vue'
 import { useRoom } from '../composables/useRoom'
-import { useGame } from '../composables/useGame'
 import { useRealtime } from '../composables/useRealtime'
 import { useAuthStore } from '../stores/auth'
 
 const router = useRouter()
 const { currentRoom, participants, leaveRoom, isHost } = useRoom()
-const { startGame } = useGame()
 const { subscribeRoom } = useRealtime()
 const authStore = useAuthStore()
 
@@ -116,17 +114,12 @@ function handleRoomJoined() {
 }
 
 // 處理開始遊戲
-async function handleStartGame() {
-  console.log('[HomeView] 開始遊戲，當前狀態:', currentRoom.value?.status)
-  const result = await startGame()
-  console.log('[HomeView] 開始遊戲結果:', result, '當前狀態:', currentRoom.value?.status)
-  
-  if (result.success && currentRoom.value) {
-    // 遊戲開始成功，房主直接跳轉到 RoomView
-    console.log('[HomeView] 遊戲開始成功，房主直接跳轉到 RoomView')
+// 注意：startGame() 已經在 WaitingLobby 中調用過了
+// 這裡只需要處理跳轉，不要重複調用 startGame()
+function handleStartGame() {
+  console.log('[HomeView] 收到遊戲開始事件，房主跳轉到 RoomView')
+  if (currentRoom.value) {
     router.push(`/room/${currentRoom.value.code}`)
-  } else if (result.error) {
-    console.error('開始遊戲失敗:', result.error)
   }
 }
 
