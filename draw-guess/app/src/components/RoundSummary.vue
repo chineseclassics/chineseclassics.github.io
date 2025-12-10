@@ -267,8 +267,8 @@ watch(() => props.roundId, () => {
 
 .summary-card {
   background: var(--bg-card);
-  border: 3px solid var(--border-color);
-  border-radius: 15px 225px 15px 255px / 225px 15px 255px 15px;
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
   padding: 1.25rem 1.5rem;
   box-shadow: 6px 6px 0 var(--shadow-color);
   position: relative;
@@ -322,7 +322,7 @@ watch(() => props.roundId, () => {
   background: var(--bg-secondary);
   display: inline-block;
   padding: 0.2rem 0.6rem;
-  border-radius: 12px;
+  border-radius: 20px;
 }
 
 /* 答案顯示 */
@@ -330,7 +330,7 @@ watch(() => props.roundId, () => {
   text-align: center;
   padding: 0.875rem;
   background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
-  border-radius: 12px;
+  border-radius: 8px;
   margin-bottom: 0.875rem;
   border: 2px solid var(--color-success);
   animation: revealPulse 0.6s ease-out;
@@ -361,7 +361,7 @@ watch(() => props.roundId, () => {
   text-align: center;
   padding: 0.6rem;
   background: var(--bg-secondary);
-  border-radius: 10px;
+  border-radius: 8px;
   margin-bottom: 0.875rem;
   border: 2px dashed var(--border-light);
 }
@@ -388,7 +388,7 @@ watch(() => props.roundId, () => {
   background: var(--color-warning);
   color: var(--text-primary);
   padding: 0.15rem 0.5rem;
-  border-radius: 10px;
+  border-radius: 6px;
   font-size: 0.85rem;
   font-weight: bold;
   animation: scorePopIn 0.4s ease-out 0.3s both;
@@ -438,7 +438,7 @@ watch(() => props.roundId, () => {
   align-items: center;
   padding: 0.4rem 0.6rem;
   background: var(--bg-secondary);
-  border-radius: 8px;
+  border-radius: 6px;
   animation: guesserSlideIn 0.3s ease-out both;
   border: 2px solid transparent;
   transition: all 0.2s ease;
@@ -497,7 +497,7 @@ watch(() => props.roundId, () => {
   text-align: center;
   padding: 0.75rem;
   border: 2px dashed var(--border-light);
-  border-radius: 10px;
+  border-radius: 8px;
   margin-bottom: 0.875rem;
   background: var(--bg-secondary);
   transition: all 0.3s ease;
@@ -563,7 +563,7 @@ watch(() => props.roundId, () => {
   gap: 0.5rem;
   padding: 0.6rem;
   background: linear-gradient(135deg, #fff8e1, #ffecb3);
-  border-radius: 10px;
+  border-radius: 8px;
   margin-bottom: 0.875rem;
   border: 2px solid var(--color-warning);
 }
@@ -607,7 +607,7 @@ watch(() => props.roundId, () => {
   color: white;
   border: none;
   padding: 0.75rem 2rem;
-  border-radius: 15px 225px 15px 255px / 225px 15px 255px 15px;
+  border-radius: 8px;
   font-size: 1rem;
   font-family: var(--font-head);
   cursor: pointer;
@@ -625,7 +625,7 @@ watch(() => props.roundId, () => {
 .selection-waiting-banner {
   background: linear-gradient(135deg, #e3f2fd, #bbdefb);
   border: 2px solid var(--color-secondary);
-  border-radius: 10px;
+  border-radius: 8px;
   padding: 0.75rem 1rem;
   margin-bottom: 0.875rem;
   display: flex;
@@ -716,7 +716,7 @@ watch(() => props.roundId, () => {
   margin-top: 0.875rem;
   padding: 0.6rem 0.875rem;
   background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
-  border-radius: 10px;
+  border-radius: 8px;
   text-align: center;
   border: 2px solid var(--color-success);
   animation: fadeInUp 0.4s ease-out 0.2s both;
@@ -749,7 +749,7 @@ watch(() => props.roundId, () => {
   margin-top: 0.875rem;
   padding: 0.6rem 0.875rem;
   background: linear-gradient(135deg, #fff8e1, #ffecb3);
-  border-radius: 10px;
+  border-radius: 8px;
   text-align: center;
   border: 2px solid var(--color-warning);
   animation: celebratePulse 1.5s ease-in-out infinite;

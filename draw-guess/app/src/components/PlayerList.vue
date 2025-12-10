@@ -141,7 +141,7 @@ async function handleKick(userId: string, playerName: string) {
   font-weight: bold;
   font-family: var(--font-head);
   text-align: center;
-  border-radius: 125px 25px 185px 25px / 25px 205px 25px 205px;
+  border-radius: 8px 8px 0 0;
   margin: -0.5rem -0.5rem 0.5rem -0.5rem;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
@@ -158,7 +158,7 @@ async function handleKick(userId: string, playerName: string) {
   padding: 0.6rem;
   border-bottom: 2px dashed var(--border-light);
   transition: all 0.2s ease;
-  border-radius: 8px;
+  border-radius: 6px;
   margin-bottom: 2px;
 }
 
@@ -226,7 +226,7 @@ async function handleKick(userId: string, playerName: string) {
   font-size: 1rem;
   font-weight: bold;
   color: var(--text-primary);
-  border: 3px solid var(--border-light);
+  border: 2px solid var(--border-light);
   transition: all 0.3s ease;
 }
 
@@ -308,7 +308,7 @@ async function handleKick(userId: string, playerName: string) {
   margin-top: 1rem;
   padding: 1.25rem;
   background: linear-gradient(135deg, var(--color-success), #6fb86f);
-  border-radius: 15px 225px 15px 255px / 225px 15px 255px 15px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   gap: 0.875rem;

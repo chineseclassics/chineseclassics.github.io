@@ -152,8 +152,8 @@ onUnmounted(() => {
 
 .selection-card {
   background: var(--bg-card);
-  border: 3px solid var(--border-color);
-  border-radius: 16px;
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
   padding: 2rem;
   max-width: 450px;
   width: 100%;
@@ -188,7 +188,7 @@ onUnmounted(() => {
   height: 80px;
   border-radius: 50%;
   background: linear-gradient(135deg, #e3f2fd, #bbdefb);
-  border: 4px solid var(--color-secondary);
+  border: 2px solid var(--color-secondary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -239,8 +239,8 @@ onUnmounted(() => {
   gap: 0.5rem;
   padding: 1rem 1.5rem;
   background: var(--bg-secondary);
-  border: 3px solid var(--border-light);
-  border-radius: 12px;
+  border: 2px solid var(--border-light);
+  border-radius: 8px;
   font-size: 1.2rem;
   font-family: var(--font-head);
   cursor: pointer;
@@ -316,8 +316,8 @@ onUnmounted(() => {
 
 .waiting-card {
   background: var(--bg-card);
-  border: 3px solid var(--color-secondary);
-  border-radius: 16px;
+  border: 2px solid var(--color-secondary);
+  border-radius: 8px;
   padding: 2.5rem;
   max-width: 400px;
   width: 100%;
@@ -346,7 +346,7 @@ onUnmounted(() => {
 .waiting-spinner {
   width: 40px;
   height: 40px;
-  border: 4px solid var(--border-color);
+  border: 2px solid var(--border-color);
   border-top-color: var(--color-secondary);
   border-radius: 50%;
   margin: 0 auto;

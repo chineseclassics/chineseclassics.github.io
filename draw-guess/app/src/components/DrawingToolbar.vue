@@ -213,7 +213,7 @@ async function handleClear() {
   min-width: 20px;
   min-height: 20px;
   border: 2px solid var(--border-light);
-  border-radius: 6px;
+  border-radius: 4px;
   cursor: pointer;
   box-sizing: border-box;
   transition: all 0.15s ease;
@@ -226,7 +226,7 @@ async function handleClear() {
 }
 
 .color-cell.selected {
-  border: 3px solid var(--text-primary);
+  border: 2px solid var(--text-primary);
   box-shadow: 0 0 0 2px white inset, 0 2px 8px rgba(0,0,0,0.3);
   transform: scale(1.1);
 }

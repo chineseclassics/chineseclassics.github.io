@@ -594,7 +594,7 @@ onUnmounted(() => {
   min-width: 280px;
   background: var(--bg-card);
   border: 2px solid var(--border-color);
-  border-radius: 15px 225px 15px 255px / 225px 15px 255px 15px;
+  border-radius: 8px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -631,7 +631,7 @@ onUnmounted(() => {
   padding: 0.75rem 1rem;
   background: var(--bg-card);
   border: 2px solid var(--border-color);
-  border-radius: 15px 225px 15px 255px / 225px 15px 255px 15px;
+  border-radius: 8px;
   position: relative;
   box-shadow: 3px 3px 0 var(--shadow-color);
   transition: all 0.3s ease;
@@ -814,7 +814,7 @@ onUnmounted(() => {
 .game-toolbar {
   background: var(--bg-card);
   border: 2px solid var(--border-color);
-  border-radius: 15px 225px 15px 255px / 225px 15px 255px 15px;
+  border-radius: 8px;
   padding: 0.5rem;
   box-shadow: 3px 3px 0 var(--shadow-color);
   transition: all 0.3s ease;
@@ -829,7 +829,7 @@ onUnmounted(() => {
   flex: 1;
   background: white;
   border: 2px solid var(--border-color);
-  border-radius: 15px 225px 15px 255px / 225px 15px 255px 15px;
+  border-radius: 8px;
   position: relative;
   display: flex;
   align-items: center;
@@ -916,7 +916,7 @@ onUnmounted(() => {
   min-width: 280px;
   background: var(--bg-card);
   border: 2px solid var(--border-color);
-  border-radius: 15px 225px 15px 255px / 225px 15px 255px 15px;
+  border-radius: 8px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -1155,8 +1155,8 @@ onUnmounted(() => {
 
 .first-round-waiting .waiting-card {
   background: var(--bg-card);
-  border: 3px solid var(--border-color);
-  border-radius: 16px;
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
   padding: 2rem;
   max-width: 400px;
   width: 100%;
