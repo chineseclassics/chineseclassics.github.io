@@ -121,10 +121,11 @@ async function handleStartGame() {
   const result = await startGame()
   console.log('[HomeView] 開始遊戲結果:', result, '當前狀態:', currentRoom.value?.status)
   
-  if (result.success) {
-    // 遊戲開始成功，跳轉由 watch 處理（避免重複跳轉）
-    console.log('[HomeView] 遊戲開始成功，等待 watch 觸發跳轉')
-  } else {
+  if (result.success && currentRoom.value) {
+    // 遊戲開始成功，直接跳轉到 RoomView
+    console.log('[HomeView] 遊戲開始成功，直接跳轉到 RoomView')
+    await router.push(`/room/${currentRoom.value.code}`)
+  } else if (result.error) {
     console.error('開始遊戲失敗:', result.error)
   }
 }
