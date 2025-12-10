@@ -489,26 +489,19 @@ onMounted(async () => {
       }
       
       // 如果輪次已開始但未結束，應該是繪畫階段
+      // 這種情況主要是頁面刷新時恢復狀態
       if (round.started_at && !round.ended_at) {
         console.log('[RoomView] 輪次進行中，初始化繪畫階段')
-        
-        // 設置 roundStatus 為 drawing
         gameStore.setRoundStatus('drawing')
         
-        // 計算剩餘時間並啟動倒計時
-        // 使用 started_at 計算，確保與其他玩家同步
+        // 頁面刷新時，根據 started_at 計算剩餘時間
         const startTime = new Date(round.started_at).getTime()
         const now = Date.now()
         const elapsed = Math.floor((now - startTime) / 1000)
         const remaining = Math.max(0, drawTime.value - elapsed)
-        
-        console.log('[RoomView] 初始化倒計時:', { drawTime: drawTime.value, elapsed, remaining })
-        
-        // 啟動倒計時（使用計算出的剩餘時間）
+        console.log('[RoomView] 刷新恢復倒計時:', remaining, '秒')
         startCountdown(remaining)
       } else if (round.ended_at) {
-        // 輪次已結束，應該是總結階段（但因為錯過廣播，可能沒設置）
-        // 這種情況比較少見，暫時不處理
         console.log('[RoomView] 輪次已結束，可能是總結階段')
       }
     }
@@ -550,27 +543,14 @@ onMounted(async () => {
           // 清除評分
           gameStore.clearRatings()
           
-          // 發送全局事件清空畫布（備用，主要靠組件掛載時清空）
-          console.log('[RoomView] 發送 clearCanvas 事件')
+          // 畫布清空由 DrawingCanvas 組件處理（組件有 key，每輪重新掛載時自動清空）
+          // 這裡發送事件作為備用（給手動清空按鈕用）
           window.dispatchEvent(new Event('clearCanvas'))
           
-          // 使用 startedAt 計算剩餘時間，確保所有玩家同步
-          let countdownDuration = drawTime.value
-          if (state.startedAt) {
-            const startTime = new Date(state.startedAt).getTime()
-            const now = Date.now()
-            const elapsed = Math.floor((now - startTime) / 1000)
-            countdownDuration = Math.max(0, drawTime.value - elapsed)
-            console.log('[RoomView] 根據 startedAt 計算倒計時:', { 
-              startedAt: state.startedAt, 
-              elapsed, 
-              countdownDuration 
-            })
-          } else {
-            console.log('[RoomView] 無 startedAt，使用默認時間:', countdownDuration)
-          }
-          
-          startCountdown(countdownDuration)
+          // 本地開始倒計時，直接使用房間設定的時間
+          // 網絡延遲造成的 1-2 秒差異可忽略，每輪都重新開始不會累積
+          console.log('[RoomView] 開始倒計時:', drawTime.value, '秒')
+          startCountdown(drawTime.value)
         }
         
         // 進入總結階段
