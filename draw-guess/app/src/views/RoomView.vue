@@ -144,7 +144,7 @@
             </div>
             
             <!-- 輸入區 - 總結階段也可以輸入 -->
-            <div class="chat-input-area card-body" style="padding: 0.75rem; border-top: 3px solid var(--border-light); display: flex; gap: 0.5rem; background: var(--bg-secondary);">
+            <div class="chat-input-area">
               <input
                 v-model="guessInput"
                 type="text"
@@ -153,7 +153,6 @@
                 :disabled="loading || hasGuessed || isCurrentDrawer"
                 @keyup.enter="handleSubmitGuess"
                 class="chat-input-field"
-                style="flex: 1;"
               />
               <button 
                 @click="handleSubmitGuess"
@@ -807,7 +806,7 @@ onUnmounted(() => {
   flex: 1;
   background: white;
   border: 3px solid var(--border-color);
-  border-radius: 12px;
+  border-radius: 0;
   position: relative;
   display: flex;
   align-items: center;
@@ -980,27 +979,43 @@ onUnmounted(() => {
 }
 
 /* 輸入區 */
+.chat-input-area {
+  padding: 0.75rem;
+  border-top: 2px solid var(--border-light);
+  display: flex;
+  gap: 0.5rem;
+  background: var(--bg-secondary);
+}
+
 .chat-input-field {
-  padding: 0.6rem 0.75rem;
+  flex: 1;
+  padding: 0.5rem 0.75rem;
   font-family: var(--font-body);
   font-size: 0.9rem;
-  transition: all 0.3s ease;
+  border: 2px solid var(--border-light);
+  border-radius: 0;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  transition: all 0.2s ease;
+  /* 使用 PaperCSS 的標準輸入框樣式，不過於不規則 */
 }
 
 .chat-input-field:focus {
   border-color: var(--color-secondary);
   outline: none;
-  box-shadow: 0 0 0 3px rgba(107, 175, 178, 0.2);
+  box-shadow: 0 0 0 2px rgba(107, 175, 178, 0.15);
 }
 
 .chat-input-field:disabled {
   background: var(--bg-secondary);
   cursor: not-allowed;
+  opacity: 0.6;
 }
 
 .chat-send-btn {
   /* PaperCSS paper-btn 樣式已提供基礎樣式 */
   padding: 0.6rem 1.25rem;
+  white-space: nowrap;
 }
 
 /* 響應式 */

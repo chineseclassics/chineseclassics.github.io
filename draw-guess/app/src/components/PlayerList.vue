@@ -141,7 +141,7 @@ async function handleKick(userId: string, playerName: string) {
   font-weight: bold;
   font-family: var(--font-head);
   text-align: center;
-  border-radius: 8px 8px 0 0;
+  border-radius: 0;
   margin: -0.5rem -0.5rem 0.5rem -0.5rem;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }

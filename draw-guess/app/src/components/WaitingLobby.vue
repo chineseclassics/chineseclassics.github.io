@@ -7,7 +7,7 @@
           <h2 class="card-title text-hand-title">{{ room?.name }}</h2>
           <div class="room-details">
             <div class="detail-item margin-bottom-small">
-              房間碼：<span class="badge badge-secondary">{{ room?.code }}</span>
+              房間碼：<span class="badge badge-secondary room-code-badge">{{ room?.code }}</span>
             </div>
             <div class="detail-item">
               狀態：<span class="badge">{{ getStatusText(room?.status) }}</span>
@@ -43,13 +43,16 @@
         <!-- 房間設置 -->
         <div class="room-settings margin-bottom-medium">
           <div class="setting-item">
-            繪畫時間：<strong>{{ room?.settings.draw_time }}</strong> 秒
+            <span class="setting-label">繪畫時間：</span>
+            <span class="setting-value"><strong>{{ room?.settings.draw_time }}</strong>秒</span>
           </div>
           <div class="setting-item">
-            輪數：<strong>{{ room?.settings.rounds }}</strong> 輪
+            <span class="setting-label">輪數：</span>
+            <span class="setting-value"><strong>{{ room?.settings.rounds }}</strong>輪</span>
           </div>
           <div class="setting-item">
-            詞語總數：<strong>{{ room?.word_count }}</strong> 個
+            <span class="setting-label">詞語總數：</span>
+            <span class="setting-value"><strong>{{ room?.word_count }}</strong>個</span>
           </div>
         </div>
 
@@ -159,6 +162,12 @@ async function handleLeaveRoom() {
   flex-wrap: wrap;
 }
 
+.room-code-badge {
+  font-size: 1.2rem;
+  padding: 0.4rem 0.8rem;
+  letter-spacing: 0.1em;
+}
+
 /* 玩家列表 */
 .players-section {
   border-top: 2px dashed var(--border-light);
@@ -251,6 +260,7 @@ async function handleLeaveRoom() {
 .setting-item {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   padding: 0.5rem 0;
   border-bottom: 1px dashed var(--border-light);
 }
@@ -259,9 +269,19 @@ async function handleLeaveRoom() {
   border-bottom: none;
 }
 
-.setting-item strong {
+.setting-label {
+  color: var(--text-secondary);
+}
+
+.setting-value {
+  text-align: right;
+  color: var(--text-primary);
+}
+
+.setting-value strong {
   color: var(--text-primary);
   font-weight: 600;
+  margin-right: 0.1em;
 }
 
 /* 操作按鈕 */
