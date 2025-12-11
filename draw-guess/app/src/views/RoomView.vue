@@ -44,7 +44,9 @@
           
           <!-- 輪次信息 -->
           <div class="round-info">
-            <span class="round-label">第 {{ currentRoundNumber }} / {{ totalRounds }} 輪</span>
+            <span class="round-label">
+              第 {{ currentGameNumber }} 局 · 第 {{ currentRoundInGame }} / {{ totalRoundsPerGame }} 輪
+            </span>
             <span v-if="isSummary" class="phase-label">輪次結算</span>
           </div>
           
@@ -90,8 +92,9 @@
               <!-- 總結階段覆蓋層 -->
               <div v-if="isSummary" class="summary-overlay">
                 <RoundSummary
-                  :round-number="currentRoundNumber"
-                  :total-rounds="totalRounds"
+                  :round-number="currentRoundInGame"
+                  :total-rounds="totalRoundsPerGame"
+                  :game-number="currentGameNumber"
                   :correct-answer="gameStore.currentWord || ''"
                   :drawer-name="currentDrawerName"
                   :drawer-id="gameStore.currentRound?.drawer_id || ''"
@@ -266,15 +269,40 @@ const nextDrawerName = computed(() => {
   return nextDrawer?.nickname || '下一位畫家'
 })
 
-// 是否是最後一輪
+// 單局總輪數（優先使用設定，否則使用目前玩家數量）
+const totalRoundsPerGame = computed(() => {
+  const settingRounds = totalRounds.value || 0
+  const participantCount = roomStore.participants.length
+  if (settingRounds > 0) return settingRounds
+  return participantCount
+})
+
+// 當前局數與局內輪次
+const currentGameNumber = computed(() => {
+  const total = totalRoundsPerGame.value
+  const round = currentRoundNumber.value
+  if (total <= 0 || round <= 0) return 1
+  return Math.floor((round - 1) / total) + 1
+})
+
+const currentRoundInGame = computed(() => {
+  const total = totalRoundsPerGame.value
+  const round = currentRoundNumber.value
+  if (total <= 0 || round <= 0) return 0
+  return ((round - 1) % total) + 1
+})
+
+// 是否是單局的最後一輪
 const isLastRound = computed(() => {
-  return currentRoundNumber.value >= totalRounds.value
+  const total = totalRoundsPerGame.value
+  if (total === 0) return false
+  return currentRoundInGame.value === total
 })
 
 // 是否完成一局（一局 = 玩家數量的輪數）
 const isGameRoundComplete = computed(() => {
   if (!currentRoom.value || roomStore.participants.length === 0) return false
-  const participantCount = roomStore.participants.length
+  const participantCount = totalRoundsPerGame.value || roomStore.participants.length
   const currentRoundNum = currentRoom.value.current_round || 0
   // 完成一局：current_round 是 participantCount 的倍數且大於 0
   return currentRoundNum > 0 && currentRoundNum % participantCount === 0
@@ -859,6 +887,13 @@ onUnmounted(() => {
 
 .game-canvas:hover {
   box-shadow: 5px 5px 0 var(--shadow-color);
+}
+
+.game-end-actions {
+  margin-top: 1.25rem;
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
 }
 
 /* 總結階段覆蓋層 - 毛玻璃效果 */

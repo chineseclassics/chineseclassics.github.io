@@ -340,17 +340,9 @@ export function useGame() {
       return { success: false, error: '只有房主可以發起下一輪' }
     }
 
-    // 檢查是否還有下一輪
-    const currentRoundNum = roomStore.currentRoom.current_round || 0
-    if (currentRoundNum >= totalRounds.value) {
-      // 所有輪次完成，結束遊戲
-      await endGame()
-      return { success: true, gameEnded: true }
-    } else {
-      // 直接開始下一輪繪畫
-      await startDrawingPhase()
-      return { success: true, gameEnded: false }
-    }
+    // 允許無限進行：不再自動結束遊戲
+    await startDrawingPhase()
+    return { success: true, gameEnded: false }
   }
 
   // 結束遊戲

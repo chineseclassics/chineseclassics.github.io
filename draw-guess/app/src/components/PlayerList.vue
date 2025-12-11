@@ -158,7 +158,7 @@ async function handleKick(userId: string, playerName: string) {
   padding: 0.6rem;
   border-bottom: 2px dashed var(--border-light);
   transition: all 0.2s ease;
-  border-radius: 6px;
+  border-radius: 0;
   margin-bottom: 2px;
 }
 
@@ -306,14 +306,15 @@ async function handleKick(userId: string, playerName: string) {
 /* 獲勝者 */
 .winner-banner {
   margin-top: 1rem;
-  padding: 1.25rem;
-  background: linear-gradient(135deg, var(--color-success), #6fb86f);
-  border-radius: 12px;
+  padding: 1rem 1.1rem;
+  background: var(--bg-card);
+  border: 3px solid var(--border-color);
+  border-radius: 0;
   display: flex;
   align-items: center;
   gap: 0.875rem;
-  color: white;
-  box-shadow: 4px 4px 0 rgba(0,0,0,0.1);
+  color: var(--text-primary);
+  box-shadow: 4px 4px 0 var(--shadow-color);
   animation: winnerSlideIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 

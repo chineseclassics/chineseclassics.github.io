@@ -23,7 +23,9 @@
           <PhPaintBrush v-else :size="24" weight="duotone" class="title-icon" />
           {{ isWaitingForSelection ? '上一輪回顧' : '輪次結束' }}
         </h2>
-        <div class="round-info">第 {{ roundNumber }} / {{ totalRounds }} 輪</div>
+        <div class="round-info">
+          第 {{ gameNumber || 1 }} 局 · 第 {{ roundNumber }} / {{ totalRounds }} 輪
+        </div>
       </div>
 
       <!-- 正確答案 -->
@@ -139,6 +141,7 @@ import { useAuthStore } from '../stores/auth'
 const props = defineProps<{
   roundNumber: number
   totalRounds: number
+  gameNumber?: number
   correctAnswer: string
   drawerName: string
   drawerId: string
