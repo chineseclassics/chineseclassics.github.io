@@ -218,11 +218,15 @@ export function useGame() {
     const nextRoundNum = currentRoundNum + 1
 
     // 檢查是否所有輪次已完成
-    if (currentRoundNum >= totalRounds.value) {
-      // 結束遊戲
-      await endGame()
-      return { success: false, error: '所有輪次已完成' }
-    }
+    // 注意：輪數可以超過詞語總數（會重複使用詞語），所以這裡只檢查是否超過設定的總輪數
+    // 但由於輪數是動態設定的（等於房間人數），實際上可以無限繼續
+    // 只有在用戶明確選擇「結束遊戲」時才結束
+    // 因此移除這個檢查，允許無限繼續
+    // if (currentRoundNum >= totalRounds.value) {
+    //   // 結束遊戲
+    //   await endGame()
+    //   return { success: false, error: '所有輪次已完成' }
+    // }
 
     try {
       // 選擇畫家（輪流）
@@ -303,8 +307,11 @@ export function useGame() {
       }
 
       // 檢查是否是最後一輪
-      const currentRoundNum = roomStore.currentRoom.current_round || 0
-      const isLastRound = currentRoundNum >= totalRounds.value
+      // 注意：由於現在支持無限繼續，理論上沒有「最後一輪」的概念
+      // 只有在用戶明確選擇「結束遊戲」時才結束
+      // 但為了保持向後兼容，我們仍然設置 isLastRound，但永遠為 false
+      // 這樣就不會觸發自動結束遊戲的邏輯
+      const isLastRound = false  // 永遠為 false，允許無限繼續
 
       // 廣播進入總結階段（所有人包括房主在回調中統一處理）
       const { broadcastGameState } = useRealtime()

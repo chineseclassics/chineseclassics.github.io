@@ -275,8 +275,10 @@ watch(() => props.roundId, () => {
   margin: 0 auto;
   padding: 0.5rem;
   max-height: calc(100vh - 2rem);
-  overflow-y: auto;
+  overflow-y: visible;
   animation: summaryPopIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  display: flex;
+  flex-direction: column;
 }
 
 @keyframes summaryPopIn {
@@ -294,10 +296,13 @@ watch(() => props.roundId, () => {
   background: var(--bg-card);
   border: 4px solid var(--border-color);
   border-radius: 16px;
-  padding: 1.25rem 1.5rem;
+  padding: 1rem 1.25rem;
   box-shadow: 6px 6px 0 var(--shadow-color);
   position: relative;
-  overflow: hidden;
+  overflow: visible;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
 }
 
 /* 裝飾性背景紋理 */
@@ -316,7 +321,7 @@ watch(() => props.roundId, () => {
 
 .summary-header {
   text-align: center;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
   position: relative;
 }
 
@@ -353,10 +358,9 @@ watch(() => props.roundId, () => {
 /* 答案顯示 */
 .answer-reveal {
   text-align: center;
-  padding: 0.875rem;
+  padding: 0.6rem 0.875rem;
   background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
   border-radius: 10px;
-  margin-bottom: 0.875rem;
   border: 3px solid var(--color-success);
   animation: revealPulse 0.6s ease-out;
 }
@@ -384,10 +388,9 @@ watch(() => props.roundId, () => {
 /* 畫家信息 */
 .drawer-section {
   text-align: center;
-  padding: 0.6rem;
+  padding: 0.5rem 0.6rem;
   background: var(--bg-secondary);
   border-radius: 8px;
-  margin-bottom: 0.875rem;
   border: 2px dashed var(--border-light);
 }
 
@@ -426,7 +429,7 @@ watch(() => props.roundId, () => {
 
 /* 猜中玩家 */
 .guessers-section {
-  margin-bottom: 0.875rem;
+  margin-bottom: 0.5rem;
 }
 
 .section-title {
@@ -454,7 +457,7 @@ watch(() => props.roundId, () => {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
-  max-height: 120px;
+  max-height: 100px;
   overflow-y: auto;
 }
 
@@ -520,10 +523,9 @@ watch(() => props.roundId, () => {
 /* 評分區域 */
 .rating-section {
   text-align: center;
-  padding: 0.75rem;
+  padding: 0.6rem 0.75rem;
   border: 2px dashed var(--border-light);
   border-radius: 10px;
-  margin-bottom: 0.875rem;
   background: var(--bg-secondary);
   transition: all 0.3s ease;
 }
@@ -586,10 +588,9 @@ watch(() => props.roundId, () => {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  padding: 0.6rem;
+  padding: 0.5rem 0.6rem;
   background: linear-gradient(135deg, #fff8e1, #ffecb3);
   border-radius: 8px;
-  margin-bottom: 0.875rem;
   border: 2px solid var(--color-warning);
 }
 
@@ -738,8 +739,7 @@ watch(() => props.roundId, () => {
 
 /* 下一位畫手提示 */
 .next-drawer-info {
-  margin-top: 0.875rem;
-  padding: 0.6rem 0.875rem;
+  padding: 0.5rem 0.75rem;
   background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
   border-radius: 10px;
   text-align: center;
@@ -771,8 +771,7 @@ watch(() => props.roundId, () => {
 
 /* 最後一輪提示 */
 .game-ending-info {
-  margin-top: 0.875rem;
-  padding: 0.6rem 0.875rem;
+  padding: 0.5rem 0.75rem;
   background: linear-gradient(135deg, #fff8e1, #ffecb3);
   border-radius: 10px;
   text-align: center;
@@ -828,7 +827,7 @@ watch(() => props.roundId, () => {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  margin-top: 0.75rem;
+  margin-top: 0.5rem;
 }
 
 .next-game-btn,

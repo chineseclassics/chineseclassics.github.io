@@ -584,16 +584,8 @@ onMounted(async () => {
             // 停止總結倒計時（如果正在運行）
             stopSummaryCountdown()
             // 不開始倒計時，不自動跳轉，等待用戶點擊按鈕
-          } else if (state.isLastRound) {
-            // 最後一輪（但不是完成一局），5秒後結束遊戲
-            if (roomStore.isHost) {
-              setTimeout(async () => {
-                const { endGame } = useGame()
-                await endGame()
-              }, 5000)
-            }
           } else {
-            // 還有下一輪（且未完成一局），開始總結倒計時
+            // 還有下一輪（未完成一局），開始總結倒計時，自動進入下一輪
             startSummaryCountdown()
           }
         }
