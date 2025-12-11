@@ -104,6 +104,19 @@
         <div class="ending-label"><PhConfetti :size="20" weight="duotone" /> 這是最後一輪！</div>
       </div>
 
+      <!-- 完成一局提示和下一局按鈕 -->
+      <div class="game-round-complete" v-if="isGameRoundComplete && isHost">
+        <div class="round-complete-label">
+          <PhConfetti :size="20" weight="duotone" /> 一局完成！
+        </div>
+        <button 
+          class="paper-btn btn-primary next-game-btn"
+          @click="$emit('next-game')"
+        >
+          下一局
+        </button>
+      </div>
+
       <!-- 倒計時由外部控制，組件內不再顯示 -->
     </div>
   </div>
@@ -129,10 +142,13 @@ const props = defineProps<{
   // 等待選詞狀態相關
   isWaitingForSelection?: boolean
   nextDrawerName?: string
+  // 是否完成一局（一局 = 玩家數量的輪數）
+  isGameRoundComplete?: boolean
 }>()
 
 const emit = defineEmits<{
   (e: 'rating-submitted', rating: number): void
+  (e: 'next-game'): void
 }>()
 
 const authStore = useAuthStore()
@@ -769,5 +785,38 @@ watch(() => props.roundId, () => {
   align-items: center;
   justify-content: center;
   gap: 0.4rem;
+}
+
+/* 完成一局提示 */
+.game-round-complete {
+  margin-top: 0.875rem;
+  padding: 0.875rem;
+  background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+  border-radius: 10px;
+  text-align: center;
+  border: 3px solid var(--color-success);
+  animation: roundCompletePulse 1.5s ease-in-out infinite;
+}
+
+@keyframes roundCompletePulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+}
+
+.round-complete-label {
+  font-size: 1rem;
+  font-weight: bold;
+  color: #2e7d32;
+  font-family: var(--font-head);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  margin-bottom: 0.75rem;
+}
+
+.next-game-btn {
+  width: 100%;
+  margin-top: 0.5rem;
 }
 </style>

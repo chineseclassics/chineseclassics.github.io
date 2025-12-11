@@ -148,9 +148,8 @@ export const useRoomStore = defineStore('room', () => {
         throw new Error('至少需要 6 個詞語')
       }
 
-      if (data.settings.rounds > data.words.length) {
-        throw new Error('輪數不能超過詞語總數')
-      }
+      // 移除輪數驗證，輪數將在開始遊戲時自動設定為房間人數
+      // 允許輪數超過詞語總數（會重複使用詞語）
 
       // 直接嘗試創建房間，如果房間碼重複則重試
       let newRoom: any = null
@@ -503,6 +502,41 @@ export const useRoomStore = defineStore('room', () => {
     }
   }
 
+  // 更新房間設置（用於更新輪數等）
+  async function updateRoomSettings(settings: Partial<GameRoom['settings']>) {
+    try {
+      if (!currentRoom.value) {
+        throw new Error('沒有當前房間')
+      }
+
+      console.log('[RoomStore] 更新房間設置:', { roomId: currentRoom.value.id, settings })
+
+      // 合併現有設置
+      const newSettings = {
+        ...currentRoom.value.settings,
+        ...settings,
+      }
+
+      const { error: updateError } = await supabase
+        .from('game_rooms')
+        .update({ settings: newSettings })
+        .eq('id', currentRoom.value.id)
+
+      if (updateError) throw updateError
+
+      if (currentRoom.value) {
+        currentRoom.value.settings = newSettings
+        console.log('[RoomStore] 房間設置已更新:', newSettings)
+      }
+
+      return { success: true }
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : '更新房間設置失敗'
+      console.error('更新房間設置錯誤:', err)
+      return { success: false, error: error.value }
+    }
+  }
+
   // 清除房間狀態
   function clearRoom() {
     currentRoom.value = null
@@ -580,6 +614,7 @@ export const useRoomStore = defineStore('room', () => {
     loadRoom,
     updateRoomStatus,
     updateRoomDrawer,
+    updateRoomSettings,
     setCurrentDrawer,
     clearRoom,
   }

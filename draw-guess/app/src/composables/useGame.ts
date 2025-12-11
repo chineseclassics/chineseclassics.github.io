@@ -177,6 +177,14 @@ export function useGame() {
       // 重置已使用詞語
       globalUsedWordIndices.value.clear()
       
+      // 自動設定輪數為房間人數（確保每個人都有一次機會畫畫）
+      const participantCount = roomStore.participants.length
+      const settingsResult = await roomStore.updateRoomSettings({ rounds: participantCount })
+      if (!settingsResult.success) {
+        return settingsResult
+      }
+      console.log('[useGame] 輪數已自動設定為房間人數:', participantCount)
+      
       // 更新房間狀態為 playing
       const statusResult = await roomStore.updateRoomStatus('playing')
       if (!statusResult.success) {
@@ -358,6 +366,48 @@ export function useGame() {
     }
   }
 
+  // 下一局（不重置任何數據，直接開始下一輪繪畫）
+  async function newGame() {
+    if (!roomStore.currentRoom) {
+      return { success: false, error: '沒有當前房間' }
+    }
+
+    if (!roomStore.isHost) {
+      return { success: false, error: '只有房主可以開始下一局' }
+    }
+
+    if (roomStore.currentRoom.status !== 'playing') {
+      return { success: false, error: '房間狀態不正確' }
+    }
+
+    // 檢查是否在總結階段
+    if (roundStatus.value !== 'summary') {
+      return { success: false, error: '只能在總結階段開始下一局' }
+    }
+
+    try {
+      console.log('[useGame] 開始下一局，直接進入下一輪繪畫')
+
+      // 停止總結倒計時
+      stopSummaryCountdown()
+
+      // 不重置任何數據：
+      // - 不重置房間狀態（保持 playing）
+      // - 不重置 current_round（繼續累加）
+      // - 不重置已使用詞語索引（繼續累加）
+      // - 不重置分數（繼續累加）
+      // - 不刪除輪次記錄（保留歷史）
+      // - 不調用 clearGame()
+
+      // 直接開始下一輪繪畫
+      const roundResult = await startDrawingPhase()
+      return roundResult
+    } catch (err) {
+      console.error('下一局錯誤:', err)
+      return { success: false, error: err instanceof Error ? err.message : '下一局失敗' }
+    }
+  }
+
   // 格式化倒計時顯示
   const formattedTime = computed(() => {
     if (timeRemaining.value === null) return '--:--'
@@ -393,6 +443,7 @@ export function useGame() {
     summaryTimeRemaining,
     // 方法
     startGame,
+    newGame,
     startNextRound,
     startDrawingPhase,
     endRound,

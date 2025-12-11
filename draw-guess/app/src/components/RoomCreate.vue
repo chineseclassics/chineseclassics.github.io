@@ -23,7 +23,7 @@
             <textarea
               v-model="form.wordsText"
               rows="6"
-              placeholder="輸入詞語，用逗號或換行分隔&#10;例如：春天,友誼,勇氣"
+              placeholder="輸入詞語，用逗號（，或,）或換行分隔&#10;例如：春天，友誼，勇氣"
               @input="handleWordsInput"
             ></textarea>
             <div class="text-small">
@@ -50,33 +50,6 @@
               />
             </div>
 
-            <!-- 輪數 -->
-            <div class="form-group">
-              <label>輪數</label>
-              <input
-                v-model.number="form.settings.rounds"
-                type="number"
-                :min="3"
-                :max="Math.min(10, wordCount)"
-                required
-              />
-              <div class="text-small">
-                最多 {{ Math.min(10, wordCount) }} 輪（不能超過詞語總數）
-              </div>
-            </div>
-
-            <!-- 每輪可選詞數 -->
-            <div class="form-group">
-              <label>每輪可選詞數</label>
-              <input
-                v-model.number="form.settings.word_count_per_round"
-                type="number"
-                min="1"
-                max="5"
-                required
-              />
-            </div>
-
             <!-- 提示數量 -->
             <div class="form-group">
               <label>提示數量</label>
@@ -87,6 +60,11 @@
                 max="5"
                 required
               />
+            </div>
+
+            <!-- 輪數說明 -->
+            <div class="alert alert-secondary margin-top-small">
+              <strong>輪數說明：</strong>遊戲開始時，輪數會自動設定為房間人數，確保每個人都有一次機會畫畫。
             </div>
           </div>
 
@@ -134,18 +112,18 @@ const form = ref({
   wordsText: '',
   settings: {
     draw_time: 60,
-    rounds: 5,
-    word_count_per_round: 3,
+    rounds: 0, // 輪數將在開始遊戲時自動設定為房間人數
+    word_count_per_round: 1, // 保留此字段以兼容數據庫，但不再顯示
     hints_count: 2,
   },
 })
 
 const error = ref<string | null>(null)
 
-// 解析詞語文本
+// 解析詞語文本（支持中文逗號「，」和英文逗號「,」以及換行）
 function parseWords(text: string): string[] {
   return text
-    .split(/[,\n]/)
+    .split(/[，,\n]/) // 支持中文逗號、英文逗號和換行
     .map(word => word.trim())
     .filter(word => word.length > 0)
 }
@@ -166,8 +144,8 @@ const isFormValid = computed(() => {
     form.value.name.length <= 50 &&
     wordCount.value >= 6 &&
     totalChars.value <= 600 &&
-    words.value.every(word => word.length >= 1 && word.length <= 32) &&
-    form.value.settings.rounds <= wordCount.value
+    words.value.every(word => word.length >= 1 && word.length <= 32)
+    // 移除輪數驗證，輪數將在開始遊戲時自動設定
   )
 })
 

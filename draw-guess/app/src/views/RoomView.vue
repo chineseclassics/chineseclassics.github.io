@@ -101,7 +101,9 @@
                   :is-host="roomStore.isHost"
                   :is-last-round="isLastRound"
                   :next-drawer-name="isLastRound ? '' : nextDrawerName"
+                  :is-game-round-complete="isGameRoundComplete"
                   @rating-submitted="handleRating"
+                  @next-game="handleNewGame"
                 />
               </div>
             </div>
@@ -177,9 +179,19 @@
                 <PhConfetti :size="28" weight="fill" class="title-icon" style="margin-right: 0.5rem;" /> 遊戲結束
               </h2>
               <PlayerList :show-winner="true" />
-              <button @click="handleLeaveRoom" class="paper-btn btn-primary margin-top-medium">
-                返回首頁
-              </button>
+              <div class="game-end-actions margin-top-medium">
+                <button 
+                  v-if="roomStore.isHost" 
+                  @click="handleNewGame" 
+                  class="paper-btn btn-primary margin-bottom-small"
+                  :disabled="loading"
+                >
+                  {{ loading ? '準備中...' : '下一局' }}
+                </button>
+                <button @click="handleLeaveRoom" class="paper-btn btn-secondary">
+                  返回首頁
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -222,6 +234,7 @@ const {
   currentRoundNumber,
   totalRounds,
   startGame,
+  newGame,
   // 輪次狀態（簡化：只有 drawing 和 summary）
   isDrawing,
   isSummary,
@@ -262,6 +275,15 @@ const nextDrawerName = computed(() => {
 // 是否是最後一輪
 const isLastRound = computed(() => {
   return currentRoundNumber.value >= totalRounds.value
+})
+
+// 是否完成一局（一局 = 玩家數量的輪數）
+const isGameRoundComplete = computed(() => {
+  if (!currentRoom.value || roomStore.participants.length === 0) return false
+  const participantCount = roomStore.participants.length
+  const currentRoundNum = currentRoom.value.current_round || 0
+  // 完成一局：current_round 是 participantCount 的倍數且大於 0
+  return currentRoundNum > 0 && currentRoundNum % participantCount === 0
 })
 
 // 排序後的猜測記錄（按時間排序）
@@ -421,6 +443,14 @@ async function handleRating(rating: number) {
     rating
   )
   
+  if (!result.success && result.error) {
+    showError(result.error)
+  }
+}
+
+// 處理再來一局
+async function handleNewGame() {
+  const result = await newGame()
   if (!result.success && result.error) {
     showError(result.error)
   }
