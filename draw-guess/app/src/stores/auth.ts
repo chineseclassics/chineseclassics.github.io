@@ -10,6 +10,7 @@ export interface UserProfile {
   display_name: string
   avatar_url: string | null
   user_type: 'registered' | 'anonymous'
+  total_score?: number // 用戶累積總積分
 }
 
 export const useAuthStore = defineStore('auth', () => {
@@ -62,7 +63,7 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  // 載入用戶資料
+  // 載入用戶資料（包含統計數據）
   async function loadUserProfile(userId: string, setLoading = false) {
     try {
       if (setLoading) {
@@ -70,7 +71,7 @@ export const useAuthStore = defineStore('auth', () => {
       }
       const { data, error: profileError } = await supabase
         .from('users')
-        .select('*')
+        .select('id, email, display_name, avatar_url, user_type, total_score, created_at, last_login_at')
         .eq('id', userId)
         .single()
 
@@ -83,7 +84,14 @@ export const useAuthStore = defineStore('auth', () => {
         throw profileError
       }
 
-      profile.value = data as UserProfile
+      profile.value = {
+        id: data.id,
+        email: data.email,
+        display_name: data.display_name,
+        avatar_url: data.avatar_url,
+        user_type: data.user_type,
+        total_score: data.total_score || 0,
+      } as UserProfile
     } catch (err) {
       error.value = err instanceof Error ? err.message : '載入用戶資料失敗'
     } finally {
@@ -108,6 +116,7 @@ export const useAuthStore = defineStore('auth', () => {
         display_name: userData.user_metadata?.full_name || userData.user_metadata?.name || '用戶',
         avatar_url: userData.user_metadata?.avatar_url || userData.user_metadata?.picture || null,
         user_type: userData.is_anonymous ? 'anonymous' : 'registered',
+        total_score: 0, // 新用戶初始積分為 0
       }
 
       const { data, error: insertError } = await supabase
@@ -214,6 +223,7 @@ export const useAuthStore = defineStore('auth', () => {
             display_name: displayName,
             avatar_url: null,
             user_type: 'anonymous' as const,
+            total_score: 0, // 匿名用戶初始積分為 0（但不會累積）
           }
 
           const { data: newProfile, error: upsertError } = await supabase

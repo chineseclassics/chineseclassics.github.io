@@ -1,23 +1,21 @@
 <template>
   <div class="container margin-top-large">
     <div class="row flex-center">
-      <div class="col-12 col-md-10 col-lg-8">
-        <div class="text-center margin-bottom-large">
-          <h1 class="text-hand-title" style="font-size: 2.5rem; margin-bottom: 0.5rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
-            <PhPaintBrush :size="36" weight="duotone" style="color: var(--color-primary);" /> 你畫我猜
+      <div class="col-12 col-md-8 col-lg-6">
+        <!-- 標題 -->
+        <div class="text-center margin-bottom-medium">
+          <h1 class="text-hand-title" style="font-size: 2.25rem; margin-bottom: 1rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+            <PhPaintBrush :size="32" weight="duotone" style="color: var(--color-primary);" /> 你畫我猜
           </h1>
-          <p class="lead text-hand" style="color: var(--text-secondary);">
-            通過繪畫和猜測，學習中文詞彙
-          </p>
         </div>
       
         <!-- 用戶認證組件 -->
-        <div class="margin-bottom-large">
+        <div class="margin-bottom-medium">
           <UserAuth />
         </div>
 
         <!-- 等待大廳（如果已加入房間且狀態為 waiting） -->
-        <div v-if="currentRoom && currentRoom.status === 'waiting'" class="margin-bottom-large">
+        <div v-if="currentRoom && currentRoom.status === 'waiting'" class="margin-bottom-medium">
           <WaitingLobby
             :room="currentRoom"
             :participants="participants"
@@ -27,7 +25,7 @@
         </div>
 
         <!-- 如果房間狀態為 playing 或 finished，應該在 RoomView 中顯示，這裡自動跳轉 -->
-        <div v-else-if="currentRoom && (currentRoom.status === 'playing' || currentRoom.status === 'finished')" class="margin-bottom-large">
+        <div v-else-if="currentRoom && (currentRoom.status === 'playing' || currentRoom.status === 'finished')" class="margin-bottom-medium">
           <div class="text-center">
             <p class="text-hand">正在跳轉到遊戲房間...</p>
           </div>
@@ -36,7 +34,7 @@
         <!-- 主界面（未加入房間時） -->
         <div v-else>
           <!-- 創建房間 -->
-          <div v-if="showCreateForm" class="margin-bottom-large">
+          <div v-if="showCreateForm" class="margin-bottom-medium">
             <RoomCreate
               @created="handleRoomCreated"
               @cancel="() => { console.log('取消創建房間'); showCreateForm = false }"
@@ -44,28 +42,33 @@
           </div>
 
           <!-- 加入房間 -->
-          <div v-else-if="showJoinForm" class="margin-bottom-large">
+          <div v-else-if="showJoinForm" class="margin-bottom-medium">
             <RoomJoin
               @joined="handleRoomJoined"
               @cancel="showJoinForm = false"
             />
           </div>
 
-          <!-- 操作按鈕 -->
-          <div v-else class="row flex-center">
-            <div class="col-12 col-md-6">
-              <button
-                @click="showCreateForm = true"
-                class="paper-btn btn-primary btn-block margin-bottom-small"
-              >
-                創建房間
-              </button>
-              <button
-                @click="showJoinForm = true"
-                class="paper-btn btn-secondary btn-block"
-              >
-                加入房間
-              </button>
+          <!-- 操作按鈕（僅限 Google 登入用戶） -->
+          <div v-else-if="authStore.isRegistered" class="home-actions">
+            <button
+              @click="showCreateForm = true"
+              class="paper-btn btn-primary btn-block margin-bottom-small"
+            >
+              創建房間
+            </button>
+            <button
+              @click="showJoinForm = true"
+              class="paper-btn btn-secondary btn-block"
+            >
+              加入房間
+            </button>
+          </div>
+          
+          <!-- 未登入或匿名用戶提示 -->
+          <div v-else class="home-actions">
+            <div class="alert alert-info text-center">
+              <p class="text-hand">請使用 Google 登入以創建或加入房間</p>
             </div>
           </div>
         </div>
@@ -193,4 +196,17 @@ onMounted(() => {
   // const roomCode = route.params.code as string
 })
 </script>
+
+<style scoped>
+.home-actions {
+  max-width: 100%;
+}
+
+@media (min-width: 768px) {
+  .home-actions {
+    max-width: 400px;
+    margin: 0 auto;
+  }
+}
+</style>
 

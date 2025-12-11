@@ -21,7 +21,7 @@
         <h2 class="summary-title">
           <PhClipboardText v-if="isWaitingForSelection" :size="24" weight="duotone" class="title-icon" />
           <PhPaintBrush v-else :size="24" weight="duotone" class="title-icon" />
-          {{ isWaitingForSelection ? '上一輪回顧' : '輪次結束' }}
+          {{ isWaitingForSelection ? '上一輪回顧' : '本局結束' }}
         </h2>
         <div class="round-info">
           第 {{ gameNumber || 1 }} 局 · 第 {{ roundNumber }} / {{ totalRounds }} 輪
@@ -99,11 +99,6 @@
       <div class="next-drawer-info" v-if="nextDrawerName && !isLastRound">
         <div class="next-drawer-label">下一輪畫手</div>
         <div class="next-drawer-name-display"><PhPencil :size="18" weight="duotone" /> {{ nextDrawerName }}</div>
-      </div>
-
-      <!-- 最後一輪提示 -->
-      <div class="game-ending-info" v-if="isLastRound">
-        <div class="ending-label"><PhConfetti :size="20" weight="duotone" /> 這是最後一輪！</div>
       </div>
 
       <!-- 完成一局提示和按鈕 -->
@@ -298,7 +293,7 @@ watch(() => props.roundId, () => {
 .summary-card {
   background: var(--bg-card);
   border: 4px solid var(--border-color);
-  border-radius: 16px;
+  border-radius: 0;
   padding: 1rem 1.25rem;
   box-shadow: 6px 6px 0 var(--shadow-color);
   position: relative;
@@ -355,7 +350,7 @@ watch(() => props.roundId, () => {
   background: var(--bg-secondary);
   display: inline-block;
   padding: 0.2rem 0.6rem;
-  border-radius: 20px;
+  border-radius: 0;
 }
 
 /* 答案顯示 */
@@ -363,7 +358,7 @@ watch(() => props.roundId, () => {
   text-align: center;
   padding: 0.6rem 0.875rem;
   background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
-  border-radius: 10px;
+  border-radius: 0;
   border: 3px solid var(--color-success);
   animation: revealPulse 0.6s ease-out;
 }
@@ -393,7 +388,7 @@ watch(() => props.roundId, () => {
   text-align: center;
   padding: 0.5rem 0.6rem;
   background: var(--bg-secondary);
-  border-radius: 8px;
+  border-radius: 0;
   border: 2px dashed var(--border-light);
 }
 
@@ -419,7 +414,7 @@ watch(() => props.roundId, () => {
   background: var(--color-warning);
   color: var(--text-primary);
   padding: 0.15rem 0.5rem;
-  border-radius: 6px;
+  border-radius: 0;
   font-size: 0.85rem;
   font-weight: bold;
   animation: scorePopIn 0.4s ease-out 0.3s both;
@@ -448,7 +443,7 @@ watch(() => props.roundId, () => {
   color: var(--text-tertiary);
   padding: 0.5rem;
   background: var(--bg-secondary);
-  border-radius: 8px;
+  border-radius: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -469,7 +464,7 @@ watch(() => props.roundId, () => {
   align-items: center;
   padding: 0.4rem 0.6rem;
   background: var(--bg-secondary);
-  border-radius: 6px;
+  border-radius: 0;
   animation: guesserSlideIn 0.3s ease-out both;
   border: 2px solid transparent;
   transition: all 0.2s ease;
@@ -528,7 +523,7 @@ watch(() => props.roundId, () => {
   text-align: center;
   padding: 0.6rem 0.75rem;
   border: 2px dashed var(--border-light);
-  border-radius: 10px;
+  border-radius: 0;
   background: var(--bg-secondary);
   transition: all 0.3s ease;
 }
@@ -593,7 +588,7 @@ watch(() => props.roundId, () => {
   gap: 0.5rem;
   padding: 0.5rem 0.6rem;
   background: linear-gradient(135deg, #fff8e1, #ffecb3);
-  border-radius: 8px;
+  border-radius: 0;
   border: 2px solid var(--color-warning);
 }
 
@@ -636,7 +631,7 @@ watch(() => props.roundId, () => {
   color: white;
   border: none;
   padding: 0.75rem 2rem;
-  border-radius: 8px;
+  border-radius: 0;
   font-size: 1rem;
   font-family: var(--font-head);
   cursor: pointer;
@@ -654,7 +649,7 @@ watch(() => props.roundId, () => {
 .selection-waiting-banner {
   background: linear-gradient(135deg, #e3f2fd, #bbdefb);
   border: 2px solid var(--color-secondary);
-  border-radius: 10px;
+  border-radius: 0;
   padding: 0.75rem 1rem;
   margin-bottom: 0.875rem;
   display: flex;
@@ -744,7 +739,7 @@ watch(() => props.roundId, () => {
 .next-drawer-info {
   padding: 0.5rem 0.75rem;
   background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
-  border-radius: 10px;
+  border-radius: 0;
   text-align: center;
   border: 2px solid var(--color-success);
   animation: fadeInUp 0.4s ease-out 0.2s both;
@@ -772,38 +767,12 @@ watch(() => props.roundId, () => {
   gap: 0.4rem;
 }
 
-/* 最後一輪提示 */
-.game-ending-info {
-  padding: 0.5rem 0.75rem;
-  background: linear-gradient(135deg, #fff8e1, #ffecb3);
-  border-radius: 10px;
-  text-align: center;
-  border: 2px solid var(--color-warning);
-  animation: celebratePulse 1.5s ease-in-out infinite;
-}
-
-@keyframes celebratePulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.02); }
-}
-
-.ending-label {
-  font-size: 1rem;
-  font-weight: bold;
-  color: #f57c00;
-  font-family: var(--font-head);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.4rem;
-}
-
 /* 完成一局提示 */
 .game-round-complete {
   margin-top: 0.875rem;
   padding: 0.875rem;
   background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
-  border-radius: 10px;
+  border-radius: 0;
   text-align: center;
   border: 3px solid var(--color-success);
   animation: roundCompletePulse 1.5s ease-in-out infinite;

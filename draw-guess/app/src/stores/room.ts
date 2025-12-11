@@ -459,6 +459,11 @@ export const useRoomStore = defineStore('room', () => {
 
       if (updateError) throw updateError
 
+      // 如果房間狀態變為 finished，累積積分到用戶賬戶
+      if (status === 'finished' && currentRoom.value) {
+        await accumulateScoresToUsers()
+      }
+
       if (currentRoom.value) {
         const oldStatus = currentRoom.value.status
         currentRoom.value.status = status
@@ -470,6 +475,98 @@ export const useRoomStore = defineStore('room', () => {
       error.value = err instanceof Error ? err.message : '更新房間狀態失敗'
       console.error('更新房間狀態錯誤:', err)
       return { success: false, error: error.value }
+    }
+  }
+
+  // 累積房間積分到用戶總積分（僅限 Google 登入用戶）
+  async function accumulateScoresToUsers() {
+    if (!currentRoom.value) return
+
+    try {
+      console.log('[RoomStore] 開始累積積分到用戶賬戶')
+
+      // 獲取所有參與者及其分數
+      const { data: participants, error: fetchError } = await supabase
+        .from('room_participants')
+        .select('user_id, score')
+        .eq('room_id', currentRoom.value.id)
+
+      if (fetchError) {
+        console.error('獲取參與者錯誤:', fetchError)
+        return
+      }
+
+      if (!participants || participants.length === 0) {
+        console.log('[RoomStore] 沒有參與者需要累積積分')
+        return
+      }
+
+      // 獲取所有參與者的用戶信息，確認是否為 Google 登入用戶
+      const userIds = participants.map(p => p.user_id)
+      const { data: users, error: usersError } = await supabase
+        .from('users')
+        .select('id, user_type')
+        .in('id', userIds)
+
+      if (usersError) {
+        console.error('獲取用戶信息錯誤:', usersError)
+        return
+      }
+
+      // 只為 Google 登入用戶（user_type = 'registered'）累積積分
+      const registeredUsers = new Set(
+        users?.filter(u => u.user_type === 'registered').map(u => u.id) || []
+      )
+
+      // 批量更新用戶總積分
+      for (const participant of participants) {
+        // 只累積 Google 登入用戶的積分
+        if (!registeredUsers.has(participant.user_id)) {
+          console.log(`[RoomStore] 跳過匿名用戶 ${participant.user_id} 的積分累積`)
+          continue
+        }
+
+        if (participant.score > 0) {
+          // 使用 SQL 的原子操作累積積分
+          const { error: updateError } = await supabase.rpc('accumulate_user_score', {
+            user_id_param: participant.user_id,
+            score_to_add: participant.score
+          })
+
+          if (updateError) {
+            // 如果 RPC 函數不存在，使用傳統的查詢+更新方式
+            console.warn('[RoomStore] RPC 函數不存在，使用傳統方式累積積分:', updateError)
+            
+            const { data: currentUser, error: fetchUserError } = await supabase
+              .from('users')
+              .select('total_score')
+              .eq('id', participant.user_id)
+              .single()
+
+            if (fetchUserError) {
+              console.error(`[RoomStore] 獲取用戶 ${participant.user_id} 總積分錯誤:`, fetchUserError)
+              continue
+            }
+
+            const newTotalScore = (currentUser?.total_score || 0) + participant.score
+
+            const { error: updateUserError } = await supabase
+              .from('users')
+              .update({ total_score: newTotalScore })
+              .eq('id', participant.user_id)
+
+            if (updateUserError) {
+              console.error(`[RoomStore] 更新用戶 ${participant.user_id} 總積分錯誤:`, updateUserError)
+            } else {
+              console.log(`[RoomStore] 用戶 ${participant.user_id} 積分已累積: +${participant.score} (總積分: ${newTotalScore})`)
+            }
+          } else {
+            console.log(`[RoomStore] 用戶 ${participant.user_id} 積分已累積: +${participant.score}`)
+          }
+        }
+      }
+    } catch (err) {
+      console.error('[RoomStore] 累積積分錯誤:', err)
     }
   }
 

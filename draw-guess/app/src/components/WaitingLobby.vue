@@ -47,8 +47,8 @@
             <span class="setting-value"><strong>{{ room?.settings.draw_time }}</strong>秒</span>
           </div>
           <div class="setting-item">
-            <span class="setting-label">輪數：</span>
-            <span class="setting-value"><strong>{{ room?.settings.rounds }}</strong>輪</span>
+            <span class="setting-label">每局輪數：</span>
+            <span class="setting-value"><strong>{{ roundsPerGame }}</strong>輪</span>
           </div>
           <div class="setting-item">
             <span class="setting-label">詞語總數：</span>
@@ -88,6 +88,7 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useRoom } from '../composables/useRoom'
 import { useGame } from '../composables/useGame'
 import type { GameRoom, RoomParticipant } from '../stores/room'
@@ -104,6 +105,14 @@ const emit = defineEmits<{
 
 const { isHost: isCurrentUserHost, canStartGame, leaveRoom, loading, error } = useRoom()
 const { startGame } = useGame()
+
+// 每局輪數：優先使用房間設定，否則按目前玩家數量（至少 1）
+const roundsPerGame = computed(() => {
+  const settingRounds = props.room?.settings.rounds || 0
+  const participantCount = props.participants.length
+  const value = settingRounds > 0 ? settingRounds : participantCount
+  return value > 0 ? value : 1
+})
 
 function getStatusText(status?: string) {
   const statusMap: Record<string, string> = {
@@ -187,7 +196,7 @@ async function handleLeaveRoom() {
   gap: 0.75rem;
   padding: 0.75rem;
   background: var(--bg-secondary);
-  border-radius: 8px;
+  border-radius: 0;
   transition: all 0.2s ease;
   animation: fadeIn 0.3s ease;
 }

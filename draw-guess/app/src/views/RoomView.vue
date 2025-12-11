@@ -248,6 +248,7 @@ const currentRoom = computed(() => roomStore.currentRoom)
 const loading = computed(() => guessingLoading.value)
 const errorMessage = ref<string | null>(null)
 const chatMessagesRef = ref<HTMLElement | null>(null)
+const isLeavingRoom = ref(false)
 
 // 當前畫家名稱
 const currentDrawerName = computed(() => {
@@ -330,6 +331,7 @@ watch(sortedGuesses, () => {
 // 監聽參與者列表變化，檢測是否被踢出
 watch(() => roomStore.participants, (newParticipants) => {
   if (!authStore.user || !currentRoom.value) return
+  if (isLeavingRoom.value) return
   
   // 檢查當前用戶是否還在參與者列表中
   const isStillInRoom = newParticipants.some(p => p.user_id === authStore.user!.id)
@@ -440,6 +442,7 @@ async function handleStartGame() {
 
 // 處理離開房間
 async function handleLeaveRoom() {
+  isLeavingRoom.value = true
   const result = await leaveRoom()
   
   // 取消房間訂閱
@@ -453,6 +456,9 @@ async function handleLeaveRoom() {
   if (!result.success && result.error) {
     showError(result.error)
   }
+
+  // 完成後重置標記
+  isLeavingRoom.value = false
 }
 
 // 處理評分
