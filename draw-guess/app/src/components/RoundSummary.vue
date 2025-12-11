@@ -104,17 +104,25 @@
         <div class="ending-label"><PhConfetti :size="20" weight="duotone" /> 這是最後一輪！</div>
       </div>
 
-      <!-- 完成一局提示和下一局按鈕 -->
+      <!-- 完成一局提示和按鈕 -->
       <div class="game-round-complete" v-if="isGameRoundComplete && isHost">
         <div class="round-complete-label">
           <PhConfetti :size="20" weight="duotone" /> 一局完成！
         </div>
-        <button 
-          class="paper-btn btn-primary next-game-btn"
-          @click="$emit('next-game')"
-        >
-          下一局
-        </button>
+        <div class="round-complete-actions">
+          <button 
+            class="paper-btn btn-primary next-game-btn"
+            @click="$emit('next-game')"
+          >
+            下一局
+          </button>
+          <button 
+            class="paper-btn btn-secondary end-game-btn"
+            @click="$emit('end-game')"
+          >
+            結束遊戲
+          </button>
+        </div>
       </div>
 
       <!-- 倒計時由外部控制，組件內不再顯示 -->
@@ -149,6 +157,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'rating-submitted', rating: number): void
   (e: 'next-game'): void
+  (e: 'end-game'): void
 }>()
 
 const authStore = useAuthStore()
@@ -815,8 +824,15 @@ watch(() => props.roundId, () => {
   margin-bottom: 0.75rem;
 }
 
-.next-game-btn {
+.round-complete-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.next-game-btn,
+.end-game-btn {
   width: 100%;
-  margin-top: 0.5rem;
 }
 </style>

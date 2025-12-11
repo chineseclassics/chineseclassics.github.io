@@ -104,6 +104,7 @@
                   :is-game-round-complete="isGameRoundComplete"
                   @rating-submitted="handleRating"
                   @next-game="handleNewGame"
+                  @end-game="handleEndGame"
                 />
               </div>
             </div>
@@ -180,15 +181,7 @@
               </h2>
               <PlayerList :show-winner="true" />
               <div class="game-end-actions margin-top-medium">
-                <button 
-                  v-if="roomStore.isHost" 
-                  @click="handleNewGame" 
-                  class="paper-btn btn-primary margin-bottom-small"
-                  :disabled="loading"
-                >
-                  {{ loading ? '準備中...' : '下一局' }}
-                </button>
-                <button @click="handleLeaveRoom" class="paper-btn btn-secondary">
+                <button @click="handleLeaveRoom" class="paper-btn btn-primary">
                   返回首頁
                 </button>
               </div>
@@ -235,6 +228,7 @@ const {
   totalRounds,
   startGame,
   newGame,
+  endGame,
   // 輪次狀態（簡化：只有 drawing 和 summary）
   isDrawing,
   isSummary,
@@ -448,9 +442,17 @@ async function handleRating(rating: number) {
   }
 }
 
-// 處理再來一局
+// 處理下一局
 async function handleNewGame() {
   const result = await newGame()
+  if (!result.success && result.error) {
+    showError(result.error)
+  }
+}
+
+// 處理結束遊戲
+async function handleEndGame() {
+  const result = await endGame()
   if (!result.success && result.error) {
     showError(result.error)
   }
@@ -565,9 +567,25 @@ onMounted(async () => {
         if (state.roundStatus === 'summary') {
           // 停止繪畫倒計時
           stopCountdown()
-          // 如果是最後一輪，5秒後結束遊戲；否則開始總結倒計時
-          if (state.isLastRound) {
-            // 最後一輪，5秒後由房主結束遊戲
+          
+          // 重新載入房間數據以獲取最新的 current_round
+          if (currentRoom.value) {
+            await roomStore.loadRoom(currentRoom.value.id)
+          }
+          
+          // 檢查是否完成一局（一局 = 玩家數量的輪數）
+          const participantCount = roomStore.participants.length
+          const currentRoundNum = currentRoom.value?.current_round || 0
+          const isGameRoundComplete = currentRoundNum > 0 && currentRoundNum % participantCount === 0
+          
+          // 如果完成一局，不自動跳轉，等待用戶選擇「下一局」或「結束遊戲」
+          if (isGameRoundComplete) {
+            console.log('[RoomView] 完成一局，停止自動跳轉，等待用戶選擇')
+            // 停止總結倒計時（如果正在運行）
+            stopSummaryCountdown()
+            // 不開始倒計時，不自動跳轉，等待用戶點擊按鈕
+          } else if (state.isLastRound) {
+            // 最後一輪（但不是完成一局），5秒後結束遊戲
             if (roomStore.isHost) {
               setTimeout(async () => {
                 const { endGame } = useGame()
@@ -575,7 +593,7 @@ onMounted(async () => {
               }, 5000)
             }
           } else {
-            // 還有下一輪，開始總結倒計時
+            // 還有下一輪（且未完成一局），開始總結倒計時
             startSummaryCountdown()
           }
         }
