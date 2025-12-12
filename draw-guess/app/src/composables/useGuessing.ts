@@ -94,9 +94,10 @@ export function useGuessing() {
       }
 
       // 每次提交後都清空輸入框，允許繼續猜測
+      const wasCorrect = isCorrect
       guessInput.value = ''
 
-      return { success: true, isCorrect, guess: data }
+      return { success: true, isCorrect: wasCorrect, guess: data }
     } catch (err) {
       error.value = err instanceof Error ? err.message : '提交猜測失敗'
       console.error('提交猜測錯誤:', err)

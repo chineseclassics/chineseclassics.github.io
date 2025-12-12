@@ -5,13 +5,13 @@
         <h2 class="card-title text-hand-title">創建房間</h2>
 
         <form @submit.prevent="handleSubmit">
-          <!-- 房間名稱 -->
+          <!-- 房間主題 -->
           <div class="form-group">
-            <label>房間名稱</label>
+            <label>房間主題</label>
             <input
               v-model="form.name"
               type="text"
-              placeholder="輸入房間名稱"
+              placeholder="輸入房間主題（例如：古代作家、紅樓夢等）"
               maxlength="50"
               required
             />

@@ -50,6 +50,12 @@
             <span v-if="isSummary" class="phase-label">輪次結算</span>
           </div>
           
+          <!-- 房間主題提示 -->
+          <div v-if="currentRoom?.name" class="room-theme-hint">
+            <span class="theme-label">主題：</span>
+            <span class="theme-text">{{ currentRoom.name }}</span>
+          </div>
+          
           <!-- 當前詞語（僅繪畫階段且畫家可見） -->
           <div v-if="isDrawing && isCurrentDrawer && gameStore.currentWord" class="word-display">
             <span class="word-label">你的詞語</span>
@@ -790,6 +796,36 @@ onUnmounted(() => {
   background: var(--bg-secondary);
   padding: 0.25rem 0.5rem;
   border-radius: 4px;
+}
+
+/* 房間主題提示 */
+.room-theme-hint {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: linear-gradient(135deg, var(--color-warning-light), var(--bg-highlight));
+  padding: 0.4rem 1rem;
+  border-radius: 20px;
+  border: 2px dashed var(--color-warning);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.theme-label {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  font-family: var(--font-head);
+  font-weight: 600;
+}
+
+.theme-text {
+  font-size: 1rem;
+  color: var(--text-primary);
+  font-family: var(--font-head);
+  font-weight: bold;
+  letter-spacing: 1px;
 }
 
 .word-label {

@@ -17,6 +17,7 @@
             <div class="wired-input-wrapper">
               <label class="wired-input-label">輸入您的猜測</label>
               <input
+                ref="guessInputRef"
                 v-model="guessInput"
                 type="text"
                 class="wired-input"
@@ -63,6 +64,7 @@
 </template>
 
 <script setup lang="ts">
+import { ref, nextTick } from 'vue'
 import { useGuessing } from '../composables/useGuessing'
 import { useRoomStore } from '../stores/room'
 
@@ -78,6 +80,7 @@ const {
 } = useGuessing()
 
 const roomStore = useRoomStore()
+const guessInputRef = ref<HTMLInputElement | null>(null)
 
 // 獲取參與者名稱
 function getParticipantName(userId: string): string {
@@ -87,7 +90,17 @@ function getParticipantName(userId: string): string {
 
 // 提交猜測
 async function handleSubmit() {
-  await submitGuess()
+  if (!guessInput.value.trim()) return
+  
+  const result = await submitGuess()
+  // 提交後重新聚焦輸入框（如果未猜中且未禁用）
+  if (result?.success && !result.isCorrect && !hasGuessed.value) {
+    await nextTick()
+    // 確保輸入框未被禁用後再聚焦
+    if (!loading.value && guessInputRef.value && !guessInputRef.value.disabled) {
+      guessInputRef.value.focus()
+    }
+  }
 }
 </script>
 
