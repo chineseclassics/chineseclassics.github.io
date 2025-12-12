@@ -67,7 +67,7 @@ class Game {
         this.dotsEaten = 0;
         this.powerupTimer = 0;
         this.invincibleTimer = 0; // 無敵時間（秒）
-        this.INVINCIBLE_DURATION = 2; // 初始無敵時間 2 秒
+        this.INVINCIBLE_DURATION = 3; // 初始無敵時間 3 秒
     }
 
     init() {
@@ -429,18 +429,18 @@ class Game {
         this.enemies.forEach(e => this.scene.remove(e.mesh));
         this.enemies = [];
         const count = Math.min(4, 1 + Math.floor((this.level - 1) / 1));
-        const colors = [0xff4d6d, 0x5ad1ff, 0xffa24d, 0xa05dff);
+        const colors = [0xff4d6d, 0x5ad1ff, 0xffa24d, 0xa05dff];
         
-        // 玩家初始位置在 (EARTH_RADIUS + PLAYER_RADIUS, 0, 0)，即 (21, 0, 0)
-        // 確保敵人在遠離玩家的位置生成
-        const playerStartPos = new THREE.Vector3(this.EARTH_RADIUS + this.PLAYER_RADIUS, 0, 0);
-        const minDistance = 8; // 最小距離，確保不會立即碰撞
+        // 玩家初始位置在 (EARTH_RADIUS + PLAYER_RADIUS, 0, 0)
+        // 使用球面角度距離來確保敵人生成在地球另一側
+        const playerStartPos = this.player.position.clone().normalize();
+        const minAngle = Math.PI / 3; // 至少 60 度角（約 1/6 球面）
         
         for (let i = 0; i < count; i++) {
             let pos;
             let attempts = 0;
             do {
-                // 在球面上隨機生成位置，但確保遠離玩家
+                // 在球面上隨機生成位置
                 const u = Math.random();
                 const v = Math.random();
                 const theta = u * 2 * Math.PI;
@@ -448,9 +448,12 @@ class Game {
                 const x = Math.sin(phi) * Math.cos(theta);
                 const y = Math.sin(phi) * Math.sin(theta);
                 const z = Math.cos(phi);
-                pos = new THREE.Vector3(x, y, z).multiplyScalar(this.EARTH_RADIUS + 0.9);
+                pos = new THREE.Vector3(x, y, z);
                 attempts++;
-            } while (pos.distanceTo(playerStartPos) < minDistance && attempts < 20);
+                // 使用點積計算角度距離，確保敵人遠離玩家
+            } while (pos.dot(playerStartPos) > Math.cos(minAngle) && attempts < 50);
+            
+            pos.multiplyScalar(this.EARTH_RADIUS + 0.9);
             
             const geo = new THREE.SphereGeometry(0.9, 18, 18);
             const mat = new THREE.MeshPhongMaterial({ color: colors[i % colors.length], emissive: colors[i % colors.length], emissiveIntensity: 0.35, shininess: 30 });
