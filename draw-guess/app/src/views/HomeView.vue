@@ -9,10 +9,17 @@
           </h1>
         </div>
 
-        <!-- 未登入狀態：顯示登入按鈕 -->
-        <div v-if="!authStore.isAuthenticated" class="home-main-layout">
-          <div class="home-auth-section">
-            <UserAuth />
+        <!-- 未登入狀態：顯示登入區域 -->
+        <div v-if="!authStore.isAuthenticated" class="home-welcome-section">
+          <div class="welcome-card">
+            <div class="welcome-icon">
+              <PhPaintBrush :size="48" weight="duotone" />
+            </div>
+            <p class="welcome-text">與朋友一起畫畫猜詞，考驗默契！</p>
+            <div class="welcome-auth">
+              <UserAuth />
+            </div>
+            <p class="welcome-hint">使用 Google 帳號登入即可開始遊戲</p>
           </div>
         </div>
 
@@ -120,11 +127,13 @@
             </div>
           </div>
           
-          <!-- 未登入或匿名用戶提示 -->
-          <div v-else class="home-main-layout">
+          <!-- 已登入但非註冊用戶（匿名用戶）提示 -->
+          <div v-else-if="authStore.isAuthenticated && !authStore.isRegistered" class="home-main-layout">
             <div class="home-auth-section">
-              <div class="alert alert-info text-center">
-                <p class="text-hand">請使用 Google 登入以創建或加入房間</p>
+              <div class="anonymous-upgrade-card">
+                <p class="text-hand">您目前是匿名用戶</p>
+                <p class="text-small text-secondary">使用 Google 登入以保存遊戲記錄</p>
+                <UserAuth />
               </div>
             </div>
           </div>
@@ -422,6 +431,62 @@ function formatNumber(num: number): string {
   width: 100%;
   max-width: 400px;
   margin: 0 auto;
+}
+
+/* 歡迎區域（未登入時的主界面） */
+.home-welcome-section {
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
+}
+
+.welcome-card {
+  background-color: var(--bg-card);
+  border: 2px solid var(--border-color);
+  border-radius: 0;
+  padding: 2rem 1.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  text-align: center;
+}
+
+.welcome-icon {
+  color: var(--color-primary);
+  margin-bottom: 1rem;
+}
+
+.welcome-text {
+  font-size: 1.1rem;
+  color: var(--text-primary);
+  font-family: var(--font-head);
+  margin-bottom: 1.5rem;
+  line-height: 1.6;
+}
+
+.welcome-auth {
+  margin-bottom: 1rem;
+}
+
+.welcome-hint {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* 匿名用戶升級提示卡片 */
+.anonymous-upgrade-card {
+  background-color: var(--bg-card);
+  border: 2px solid var(--border-color);
+  border-radius: 0;
+  padding: 1.5rem;
+  text-align: center;
+}
+
+.anonymous-upgrade-card .text-hand {
+  margin-bottom: 0.5rem;
+}
+
+.anonymous-upgrade-card .text-small {
+  margin-bottom: 1rem;
 }
 
 /* 響應式調整 */
