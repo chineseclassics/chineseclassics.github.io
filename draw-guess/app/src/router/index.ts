@@ -12,6 +12,11 @@ const routes: RouteRecordRaw[] = [
     name: 'room',
     component: () => import('../views/RoomView.vue'),
   },
+  {
+    path: '/word-library',
+    name: 'word-library',
+    component: () => import('../views/WordLibraryAdmin.vue'),
+  },
 ]
 
 const router = createRouter({

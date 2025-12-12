@@ -26,13 +26,25 @@
 <body>
     <div id="game-container"></div>
     <div id="ui-layer">
-        <div class="score-display">分數: <span id="score">0</span></div>
+        <div class="panel">
+            <div class="row"><span class="label">分數</span><span id="score">0</span></div>
+            <div class="row"><span class="label">等級</span><span id="level">1</span></div>
+            <div class="row"><span class="label">生命</span><span id="lives">3</span></div>
+            <div class="row"><span class="label">詩句</span><span id="poem-progress">—</span></div>
+        </div>
     </div>
     <div id="start-screen">
         <h1>地球吃豆人 3D</h1>
-        <p>使用方向鍵控制移動</p>
+        <p id="start-tip">鍵盤：方向鍵或 WASD；手機：滑動或虛擬按鍵</p>
         <button id="start-btn">開始遊戲</button>
     </div>
+    <div id="touch-controls" aria-label="方向控制">
+        <button class="touch-btn up" data-dir="up">↑</button>
+        <button class="touch-btn left" data-dir="left">←</button>
+        <button class="touch-btn right" data-dir="right">→</button>
+        <button class="touch-btn down" data-dir="down">↓</button>
+    </div>
+    <div id="message-banner" aria-live="polite"></div>
 
     <!-- Three.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>

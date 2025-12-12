@@ -63,6 +63,14 @@
             >
               加入房間
             </button>
+            <div v-if="isAdmin" class="margin-top-small">
+              <button
+                class="paper-btn btn-warning btn-block"
+                @click="goWordLibrary"
+              >
+                詞句庫管理（管理員）
+              </button>
+            </div>
           </div>
           
           <!-- 未登入或匿名用戶提示 -->
@@ -88,11 +96,13 @@ import WaitingLobby from '../components/WaitingLobby.vue'
 import { useRoom } from '../composables/useRoom'
 import { useRealtime } from '../composables/useRealtime'
 import { useAuthStore } from '../stores/auth'
+import { useWordLibrary } from '../composables/useWordLibrary'
 
 const router = useRouter()
 const { currentRoom, participants, leaveRoom, isHost } = useRoom()
 const { subscribeRoom } = useRealtime()
 const authStore = useAuthStore()
+const { isAdmin, refreshAdminStatus } = useWordLibrary()
 
 const showCreateForm = ref(false)
 const showJoinForm = ref(false)
@@ -194,7 +204,24 @@ onMounted(() => {
   // 這裡可以添加邏輯來恢復房間狀態
   // roomCode 變量未使用，但保留以備將來使用
   // const roomCode = route.params.code as string
+  if (authStore.profile?.email) {
+    refreshAdminStatus(true)
+  }
 })
+
+// 監聽登入狀態以刷新管理員權限
+watch(
+  () => authStore.profile?.email,
+  (email) => {
+    if (email) {
+      refreshAdminStatus(true)
+    }
+  }
+)
+
+function goWordLibrary() {
+  router.push('/word-library')
+}
 </script>
 
 <style scoped>
