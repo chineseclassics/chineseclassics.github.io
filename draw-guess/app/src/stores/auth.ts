@@ -267,10 +267,16 @@ export const useAuthStore = defineStore('auth', () => {
       loading.value = true
       error.value = null
 
+      // 根據部署路徑設置回調 URL
+      // 生產環境：/draw-guess/
+      // 開發環境：當前路徑
+      const basePath = import.meta.env.BASE_URL || '/draw-guess/'
+      const redirectTo = `${window.location.origin}${basePath}`
+
       const { error: authError } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/`,
+          redirectTo: redirectTo,
         },
       })
 

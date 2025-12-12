@@ -199,7 +199,7 @@ async function initAdmin() {
   clearMessages()
   await refreshAdminStatus(true)
   await loadCollections({ includeInactive: true })
-  if (collections.value.length > 0) {
+  if (collections.value.length > 0 && collections.value[0]) {
     selectedCollectionId.value = collections.value[0].id
     await loadEntries(selectedCollectionId.value)
   }
@@ -382,4 +382,5 @@ onMounted(() => {
   }
 }
 </style>
+
 

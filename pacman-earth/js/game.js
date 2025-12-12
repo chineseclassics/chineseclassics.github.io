@@ -66,6 +66,8 @@ class Game {
         this.dotCount = 110;
         this.dotsEaten = 0;
         this.powerupTimer = 0;
+        this.invincibleTimer = 0; // 無敵時間（秒）
+        this.INVINCIBLE_DURATION = 2; // 初始無敵時間 2 秒
     }
 
     init() {
@@ -92,7 +94,7 @@ class Game {
         this.buildPlayer();
 
         this.bindEvents();
-        this.resetGame();
+        this.updateUI(); // 只更新 UI，不生成遊戲物件
         this.animate();
     }
 
@@ -242,22 +244,31 @@ class Game {
     }
 
     startGame() {
-        if (this.startScreen) this.startScreen.style.display = 'none';
-        this.resetGame();
-        this.isPlaying = true;
-        this.showBanner("開局！吃對詩句順序拿高分，加油！");
+        try {
+            if (this.startScreen) this.startScreen.style.display = 'none';
+            this.resetGame();
+            this.isPlaying = true;
+            this.showBanner("開局！吃對詩句順序拿高分，加油！");
+        } catch (error) {
+            console.error('開始遊戲時發生錯誤:', error);
+            alert('遊戲啟動失敗，請重新整理頁面');
+        }
     }
 
     startLevel() {
         this.poemProgress = 0;
-        this.currentPoem = this.poems[(this.level - 1) % this.poems.length];
+        if (this.poems && this.poems.length > 0) {
+            this.currentPoem = this.poems[(this.level - 1) % this.poems.length];
+        } else {
+            this.currentPoem = "";
+        }
         this.dotsEaten = 0;
         this.clearDots();
-        this.spawnDots();
-        this.spawnEnemies();
         this.clearPowerups();
         this.powerupTimer = 0;
-        this.resetPlayer();
+        this.resetPlayer(); // 先重置玩家位置（會設置無敵時間）
+        this.spawnDots();
+        this.spawnEnemies(); // 再生成敵人，這樣可以根據玩家位置避免碰撞
         this.updateUI();
     }
 
@@ -280,12 +291,20 @@ class Game {
         this.player.rotation.set(0, 0, 0);
         this.swipeDirection = null;
         this.touchInput = { up: false, down: false, left: false, right: false };
+        this.invincibleTimer = this.INVINCIBLE_DURATION; // 重置時給予無敵時間
     }
 
     // --- Bean 與詩句 ---
     generateDotChars(count) {
         const chars = [];
-        const poemChars = this.currentPoem.split('');
+        const poemChars = this.currentPoem ? this.currentPoem.split('') : [];
+        if (poemChars.length === 0) {
+            // 如果沒有詩句，使用預設字符
+            for (let i = 0; i < count; i++) {
+                chars.push('字');
+            }
+            return chars;
+        }
         for (let i = 0; i < count; i++) {
             chars.push(poemChars[i % poemChars.length]);
         }
@@ -410,14 +429,29 @@ class Game {
         this.enemies.forEach(e => this.scene.remove(e.mesh));
         this.enemies = [];
         const count = Math.min(4, 1 + Math.floor((this.level - 1) / 1));
-        const colors = [0xff4d6d, 0x5ad1ff, 0xffa24d, 0xa05dff];
+        const colors = [0xff4d6d, 0x5ad1ff, 0xffa24d, 0xa05dff);
+        
+        // 玩家初始位置在 (EARTH_RADIUS + PLAYER_RADIUS, 0, 0)，即 (21, 0, 0)
+        // 確保敵人在遠離玩家的位置生成
+        const playerStartPos = new THREE.Vector3(this.EARTH_RADIUS + this.PLAYER_RADIUS, 0, 0);
+        const minDistance = 8; // 最小距離，確保不會立即碰撞
+        
         for (let i = 0; i < count; i++) {
-            const angle = (i / count) * Math.PI * 2;
-            const pos = new THREE.Vector3(
-                Math.cos(angle),
-                0,
-                Math.sin(angle)
-            ).multiplyScalar(this.EARTH_RADIUS + 0.9);
+            let pos;
+            let attempts = 0;
+            do {
+                // 在球面上隨機生成位置，但確保遠離玩家
+                const u = Math.random();
+                const v = Math.random();
+                const theta = u * 2 * Math.PI;
+                const phi = Math.acos(2 * v - 1);
+                const x = Math.sin(phi) * Math.cos(theta);
+                const y = Math.sin(phi) * Math.sin(theta);
+                const z = Math.cos(phi);
+                pos = new THREE.Vector3(x, y, z).multiplyScalar(this.EARTH_RADIUS + 0.9);
+                attempts++;
+            } while (pos.distanceTo(playerStartPos) < minDistance && attempts < 20);
+            
             const geo = new THREE.SphereGeometry(0.9, 18, 18);
             const mat = new THREE.MeshPhongMaterial({ color: colors[i % colors.length], emissive: colors[i % colors.length], emissiveIntensity: 0.35, shininess: 30 });
             const mesh = new THREE.Mesh(geo, mat);
@@ -447,6 +481,9 @@ class Game {
     }
 
     checkEnemyCollision() {
+        // 無敵時間內不檢查碰撞
+        if (this.invincibleTimer > 0) return;
+        
         const radius = this.PLAYER_RADIUS + 0.9;
         for (const { mesh } of this.enemies) {
             if (mesh.position.distanceTo(this.player.position) < radius) {
@@ -653,6 +690,11 @@ class Game {
             return;
         }
 
+        // 更新無敵時間
+        if (this.invincibleTimer > 0) {
+            this.invincibleTimer -= delta;
+        }
+
         this.updateInputState();
         this.movePlayer(delta);
         this.faceNearestDot();
@@ -678,9 +720,3 @@ class Game {
         if (this.renderer && this.scene && this.camera) this.renderer.render(this.scene, this.camera);
     }
 }
-
-// 初始化遊戲
-window.addEventListener('DOMContentLoaded', () => {
-    const game = new Game();
-    game.init();
-});
