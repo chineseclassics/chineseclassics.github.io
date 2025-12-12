@@ -70,6 +70,10 @@ export const useGameStore = defineStore('game', () => {
   const roundStatus = ref<RoundStatus>('drawing')
   const wordOptions = ref<WordOption[]>([])
   const ratings = ref<DrawingRating[]>([])
+  
+  // 提示功能狀態
+  const hintGiven = ref(false) // 當前輪次是否已給提示
+  const revealedIndices = ref<number[]>([]) // 已揭示的字符索引
   const averageRating = computed(() => {
     if (ratings.value.length === 0) return 0
     const sum = ratings.value.reduce((acc, r) => acc + r.rating, 0)
@@ -100,6 +104,44 @@ export const useGameStore = defineStore('game', () => {
   // 清除輪次評分
   function clearRatings() {
     ratings.value = []
+  }
+
+  // 給提示（揭示一個隨機字符）
+  function giveHint(): number | null {
+    if (hintGiven.value || !currentWord.value) return null
+    
+    const wordLength = currentWord.value.length
+    // 找出尚未揭示的索引
+    const unrevealedIndices: number[] = []
+    for (let i = 0; i < wordLength; i++) {
+      if (!revealedIndices.value.includes(i)) {
+        unrevealedIndices.push(i)
+      }
+    }
+    
+    if (unrevealedIndices.length === 0) return null
+    
+    // 隨機選一個揭示
+    const randomIdx = Math.floor(Math.random() * unrevealedIndices.length)
+    const revealIdx = unrevealedIndices[randomIdx]
+    if (revealIdx === undefined) return null
+    
+    revealedIndices.value.push(revealIdx)
+    hintGiven.value = true
+    
+    return revealIdx
+  }
+
+  // 設置提示狀態（用於廣播同步）
+  function setHintState(given: boolean, indices: number[]) {
+    hintGiven.value = given
+    revealedIndices.value = indices
+  }
+
+  // 重置提示狀態（新輪次時調用）
+  function resetHint() {
+    hintGiven.value = false
+    revealedIndices.value = []
   }
 
   // 載入當前輪次
@@ -295,6 +337,8 @@ export const useGameStore = defineStore('game', () => {
     roundStatus.value = 'drawing'
     wordOptions.value = []
     ratings.value = []
+    hintGiven.value = false
+    revealedIndices.value = []
   }
 
   // 提交評分到數據庫
@@ -363,6 +407,9 @@ export const useGameStore = defineStore('game', () => {
     wordOptions,
     ratings,
     averageRating,
+    // 提示狀態
+    hintGiven,
+    revealedIndices,
     // 方法
     loadCurrentRound,
     loadGuesses,
@@ -378,6 +425,10 @@ export const useGameStore = defineStore('game', () => {
     clearRatings,
     submitRating,
     loadRatings,
+    // 提示方法
+    giveHint,
+    setHintState,
+    resetHint,
   }
 })
 

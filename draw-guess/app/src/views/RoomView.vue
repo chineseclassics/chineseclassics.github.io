@@ -54,6 +54,17 @@
           <div v-if="isDrawing && isCurrentDrawer && gameStore.currentWord" class="word-display">
             <span class="word-label">你的詞語</span>
             <span class="word-text">{{ gameStore.currentWord }}</span>
+            <!-- 提示按鈕：30秒後顯示，未給過提示時可點擊 -->
+            <button 
+              v-if="canShowHintButton" 
+              class="hint-btn"
+              :disabled="gameStore.hintGiven"
+              @click="handleGiveHint"
+              :title="gameStore.hintGiven ? '已給過提示' : '揭示一個字給猜測者'"
+            >
+              <PhLightbulb :size="18" weight="fill" />
+              {{ gameStore.hintGiven ? '已提示' : '給提示' }}
+            </button>
           </div>
           <!-- 非畫家顯示提示和畫家名稱（繪畫階段） -->
           <div v-else-if="isDrawing" class="word-display">
@@ -205,7 +216,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { PhPaintBrush, PhGameController, PhCheckCircle, PhX, PhConfetti } from '@phosphor-icons/vue'
+import { PhPaintBrush, PhGameController, PhCheckCircle, PhX, PhConfetti, PhLightbulb } from '@phosphor-icons/vue'
 import DrawingCanvas from '../components/DrawingCanvas.vue'
 import DrawingToolbar from '../components/DrawingToolbar.vue'
 import PlayerList from '../components/PlayerList.vue'
@@ -363,12 +374,44 @@ const getInputPlaceholder = computed(() => {
   return '輸入你的猜測...'
 })
 
-// 獲取詞語提示（類似 skribbl.io 的下劃線風格）
+// 獲取詞語提示（類似 skribbl.io 的下劃線風格，支持揭示提示）
 const getWordHint = computed(() => {
   if (!gameStore.currentWord) return '猜猜畫的是什麼？'
-  // 將每個字替換為下劃線，中間用空格分開
-  return gameStore.currentWord.split('').map(() => '_').join(' ')
+  const word = gameStore.currentWord
+  const revealed = gameStore.revealedIndices
+  // 將每個字替換為下劃線，已揭示的顯示實際字符
+  return word.split('').map((char, idx) => {
+    if (revealed.includes(idx)) {
+      return char
+    }
+    return '_'
+  }).join(' ')
 })
+
+// 是否可以顯示提示按鈕（30秒後）
+const canShowHintButton = computed(() => {
+  if (!isDrawing.value || !isCurrentDrawer.value) return false
+  if (timeRemaining.value === null) return false
+  // 繪畫時間過了 30 秒後顯示（即剩餘時間 <= 總時間 - 30）
+  const elapsed = drawTime.value - timeRemaining.value
+  return elapsed >= 30
+})
+
+// 處理給提示
+async function handleGiveHint() {
+  if (gameStore.hintGiven || !currentRoom.value) return
+  
+  const revealedIdx = gameStore.giveHint()
+  if (revealedIdx === null) return
+  
+  // 廣播提示狀態給所有玩家
+  const { broadcastGameState } = useRealtime()
+  await broadcastGameState(currentRoom.value.code, {
+    roundStatus: 'drawing',
+    hintGiven: true,
+    revealedIndices: [...gameStore.revealedIndices],
+  })
+}
 
 // 計算畫家在當前輪次的得分（根據猜中人數）
 const drawerScoreForRound = computed(() => {
@@ -575,17 +618,25 @@ onMounted(async () => {
         roomStore.setCurrentDrawer(state.drawerId)
       }
       
+      // 處理提示狀態更新（不改變 roundStatus）
+      if (state.hintGiven !== undefined && state.revealedIndices !== undefined) {
+        console.log('[RoomView] 更新提示狀態:', state.hintGiven, state.revealedIndices)
+        gameStore.setHintState(state.hintGiven, state.revealedIndices)
+      }
+      
       // 更新輪次狀態 - 所有人統一處理
       if (state.roundStatus) {
         console.log('[RoomView] 更新輪次狀態:', state.roundStatus)
         gameStore.setRoundStatus(state.roundStatus)
         
         // 進入繪畫階段
-        if (state.roundStatus === 'drawing') {
+        if (state.roundStatus === 'drawing' && state.startedAt) {
           // 停止之前的總結倒計時
           stopSummaryCountdown()
           // 清除評分
           gameStore.clearRatings()
+          // 重置提示狀態（新輪次）
+          gameStore.resetHint()
           
           // 畫布清空由 DrawingCanvas 組件的 watch 自動處理
           
@@ -850,6 +901,38 @@ onUnmounted(() => {
   font-family: monospace;
   letter-spacing: 0.3em;
   color: var(--text-primary);
+}
+
+/* 提示按鈕 */
+.hint-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.75rem;
+  background: linear-gradient(135deg, #fff3cd, #ffeeba);
+  border: 2px solid var(--color-warning);
+  border-radius: 6px;
+  color: #856404;
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-family: var(--font-body);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-left: 1rem;
+}
+
+.hint-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #ffeeba, #ffd93d);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(255, 193, 7, 0.3);
+}
+
+.hint-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: var(--bg-secondary);
+  border-color: var(--border-light);
+  color: var(--text-tertiary);
 }
 
 .word-hint {

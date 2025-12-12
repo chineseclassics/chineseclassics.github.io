@@ -164,28 +164,18 @@
           <div class="margin-top-medium game-settings-section">
             <h4 class="text-hand-title">遊戲設置</h4>
 
-            <!-- 繪畫時間和提示數量 - 左右排列 -->
-            <div class="settings-row">
-              <div class="form-group settings-item">
-                <label>繪畫時間（秒）</label>
-                <input
-                  v-model.number="form.settings.draw_time"
-                  type="number"
-                  min="60"
-                  max="180"
-                  required
-                />
-              </div>
-
-              <div class="form-group settings-item">
-                <label>提示數量</label>
-                <input
-                  v-model.number="form.settings.hints_count"
-                  type="number"
-                  min="0"
-                  max="5"
-                  required
-                />
+            <!-- 繪畫時間設置 -->
+            <div class="form-group">
+              <label>繪畫時間（秒）</label>
+              <input
+                v-model.number="form.settings.draw_time"
+                type="number"
+                min="60"
+                max="180"
+                required
+              />
+              <div class="text-small text-secondary margin-top-small">
+                💡 30秒後畫手可選擇給一次提示
               </div>
             </div>
           </div>
@@ -515,28 +505,9 @@ async function handleSubmit() {
   margin-bottom: 2rem;
 }
 
-/* 遊戲設置行 - 左右排列 */
-.settings-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-  margin-top: 0.75rem;
-}
-
-.settings-item {
-  margin-bottom: 0;
-}
-
 /* 提交按鈕區域 - 增加頂部間距 */
 .submit-buttons-section {
   margin-top: 2rem;
-}
-
-@media (max-width: 768px) {
-  .settings-row {
-    grid-template-columns: 1fr;
-    gap: 0;
-  }
 }
 
 .dropdown-wrapper {
