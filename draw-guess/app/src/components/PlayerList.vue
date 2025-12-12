@@ -16,7 +16,7 @@
       ]"
     >
       <!-- 排名 -->
-      <div class="player-rank">{{ index + 1 }}</div>
+      <div class="player-rank" :class="{ 'rank-1': index === 0, 'rank-2': index === 1, 'rank-3': index === 2 }">{{ index + 1 }}</div>
 
       <!-- 頭像 -->
       <div class="player-avatar" :class="{ 'drawing': isCurrentDrawer(player.user_id) }">
@@ -200,17 +200,18 @@ async function handleKick(userId: string, playerName: string) {
   border-radius: 50%;
 }
 
-.player-item:nth-child(1) .player-rank {
+/* 使用 data 屬性來標記排名，避免 nth-child 選擇器問題 */
+.player-rank.rank-1 {
   background: linear-gradient(135deg, #ffd700, #ffb300);
   color: #333;
 }
 
-.player-item:nth-child(2) .player-rank {
+.player-rank.rank-2 {
   background: linear-gradient(135deg, #c0c0c0, #a8a8a8);
   color: #333;
 }
 
-.player-item:nth-child(3) .player-rank {
+.player-rank.rank-3 {
   background: linear-gradient(135deg, #cd7f32, #b8722e);
   color: white;
 }

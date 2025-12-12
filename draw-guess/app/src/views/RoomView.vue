@@ -69,7 +69,10 @@
           <!-- 非畫家顯示提示和畫家名稱（繪畫階段） -->
           <div v-else-if="isDrawing" class="word-display">
             <span class="drawer-hint"><PhPaintBrush :size="18" weight="fill" class="hint-icon" /> {{ currentDrawerName }} 正在畫</span>
-            <span class="word-slots">{{ getWordHint }}</span>
+            <span class="word-slots" :class="{ 'hint-revealed': gameStore.hintGiven }">{{ getWordHint }}</span>
+            <span v-if="gameStore.hintGiven" class="hint-badge">
+              <PhLightbulb :size="14" weight="fill" /> 已提示
+            </span>
           </div>
           <!-- 總結階段：顯示答案 -->
           <div v-else-if="isSummary && gameStore.currentWord" class="word-display summary-word">
@@ -194,12 +197,26 @@
     <div v-else-if="isFinished" class="container margin-top-large">
       <div class="row flex-center">
         <div class="col-12 col-md-8">
-          <div class="card">
+          <div class="card game-end-card">
             <div class="card-body text-center">
               <h2 class="card-title text-hand-title">
                 <PhConfetti :size="28" weight="fill" class="title-icon" style="margin-right: 0.5rem;" /> 遊戲結束
               </h2>
+              
+              <!-- 遊戲統計 -->
+              <div class="game-stats">
+                <div class="stat-item">
+                  <span class="stat-label">總輪數</span>
+                  <span class="stat-value">{{ currentRoundNumber }}</span>
+                </div>
+                <div class="stat-item">
+                  <span class="stat-label">參與人數</span>
+                  <span class="stat-value">{{ roomStore.participants.length }}</span>
+                </div>
+              </div>
+              
               <PlayerList :show-winner="true" />
+              
               <div class="game-end-actions margin-top-medium">
                 <button @click="handleLeaveRoom" class="paper-btn btn-primary">
                   返回首頁
@@ -333,16 +350,22 @@ const sortedGuesses = computed(() => {
   )
 })
 
-// 自動滾動到聊天底部
-function scrollToBottom() {
-  if (chatMessagesRef.value) {
-    chatMessagesRef.value.scrollTop = chatMessagesRef.value.scrollHeight
+// 自動滾動到聊天底部（智能滾動：只有當用戶在底部附近時才自動滾動）
+function scrollToBottom(force = false) {
+  if (!chatMessagesRef.value) return
+  
+  const el = chatMessagesRef.value
+  // 判斷用戶是否在底部附近（距離底部 100px 以內）
+  const isNearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 100
+  
+  if (force || isNearBottom) {
+    el.scrollTop = el.scrollHeight
   }
 }
 
-// 監聽猜測記錄變化，自動滾動
+// 監聽猜測記錄變化，智能滾動
 watch(sortedGuesses, () => {
-  nextTick(scrollToBottom)
+  nextTick(() => scrollToBottom(false))
 }, { deep: true })
 
 // 監聽參與者列表變化，檢測是否被踢出
@@ -625,12 +648,14 @@ onMounted(async () => {
       }
       
       // 更新輪次狀態 - 所有人統一處理
+      // 注意：只有當 roundStatus 變化且有 startedAt（新輪次）或是 summary 時才處理
+      // 提示廣播只更新 hintGiven/revealedIndices，不會有 startedAt
       if (state.roundStatus) {
         console.log('[RoomView] 更新輪次狀態:', state.roundStatus)
-        gameStore.setRoundStatus(state.roundStatus)
         
-        // 進入繪畫階段
+        // 進入繪畫階段（只有新輪次開始時才處理，有 startedAt 標記）
         if (state.roundStatus === 'drawing' && state.startedAt) {
+          gameStore.setRoundStatus(state.roundStatus)
           // 停止之前的總結倒計時
           stopSummaryCountdown()
           // 清除評分
@@ -641,14 +666,11 @@ onMounted(async () => {
           // 畫布清空由 DrawingCanvas 組件的 watch 自動處理
           
           // 根據服務器時間戳計算剩餘時間，確保所有玩家倒計時同步
-          let remaining = drawTime.value
-          if (state.startedAt) {
-            const startTime = new Date(state.startedAt).getTime()
-            const now = Date.now()
-            const elapsed = Math.floor((now - startTime) / 1000)
-            remaining = Math.max(0, drawTime.value - elapsed)
-            console.log('[RoomView] 根據服務器時間計算剩餘時間:', remaining, '秒 (elapsed:', elapsed, '秒)')
-          }
+          const startTime = new Date(state.startedAt).getTime()
+          const now = Date.now()
+          const elapsed = Math.floor((now - startTime) / 1000)
+          const remaining = Math.max(0, drawTime.value - elapsed)
+          console.log('[RoomView] 根據服務器時間計算剩餘時間:', remaining, '秒 (elapsed:', elapsed, '秒)')
           
           console.log('[RoomView] 開始倒計時:', remaining, '秒')
           startCountdown(remaining)
@@ -656,6 +678,7 @@ onMounted(async () => {
         
         // 進入總結階段
         if (state.roundStatus === 'summary') {
+          gameStore.setRoundStatus(state.roundStatus)
           // 停止繪畫倒計時
           stopCountdown()
           
@@ -935,6 +958,40 @@ onUnmounted(() => {
   color: var(--text-tertiary);
 }
 
+/* 提示揭示動畫 */
+.word-slots.hint-revealed {
+  animation: hintReveal 0.8s ease-out;
+}
+
+@keyframes hintReveal {
+  0% { transform: scale(1); }
+  30% { transform: scale(1.15); color: var(--color-warning); }
+  60% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+/* 已提示標記 */
+.hint-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.2rem 0.5rem;
+  background: linear-gradient(135deg, #fff3cd, #ffeeba);
+  border: 1px solid var(--color-warning);
+  border-radius: 4px;
+  color: #856404;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-left: 0.75rem;
+  animation: badgePop 0.4s ease-out;
+}
+
+@keyframes badgePop {
+  0% { transform: scale(0); opacity: 0; }
+  60% { transform: scale(1.2); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
 .word-hint {
   font-size: 1.1rem;
   color: var(--text-secondary);
@@ -1018,6 +1075,46 @@ onUnmounted(() => {
   display: flex;
   justify-content: center;
   gap: 0.75rem;
+}
+
+/* 遊戲結束卡片 */
+.game-end-card {
+  animation: endCardPop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes endCardPop {
+  0% { transform: scale(0.8); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* 遊戲統計 */
+.game-stats {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin: 1rem 0 1.5rem;
+  padding: 1rem;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+}
+
+.game-stats .stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.game-stats .stat-label {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.game-stats .stat-value {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--color-primary);
+  font-family: var(--font-head);
 }
 
 /* 總結階段覆蓋層 - 毛玻璃效果 */

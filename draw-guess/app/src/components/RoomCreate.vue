@@ -174,9 +174,6 @@
                 max="180"
                 required
               />
-              <div class="text-small text-secondary margin-top-small">
-                💡 30秒後畫手可選擇給一次提示
-              </div>
             </div>
           </div>
 

@@ -107,13 +107,19 @@ export function useGuessing() {
     }
   }
 
-  // 匹配判斷（精確匹配）
+  // 匹配判斷（忽略空格和全形/半形差異）
   function matchGuess(guess: string, correctWord: string): boolean {
-    // 去除首尾空格並比較
-    const normalizedGuess = guess.trim()
-    const normalizedCorrect = correctWord.trim()
+    // 標準化：去除所有空格（包括全形空格）並轉換為小寫
+    const normalize = (str: string) => {
+      return str
+        .replace(/[\s\u3000]+/g, '') // 移除所有空格（包括全形空格 \u3000）
+        .toLowerCase() // 轉小寫（處理英文混合情況）
+        .trim()
+    }
+    
+    const normalizedGuess = normalize(guess)
+    const normalizedCorrect = normalize(correctWord)
 
-    // 精確匹配（中文無大小寫，但預留處理）
     return normalizedGuess === normalizedCorrect
   }
 
