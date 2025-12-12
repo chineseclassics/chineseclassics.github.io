@@ -1,17 +1,19 @@
 <template>
   <div class="container margin-top-large">
     <div class="row flex-center">
-      <div class="col-12 col-md-8 col-lg-6">
+      <div class="col-12 col-lg-10">
         <!-- 標題 -->
-        <div class="text-center margin-bottom-medium">
+        <div class="text-center margin-bottom-large">
           <h1 class="text-hand-title" style="font-size: 2.25rem; margin-bottom: 1rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
             <PhPaintBrush :size="32" weight="duotone" style="color: var(--color-primary);" /> 你畫我猜
           </h1>
         </div>
-      
-        <!-- 用戶認證組件 -->
-        <div class="margin-bottom-medium">
-          <UserAuth />
+
+        <!-- 未登入狀態：顯示登入按鈕 -->
+        <div v-if="!authStore.isAuthenticated" class="home-main-layout">
+          <div class="home-auth-section">
+            <UserAuth />
+          </div>
         </div>
 
         <!-- 等待大廳（如果已加入房間且狀態為 waiting） -->
@@ -49,34 +51,81 @@
             />
           </div>
 
-          <!-- 操作按鈕（僅限 Google 登入用戶） -->
-          <div v-else-if="authStore.isRegistered" class="home-actions">
-            <button
-              @click="showCreateForm = true"
-              class="paper-btn btn-primary btn-block margin-bottom-small"
-            >
-              創建房間
-            </button>
-            <button
-              @click="showJoinForm = true"
-              class="paper-btn btn-secondary btn-block"
-            >
-              加入房間
-            </button>
-            <div v-if="isAdmin" class="margin-top-small">
-              <button
-                class="paper-btn btn-warning btn-block"
-                @click="goWordLibrary"
-              >
-                詞句庫管理（管理員）
-              </button>
+          <!-- 分區式佈局：左側用戶信息，右側快速操作 -->
+          <div v-else-if="authStore.isRegistered" class="home-main-layout">
+            <!-- 左側：用戶信息 -->
+            <div class="home-user-section">
+              <div class="user-info-card">
+                <div class="user-header">
+                  <img
+                    v-if="authStore.profile?.avatar_url"
+                    :src="authStore.profile.avatar_url"
+                    :alt="authStore.profile.display_name"
+                    class="user-avatar"
+                  />
+                  <div
+                    v-else
+                    class="user-avatar user-avatar-placeholder"
+                  >
+                    {{ authStore.profile?.display_name?.charAt(0) || '?' }}
+                  </div>
+                  <div class="user-details">
+                    <div class="user-name">{{ authStore.profile?.display_name || '用戶' }}</div>
+                    <div class="user-status">{{ authStore.isAnonymous ? '匿名遊玩' : '已登入' }}</div>
+                  </div>
+                </div>
+                <div v-if="authStore.isRegistered && authStore.profile" class="user-stats">
+                  <div class="stat-item">
+                    <span class="stat-label">總積分</span>
+                    <span class="stat-value">{{ formatNumber(authStore.profile.total_score || 0) }}</span>
+                  </div>
+                </div>
+                <div class="user-actions">
+                  <button
+                    @click="handleSignOut"
+                    :disabled="authStore.loading"
+                    class="paper-btn btn-small btn-block"
+                  >
+                    {{ authStore.loading ? '處理中...' : '登出' }}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 右側：快速操作 -->
+            <div class="home-actions-section">
+              <div class="actions-card">
+                <div class="actions-buttons">
+                  <button
+                    @click="showCreateForm = true"
+                    class="paper-btn btn-primary btn-block margin-bottom-small"
+                  >
+                    創建房間
+                  </button>
+                  <button
+                    @click="showJoinForm = true"
+                    class="paper-btn btn-secondary btn-block margin-bottom-small"
+                  >
+                    加入房間
+                  </button>
+                  <button
+                    v-if="isAdmin"
+                    class="paper-btn btn-warning btn-block"
+                    @click="goWordLibrary"
+                  >
+                    詞句庫管理
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
           
           <!-- 未登入或匿名用戶提示 -->
-          <div v-else class="home-actions">
-            <div class="alert alert-info text-center">
-              <p class="text-hand">請使用 Google 登入以創建或加入房間</p>
+          <div v-else class="home-main-layout">
+            <div class="home-auth-section">
+              <div class="alert alert-info text-center">
+                <p class="text-hand">請使用 Google 登入以創建或加入房間</p>
+              </div>
             </div>
           </div>
         </div>
@@ -222,17 +271,180 @@ watch(
 function goWordLibrary() {
   router.push('/word-library')
 }
+
+// 登出處理
+async function handleSignOut() {
+  const result = await authStore.signOut()
+  if (!result.success) {
+    console.error('登出失敗:', result.error)
+  }
+}
+
+// 格式化數字（添加千分位分隔符）
+function formatNumber(num: number): string {
+  return num.toLocaleString('zh-TW')
+}
 </script>
 
 <style scoped>
-.home-actions {
-  max-width: 100%;
+/* 主佈局容器 */
+.home-main-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  max-width: 900px;
+  margin: 0 auto;
 }
 
 @media (min-width: 768px) {
-  .home-actions {
-    max-width: 400px;
-    margin: 0 auto;
+  .home-main-layout {
+    grid-template-columns: 280px 1fr;
+    gap: 2rem;
+  }
+}
+
+/* 左側：用戶信息區 */
+.home-user-section {
+  width: 100%;
+}
+
+.user-info-card {
+  background-color: var(--bg-card);
+  border: 2px solid var(--border-color);
+  border-radius: 0;
+  padding: 1.25rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.user-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid var(--border-light);
+}
+
+.user-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 0;
+  object-fit: cover;
+  border: 2px solid var(--border-color);
+  display: block;
+  flex-shrink: 0;
+}
+
+.user-avatar-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 1.5rem;
+  font-weight: 600;
+  font-family: var(--font-head);
+}
+
+.user-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.user-name {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.25rem;
+  font-family: var(--font-head);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-status {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.user-stats {
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid var(--border-light);
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.stat-label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  font-family: var(--font-head);
+  letter-spacing: 1px;
+}
+
+.user-actions {
+  width: 100%;
+}
+
+/* 右側：快速操作區 */
+.home-actions-section {
+  width: 100%;
+}
+
+.actions-card {
+  background-color: var(--bg-card);
+  border: 2px solid var(--border-color);
+  border-radius: 0;
+  padding: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  min-height: 200px;
+}
+
+.actions-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* 登入區域（未登入時） */
+.home-auth-section {
+  width: 100%;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+/* 響應式調整 */
+@media (max-width: 767px) {
+  .home-main-layout {
+    gap: 1rem;
+  }
+
+  .user-info-card {
+    padding: 1rem;
+  }
+
+  .actions-card {
+    padding: 1.25rem;
+  }
+
+  .user-header {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .user-details {
+    text-align: center;
   }
 }
 </style>

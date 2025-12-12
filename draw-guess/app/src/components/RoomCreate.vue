@@ -101,7 +101,7 @@
           </div>
         </div>
 
-        <!-- 自定義詞語 -->
+          <!-- 自定義詞語 -->
           <div class="form-group">
             <label>自定義詞語（至少 6 個，每個 1-32 字符，最多 600 字符）</label>
             <textarea
