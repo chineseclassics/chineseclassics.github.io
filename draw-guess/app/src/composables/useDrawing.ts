@@ -98,8 +98,8 @@ export function useDrawing() {
     // 阻止默認行為（防止觸摸滾動和縮放）
     event.preventDefault()
     
-    // 觸摸設備：阻止多點觸控
-    if (event instanceof TouchEvent && event.touches.length > 1) {
+    // 觸摸設備：阻止多點觸控（安全檢測，避免 TouchEvent 不存在的問題）
+    if ('touches' in event && event.touches.length > 1) {
       return
     }
     
@@ -121,7 +121,7 @@ export function useDrawing() {
     lastPoint.value = coords
     
     // 觸摸設備：立即繪製起點（提升響應感）
-    if (event instanceof TouchEvent && ctxRef.value) {
+    if ('touches' in event && ctxRef.value) {
       const ctx = ctxRef.value
       ctx.save()
       if (currentStroke.value.tool === 'pen') {
@@ -141,8 +141,8 @@ export function useDrawing() {
     // 阻止默認行為
     event.preventDefault()
     
-    // 觸摸設備：只處理單點觸控
-    if (event instanceof TouchEvent && event.touches.length > 1) {
+    // 觸摸設備：只處理單點觸控（安全檢測）
+    if ('touches' in event && event.touches.length > 1) {
       return
     }
     

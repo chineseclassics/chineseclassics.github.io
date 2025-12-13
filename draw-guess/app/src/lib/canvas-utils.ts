@@ -13,10 +13,13 @@ export function getCanvasCoordinates(
   let clientX: number
   let clientY: number
 
-  if (event instanceof MouseEvent) {
+  // 安全檢測事件類型（某些瀏覽器環境可能沒有 TouchEvent）
+  if ('clientX' in event && 'clientY' in event) {
+    // MouseEvent
     clientX = event.clientX
     clientY = event.clientY
-  } else if (event instanceof TouchEvent && event.touches.length > 0 && event.touches[0]) {
+  } else if ('touches' in event && event.touches.length > 0 && event.touches[0]) {
+    // TouchEvent
     clientX = event.touches[0].clientX
     clientY = event.touches[0].clientY
   } else {
