@@ -20,8 +20,9 @@
       <div class="summary-header">
         <h2 class="summary-title">
           <PhClipboardText v-if="isWaitingForSelection" :size="24" weight="duotone" class="title-icon" />
+          <PhConfetti v-else-if="isGameRoundComplete" :size="24" weight="duotone" class="title-icon" />
           <PhPaintBrush v-else :size="24" weight="duotone" class="title-icon" />
-          {{ isWaitingForSelection ? '上一輪回顧' : '本局結束' }}
+          {{ isWaitingForSelection ? '上一輪回顧' : (isGameRoundComplete ? '本局結束' : '本輪結束') }}
         </h2>
         <div class="round-info">
           第 {{ gameNumber || 1 }} 局 · 第 {{ roundNumber }} / {{ totalRounds }} 輪
