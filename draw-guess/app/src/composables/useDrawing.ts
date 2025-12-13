@@ -26,6 +26,9 @@ export function useDrawing() {
   // 節流相關
   let throttleTimer: number | null = null
   const THROTTLE_DELAY = 50 // 50ms 節流
+  
+  // 觸摸設備檢測
+  const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0
 
   // 初始化 Canvas
   function initCanvas(canvas: HTMLCanvasElement) {
@@ -92,7 +95,14 @@ export function useDrawing() {
       return
     }
 
+    // 阻止默認行為（防止觸摸滾動和縮放）
     event.preventDefault()
+    
+    // 觸摸設備：阻止多點觸控
+    if (event instanceof TouchEvent && event.touches.length > 1) {
+      return
+    }
+    
     drawingStore.setDrawing(true)
 
     const coords = getCanvasCoordinates(canvasRef.value, event)
@@ -109,15 +119,45 @@ export function useDrawing() {
     }
 
     lastPoint.value = coords
+    
+    // 觸摸設備：立即繪製起點（提升響應感）
+    if (event instanceof TouchEvent && ctxRef.value) {
+      const ctx = ctxRef.value
+      ctx.save()
+      if (currentStroke.value.tool === 'pen') {
+        ctx.fillStyle = currentStroke.value.color
+        ctx.beginPath()
+        ctx.arc(coords.x, coords.y, currentStroke.value.lineWidth / 2, 0, Math.PI * 2)
+        ctx.fill()
+      }
+      ctx.restore()
+    }
   }
 
   // 繪畫中
   function draw(event: MouseEvent | TouchEvent) {
     if (!canvasRef.value || !ctxRef.value || !drawingStore.isDrawing || !currentStroke.value) return
 
+    // 阻止默認行為
     event.preventDefault()
+    
+    // 觸摸設備：只處理單點觸控
+    if (event instanceof TouchEvent && event.touches.length > 1) {
+      return
+    }
+    
     const coords = getCanvasCoordinates(canvasRef.value, event)
     if (!coords || !lastPoint.value) return
+
+    // 計算與上一點的距離，過濾抖動
+    const dx = coords.x - lastPoint.value.x
+    const dy = coords.y - lastPoint.value.y
+    const distance = Math.sqrt(dx * dx + dy * dy)
+    
+    // 觸摸設備：過濾微小移動（減少抖動）
+    if (isTouchDevice && distance < 1) {
+      return
+    }
 
     // 繪製線條
     const ctx = ctxRef.value
@@ -145,12 +185,13 @@ export function useDrawing() {
     currentStroke.value.points.push(coords)
     lastPoint.value = coords
 
-    // 節流發送數據
+    // 節流發送數據（觸摸設備使用更短的延遲以提升同步性）
+    const delay = isTouchDevice ? 30 : THROTTLE_DELAY
     if (throttleTimer === null) {
       throttleTimer = window.setTimeout(() => {
         sendStrokeData()
         throttleTimer = null
-      }, THROTTLE_DELAY)
+      }, delay)
     }
   }
 

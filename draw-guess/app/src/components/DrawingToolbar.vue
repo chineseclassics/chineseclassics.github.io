@@ -274,5 +274,121 @@ async function handleClear() {
   border-color: var(--color-secondary);
   box-shadow: 0 0 0 3px var(--bg-card), 0 0 0 5px var(--color-secondary);
 }
+
+/* ============================================
+   移動端觸摸優化
+   ============================================ */
+@media (max-width: 768px) {
+  .drawing-toolbar {
+    padding: 0.2rem;
+  }
+
+  .toolbar-horizontal {
+    gap: 0.75rem;
+    padding: 0.4rem 0.6rem;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .toolbar-horizontal .tools-section {
+    gap: 0.25rem;
+    flex-shrink: 0;
+  }
+
+  /* 工具按鈕 - 增大觸摸區域 */
+  .tool-btn {
+    width: 40px;
+    height: 40px;
+    padding: 0.5rem;
+    min-width: 40px;
+    min-height: 40px;
+    /* 增加觸摸反饋 */
+    -webkit-tap-highlight-color: rgba(107, 175, 178, 0.3);
+  }
+
+  .tool-btn:active {
+    transform: scale(0.95);
+    background: var(--bg-hover);
+  }
+
+  /* 顏色網格 - 移動端優化 */
+  .color-grid-horizontal {
+    grid-template-columns: repeat(8, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    gap: 3px;
+  }
+
+  .color-cell {
+    min-width: 24px;
+    min-height: 24px;
+    /* 增加觸摸反饋 */
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .color-cell:active {
+    transform: scale(1.2);
+  }
+
+  /* 畫筆大小 - 移動端優化 */
+  .toolbar-horizontal .size-section {
+    padding: 0 0.5rem;
+  }
+
+  .size-dots-horizontal {
+    gap: 0.5rem;
+  }
+
+  .size-dot {
+    /* 增加觸摸區域 */
+    position: relative;
+  }
+
+  .size-dot::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+  }
+
+  .size-dot:active {
+    transform: scale(1.15);
+  }
+}
+
+/* 小屏幕進一步優化 */
+@media (max-width: 480px) {
+  .toolbar-horizontal {
+    gap: 0.5rem;
+    padding: 0.3rem 0.4rem;
+  }
+
+  .tool-btn {
+    width: 36px;
+    height: 36px;
+    padding: 0.4rem;
+    min-width: 36px;
+    min-height: 36px;
+  }
+
+  .color-grid-horizontal {
+    grid-template-columns: repeat(6, 1fr);
+    grid-template-rows: repeat(4, 1fr);
+    gap: 2px;
+  }
+
+  .color-cell {
+    min-width: 20px;
+    min-height: 20px;
+  }
+
+  .size-dots-horizontal {
+    gap: 0.4rem;
+  }
+}
 </style>
 

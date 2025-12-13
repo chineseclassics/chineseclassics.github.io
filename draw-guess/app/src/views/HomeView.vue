@@ -501,6 +501,7 @@ function formatNumber(num: number): string {
 
   .actions-card {
     padding: 1.25rem;
+    min-height: auto;
   }
 
   .user-header {
@@ -510,6 +511,45 @@ function formatNumber(num: number): string {
 
   .user-details {
     text-align: center;
+  }
+
+  /* 按鈕觸摸優化 */
+  .paper-btn {
+    min-height: 48px;
+    padding: 0.75rem 1rem;
+  }
+}
+
+/* 小屏幕進一步優化 */
+@media (max-width: 480px) {
+  .container {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+
+  h1.text-hand-title {
+    font-size: 1.75rem !important;
+  }
+
+  .welcome-card {
+    padding: 1.5rem 1rem;
+  }
+
+  .welcome-text {
+    font-size: 1rem;
+  }
+
+  .user-avatar {
+    width: 48px;
+    height: 48px;
+  }
+
+  .user-name {
+    font-size: 1rem;
+  }
+
+  .stat-value {
+    font-size: 1.25rem;
   }
 }
 </style>

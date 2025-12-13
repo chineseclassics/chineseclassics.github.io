@@ -166,6 +166,10 @@ onUnmounted(() => {
   align-items: stretch;
   justify-content: stretch;
   position: relative;
+  /* 防止移動端觸摸時的意外行為 */
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
 }
 
 .drawing-canvas {
@@ -175,8 +179,27 @@ onUnmounted(() => {
   background-color: var(--bg-card);
   background-image: none;
   cursor: crosshair;
-  touch-action: none; /* 防止觸摸滾動 */
+  touch-action: none; /* 防止觸摸滾動和縮放 */
   display: block;
+  /* 防止移動端長按選擇 */
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  /* 優化觸摸繪畫性能 */
+  will-change: contents;
+}
+
+/* 移動端優化 */
+@media (max-width: 768px) {
+  .drawing-canvas-container {
+    /* 確保觸摸事件正確處理 */
+    overflow: hidden;
+  }
+
+  .drawing-canvas {
+    /* 移動端使用手指圖標 */
+    cursor: default;
+  }
 }
 </style>
 

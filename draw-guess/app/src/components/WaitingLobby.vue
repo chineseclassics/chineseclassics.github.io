@@ -300,10 +300,75 @@ async function handleLeaveRoom() {
   gap: 0.75rem;
 }
 
-/* 響應式設計 */
-@media (max-width: 640px) {
+/* ============================================
+   移動端優化
+   ============================================ */
+@media (max-width: 768px) {
+  .waiting-lobby {
+    max-width: 100%;
+    padding: 0 0.5rem;
+  }
+
   .card-title {
     font-size: 1.5rem;
+  }
+
+  .room-code-badge {
+    font-size: 1.1rem;
+    padding: 0.35rem 0.7rem;
+  }
+
+  .players-section {
+    padding: 0.75rem 0;
+  }
+
+  .player-item {
+    padding: 0.6rem;
+  }
+
+  .player-avatar {
+    width: 36px;
+    height: 36px;
+    font-size: 1rem;
+  }
+
+  .player-name {
+    font-size: 0.9rem;
+  }
+
+  .room-settings {
+    font-size: 0.85rem;
+  }
+
+  .setting-item {
+    padding: 0.4rem 0;
+  }
+
+  .lobby-actions {
+    gap: 0.6rem;
+  }
+
+  /* 按鈕觸摸優化 */
+  .paper-btn {
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    min-height: 48px; /* 確保足夠的觸摸區域 */
+  }
+}
+
+@media (max-width: 480px) {
+  .card-title {
+    font-size: 1.3rem;
+  }
+
+  .room-code-badge {
+    font-size: 1rem;
+  }
+
+  .player-avatar {
+    width: 32px;
+    height: 32px;
+    font-size: 0.9rem;
   }
 }
 </style>

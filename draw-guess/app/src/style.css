@@ -390,3 +390,53 @@ input:focus, select:focus, textarea:focus {
     padding: 0.75rem;
   }
 }
+
+/* ============================================
+   全局移動端優化
+   ============================================ */
+
+/* 防止移動端輸入框縮放 */
+@media (max-width: 768px) {
+  input, select, textarea {
+    font-size: 16px !important; /* 防止 iOS 自動縮放 */
+  }
+
+  /* 優化觸摸反饋 */
+  button, .paper-btn {
+    -webkit-tap-highlight-color: rgba(107, 175, 178, 0.2);
+    touch-action: manipulation; /* 禁用雙擊縮放 */
+  }
+
+  /* 確保按鈕有足夠的觸摸區域 */
+  .paper-btn {
+    min-height: 44px;
+    padding: 0.6rem 1rem;
+  }
+
+  /* 卡片在移動端減少陰影 */
+  .card {
+    box-shadow: 2px 2px 0 var(--shadow-color);
+  }
+}
+
+/* 安全區域適配（iPhone X 等設備） */
+@supports (padding: max(0px)) {
+  .game-container {
+    padding-left: max(0.5rem, env(safe-area-inset-left));
+    padding-right: max(0.5rem, env(safe-area-inset-right));
+    padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+  }
+}
+
+/* 移動端滾動優化 */
+@media (max-width: 768px) {
+  html, body {
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* 防止橡皮筋效果影響遊戲體驗 */
+  .game-layout {
+    overscroll-behavior: contain;
+  }
+}

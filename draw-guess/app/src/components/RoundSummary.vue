@@ -806,4 +806,203 @@ watch(() => props.roundId, () => {
 .end-game-btn {
   width: 100%;
 }
+
+/* ============================================
+   移動端優化
+   ============================================ */
+@media (max-width: 768px) {
+  .round-summary {
+    max-width: 100%;
+    padding: 0.25rem;
+    max-height: calc(100dvh - 1rem);
+  }
+
+  .summary-card {
+    padding: 0.75rem 1rem;
+    gap: 0.5rem;
+    box-shadow: 4px 4px 0 var(--shadow-color);
+  }
+
+  .summary-header {
+    margin-bottom: 0.25rem;
+  }
+
+  .summary-title {
+    font-size: 1.2rem;
+    gap: 0.35rem;
+  }
+
+  .round-info {
+    font-size: 0.8rem;
+    padding: 0.15rem 0.5rem;
+  }
+
+  /* 答案顯示 */
+  .answer-reveal {
+    padding: 0.5rem 0.75rem;
+  }
+
+  .answer-label {
+    font-size: 0.75rem;
+  }
+
+  .answer-text {
+    font-size: 1.5rem;
+  }
+
+  /* 畫家信息 */
+  .drawer-section {
+    padding: 0.4rem 0.5rem;
+  }
+
+  .drawer-info {
+    gap: 0.4rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .drawer-label, .drawer-name {
+    font-size: 0.85rem;
+  }
+
+  .drawer-score {
+    font-size: 0.8rem;
+    padding: 0.1rem 0.4rem;
+  }
+
+  /* 猜中玩家列表 */
+  .guessers-section {
+    margin-bottom: 0.35rem;
+  }
+
+  .section-title {
+    font-size: 0.85rem;
+    margin-bottom: 0.3rem;
+  }
+
+  .guessers-list {
+    max-height: 80px;
+    gap: 0.2rem;
+  }
+
+  .guesser-item {
+    padding: 0.3rem 0.5rem;
+  }
+
+  .guesser-rank {
+    width: 20px;
+    height: 20px;
+    font-size: 0.7rem;
+  }
+
+  .guesser-name, .guesser-score {
+    font-size: 0.8rem;
+  }
+
+  /* 評分區域 */
+  .rating-section {
+    padding: 0.5rem;
+  }
+
+  .star-rating {
+    gap: 0.3rem;
+    margin: 0.3rem 0;
+  }
+
+  .star-btn {
+    padding: 0.15rem;
+    /* 增大觸摸區域 */
+    min-width: 36px;
+    min-height: 36px;
+  }
+
+  .rating-info {
+    font-size: 0.75rem;
+  }
+
+  /* 平均評分 */
+  .average-rating {
+    padding: 0.4rem 0.5rem;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .avg-label {
+    font-size: 0.8rem;
+  }
+
+  .avg-score {
+    font-size: 1.1rem;
+  }
+
+  .avg-count {
+    font-size: 0.7rem;
+  }
+
+  /* 等待選詞狀態 */
+  .selection-waiting-banner {
+    padding: 0.5rem 0.75rem;
+    margin-bottom: 0.5rem;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .waiting-text {
+    font-size: 0.85rem;
+  }
+
+  /* 下一位畫手提示 */
+  .next-drawer-info {
+    padding: 0.4rem 0.6rem;
+  }
+
+  .next-drawer-label {
+    font-size: 0.75rem;
+  }
+
+  .next-drawer-name-display {
+    font-size: 0.9rem;
+  }
+
+  /* 完成一局提示 */
+  .game-round-complete {
+    margin-top: 0.5rem;
+    padding: 0.6rem;
+  }
+
+  .round-complete-label {
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .round-complete-actions {
+    gap: 0.4rem;
+  }
+}
+
+/* 小屏幕進一步優化 */
+@media (max-width: 480px) {
+  .summary-card {
+    padding: 0.6rem 0.75rem;
+  }
+
+  .summary-title {
+    font-size: 1.1rem;
+  }
+
+  .answer-text {
+    font-size: 1.3rem;
+  }
+
+  .guessers-list {
+    max-height: 70px;
+  }
+
+  .star-btn {
+    min-width: 32px;
+    min-height: 32px;
+  }
+}
 </style>

@@ -359,5 +359,70 @@ async function handleKick(userId: string, playerName: string) {
   font-size: 0.9rem;
   opacity: 0.9;
 }
+
+/* ============================================
+   移動端優化
+   ============================================ */
+@media (max-width: 768px) {
+  .player-list-header {
+    padding: 0.6rem;
+    margin: -0.5rem -0.5rem 0.35rem -0.5rem;
+  }
+
+  .player-count {
+    font-size: 0.85rem;
+  }
+
+  .player-item {
+    padding: 0.4rem 0.5rem;
+    gap: 0.4rem;
+  }
+
+  .player-rank {
+    width: 20px;
+    height: 20px;
+    font-size: 0.75rem;
+  }
+
+  .player-avatar {
+    width: 32px;
+    height: 32px;
+    font-size: 0.9rem;
+    border-width: 2px;
+  }
+
+  .player-name {
+    font-size: 0.85rem;
+    gap: 0.25rem;
+  }
+
+  .player-score {
+    font-size: 0.75rem;
+  }
+
+  .kick-btn {
+    width: 24px;
+    height: 24px;
+    /* 移動端始終顯示踢人按鈕 */
+    opacity: 0.6;
+  }
+
+  .winner-banner {
+    padding: 0.75rem;
+    gap: 0.6rem;
+  }
+
+  .winner-title {
+    font-size: 0.75rem;
+  }
+
+  .winner-name {
+    font-size: 1rem;
+  }
+
+  .winner-score {
+    font-size: 0.85rem;
+  }
+}
 </style>
 

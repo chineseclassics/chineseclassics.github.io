@@ -1339,44 +1339,285 @@ onUnmounted(() => {
   }
 }
 
+/* ============================================
+   移動端優化 (768px 以下)
+   ============================================ */
 @media (max-width: 768px) {
   .game-layout {
     flex-direction: column;
     height: auto;
-    min-height: 100vh;
+    min-height: 100dvh; /* 使用 dvh 適配移動端瀏覽器 */
+    padding: 0.25rem;
+    gap: 0.25rem;
   }
 
+  /* 移動端隱藏左側玩家列表，改為頂部簡化顯示 */
   .game-players {
-    width: 100%;
-    min-width: unset;
-    max-height: 150px;
+    display: none;
   }
 
   .game-main {
     margin-left: 0;
-    margin-top: 0.5rem;
     flex-direction: column;
+    gap: 0.25rem;
+    flex: 1;
+    min-height: 0;
   }
 
-  .game-canvas-area {
-    min-height: 300px;
+  /* 頂部提示區域 - 移動端緊湊化 */
+  .game-header {
+    padding: 0.5rem 0.75rem;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    min-height: auto;
   }
 
-  .game-toolbar {
+  .time-display {
+    position: static;
+    order: -1;
+  }
+
+  .time-number {
+    font-size: 1.5rem;
+    min-width: 2rem;
+  }
+
+  .round-info {
+    position: static;
+    order: 0;
+    flex: 1;
+    text-align: center;
+  }
+
+  .round-label {
+    font-size: 0.8rem;
+    padding: 0.2rem 0.4rem;
+  }
+
+  .word-display {
     width: 100%;
-    min-width: unset;
+    justify-content: center;
+    order: 1;
+    flex-wrap: wrap;
+    gap: 0.5rem;
   }
 
+  .word-label {
+    font-size: 0.75rem;
+    padding: 0.2rem 0.5rem;
+  }
+
+  .word-text {
+    font-size: 1.2rem;
+  }
+
+  .word-slots {
+    font-size: 1.2rem;
+    letter-spacing: 0.2em;
+  }
+
+  .drawer-hint {
+    font-size: 0.9rem;
+  }
+
+  .hint-btn {
+    padding: 0.3rem 0.6rem;
+    font-size: 0.8rem;
+    margin-left: 0;
+  }
+
+  .leave-btn {
+    position: absolute;
+    right: 0.25rem;
+    top: 0.25rem;
+    padding: 0.2rem 0.4rem;
+  }
+
+  /* 主要內容區域 - 移動端垂直排列 */
+  .game-content-area {
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+  }
+
+  /* 畫布區域 - 移動端佔據主要空間 */
+  .game-canvas-wrapper {
+    flex: 1;
+    min-height: 200px;
+    max-height: 50vh;
+  }
+
+  .game-canvas {
+    min-height: 180px;
+  }
+
+  /* 工具欄 - 移動端更緊湊 */
+  .game-toolbar {
+    flex-shrink: 0;
+  }
+
+  .game-toolbar .card-body {
+    padding: 0.35rem !important;
+  }
+
+  /* 聊天面板 - 移動端固定在底部 */
   .game-chat-panel {
     width: 100%;
     min-width: unset;
-    height: 200px;
+    height: auto;
+    min-height: 140px;
+    max-height: 35vh;
     margin-left: 0;
-    margin-top: 0.5rem;
+    flex-shrink: 0;
   }
-  
+
+  .room-theme-hint {
+    padding: 0.35rem 0.5rem;
+    font-size: 0.8rem;
+  }
+
+  .theme-label, .theme-text {
+    font-size: 0.8rem;
+  }
+
+  .chat-messages-container {
+    font-size: 0.85rem;
+    padding: 0.5rem !important;
+    min-height: 60px;
+    max-height: 100px;
+  }
+
+  .chat-msg {
+    padding: 0.35rem 0.5rem;
+    font-size: 0.85rem;
+  }
+
+  /* 輸入區 - 移動端優化觸摸 */
+  .chat-input-area {
+    padding: 0.5rem;
+    gap: 0.35rem;
+  }
+
+  .chat-input-field {
+    padding: 0.6rem 0.75rem;
+    font-size: 16px; /* 防止 iOS 縮放 */
+    border-radius: 8px;
+  }
+
+  .chat-send-btn {
+    padding: 0.6rem 1rem;
+    font-size: 0.9rem;
+    min-width: 60px;
+  }
+
+  /* 總結覆蓋層 - 移動端適配 */
   .summary-overlay {
-    padding: 1rem;
+    padding: 0.5rem;
+    align-items: flex-start;
+    padding-top: 2rem;
+  }
+
+  /* 時間進度條 */
+  .time-progress {
+    height: 6px;
+  }
+}
+
+/* ============================================
+   小屏幕移動端 (480px 以下)
+   ============================================ */
+@media (max-width: 480px) {
+  .game-layout {
+    padding: 0.15rem;
+  }
+
+  .game-header {
+    padding: 0.4rem 0.5rem;
+  }
+
+  .time-number {
+    font-size: 1.3rem;
+  }
+
+  .round-label {
+    font-size: 0.75rem;
+  }
+
+  .word-text, .word-slots {
+    font-size: 1.1rem;
+  }
+
+  .game-canvas-wrapper {
+    max-height: 45vh;
+  }
+
+  .game-chat-panel {
+    max-height: 40vh;
+  }
+
+  .chat-messages-container {
+    max-height: 80px;
+  }
+
+  .chat-input-field {
+    padding: 0.5rem 0.6rem;
+  }
+
+  .chat-send-btn {
+    padding: 0.5rem 0.75rem;
+    min-width: 50px;
+  }
+}
+
+/* ============================================
+   橫屏移動端優化
+   ============================================ */
+@media (max-width: 900px) and (orientation: landscape) {
+  .game-layout {
+    flex-direction: row;
+    height: 100dvh;
+    padding: 0.25rem;
+  }
+
+  .game-players {
+    display: none;
+  }
+
+  .game-main {
+    flex: 1;
+    flex-direction: row;
+    gap: 0.25rem;
+  }
+
+  .game-header {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 10;
+    background: var(--bg-card);
+    padding: 0.35rem 0.5rem;
+  }
+
+  .game-content-area {
+    flex-direction: row;
+    padding-top: 2.5rem;
+  }
+
+  .game-canvas-wrapper {
+    flex: 1;
+    max-height: none;
+  }
+
+  .game-chat-panel {
+    width: 200px;
+    min-width: 180px;
+    max-height: none;
+    height: 100%;
+  }
+
+  .chat-messages-container {
+    max-height: none;
   }
 }
 
