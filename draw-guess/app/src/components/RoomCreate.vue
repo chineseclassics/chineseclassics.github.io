@@ -323,17 +323,29 @@ function addWordsToTextarea(newWords: string[]) {
   const seen = new Set(existing)
   const merged = [...existing]
 
+  let addedCount = 0
+  let skippedCount = 0
+
   trimmed.forEach(word => {
     if (!seen.has(word)) {
       seen.add(word)
       merged.push(word)
+      addedCount++
+    } else {
+      skippedCount++
     }
   })
 
   form.value.wordsText = merged.join('\n')
   libraryWords.value = new Set([...libraryWords.value, ...trimmed])
   pruneLibraryWords()
-  infoMessage.value = `已加入 ${trimmed.length} 個詞條`
+  
+  // 顯示加入結果，包含跳過重複的提示
+  if (skippedCount > 0) {
+    infoMessage.value = `已加入 ${addedCount} 個詞條，跳過 ${skippedCount} 個重複詞條`
+  } else {
+    infoMessage.value = `已加入 ${addedCount} 個詞條`
+  }
 }
 
 // 切換下拉菜單
@@ -385,6 +397,8 @@ async function addSelectedEntries(collectionId: string) {
   const selectedWords = entries?.filter(e => selection.has(e.id)).map(e => e.text) || []
   addWordsToTextarea(selectedWords)
   clearSelection(collectionId)
+  // 加入後自動關閉詳情面板
+  selectedCollection.value = null
 }
 
 // 一鍵加入整個詞庫
@@ -393,6 +407,8 @@ async function addWholeCollection(collectionId: string) {
   const texts = (entries || []).map(e => e.text)
   addWordsToTextarea(texts)
   clearSelection(collectionId)
+  // 加入後自動關閉詳情面板
+  selectedCollection.value = null
 }
 
 // 點擊外部關閉下拉菜單

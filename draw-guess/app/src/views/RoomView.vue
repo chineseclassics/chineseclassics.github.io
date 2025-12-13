@@ -641,10 +641,17 @@ onMounted(async () => {
         roomStore.setCurrentDrawer(state.drawerId)
       }
       
-      // 處理提示狀態更新（不改變 roundStatus）
+      // 處理提示狀態更新（不改變 roundStatus，也不重新載入數據）
+      // 提示廣播只更新前端狀態，不需要從數據庫重新載入
       if (state.hintGiven !== undefined && state.revealedIndices !== undefined) {
         console.log('[RoomView] 更新提示狀態:', state.hintGiven, state.revealedIndices)
         gameStore.setHintState(state.hintGiven, state.revealedIndices)
+        // 提示廣播不需要重新載入數據，直接返回
+        // 避免 loadRoom() 覆蓋掉正確的 current_drawer_id
+        if (!state.startedAt && state.roundStatus === 'drawing') {
+          console.log('[RoomView] 提示廣播，跳過數據重載')
+          return
+        }
       }
       
       // 更新輪次狀態 - 所有人統一處理
@@ -706,7 +713,8 @@ onMounted(async () => {
       }
       
       // 重新載入房間和輪次以獲取最新數據
-      if (currentRoom.value) {
+      // 只在新輪次開始或進入總結階段時載入，避免覆蓋 current_drawer_id
+      if (currentRoom.value && (state.startedAt || state.roundStatus === 'summary')) {
         await roomStore.loadRoom(currentRoom.value.id)
         await gameStore.loadCurrentRound(currentRoom.value.id)
       }
