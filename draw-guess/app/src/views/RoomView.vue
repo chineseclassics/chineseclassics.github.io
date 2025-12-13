@@ -115,14 +115,20 @@
             
             <!-- 分鏡模式提示內容 -->
             <div class="storyboard-prompt">
-              <!-- 繪畫階段：顯示上一輪勝出句子作為繪畫題目 -->
+              <!-- 繪畫階段：顯示上一輪勝出句子，畫手需要畫出接下來的情節 -->
               <!-- Requirements: 3.1 -->
               <template v-if="isStoryboardDrawing">
-                <div v-if="isCurrentDrawer" class="word-display storyboard-drawing">
-                  <span class="word-label storyboard-label">
-                    <PhPencilLine :size="16" weight="fill" /> 繪畫題目
-                  </span>
-                  <span class="word-text storyboard-sentence">{{ latestSentence?.content || '開始創作故事...' }}</span>
+                <div v-if="isCurrentDrawer" class="word-display storyboard-drawing drawer-task">
+                  <div class="drawer-task-header">
+                    <span class="word-label storyboard-label">
+                      <PhBookOpen :size="16" weight="fill" /> 上一句故事
+                    </span>
+                    <span class="word-text storyboard-sentence">{{ latestSentence?.content || '故事即將開始...' }}</span>
+                  </div>
+                  <div class="drawer-task-instruction">
+                    <PhPencilLine :size="18" weight="fill" class="instruction-icon" />
+                    <span class="instruction-text">畫出【接下來發生了什麼】，讓編劇續寫故事！</span>
+                  </div>
                 </div>
                 <div v-else class="word-display storyboard-watching">
                   <span class="drawer-hint">
@@ -382,6 +388,13 @@
       @submit="handleStorySetupSubmit"
     />
 
+    <!-- 分鏡模式畫手教學彈窗 -->
+    <!-- 玩家第一次成為畫手時顯示，說明「續創」vs「圖解」的區別 -->
+    <DrawerTutorialModal
+      v-if="showDrawerTutorial"
+      @close="handleDrawerTutorialClose"
+    />
+
     <!-- 分鏡模式局結束彈窗 -->
     <!-- Requirements: 7.3 - 一局結束時詢問房主是否設為最後一局 -->
     <FinalRoundModal
@@ -432,6 +445,7 @@ import StoryboardSummary from '../components/StoryboardSummary.vue'
 import FinalRoundModal from '../components/FinalRoundModal.vue'
 import StoryEndingModal from '../components/StoryEndingModal.vue'
 import StoryReview from '../components/StoryReview.vue'
+import DrawerTutorialModal from '../components/DrawerTutorialModal.vue'
 import { useRoomStore } from '../stores/room'
 import { useGameStore } from '../stores/game'
 import { useAuthStore } from '../stores/auth'
@@ -529,6 +543,29 @@ const showStoryEndingModal = ref(false)
 // ========== 分鏡模式故事回顧狀態 ==========
 // Requirements: 7.9, 8.1 - 提交或跳過結尾後進入故事回顧
 const showStoryReview = ref(false)
+
+// ========== 畫手教學彈窗狀態 ==========
+// 分鏡模式中，玩家第一次成為畫手時顯示教學
+const showDrawerTutorial = ref(false)
+const DRAWER_TUTORIAL_STORAGE_KEY = 'draw-guess-drawer-tutorial-shown'
+
+/** 檢查是否需要顯示畫手教學 */
+function checkShowDrawerTutorial() {
+  // 檢查 localStorage 是否已經顯示過
+  const hasShown = localStorage.getItem(DRAWER_TUTORIAL_STORAGE_KEY)
+  if (hasShown === 'true') {
+    return false
+  }
+  return true
+}
+
+/** 處理畫手教學彈窗關閉 */
+function handleDrawerTutorialClose(dontShowAgain: boolean) {
+  showDrawerTutorial.value = false
+  if (dontShowAgain) {
+    localStorage.setItem(DRAWER_TUTORIAL_STORAGE_KEY, 'true')
+  }
+}
 
 const {
   myVote,
@@ -1581,6 +1618,10 @@ onMounted(async () => {
               if (currentRoom.value) {
                 await loadStoryChain(currentRoom.value.id)
               }
+              // 如果當前用戶是畫手，檢查是否需要顯示教學彈窗
+              if (isCurrentDrawer.value && checkShowDrawerTutorial()) {
+                showDrawerTutorial.value = true
+              }
               break
             case 'writing':
               phaseDuration = STORYBOARD_WRITING_TIME
@@ -2039,6 +2080,58 @@ onUnmounted(() => {
 .word-display.storyboard-summary,
 .word-display.storyboard-watching {
   gap: 0.75rem;
+}
+
+/* ========== 畫手任務區域（分鏡模式） ========== */
+.word-display.drawer-task {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: linear-gradient(135deg, #f8f9fa, #fff);
+  border-radius: 8px;
+  border: 2px solid var(--border-light);
+}
+
+.drawer-task-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.drawer-task-header .word-label {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+}
+
+.drawer-task-header .word-text {
+  font-size: 1rem;
+  color: var(--text-primary);
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.drawer-task-instruction {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+  border: 2px solid var(--color-success);
+  border-radius: 6px;
+  margin-top: 0.25rem;
+}
+
+.drawer-task-instruction .instruction-icon {
+  color: var(--color-success);
+  flex-shrink: 0;
+}
+
+.drawer-task-instruction .instruction-text {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #2e7d32;
+  font-family: var(--font-body);
 }
 
 /* 分鏡模式倒計時 */
