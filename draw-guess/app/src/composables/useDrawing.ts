@@ -206,6 +206,12 @@ export function useDrawing() {
       clearTimeout(throttleTimer)
       throttleTimer = null
     }
+    
+    // 將完成的筆觸添加到 store（用於 resize 時重繪）
+    if (currentStroke.value.points.length > 0) {
+      drawingStore.addStroke({ ...currentStroke.value })
+    }
+    
     sendStrokeData()
 
     currentStroke.value = null
