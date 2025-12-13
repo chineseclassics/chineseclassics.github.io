@@ -691,8 +691,9 @@ export function useGame() {
 
   /**
    * 進入分鏡模式結算階段
+   * @param roundResult 可選的輪次結算結果，會廣播給其他玩家
    */
-  async function enterStoryboardSummaryPhase() {
+  async function enterStoryboardSummaryPhase(roundResult?: StoryboardRoundResult) {
     if (!roomStore.currentRoom || !roomStore.isHost) {
       return { success: false, error: '只有房主可以控制階段' }
     }
@@ -715,12 +716,21 @@ export function useGame() {
     
     setStoryboardPhase('summary')
 
-    // 2. 再廣播（快速通知）
+    // 2. 再廣播（快速通知），包含結算結果
     const { broadcastGameState } = useRealtime()
     await broadcastGameState(roomStore.currentRoom.code, {
       roundStatus: 'summary',
       storyboardPhase: 'summary',
       startedAt: startedAt,
+      // 廣播結算結果給其他玩家（提供默認值以滿足類型要求）
+      storyboardRoundResult: roundResult ? {
+        winningSentence: roundResult.winningSentence || '故事繼續發展中...',
+        winnerName: roundResult.winnerName || '',
+        winnerId: roundResult.winnerId || '',
+        winnerVoteCount: roundResult.winnerVoteCount || 0,
+        drawerScore: roundResult.drawerScore || 0,
+        screenwriterScore: roundResult.screenwriterScore || 0,
+      } : undefined,
     })
 
     return { success: true }

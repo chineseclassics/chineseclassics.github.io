@@ -162,7 +162,7 @@
               <!-- 結算階段 -->
               <template v-else-if="isStoryboardSummary">
                 <div class="word-display storyboard-summary">
-                  <span class="word-label storyboard-label">結算中</span>
+                  <span class="word-label storyboard-label">🎬 本幕完成</span>
                 </div>
               </template>
             </div>
@@ -1071,8 +1071,8 @@ async function handleStoryboardRoundSettlement() {
       // 保存結算結果用於顯示
       storyboardRoundResult.value = result
       
-      // 進入結算階段
-      await enterStoryboardSummaryPhase()
+      // 進入結算階段，並將結算結果廣播給其他玩家
+      await enterStoryboardSummaryPhase(result)
     } else {
       console.error('[RoomView] 輪次結算失敗:', result.error)
       showError(result.error || '輪次結算失敗')
@@ -1650,6 +1650,20 @@ onMounted(async () => {
             await loadStoryChain(currentRoom.value.id)
           }
           
+          // 如果廣播中包含結算結果，更新本地結算結果（非房主玩家）
+          if (state.storyboardRoundResult && !roomStore.isHost) {
+            console.log('[RoomView] 從廣播接收結算結果:', state.storyboardRoundResult)
+            storyboardRoundResult.value = {
+              success: true,
+              winningSentence: state.storyboardRoundResult.winningSentence,
+              winnerName: state.storyboardRoundResult.winnerName,
+              winnerId: state.storyboardRoundResult.winnerId,
+              winnerVoteCount: state.storyboardRoundResult.winnerVoteCount,
+              drawerScore: state.storyboardRoundResult.drawerScore,
+              screenwriterScore: state.storyboardRoundResult.screenwriterScore,
+            }
+          }
+          
           // 檢查是否完成一局（一局 = 玩家數量的輪數）
           const participantCount = roomStore.participants.length
           const currentRoundNum = currentRoom.value?.current_round || 0
@@ -2007,6 +2021,20 @@ onUnmounted(() => {
 
 .game-header.storyboard-mode {
   background: linear-gradient(135deg, var(--bg-card), var(--bg-highlight));
+  flex-wrap: wrap;
+  min-height: auto;
+  padding: 0.5rem 1rem;
+}
+
+/* 分鏡模式頂部佈局：三行結構 */
+.game-header.storyboard-mode .time-display.storyboard,
+.game-header.storyboard-mode .round-info.storyboard {
+  position: static;
+}
+
+.game-header.storyboard-mode .storyboard-prompt {
+  width: 100%;
+  margin-top: 0.25rem;
 }
 
 /* 分鏡模式階段標籤 */
@@ -2134,20 +2162,20 @@ onUnmounted(() => {
   font-family: var(--font-body);
 }
 
-/* 分鏡模式倒計時 */
+/* 分鏡模式倒計時和輪次信息 - 改為流式佈局 */
 .time-display.storyboard {
-  position: absolute;
-  left: 1rem;
+  display: flex;
+  align-items: baseline;
+  gap: 0.25rem;
+  flex-shrink: 0;
 }
 
 .round-info.storyboard {
-  position: absolute;
-  left: 5rem;
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  max-width: calc(50% - 6rem); /* 限制寬度，避免覆蓋中間提示區域 */
-  flex-wrap: wrap; /* 允許換行 */
+  flex-wrap: wrap;
+  flex: 1;
 }
 
 /* Final_Round 結局倒數提示 */

@@ -406,6 +406,15 @@ export function useRealtime() {
     revealedIndices?: number[]
     // 分鏡模式相關
     storyboardPhase?: string  // 分鏡模式階段：setup, drawing, writing, voting, summary, ending
+    // 分鏡模式結算結果（用於同步給非房主玩家）
+    storyboardRoundResult?: {
+      winningSentence: string
+      winnerName: string
+      winnerId: string
+      winnerVoteCount: number
+      drawerScore: number
+      screenwriterScore: number
+    }
   }) {
     const channel = getRoomChannel(roomCode)
     const channelState = (channel as any).state

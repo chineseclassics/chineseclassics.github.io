@@ -5,10 +5,10 @@
       <div class="summary-header">
         <h2 class="summary-title">
           <PhFilmStrip :size="24" weight="duotone" class="title-icon" />
-          本輪結算
+          本幕完成
         </h2>
         <div class="round-info">
-          第 {{ gameNumber || 1 }} 局 · 第 {{ roundNumber }} / {{ totalRounds }} 輪
+          第 {{ gameNumber || 1 }} 局 · 第 {{ roundNumber }} / {{ totalRounds }} 幕
         </div>
       </div>
 
