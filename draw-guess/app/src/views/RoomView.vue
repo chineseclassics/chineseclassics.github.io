@@ -493,6 +493,7 @@ const {
   STORYBOARD_DRAWING_TIME,
   STORYBOARD_WRITING_TIME,
   STORYBOARD_VOTING_TIME,
+  STORYBOARD_SUMMARY_TIME,
   // 分鏡模式開始第一輪
   startDrawingPhase,
   // 分鏡模式輪次結算方法
@@ -1076,6 +1077,23 @@ async function handleNewGame() {
   }
 }
 
+/**
+ * 處理分鏡模式結算階段結束（自動進入下一輪）
+ * 結算展示 5 秒後自動調用此函數
+ */
+async function handleStoryboardSummaryEnd() {
+  // 只有房主才執行實際的下一輪邏輯
+  if (!roomStore.isHost) {
+    console.log('[RoomView] 非房主，等待廣播')
+    return
+  }
+  
+  console.log('[RoomView] 分鏡結算結束，準備進入下一輪')
+  
+  // 直接調用下一輪的邏輯
+  await handleStoryboardNextGame()
+}
+
 // 處理分鏡模式下一局
 // Requirements: 6.8 - 結算完成後繼續下一輪
 // Requirements: 7.3 - 一局結束時詢問房主是否設為最後一局
@@ -1546,6 +1564,20 @@ onMounted(async () => {
           if (currentRoom.value) {
             await loadStoryChain(currentRoom.value.id)
           }
+          
+          // 檢查是否完成一局（一局 = 玩家數量的輪數）
+          const participantCount = roomStore.participants.length
+          const currentRoundNum = currentRoom.value?.current_round || 0
+          const isGameComplete = currentRoundNum > 0 && currentRoundNum % participantCount === 0
+          
+          // 如果完成一局，不自動跳轉，等待房主選擇
+          if (isGameComplete) {
+            console.log('[RoomView] 分鏡模式完成一局，等待房主選擇')
+          } else {
+            // 未完成一局，啟動 5 秒倒計時後自動進入下一輪
+            console.log('[RoomView] 分鏡模式結算開始，', STORYBOARD_SUMMARY_TIME, '秒後自動進入下一輪')
+            startStoryboardCountdown(STORYBOARD_SUMMARY_TIME, handleStoryboardSummaryEnd)
+          }
         }
         
         // 分鏡模式故事結局階段
@@ -1938,6 +1970,8 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  max-width: calc(50% - 6rem); /* 限制寬度，避免覆蓋中間提示區域 */
+  flex-wrap: wrap; /* 允許換行 */
 }
 
 /* Final_Round 結局倒數提示 */

@@ -13,6 +13,7 @@ const SUMMARY_TIME = 6
 const STORYBOARD_DRAWING_TIME = 60  // 繪畫階段
 const STORYBOARD_WRITING_TIME = 60  // 編劇階段
 const STORYBOARD_VOTING_TIME = 60   // 投票階段
+const STORYBOARD_SUMMARY_TIME = 5   // 結算階段（自動跳轉前的展示時間）
 
 // 分鏡模式得分配置
 // Requirements: 6.6, 6.7, 9.4
@@ -666,11 +667,12 @@ export function useGame() {
     console.log('[useGame] 進入分鏡模式結算階段')
     setStoryboardPhase('summary')
 
-    // 廣播階段變化
+    // 廣播階段變化（包含 startedAt 以便其他玩家計算倒計時）
     const { broadcastGameState } = useRealtime()
     await broadcastGameState(roomStore.currentRoom.code, {
       roundStatus: 'summary',
       storyboardPhase: 'summary',
+      startedAt: new Date().toISOString(),
     })
 
     return { success: true }
@@ -1167,6 +1169,7 @@ export function useGame() {
     STORYBOARD_DRAWING_TIME,
     STORYBOARD_WRITING_TIME,
     STORYBOARD_VOTING_TIME,
+    STORYBOARD_SUMMARY_TIME,
     SCREENWRITER_WIN_SCORE,
     DIRECTOR_BASE_SCORE,
     DIRECTOR_VOTE_BONUS,

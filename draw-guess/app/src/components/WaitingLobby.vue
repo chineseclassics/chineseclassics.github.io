@@ -59,7 +59,8 @@
             <span class="setting-label">每局輪數：</span>
             <span class="setting-value"><strong>{{ roundsPerGame }}</strong>輪</span>
           </div>
-          <div class="setting-item">
+          <!-- 詞語總數（僅傳統模式顯示） -->
+          <div v-if="room?.game_mode !== 'storyboard'" class="setting-item">
             <span class="setting-label">詞語總數：</span>
             <span class="setting-value"><strong>{{ room?.word_count }}</strong>個</span>
           </div>
