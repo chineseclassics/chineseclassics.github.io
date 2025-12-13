@@ -8,11 +8,18 @@ export function useRoom() {
   const currentRoom = computed(() => roomStore.currentRoom)
   const participants = computed(() => roomStore.participants)
   const isHost = computed(() => roomStore.isHost)
+  // 根據遊戲模式計算最少人數要求
+  const minPlayersRequired = computed(() => {
+    if (!currentRoom.value) return 2
+    // 分鏡接龍模式需要至少 3 人
+    return currentRoom.value.game_mode === 'storyboard' ? 3 : 2
+  })
+
   const canStartGame = computed(() => {
     if (!currentRoom.value) return false
     if (currentRoom.value.status !== 'waiting') return false
     if (!isHost.value) return false
-    return participants.value.length >= 2 // 至少需要 2 個玩家
+    return participants.value.length >= minPlayersRequired.value
   })
 
   // 創建房間
@@ -25,6 +32,9 @@ export function useRoom() {
       word_count_per_round: number
       hints_count: number
     }
+    // 分鏡接龍模式相關參數
+    gameMode?: 'classic' | 'storyboard'
+    singleRoundMode?: boolean
   }) {
     return await roomStore.createRoom(data)
   }
@@ -48,6 +58,7 @@ export function useRoom() {
     participants,
     isHost,
     canStartGame,
+    minPlayersRequired,
     loading: computed(() => roomStore.loading),
     error: computed(() => roomStore.error),
     // 方法

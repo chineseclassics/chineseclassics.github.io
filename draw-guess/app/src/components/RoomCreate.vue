@@ -18,8 +18,53 @@
             />
           </div>
 
-        <!-- 主題詞句庫 -->
-        <div class="form-group">
+          <!-- 遊戲模式選擇 -->
+          <div class="form-group game-mode-group">
+            <label>遊戲模式</label>
+            <div class="game-mode-options">
+              <label class="game-mode-option" :class="{ active: form.gameMode === 'classic' }">
+                <input
+                  type="radio"
+                  v-model="form.gameMode"
+                  value="classic"
+                  name="gameMode"
+                />
+                <div class="mode-content">
+                  <span class="mode-icon">🎨</span>
+                  <span class="mode-name">傳統模式</span>
+                  <span class="mode-desc">猜詞競技，猜對得分</span>
+                </div>
+              </label>
+              <label class="game-mode-option" :class="{ active: form.gameMode === 'storyboard' }">
+                <input
+                  type="radio"
+                  v-model="form.gameMode"
+                  value="storyboard"
+                  name="gameMode"
+                />
+                <div class="mode-content">
+                  <span class="mode-icon">📖</span>
+                  <span class="mode-name">分鏡接龍</span>
+                  <span class="mode-desc">合作創作故事漫畫</span>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- 單局模式選項（分鏡模式專用） -->
+          <div v-if="form.gameMode === 'storyboard'" class="form-group single-round-group">
+            <label class="checkbox-label">
+              <input
+                type="checkbox"
+                v-model="form.singleRoundMode"
+              />
+              <span class="checkbox-text">單局模式</span>
+              <span class="checkbox-hint">（勾選後遊戲只進行一局即結束）</span>
+            </label>
+          </div>
+
+        <!-- 主題詞句庫（傳統模式專用） -->
+        <div v-if="form.gameMode === 'classic'" class="form-group">
           <label class="library-label">主題詞句庫</label>
           <div v-if="loadingCollections" class="text-small text-secondary">詞句庫載入中...</div>
           <div v-else class="word-library-dropdown">
@@ -140,8 +185,8 @@
           </div>
         </div>
 
-          <!-- 自定義詞語 -->
-          <div class="form-group words-input-group">
+          <!-- 自定義詞語（傳統模式專用） -->
+          <div v-if="form.gameMode === 'classic'" class="form-group words-input-group">
             <label>自定義詞語（至少 6 個，每個 1-32 字符，最多 600 字符）</label>
             <textarea
               v-model="form.wordsText"
@@ -157,6 +202,20 @@
               <div v-if="wordCount < 6" class="text-small" style="color: #e8590c;">
                 還需要 {{ 6 - wordCount }} 個詞語
               </div>
+            </div>
+          </div>
+
+          <!-- 分鏡模式說明 -->
+          <div v-if="form.gameMode === 'storyboard'" class="storyboard-info">
+            <div class="info-card">
+              <h4>📖 分鏡接龍模式說明</h4>
+              <ul>
+                <li>🎨 畫家根據上一輪勝出句子繪畫</li>
+                <li>✍️ 編劇根據畫作創作下一句故事</li>
+                <li>🗳️ 所有玩家投票選出最佳句子</li>
+                <li>📚 最終產出一個圖文交替的故事漫畫</li>
+              </ul>
+              <p class="info-note">⚠️ 分鏡模式需要至少 3 位玩家</p>
             </div>
           </div>
 
@@ -234,6 +293,9 @@ const form = ref({
     word_count_per_round: 1, // 保留此字段以兼容數據庫，但不再顯示
     hints_count: 2,
   },
+  // 分鏡接龍模式相關
+  gameMode: 'classic' as 'classic' | 'storyboard',
+  singleRoundMode: false,
 })
 
 const error = ref<string | null>(null)
@@ -273,9 +335,17 @@ const wordCount = computed(() => uniqueWords.value.length)
 const totalChars = computed(() => form.value.wordsText.length)
 
 const isFormValid = computed(() => {
+  // 基本驗證：房間名稱
+  const nameValid = form.value.name.trim().length > 0 && form.value.name.length <= 50
+  
+  // 分鏡模式不需要詞語驗證
+  if (form.value.gameMode === 'storyboard') {
+    return nameValid
+  }
+  
+  // 傳統模式需要詞語驗證
   return (
-    form.value.name.trim().length > 0 &&
-    form.value.name.length <= 50 &&
+    nameValid &&
     wordCount.value >= 6 &&
     totalChars.value <= 600 &&
     uniqueWords.value.every(word => word.length >= 1 && word.length <= 32)
@@ -440,16 +510,21 @@ async function handleSubmit() {
   pruneLibraryWords()
 
   try {
-    // 構建詞語列表
-    const wordsList = uniqueWords.value.map(text => ({
-      text,
-      source: libraryWords.value.has(text) ? ('wordlist' as const) : ('custom' as const),
-    }))
+    // 構建詞語列表（分鏡模式可以為空）
+    const wordsList = form.value.gameMode === 'storyboard' 
+      ? [] 
+      : uniqueWords.value.map(text => ({
+          text,
+          source: libraryWords.value.has(text) ? ('wordlist' as const) : ('custom' as const),
+        }))
 
     const result = await createRoom({
       name: form.value.name.trim(),
       words: wordsList,
       settings: form.value.settings,
+      // 分鏡接龍模式相關參數
+      gameMode: form.value.gameMode,
+      singleRoundMode: form.value.singleRoundMode,
     })
 
     if (result.success && result.room) {
@@ -806,6 +881,143 @@ async function handleSubmit() {
 .dropdown-menu::-webkit-scrollbar-thumb:hover,
 .detail-entries::-webkit-scrollbar-thumb:hover {
   background: var(--border-color);
+}
+
+/* 遊戲模式選擇 */
+.game-mode-group {
+  margin-top: 1rem;
+}
+
+.game-mode-options {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.game-mode-option {
+  flex: 1;
+  min-width: 200px;
+  cursor: pointer;
+}
+
+.game-mode-option input[type="radio"] {
+  display: none;
+}
+
+.game-mode-option .mode-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem;
+  background: var(--bg-card);
+  border: 3px solid var(--border-color);
+  border-radius: 0;
+  transition: all 0.2s ease;
+  box-shadow: 3px 3px 0 var(--shadow-color);
+}
+
+.game-mode-option:hover .mode-content {
+  background: var(--bg-hover);
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 var(--shadow-color);
+}
+
+.game-mode-option.active .mode-content {
+  border-color: var(--primary-color, #4a90d9);
+  background: var(--bg-secondary);
+  box-shadow: 3px 3px 0 var(--primary-color, #4a90d9);
+}
+
+.mode-icon {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.mode-name {
+  font-weight: 600;
+  font-family: var(--font-head);
+  color: var(--text-primary);
+  font-size: 1.1rem;
+  margin-bottom: 0.25rem;
+}
+
+.mode-desc {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+/* 單局模式選項 */
+.single-round-group {
+  margin-top: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: var(--bg-secondary);
+  border: 2px dashed var(--border-light);
+  border-radius: 4px;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.checkbox-label input[type="checkbox"] {
+  cursor: pointer;
+  width: 18px;
+  height: 18px;
+}
+
+.checkbox-text {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.checkbox-hint {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+/* 分鏡模式說明 */
+.storyboard-info {
+  margin-top: 1rem;
+}
+
+.info-card {
+  padding: 1rem 1.25rem;
+  background: linear-gradient(135deg, #f8f4e8 0%, #fff9e6 100%);
+  border: 3px solid var(--border-color);
+  border-radius: 0;
+  box-shadow: 3px 3px 0 var(--shadow-color);
+}
+
+.info-card h4 {
+  margin: 0 0 0.75rem 0;
+  font-family: var(--font-head);
+  color: var(--text-primary);
+  font-size: 1.1rem;
+}
+
+.info-card ul {
+  margin: 0;
+  padding-left: 0;
+  list-style: none;
+}
+
+.info-card li {
+  padding: 0.35rem 0;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+}
+
+.info-note {
+  margin: 0.75rem 0 0 0;
+  padding-top: 0.75rem;
+  border-top: 2px dashed var(--border-light);
+  font-size: 0.9rem;
+  color: #e8590c;
+  font-weight: 500;
 }
 </style>
 

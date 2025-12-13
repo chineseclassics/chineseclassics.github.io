@@ -1,10 +1,25 @@
 import { ref, computed, onUnmounted } from 'vue'
 import { useRoomStore } from '../stores/room'
 import { useGameStore } from '../stores/game'
+import { useStoryStore } from '../stores/story'
 import { useRealtime } from './useRealtime'
+import type { StoryboardPhase } from '../types/storyboard'
 
 // 總結頁面顯示時間（秒）
 const SUMMARY_TIME = 6
+
+// ========== 分鏡模式配置 ==========
+// 各階段時間（秒）
+const STORYBOARD_DRAWING_TIME = 60  // 繪畫階段
+const STORYBOARD_WRITING_TIME = 60  // 編劇階段
+const STORYBOARD_VOTING_TIME = 60   // 投票階段
+
+// 分鏡模式得分配置
+// Requirements: 6.6, 6.7, 9.4
+const SCREENWRITER_WIN_SCORE = 10   // 編劇勝出 +10 分
+const DIRECTOR_BASE_SCORE = 5       // 畫家基礎分
+const DIRECTOR_VOTE_BONUS = 2       // 每個投票人數 ×2 分
+const RATING_BONUS_MULTIPLIER = 3   // 平均評星 ×3 分
 
 // ========== 全局單例狀態（所有 useGame() 調用共享） ==========
 // 倒計時相關
@@ -19,10 +34,20 @@ let globalSummaryTimer: number | null = null
 // 已使用的詞語索引（用於避免重複）
 const globalUsedWordIndices = ref<Set<number>>(new Set())
 
+// ========== 分鏡模式全局狀態 ==========
+// 當前分鏡模式階段
+// Requirements: 3.5, 4.1, 4.10, 5.1
+const globalStoryboardPhase = ref<StoryboardPhase>('setup')
+
+// 分鏡模式階段倒計時
+const globalStoryboardTimeRemaining = ref<number | null>(null)
+let globalStoryboardTimer: number | null = null
+
 // ========== useGame composable ==========
 export function useGame() {
   const roomStore = useRoomStore()
   const gameStore = useGameStore()
+  const storyStore = useStoryStore()
   const { broadcastGameState: _broadcastGameState, subscribeGameState: _subscribeGameState } = useRealtime()
 
   // 暴露全局狀態（只讀引用）
@@ -40,6 +65,39 @@ export function useGame() {
   const roundStatus = computed(() => gameStore.roundStatus)
   const isDrawing = computed(() => roundStatus.value === 'drawing')
   const isSummary = computed(() => roundStatus.value === 'summary')
+
+  // ========== 分鏡模式狀態 ==========
+  // Requirements: 3.5, 4.1, 4.10, 5.1
+  
+  // 是否為分鏡模式
+  const isStoryboardMode = computed(() => {
+    const room = roomStore.currentRoom as any
+    return room?.game_mode === 'storyboard'
+  })
+
+  // 當前分鏡模式階段
+  const storyboardPhase = globalStoryboardPhase
+  const storyboardTimeRemaining = globalStoryboardTimeRemaining
+
+  // 分鏡模式階段判斷
+  const isStoryboardDrawing = computed(() => 
+    isStoryboardMode.value && storyboardPhase.value === 'drawing'
+  )
+  const isStoryboardWriting = computed(() => 
+    isStoryboardMode.value && storyboardPhase.value === 'writing'
+  )
+  const isStoryboardVoting = computed(() => 
+    isStoryboardMode.value && storyboardPhase.value === 'voting'
+  )
+  const isStoryboardSummary = computed(() => 
+    isStoryboardMode.value && storyboardPhase.value === 'summary'
+  )
+  const isStoryboardSetup = computed(() => 
+    isStoryboardMode.value && storyboardPhase.value === 'setup'
+  )
+  const isStoryboardEnding = computed(() => 
+    isStoryboardMode.value && storyboardPhase.value === 'ending'
+  )
 
   // 當前輪次信息
   const currentRound = computed(() => gameStore.currentRound)
@@ -191,7 +249,27 @@ export function useGame() {
         return statusResult
       }
 
-      // 直接開始第一輪繪畫（不再有選詞階段）
+      // ========== 分鏡模式特殊處理 ==========
+      // Requirements: 2.1 - 分鏡接龍模式遊戲開始時進入 setup 階段
+      if (isStoryboardMode.value) {
+        console.log('[useGame] 分鏡模式：進入故事設定階段')
+        setStoryboardPhase('setup')
+        
+        // 清除故事數據
+        storyStore.clearAll()
+        
+        // 廣播進入 setup 階段
+        const { broadcastGameState } = useRealtime()
+        await broadcastGameState(roomStore.currentRoom!.code, {
+          roundStatus: 'drawing', // 保持 roundStatus 為 drawing
+          storyboardPhase: 'setup',
+        })
+        
+        return { success: true, isStoryboardSetup: true }
+      }
+      // ========== 分鏡模式特殊處理結束 ==========
+
+      // 傳統模式：直接開始第一輪繪畫（不再有選詞階段）
       const roundResult = await startDrawingPhase()
       return roundResult
     } catch (err) {
@@ -239,13 +317,30 @@ export function useGame() {
         throw new Error('無法選擇畫家')
       }
 
-      // 獲取下一個詞語
-      const word = getNextWord()
-      if (!word) {
-        throw new Error('沒有可用的詞語')
-      }
+      // ========== 分鏡模式特殊處理 ==========
+      // 分鏡模式不需要詞語，使用故事鏈中的最新句子作為繪畫題目
+      let word: { text: string; source: 'wordlist' | 'custom' } | null = null
       
-      console.log('[startDrawingPhase] 分配詞語:', word.text)
+      if (isStoryboardMode.value) {
+        // 分鏡模式：使用故事鏈中的最新句子作為「詞語」
+        const latestSentence = storyStore.latestSentence
+        if (latestSentence) {
+          word = { text: latestSentence.content, source: 'custom' }
+          console.log('[startDrawingPhase] 分鏡模式：使用故事句子作為題目:', word.text)
+        } else {
+          // 如果沒有故事句子，使用佔位符
+          word = { text: '故事開始...', source: 'custom' }
+          console.log('[startDrawingPhase] 分鏡模式：沒有故事句子，使用佔位符')
+        }
+      } else {
+        // 傳統模式：獲取下一個詞語
+        word = getNextWord()
+        if (!word) {
+          throw new Error('沒有可用的詞語')
+        }
+        console.log('[startDrawingPhase] 傳統模式：分配詞語:', word.text)
+      }
+      // ========== 分鏡模式特殊處理結束 ==========
 
       // 更新房間當前畫家
       await roomStore.updateRoomDrawer(drawer.user_id)
@@ -265,14 +360,29 @@ export function useGame() {
       // 廣播狀態給所有玩家（包括房主自己，統一在回調中處理）
       // 使用服務器返回的 started_at 時間戳，確保所有玩家倒計時同步
       const { broadcastGameState } = useRealtime()
-      await broadcastGameState(roomStore.currentRoom!.code, {
-        roundStatus: 'drawing',
-        wordOptions: [],
-        drawerId: drawer.user_id,
-        drawerName: drawer.nickname,
-        roundNumber: nextRoundNum,
-        startedAt: result.round.started_at,  // 服務器時間戳
-      })
+      
+      // 根據遊戲模式廣播不同的狀態
+      if (isStoryboardMode.value) {
+        // 分鏡模式：廣播分鏡模式階段
+        await broadcastGameState(roomStore.currentRoom!.code, {
+          roundStatus: 'drawing',
+          storyboardPhase: 'drawing',
+          drawerId: drawer.user_id,
+          drawerName: drawer.nickname,
+          roundNumber: nextRoundNum,
+          startedAt: result.round.started_at,
+        })
+      } else {
+        // 傳統模式：廣播傳統模式狀態
+        await broadcastGameState(roomStore.currentRoom!.code, {
+          roundStatus: 'drawing',
+          wordOptions: [],
+          drawerId: drawer.user_id,
+          drawerName: drawer.nickname,
+          roundNumber: nextRoundNum,
+          startedAt: result.round.started_at,
+        })
+      }
 
       return { success: true, drawerId: drawer.user_id, word: word.text }
     } catch (err) {
@@ -415,10 +525,578 @@ export function useGame() {
     return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
   })
 
+  // ========== 分鏡模式階段管理 ==========
+  // Requirements: 3.5, 4.1, 4.10, 5.1
+
+  /**
+   * 設置分鏡模式階段
+   * @param phase 新的階段
+   */
+  function setStoryboardPhase(phase: StoryboardPhase) {
+    console.log('[useGame] 設置分鏡模式階段:', phase)
+    globalStoryboardPhase.value = phase
+    storyStore.setPhase(phase)
+  }
+
+  /**
+   * 開始分鏡模式倒計時
+   * @param duration 倒計時時長（秒）
+   * @param onEnd 倒計時結束回調
+   */
+  function startStoryboardCountdown(duration: number, onEnd?: () => void) {
+    console.log('[useGame] 開始分鏡模式倒計時:', duration, '秒')
+    
+    if (globalStoryboardTimer) {
+      clearInterval(globalStoryboardTimer)
+    }
+
+    globalStoryboardTimeRemaining.value = duration
+
+    globalStoryboardTimer = window.setInterval(() => {
+      if (globalStoryboardTimeRemaining.value !== null && globalStoryboardTimeRemaining.value > 0) {
+        globalStoryboardTimeRemaining.value--
+      } else {
+        stopStoryboardCountdown()
+        if (onEnd) {
+          onEnd()
+        }
+      }
+    }, 1000)
+  }
+
+  /**
+   * 停止分鏡模式倒計時
+   */
+  function stopStoryboardCountdown() {
+    if (globalStoryboardTimer) {
+      clearInterval(globalStoryboardTimer)
+      globalStoryboardTimer = null
+    }
+  }
+
+  /**
+   * 重置分鏡模式倒計時
+   */
+  function resetStoryboardCountdown() {
+    stopStoryboardCountdown()
+    globalStoryboardTimeRemaining.value = null
+  }
+
+  /**
+   * 進入分鏡模式繪畫階段
+   * Requirements: 3.5 - 繪畫時間結束自動進入編劇階段
+   */
+  async function enterStoryboardDrawingPhase() {
+    if (!roomStore.currentRoom || !roomStore.isHost) {
+      return { success: false, error: '只有房主可以控制階段' }
+    }
+
+    console.log('[useGame] 進入分鏡模式繪畫階段')
+    setStoryboardPhase('drawing')
+    
+    // 清除上一輪的提交和投票數據
+    storyStore.clearRoundData()
+
+    // 廣播階段變化
+    const { broadcastGameState } = useRealtime()
+    await broadcastGameState(roomStore.currentRoom.code, {
+      roundStatus: 'drawing',
+      storyboardPhase: 'drawing',
+      startedAt: new Date().toISOString(),
+    })
+
+    return { success: true }
+  }
+
+  /**
+   * 進入分鏡模式編劇階段
+   * Requirements: 4.1 - 繪畫階段結束進入編劇階段
+   */
+  async function enterStoryboardWritingPhase() {
+    if (!roomStore.currentRoom || !roomStore.isHost) {
+      return { success: false, error: '只有房主可以控制階段' }
+    }
+
+    console.log('[useGame] 進入分鏡模式編劇階段')
+    setStoryboardPhase('writing')
+
+    // 廣播階段變化
+    const { broadcastGameState } = useRealtime()
+    await broadcastGameState(roomStore.currentRoom.code, {
+      roundStatus: 'drawing', // 保持 roundStatus 為 drawing，用 storyboardPhase 區分
+      storyboardPhase: 'writing',
+      startedAt: new Date().toISOString(),
+    })
+
+    return { success: true }
+  }
+
+  /**
+   * 進入分鏡模式投票階段
+   * Requirements: 4.10 - 編劇時間結束自動進入投票階段
+   * Requirements: 5.1 - 編劇時間結束進入投票階段並顯示所有提交的句子
+   */
+  async function enterStoryboardVotingPhase() {
+    if (!roomStore.currentRoom || !roomStore.isHost) {
+      return { success: false, error: '只有房主可以控制階段' }
+    }
+
+    console.log('[useGame] 進入分鏡模式投票階段')
+    setStoryboardPhase('voting')
+
+    // 廣播階段變化
+    const { broadcastGameState } = useRealtime()
+    await broadcastGameState(roomStore.currentRoom.code, {
+      roundStatus: 'drawing', // 保持 roundStatus 為 drawing，用 storyboardPhase 區分
+      storyboardPhase: 'voting',
+      startedAt: new Date().toISOString(),
+    })
+
+    return { success: true }
+  }
+
+  /**
+   * 進入分鏡模式結算階段
+   */
+  async function enterStoryboardSummaryPhase() {
+    if (!roomStore.currentRoom || !roomStore.isHost) {
+      return { success: false, error: '只有房主可以控制階段' }
+    }
+
+    console.log('[useGame] 進入分鏡模式結算階段')
+    setStoryboardPhase('summary')
+
+    // 廣播階段變化
+    const { broadcastGameState } = useRealtime()
+    await broadcastGameState(roomStore.currentRoom.code, {
+      roundStatus: 'summary',
+      storyboardPhase: 'summary',
+    })
+
+    return { success: true }
+  }
+
+  /**
+   * 進入分鏡模式故事結局階段
+   * Requirements: 7.7, 7.8 - 最後一局結束時進入故事結局階段
+   */
+  async function enterStoryboardEndingPhase() {
+    if (!roomStore.currentRoom || !roomStore.isHost) {
+      return { success: false, error: '只有房主可以控制階段' }
+    }
+
+    console.log('[useGame] 進入分鏡模式故事結局階段')
+    setStoryboardPhase('ending')
+
+    // 廣播階段變化
+    const { broadcastGameState } = useRealtime()
+    await broadcastGameState(roomStore.currentRoom.code, {
+      roundStatus: 'summary',
+      storyboardPhase: 'ending',
+    })
+
+    return { success: true }
+  }
+
+  // ========== 分鏡模式輪次結算流程 ==========
+  // Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7, 6.8
+
+  /** 輪次結算結果類型 */
+  interface StoryboardRoundResult {
+    success: boolean
+    error?: string
+    winningSentence?: string
+    winnerName?: string
+    winnerId?: string
+    winnerVoteCount?: number
+    drawerScore?: number
+    screenwriterScore?: number
+    imageUrl?: string
+  }
+
+  /**
+   * 計算勝出句子
+   * Requirements: 6.1, 6.2, 6.3
+   * 
+   * @returns 勝出的句子及其作者信息
+   */
+  function calculateWinningSentence(): {
+    submission: typeof storyStore.submissions[0] | null
+    voteCount: number
+    hasTie: boolean
+  } {
+    const submissions = storyStore.submissions
+    const votes = storyStore.votes
+
+    if (submissions.length === 0) {
+      console.log('[useGame] 沒有任何提交，使用默認句子')
+      return { submission: null, voteCount: 0, hasTie: false }
+    }
+
+    // Requirements: 6.1 - 統計每個句子的得票數
+    const voteCounts = new Map<string, number>()
+    for (const submission of submissions) {
+      voteCounts.set(submission.id, 0)
+    }
+    for (const vote of votes) {
+      const current = voteCounts.get(vote.submissionId) || 0
+      voteCounts.set(vote.submissionId, current + 1)
+    }
+
+    // 找出最高票
+    let maxVotes = -1
+    let topSubmissions: typeof submissions = []
+
+    for (const submission of submissions) {
+      const voteCount = voteCounts.get(submission.id) || 0
+      if (voteCount > maxVotes) {
+        maxVotes = voteCount
+        topSubmissions = [submission]
+      } else if (voteCount === maxVotes) {
+        topSubmissions.push(submission)
+      }
+    }
+
+    const hasTie = topSubmissions.length > 1
+
+    // Requirements: 6.2 - 唯一最高票為勝出
+    if (topSubmissions.length === 1) {
+      console.log('[useGame] 唯一最高票勝出:', topSubmissions[0]?.sentence)
+      return { submission: topSubmissions[0] || null, voteCount: maxVotes, hasTie: false }
+    }
+
+    // Requirements: 6.3 - 平票時隨機選擇
+    const randomIndex = Math.floor(Math.random() * topSubmissions.length)
+    const winner = topSubmissions[randomIndex] || null
+    console.log('[useGame] 平票隨機選擇勝出:', winner?.sentence, '(共', topSubmissions.length, '個平票)')
+    
+    return { submission: winner, voteCount: maxVotes, hasTie }
+  }
+
+  /**
+   * 完成分鏡模式輪次結算
+   * Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7, 6.8
+   * 
+   * 此方法整合了完整的輪次結算流程：
+   * 1. 計算勝出句子 (6.1, 6.2, 6.3)
+   * 2. 上傳畫布截圖 (6.4)
+   * 3. 更新 Story_Chain (6.5)
+   * 4. 計算並更新玩家得分 (6.6, 6.7)
+   * 5. 返回結算結果用於顯示 (6.8)
+   * 
+   * @param canvas 畫布元素（用於截圖）
+   */
+  async function finalizeStoryboardRound(
+    canvas: HTMLCanvasElement | null
+  ): Promise<StoryboardRoundResult> {
+    if (!roomStore.currentRoom || !roomStore.isHost) {
+      return { success: false, error: '只有房主可以執行結算' }
+    }
+
+    if (!gameStore.currentRound) {
+      return { success: false, error: '沒有當前輪次' }
+    }
+
+    const roundNumber = gameStore.currentRound.round_number
+    const drawerId = gameStore.currentRound.drawer_id
+    const drawerParticipant = roomStore.participants.find(p => p.user_id === drawerId)
+    const drawerName = drawerParticipant?.nickname || '畫家'
+
+    console.log('[useGame] 開始分鏡模式輪次結算，輪次:', roundNumber)
+
+    try {
+      // ========== 1. 計算勝出句子 ==========
+      // Requirements: 6.1, 6.2, 6.3
+      const { submission: winningSubmission, voteCount, hasTie } = calculateWinningSentence()
+      
+      let winningSentence: string
+      let winnerId: string
+      let winnerName: string
+
+      if (winningSubmission) {
+        winningSentence = winningSubmission.sentence
+        winnerId = winningSubmission.userId
+        const winnerParticipant = roomStore.participants.find(p => p.user_id === winnerId)
+        winnerName = winnerParticipant?.nickname || '編劇'
+        
+        // 標記勝出句子
+        await storyStore.markWinningSubmission(winningSubmission.id)
+        
+        console.log('[useGame] 勝出句子:', winningSentence, '作者:', winnerName, '票數:', voteCount, '平票:', hasTie)
+      } else {
+        // Requirements: 5.7 - 沒有任何編劇提交句子時使用默認句子
+        winningSentence = '故事繼續發展中...'
+        winnerId = drawerId // 默認歸屬畫家
+        winnerName = drawerName
+        console.log('[useGame] 沒有提交，使用默認句子')
+      }
+
+      // ========== 2. 上傳畫布截圖 ==========
+      // Requirements: 6.4
+      let imageUrl = '/placeholder-image.png'
+      
+      if (canvas) {
+        try {
+          // 將 canvas 轉換為 Blob
+          const blob = await new Promise<Blob | null>((resolve) => {
+            canvas.toBlob(resolve, 'image/png', 0.9)
+          })
+
+          if (blob) {
+            const { supabase } = await import('../lib/supabase')
+            const timestamp = Date.now()
+            const fileName = `storyboard/${roomStore.currentRoom!.id}/round_${roundNumber}_${timestamp}.png`
+
+            const { error: uploadError } = await supabase.storage
+              .from('canvas-snapshots')
+              .upload(fileName, blob, {
+                contentType: 'image/png',
+                cacheControl: '3600',
+                upsert: false,
+              })
+
+            if (uploadError) {
+              console.error('[useGame] 截圖上傳失敗:', uploadError)
+            } else {
+              const { data: urlData } = supabase.storage
+                .from('canvas-snapshots')
+                .getPublicUrl(fileName)
+              imageUrl = urlData.publicUrl
+              console.log('[useGame] 畫布截圖上傳成功:', imageUrl)
+            }
+          }
+        } catch (err) {
+          console.error('[useGame] 截圖上傳錯誤:', err)
+        }
+      } else {
+        console.warn('[useGame] 沒有畫布元素，使用佔位圖')
+      }
+
+      // ========== 3. 更新 Story_Chain ==========
+      // Requirements: 6.5
+      
+      // 添加畫布截圖到故事鏈
+      await storyStore.addStoryChainItem({
+        roomId: roomStore.currentRoom!.id,
+        roundNumber,
+        itemType: 'image',
+        content: imageUrl,
+        authorId: drawerId,
+        authorName: drawerName,
+      })
+
+      // 添加勝出句子到故事鏈
+      await storyStore.addStoryChainItem({
+        roomId: roomStore.currentRoom!.id,
+        roundNumber,
+        itemType: 'text',
+        content: winningSentence,
+        authorId: winnerId,
+        authorName: winnerName,
+      })
+
+      console.log('[useGame] Story_Chain 已更新')
+
+      // ========== 4. 計算並更新玩家得分 ==========
+      // Requirements: 6.6, 6.7
+      const voterCount = storyStore.votes.length
+      
+      // 編劇勝出得分（只有當有實際提交時才給分）
+      let screenwriterScore = 0
+      if (winningSubmission) {
+        screenwriterScore = SCREENWRITER_WIN_SCORE
+        await updateStoryboardPlayerScore(winnerId, screenwriterScore)
+        console.log('[useGame] 編劇勝出得分:', screenwriterScore, '分給', winnerName)
+      }
+
+      // 畫家得分
+      const directorScore = DIRECTOR_BASE_SCORE + (voterCount * DIRECTOR_VOTE_BONUS)
+      await updateStoryboardPlayerScore(drawerId, directorScore)
+      console.log('[useGame] 畫家得分:', directorScore, '分給', drawerName, '(投票人數:', voterCount, ')')
+
+      // ========== 5. 返回結算結果 ==========
+      // Requirements: 6.8
+      const result: StoryboardRoundResult = {
+        success: true,
+        winningSentence,
+        winnerName,
+        winnerId,
+        winnerVoteCount: voteCount,
+        drawerScore: directorScore,
+        screenwriterScore,
+        imageUrl,
+      }
+
+      console.log('[useGame] 輪次結算完成:', result)
+      return result
+    } catch (err) {
+      console.error('[useGame] 輪次結算錯誤:', err)
+      return { success: false, error: err instanceof Error ? err.message : '輪次結算失敗' }
+    }
+  }
+
+  /**
+   * 獲取畫布元素（用於截圖）
+   * 從 DOM 中查找畫布元素
+   */
+  function getCanvasElement(): HTMLCanvasElement | null {
+    // 嘗試從 DOM 中獲取畫布元素
+    const canvas = document.querySelector('canvas.drawing-canvas') as HTMLCanvasElement
+    if (canvas) {
+      return canvas
+    }
+    
+    // 備選：嘗試獲取任何畫布
+    const anyCanvas = document.querySelector('canvas') as HTMLCanvasElement
+    return anyCanvas || null
+  }
+
+  /**
+   * 獲取當前分鏡模式階段的時間配置
+   */
+  function getStoryboardPhaseDuration(phase: StoryboardPhase): number {
+    switch (phase) {
+      case 'drawing':
+        return STORYBOARD_DRAWING_TIME
+      case 'writing':
+        return STORYBOARD_WRITING_TIME
+      case 'voting':
+        return STORYBOARD_VOTING_TIME
+      default:
+        return 0
+    }
+  }
+
+  // ========== 分鏡模式得分計算 ==========
+  // Requirements: 6.6, 6.7, 9.4
+
+  /**
+   * 計算編劇勝出得分
+   * Requirements: 6.6, 9.2 - 編劇勝出 +10 分
+   */
+  function calculateScreenwriterWinScore(): number {
+    return SCREENWRITER_WIN_SCORE
+  }
+
+  /**
+   * 計算畫家得分
+   * Requirements: 6.7, 9.3 - 畫家 5 + 投票人數×2 分
+   * @param voterCount 投票人數
+   */
+  function calculateDirectorScore(voterCount: number): number {
+    return DIRECTOR_BASE_SCORE + (voterCount * DIRECTOR_VOTE_BONUS)
+  }
+
+  /**
+   * 計算評星加分
+   * Requirements: 9.4 - 平均評星 × 3 分
+   * @param averageRating 平均評星（1-5）
+   */
+  function calculateRatingBonus(averageRating: number): number {
+    return Math.round(averageRating * RATING_BONUS_MULTIPLIER)
+  }
+
+  /**
+   * 計算分鏡模式輪次結算得分
+   * Requirements: 6.6, 6.7, 9.4
+   * 
+   * @param winnerId 勝出句子作者 ID
+   * @param drawerId 畫家 ID
+   * @param voterCount 投票人數
+   * @param averageRating 平均評星（可選）
+   */
+  async function calculateStoryboardRoundScores(
+    winnerId: string,
+    drawerId: string,
+    voterCount: number,
+    averageRating: number = 0
+  ): Promise<{ success: boolean; error?: string }> {
+    if (!roomStore.currentRoom) {
+      return { success: false, error: '沒有當前房間' }
+    }
+
+    try {
+      // 1. 編劇勝出得分
+      const screenwriterScore = calculateScreenwriterWinScore()
+      console.log('[useGame] 編劇勝出得分:', screenwriterScore, '分給', winnerId)
+      
+      await updateStoryboardPlayerScore(winnerId, screenwriterScore)
+
+      // 2. 畫家得分
+      const directorScore = calculateDirectorScore(voterCount)
+      console.log('[useGame] 畫家得分:', directorScore, '分給', drawerId, '(投票人數:', voterCount, ')')
+      
+      await updateStoryboardPlayerScore(drawerId, directorScore)
+
+      // 3. 評星加分（如果有評星）
+      if (averageRating > 0) {
+        const ratingBonus = calculateRatingBonus(averageRating)
+        console.log('[useGame] 評星加分:', ratingBonus, '分給', drawerId, '(平均評星:', averageRating, ')')
+        
+        await updateStoryboardPlayerScore(drawerId, ratingBonus)
+      }
+
+      return { success: true }
+    } catch (err) {
+      console.error('[useGame] 計算分鏡模式得分錯誤:', err)
+      return { success: false, error: err instanceof Error ? err.message : '計算得分失敗' }
+    }
+  }
+
+  /**
+   * 更新分鏡模式玩家得分
+   * @param userId 玩家 ID
+   * @param scoreToAdd 要增加的分數
+   */
+  async function updateStoryboardPlayerScore(userId: string, scoreToAdd: number): Promise<boolean> {
+    if (!roomStore.currentRoom) {
+      console.error('[useGame] 沒有當前房間')
+      return false
+    }
+
+    try {
+      const { supabase } = await import('../lib/supabase')
+      
+      // 獲取當前分數
+      const { data: participant, error: fetchError } = await supabase
+        .from('room_participants')
+        .select('score')
+        .eq('room_id', roomStore.currentRoom.id)
+        .eq('user_id', userId)
+        .single()
+
+      if (fetchError) throw fetchError
+
+      const newScore = (participant?.score || 0) + scoreToAdd
+
+      // 更新分數
+      const { error: updateError } = await supabase
+        .from('room_participants')
+        .update({ score: newScore })
+        .eq('room_id', roomStore.currentRoom.id)
+        .eq('user_id', userId)
+
+      if (updateError) throw updateError
+
+      // 更新本地狀態
+      const participantIndex = roomStore.participants.findIndex(p => p.user_id === userId)
+      if (participantIndex !== -1 && roomStore.participants[participantIndex]) {
+        roomStore.participants[participantIndex].score = newScore
+      }
+
+      console.log('[useGame] 玩家', userId, '得分更新為', newScore)
+      return true
+    } catch (err) {
+      console.error('[useGame] 更新玩家分數錯誤:', err)
+      return false
+    }
+  }
+
   // 清理資源
   onUnmounted(() => {
     stopCountdown()
     stopSummaryCountdown()
+    stopStoryboardCountdown()
   })
 
   return {
@@ -440,6 +1118,16 @@ export function useGame() {
     isDrawing,
     isSummary,
     summaryTimeRemaining,
+    // 分鏡模式狀態
+    isStoryboardMode,
+    storyboardPhase,
+    storyboardTimeRemaining,
+    isStoryboardDrawing,
+    isStoryboardWriting,
+    isStoryboardVoting,
+    isStoryboardSummary,
+    isStoryboardSetup,
+    isStoryboardEnding,
     // 方法
     startGame,
     newGame,
@@ -453,5 +1141,35 @@ export function useGame() {
     startSummaryCountdown,
     stopSummaryCountdown,
     resetCountdown,
+    // 分鏡模式階段管理方法
+    setStoryboardPhase,
+    startStoryboardCountdown,
+    stopStoryboardCountdown,
+    resetStoryboardCountdown,
+    enterStoryboardDrawingPhase,
+    enterStoryboardWritingPhase,
+    enterStoryboardVotingPhase,
+    enterStoryboardSummaryPhase,
+    enterStoryboardEndingPhase,
+    getStoryboardPhaseDuration,
+    // 分鏡模式輪次結算方法
+    // Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7, 6.8
+    calculateWinningSentence,
+    finalizeStoryboardRound,
+    getCanvasElement,
+    // 分鏡模式得分計算方法
+    calculateScreenwriterWinScore,
+    calculateDirectorScore,
+    calculateRatingBonus,
+    calculateStoryboardRoundScores,
+    updateStoryboardPlayerScore,
+    // 分鏡模式配置常量
+    STORYBOARD_DRAWING_TIME,
+    STORYBOARD_WRITING_TIME,
+    STORYBOARD_VOTING_TIME,
+    SCREENWRITER_WIN_SCORE,
+    DIRECTOR_BASE_SCORE,
+    DIRECTOR_VOTE_BONUS,
+    RATING_BONUS_MULTIPLIER,
   }
 }

@@ -9,8 +9,17 @@
             <div class="detail-item margin-bottom-small">
               房間碼：<span class="badge badge-secondary room-code-badge">{{ room?.code }}</span>
             </div>
-            <div class="detail-item">
+            <div class="detail-item margin-bottom-small">
               狀態：<span class="badge">{{ getStatusText(room?.status) }}</span>
+            </div>
+            <!-- 遊戲模式標識 -->
+            <div class="detail-item">
+              模式：<span 
+                class="badge" 
+                :class="room?.game_mode === 'storyboard' ? 'badge-success' : 'badge-primary'"
+              >
+                {{ getGameModeText(room?.game_mode) }}
+              </span>
             </div>
           </div>
         </div>
@@ -67,7 +76,10 @@
             {{ loading ? '開始中' : '開始遊戲' }}
           </button>
           <div v-else-if="isCurrentUserHost" class="alert alert-warning text-center">
-            至少需要 2 個玩家才能開始遊戲
+            至少需要 {{ minPlayersRequired }} 個玩家才能開始遊戲
+            <template v-if="room?.game_mode === 'storyboard'">
+              （分鏡接龍模式）
+            </template>
           </div>
           <button
             :disabled="loading"
@@ -103,7 +115,7 @@ const emit = defineEmits<{
   leaveRoom: []
 }>()
 
-const { isHost: isCurrentUserHost, canStartGame, leaveRoom, loading, error } = useRoom()
+const { isHost: isCurrentUserHost, canStartGame, minPlayersRequired, leaveRoom, loading, error } = useRoom()
 const { startGame } = useGame()
 
 // 每局輪數：優先使用房間設定，否則按目前玩家數量（至少 1）
@@ -121,6 +133,14 @@ function getStatusText(status?: string) {
     finished: '已結束',
   }
   return statusMap[status || ''] || status || '未知'
+}
+
+function getGameModeText(mode?: string) {
+  const modeMap: Record<string, string> = {
+    classic: '傳統模式',
+    storyboard: '分鏡接龍',
+  }
+  return modeMap[mode || ''] || '傳統模式'
 }
 
 function isParticipantHost(userId: string) {

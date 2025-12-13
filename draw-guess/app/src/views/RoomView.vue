@@ -26,59 +26,141 @@
       <!-- 中間：工具欄 + 畫布 + 聊天面板 -->
       <div class="game-main">
         <!-- 頂部：提示詞區域 -->
-        <div class="game-header card" :class="{ 'time-critical': timeRemaining !== null && timeRemaining <= 10 }">
-          <!-- 倒計時顯示（繪畫階段） -->
-          <div v-if="isDrawing && isCountingDown && timeRemaining !== null" class="time-display">
-            <span class="time-number" :class="{ 
-              'time-warning': timeRemaining <= 10,
-              'time-critical-pulse': timeRemaining <= 5 
-            }">{{ timeRemaining }}</span>
-            <span class="time-label">秒</span>
-          </div>
-          
-          <!-- 總結階段倒計時 -->
-          <div v-else-if="isSummary && summaryTimeRemaining !== null" class="time-display summary">
-            <span class="time-number">{{ summaryTimeRemaining }}</span>
-            <span class="time-label">秒後繼續</span>
-          </div>
-          
-          <!-- 輪次信息 -->
-          <div class="round-info">
-            <span class="round-label">
-              第 {{ currentGameNumber }} 局 · 第 {{ currentRoundInGame }} / {{ totalRoundsPerGame }} 輪
-            </span>
-            <span v-if="isSummary" class="phase-label">輪次結算</span>
-          </div>
-          
-          <!-- 當前詞語（僅繪畫階段且畫家可見） -->
-          <div v-if="isDrawing && isCurrentDrawer && gameStore.currentWord" class="word-display">
-            <span class="word-label">你的詞語</span>
-            <span class="word-text">{{ gameStore.currentWord }}</span>
-            <!-- 提示按鈕：30秒後顯示，未給過提示時可點擊 -->
-            <button 
-              v-if="canShowHintButton" 
-              class="hint-btn"
-              :disabled="gameStore.hintGiven"
-              @click="handleGiveHint"
-              :title="gameStore.hintGiven ? '已給過提示' : '揭示一個字給猜測者'"
-            >
-              <PhLightbulb :size="18" weight="fill" />
-              {{ gameStore.hintGiven ? '已提示' : '給提示' }}
-            </button>
-          </div>
-          <!-- 非畫家顯示提示和畫家名稱（繪畫階段） -->
-          <div v-else-if="isDrawing" class="word-display">
-            <span class="drawer-hint"><PhPaintBrush :size="18" weight="fill" class="hint-icon" /> {{ currentDrawerName }} 正在畫</span>
-            <span class="word-slots" :class="{ 'hint-revealed': gameStore.hintGiven }">{{ getWordHint }}</span>
-            <span v-if="gameStore.hintGiven" class="hint-badge">
-              <PhLightbulb :size="14" weight="fill" /> 已提示
-            </span>
-          </div>
-          <!-- 總結階段：顯示答案 -->
-          <div v-else-if="isSummary && gameStore.currentWord" class="word-display summary-word">
-            <span class="word-label">答案是</span>
-            <span class="word-text revealed">{{ gameStore.currentWord }}</span>
-          </div>
+        <div class="game-header card" :class="{ 
+          'time-critical': !isStoryboardMode && timeRemaining !== null && timeRemaining <= 10,
+          'storyboard-mode': isStoryboardMode
+        }">
+          <!-- ========== 傳統模式頂部提示 ========== -->
+          <template v-if="!isStoryboardMode">
+            <!-- 倒計時顯示（繪畫階段） -->
+            <div v-if="isDrawing && isCountingDown && timeRemaining !== null" class="time-display">
+              <span class="time-number" :class="{ 
+                'time-warning': timeRemaining <= 10,
+                'time-critical-pulse': timeRemaining <= 5 
+              }">{{ timeRemaining }}</span>
+              <span class="time-label">秒</span>
+            </div>
+            
+            <!-- 總結階段倒計時 -->
+            <div v-else-if="isSummary && summaryTimeRemaining !== null" class="time-display summary">
+              <span class="time-number">{{ summaryTimeRemaining }}</span>
+              <span class="time-label">秒後繼續</span>
+            </div>
+            
+            <!-- 輪次信息 -->
+            <div class="round-info">
+              <span class="round-label">
+                第 {{ currentGameNumber }} 局 · 第 {{ currentRoundInGame }} / {{ totalRoundsPerGame }} 輪
+              </span>
+              <span v-if="isSummary" class="phase-label">輪次結算</span>
+            </div>
+            
+            <!-- 當前詞語（僅繪畫階段且畫家可見） -->
+            <div v-if="isDrawing && isCurrentDrawer && gameStore.currentWord" class="word-display">
+              <span class="word-label">你的詞語</span>
+              <span class="word-text">{{ gameStore.currentWord }}</span>
+              <!-- 提示按鈕：30秒後顯示，未給過提示時可點擊 -->
+              <button 
+                v-if="canShowHintButton" 
+                class="hint-btn"
+                :disabled="gameStore.hintGiven"
+                @click="handleGiveHint"
+                :title="gameStore.hintGiven ? '已給過提示' : '揭示一個字給猜測者'"
+              >
+                <PhLightbulb :size="18" weight="fill" />
+                {{ gameStore.hintGiven ? '已提示' : '給提示' }}
+              </button>
+            </div>
+            <!-- 非畫家顯示提示和畫家名稱（繪畫階段） -->
+            <div v-else-if="isDrawing" class="word-display">
+              <span class="drawer-hint"><PhPaintBrush :size="18" weight="fill" class="hint-icon" /> {{ currentDrawerName }} 正在畫</span>
+              <span class="word-slots" :class="{ 'hint-revealed': gameStore.hintGiven }">{{ getWordHint }}</span>
+              <span v-if="gameStore.hintGiven" class="hint-badge">
+                <PhLightbulb :size="14" weight="fill" /> 已提示
+              </span>
+            </div>
+            <!-- 總結階段：顯示答案 -->
+            <div v-else-if="isSummary && gameStore.currentWord" class="word-display summary-word">
+              <span class="word-label">答案是</span>
+              <span class="word-text revealed">{{ gameStore.currentWord }}</span>
+            </div>
+          </template>
+
+          <!-- ========== 分鏡模式頂部提示 ========== -->
+          <!-- Requirements: 3.1, 4.2 - 顯示上一輪勝出句子、階段倒計時 -->
+          <template v-else>
+            <!-- 分鏡模式倒計時 -->
+            <div v-if="storyboardTimeRemaining !== null && storyboardTimeRemaining > 0" class="time-display storyboard">
+              <span class="time-number" :class="{ 
+                'time-warning': storyboardTimeRemaining <= 10,
+                'time-critical-pulse': storyboardTimeRemaining <= 5 
+              }">{{ storyboardTimeRemaining }}</span>
+              <span class="time-label">秒</span>
+            </div>
+            
+            <!-- 輪次和階段信息 -->
+            <div class="round-info storyboard">
+              <span class="round-label">
+                第 {{ currentGameNumber }} 局 · 第 {{ currentRoundInGame }} / {{ totalRoundsPerGame }} 輪
+              </span>
+              <span class="phase-label storyboard-phase" :class="'phase-' + storyboardPhase">
+                {{ storyboardPhaseLabel }}
+              </span>
+              <!-- Final_Round 結局倒數顯示 -->
+              <!-- Requirements: 7.5, 7.6 -->
+              <span v-if="isStoryboardFinalRound" class="final-round-hint">
+                {{ finalRoundHint }}
+              </span>
+            </div>
+            
+            <!-- 分鏡模式提示內容 -->
+            <div class="storyboard-prompt">
+              <!-- 繪畫階段：顯示上一輪勝出句子作為繪畫題目 -->
+              <!-- Requirements: 3.1 -->
+              <template v-if="isStoryboardDrawing">
+                <div v-if="isCurrentDrawer" class="word-display storyboard-drawing">
+                  <span class="word-label storyboard-label">
+                    <PhPencilLine :size="16" weight="fill" /> 繪畫題目
+                  </span>
+                  <span class="word-text storyboard-sentence">{{ latestSentence?.content || '開始創作故事...' }}</span>
+                </div>
+                <div v-else class="word-display storyboard-watching">
+                  <span class="drawer-hint">
+                    <PhPaintBrush :size="18" weight="fill" class="hint-icon" /> 
+                    {{ currentDrawerName }} 正在繪畫
+                  </span>
+                </div>
+              </template>
+              
+              <!-- 編劇階段：顯示上一輪勝出句子和當前畫作背景 -->
+              <!-- Requirements: 4.2 -->
+              <template v-else-if="isStoryboardWriting">
+                <div class="word-display storyboard-writing">
+                  <span class="word-label storyboard-label">
+                    <PhBookOpen :size="16" weight="fill" /> 上一句
+                  </span>
+                  <span class="word-text storyboard-sentence">{{ latestSentence?.content || '故事開始...' }}</span>
+                </div>
+              </template>
+              
+              <!-- 投票階段 -->
+              <template v-else-if="isStoryboardVoting">
+                <div class="word-display storyboard-voting">
+                  <span class="word-label storyboard-label">
+                    <PhHandPointing :size="16" weight="fill" /> 投票中
+                  </span>
+                  <span class="word-text storyboard-hint">選擇你認為最好的句子</span>
+                </div>
+              </template>
+              
+              <!-- 結算階段 -->
+              <template v-else-if="isStoryboardSummary">
+                <div class="word-display storyboard-summary">
+                  <span class="word-label storyboard-label">結算中</span>
+                </div>
+              </template>
+            </div>
+          </template>
           
           <!-- 離開按鈕 -->
           <button class="leave-btn" @click="handleLeaveRoom" title="離開房間">
@@ -104,8 +186,10 @@
               </div>
               
               <!-- 總結階段覆蓋層 -->
-              <div v-if="isSummary" class="summary-overlay">
+              <div v-if="isSummary || isStoryboardSummary" class="summary-overlay">
+                <!-- 傳統模式結算 -->
                 <RoundSummary
+                  v-if="!isStoryboardMode"
                   :round-number="currentRoundInGame"
                   :total-rounds="totalRoundsPerGame"
                   :game-number="currentGameNumber"
@@ -123,6 +207,35 @@
                   @next-game="handleNewGame"
                   @end-game="handleEndGame"
                 />
+                
+                <!-- 分鏡模式結算 -->
+                <!-- Requirements: 6.8 - 顯示結算結果 -->
+                <StoryboardSummary
+                  v-else
+                  :round-number="currentRoundInGame"
+                  :total-rounds="totalRoundsPerGame"
+                  :game-number="currentGameNumber"
+                  :winning-sentence="storyboardRoundResult?.winningSentence || '故事繼續發展中...'"
+                  :winner-name="storyboardRoundResult?.winnerName || ''"
+                  :winner-id="storyboardRoundResult?.winnerId || ''"
+                  :winner-submission-id="storyboardWinnerSubmissionId"
+                  :winner-vote-count="storyboardRoundResult?.winnerVoteCount || 0"
+                  :has-tie="storyboardHasTie"
+                  :drawer-name="currentDrawerName"
+                  :drawer-id="gameStore.currentRound?.drawer_id || ''"
+                  :drawer-score="storyboardRoundResult?.drawerScore || 0"
+                  :voter-count="storyStore.votes.length"
+                  :screenwriter-score="storyboardRoundResult?.screenwriterScore || 0"
+                  :submissions="storyboardSubmissionsWithVotes"
+                  :round-id="gameStore.currentRound?.id || ''"
+                  :is-host="roomStore.isHost"
+                  :is-last-round="isLastRound"
+                  :next-drawer-name="isLastRound ? '' : nextDrawerName"
+                  :is-game-round-complete="isGameRoundComplete"
+                  @rating-submitted="handleRating"
+                  @next-game="handleStoryboardNextGame"
+                  @end-game="handleEndGame"
+                />
               </div>
             </div>
             
@@ -134,8 +247,11 @@
             </div>
           </div>
 
-          <!-- 聊天面板 - 始終顯示所有猜測記錄，不因總結階段改變 -->
-          <div class="game-chat-panel card">
+          <!-- ========== 右側面板：根據遊戲模式切換 ========== -->
+          <!-- Requirements: 10.2 - 分鏡模式用 StoryPanel 替換 GuessingPanel -->
+          
+          <!-- 傳統模式：聊天面板（猜測記錄） -->
+          <div v-if="!isStoryboardMode" class="game-chat-panel card">
             <!-- 房間主題提示 - 固定在猜測區域頂部 -->
             <div v-if="currentRoom?.name" class="room-theme-hint">
               <span class="theme-label">主題：</span>
@@ -189,43 +305,113 @@
               </button>
             </div>
           </div>
+
+          <!-- 分鏡模式：故事面板 -->
+          <!-- Requirements: 10.2, 10.7, 10.8, 10.9 -->
+          <div v-else class="game-story-panel">
+            <StoryPanel
+              :phase="storyboardPhase"
+              :story-history="storyHistory"
+              :submissions="currentSubmissions"
+              :my-submission="mySubmissionText"
+              :voted-submission-id="votedSubmissionId"
+              @submit="handleStorySubmit"
+              @vote="handleStoryVote"
+            />
+          </div>
         </div>
       </div>
     </div>
 
     <!-- 遊戲結束 -->
-    <div v-else-if="isFinished" class="container margin-top-large">
-      <div class="row flex-center">
-        <div class="col-12 col-md-8">
-          <div class="card game-end-card">
-            <div class="card-body text-center">
-              <h2 class="card-title text-hand-title">
-                <PhConfetti :size="28" weight="fill" class="title-icon" style="margin-right: 0.5rem;" /> 遊戲結束
-              </h2>
-              
-              <!-- 遊戲統計 -->
-              <div class="game-stats">
-                <div class="stat-item">
-                  <span class="stat-label">總輪數</span>
-                  <span class="stat-value">{{ currentRoundNumber }}</span>
+    <!-- Requirements: 8.1, 9.5, 9.6 - 分鏡模式顯示故事回顧，傳統模式顯示排行榜 -->
+    <div v-else-if="isFinished" class="game-finished-container">
+      <!-- 分鏡模式：顯示故事回顧 -->
+      <!-- Requirements: 8.1, 8.2 - 遊戲結束進入故事回顧頁面 -->
+      <StoryReview
+        v-if="isStoryboardMode"
+        :story-chain="storyStore.storyChain"
+        :title="currentRoom?.name || ''"
+        :participants="storyboardParticipants"
+        :scores="storyboardPlayerScores"
+        @restart="handleStoryReviewRestart"
+        @go-home="handleStoryReviewGoHome"
+      />
+      
+      <!-- 傳統模式：顯示排行榜 -->
+      <div v-else class="container margin-top-large">
+        <div class="row flex-center">
+          <div class="col-12 col-md-8">
+            <div class="card game-end-card">
+              <div class="card-body text-center">
+                <h2 class="card-title text-hand-title">
+                  <PhConfetti :size="28" weight="fill" class="title-icon" style="margin-right: 0.5rem;" /> 遊戲結束
+                </h2>
+                
+                <!-- 遊戲統計 -->
+                <div class="game-stats">
+                  <div class="stat-item">
+                    <span class="stat-label">總輪數</span>
+                    <span class="stat-value">{{ currentRoundNumber }}</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label">參與人數</span>
+                    <span class="stat-value">{{ roomStore.participants.length }}</span>
+                  </div>
                 </div>
-                <div class="stat-item">
-                  <span class="stat-label">參與人數</span>
-                  <span class="stat-value">{{ roomStore.participants.length }}</span>
+                
+                <PlayerList :show-winner="true" />
+                
+                <div class="game-end-actions margin-top-medium">
+                  <button @click="handleLeaveRoom" class="paper-btn btn-primary">
+                    返回首頁
+                  </button>
                 </div>
-              </div>
-              
-              <PlayerList :show-winner="true" />
-              
-              <div class="game-end-actions margin-top-medium">
-                <button @click="handleLeaveRoom" class="paper-btn btn-primary">
-                  返回首頁
-                </button>
               </div>
             </div>
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- 分鏡模式故事設定彈窗 -->
+    <!-- Requirements: 2.1 - 分鏡接龍模式遊戲開始時顯示 StorySetupModal -->
+    <StorySetupModal
+      v-if="showStorySetupModal"
+      :is-host="roomStore.isHost"
+      @submit="handleStorySetupSubmit"
+    />
+
+    <!-- 分鏡模式局結束彈窗 -->
+    <!-- Requirements: 7.3 - 一局結束時詢問房主是否設為最後一局 -->
+    <FinalRoundModal
+      v-if="showFinalRoundModal"
+      @continue="handleFinalRoundContinue"
+      @set-final-round="handleSetFinalRound"
+      @end-game="handleFinalRoundEndGame"
+    />
+
+    <!-- 分鏡模式故事結局彈窗 -->
+    <!-- Requirements: 7.7, 7.8 - 最後一局結束時顯示故事結尾輸入 -->
+    <StoryEndingModal
+      v-if="showStoryEndingModal"
+      :is-host="roomStore.isHost"
+      :story-opening="storyStore.storyOpening || ''"
+      @submit="handleStoryEndingSubmit"
+      @skip="handleStoryEndingSkip"
+    />
+
+    <!-- 分鏡模式故事回顧 -->
+    <!-- Requirements: 7.9, 8.1 - 提交或跳過結尾後進入故事回顧 -->
+    <div v-if="showStoryReview" class="story-review-overlay">
+      <StoryReview
+        :story-chain="storyStore.storyChain"
+        :title="currentRoom?.name || ''"
+        :participants="storyboardParticipants"
+        :scores="storyboardPlayerScores"
+        @restart="handleStoryReviewRestart"
+        @go-home="handleStoryReviewGoHome"
+      />
     </div>
   </div>
 </template>
@@ -233,26 +419,39 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { PhPaintBrush, PhGameController, PhCheckCircle, PhX, PhConfetti, PhLightbulb } from '@phosphor-icons/vue'
+import { PhPaintBrush, PhGameController, PhCheckCircle, PhX, PhConfetti, PhLightbulb, PhBookOpen, PhPencilLine, PhHandPointing } from '@phosphor-icons/vue'
 import DrawingCanvas from '../components/DrawingCanvas.vue'
 import DrawingToolbar from '../components/DrawingToolbar.vue'
 import PlayerList from '../components/PlayerList.vue'
 import WaitingLobby from '../components/WaitingLobby.vue'
 import RoundSummary from '../components/RoundSummary.vue'
+// 分鏡模式組件
+import StoryPanel from '../components/StoryPanel.vue'
+import StorySetupModal from '../components/StorySetupModal.vue'
+import StoryboardSummary from '../components/StoryboardSummary.vue'
+import FinalRoundModal from '../components/FinalRoundModal.vue'
+import StoryEndingModal from '../components/StoryEndingModal.vue'
+import StoryReview from '../components/StoryReview.vue'
+// VotingModal 將在 Phase 5 中使用
+// import VotingModal from '../components/VotingModal.vue'
 import { useRoomStore } from '../stores/room'
 import { useGameStore } from '../stores/game'
 import { useAuthStore } from '../stores/auth'
+import { useStoryStore } from '../stores/story'
 import { useRealtime } from '../composables/useRealtime'
 import { useGame } from '../composables/useGame'
 import { useRoom } from '../composables/useRoom'
 import { useGuessing } from '../composables/useGuessing'
+import { useStoryboard } from '../composables/useStoryboard'
+import { useVoting } from '../composables/useVoting'
 
 const route = useRoute()
 const router = useRouter()
 const roomStore = useRoomStore()
 const gameStore = useGameStore()
 const authStore = useAuthStore()
-const { subscribeRoom, unsubscribeRoom, subscribeGameState } = useRealtime()
+const storyStore = useStoryStore()
+const { subscribeRoom, unsubscribeRoom, subscribeGameState, broadcastGameState } = useRealtime()
 const {
   isPlaying,
   isWaiting,
@@ -274,15 +473,180 @@ const {
   stopSummaryCountdown,
   startCountdown,
   stopCountdown,
+  // 分鏡模式狀態和方法
+  isStoryboardMode,
+  storyboardPhase,
+  storyboardTimeRemaining,
+  isStoryboardDrawing,
+  isStoryboardWriting,
+  isStoryboardVoting,
+  isStoryboardSummary,
+  setStoryboardPhase,
+  startStoryboardCountdown,
+  stopStoryboardCountdown,
+  // enterStoryboardDrawingPhase 將在 Phase 5 中使用
+  enterStoryboardWritingPhase,
+  enterStoryboardVotingPhase,
+  enterStoryboardSummaryPhase,
+  enterStoryboardEndingPhase,
+  // getStoryboardPhaseDuration 將在 Phase 5 中使用
+  STORYBOARD_DRAWING_TIME,
+  STORYBOARD_WRITING_TIME,
+  STORYBOARD_VOTING_TIME,
+  // 分鏡模式開始第一輪
+  startDrawingPhase,
+  // 分鏡模式輪次結算方法
+  // Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7, 6.8
+  finalizeStoryboardRound,
+  getCanvasElement,
 } = useGame()
 const { hasGuessed, guessInput, submitGuess, loading: guessingLoading } = useGuessing()
 const { leaveRoom } = useRoom()
+
+// 分鏡模式 composables
+const {
+  // storyChain 直接使用 storyStore.storyChain
+  // submissions 直接使用 storyStore.submissions
+  mySubmission,
+  latestSentence,
+  loadStoryChain,
+  loadSubmissions,
+} = useStoryboard()
+
+// ========== 分鏡模式故事設定彈窗狀態 ==========
+// Requirements: 2.1 - 分鏡接龍模式遊戲開始時顯示 StorySetupModal
+const showStorySetupModal = ref(false)
+
+// ========== 分鏡模式局結束彈窗狀態 ==========
+// Requirements: 7.3 - 一局結束時詢問房主是否設為最後一局
+const showFinalRoundModal = ref(false)
+
+// ========== 分鏡模式故事結局彈窗狀態 ==========
+// Requirements: 7.7, 7.8 - 最後一局結束時顯示故事結尾輸入
+const showStoryEndingModal = ref(false)
+
+// ========== 分鏡模式故事回顧狀態 ==========
+// Requirements: 7.9, 8.1 - 提交或跳過結尾後進入故事回顧
+const showStoryReview = ref(false)
+
+const {
+  myVote,
+  // castVote 和 loadVotes 將在 Phase 5 中使用
+} = useVoting()
 
 const currentRoom = computed(() => roomStore.currentRoom)
 const loading = computed(() => guessingLoading.value)
 const errorMessage = ref<string | null>(null)
 const chatMessagesRef = ref<HTMLElement | null>(null)
 const isLeavingRoom = ref(false)
+
+// ========== 分鏡模式狀態 ==========
+// Requirements: 10.2 - 根據 game_mode 切換 UI 模式
+
+// showVotingModal 將在 Phase 5 中使用
+// const showVotingModal = ref(false)
+
+/** 分鏡模式輪次結算結果 */
+// Requirements: 6.8 - 顯示結算結果
+interface StoryboardRoundResult {
+  success: boolean
+  error?: string
+  winningSentence?: string
+  winnerName?: string
+  winnerId?: string
+  winnerVoteCount?: number
+  drawerScore?: number
+  screenwriterScore?: number
+  imageUrl?: string
+}
+const storyboardRoundResult = ref<StoryboardRoundResult | null>(null)
+
+/** 分鏡模式故事歷史（用於 StoryPanel） */
+const storyHistory = computed(() => storyStore.storyChain)
+
+/** 分鏡模式當前輪次提交列表 */
+const currentSubmissions = computed(() => storyStore.submissions)
+
+/** 當前用戶已提交的句子內容 */
+const mySubmissionText = computed(() => mySubmission.value?.sentence || '')
+
+/** 當前用戶已投票的句子 ID */
+const votedSubmissionId = computed(() => myVote.value?.submissionId || '')
+
+/** 分鏡模式勝出句子的提交 ID */
+const storyboardWinnerSubmissionId = computed(() => {
+  if (!storyboardRoundResult.value?.winnerId) return ''
+  const winnerSubmission = storyStore.submissions.find(
+    s => s.userId === storyboardRoundResult.value?.winnerId
+  )
+  return winnerSubmission?.id || ''
+})
+
+/** 分鏡模式是否有平票 */
+const storyboardHasTie = computed(() => {
+  if (!storyboardRoundResult.value) return false
+  // 檢查是否有多個最高票
+  const voteCounts = storyStore.voteCounts
+  const maxVotes = Math.max(...Array.from(voteCounts.values()))
+  const topCount = Array.from(voteCounts.values()).filter(v => v === maxVotes).length
+  return topCount > 1
+})
+
+/** 分鏡模式提交列表（帶投票數） */
+const storyboardSubmissionsWithVotes = computed(() => {
+  return storyStore.submissions.map(submission => ({
+    submission,
+    voteCount: storyStore.voteCounts.get(submission.id) || 0
+  }))
+})
+
+/** 分鏡模式階段顯示名稱 */
+const storyboardPhaseLabel = computed(() => {
+  switch (storyboardPhase.value) {
+    case 'setup': return '故事設定'
+    case 'drawing': return '繪畫階段'
+    case 'writing': return '編劇階段'
+    case 'voting': return '投票階段'
+    case 'summary': return '結算階段'
+    case 'ending': return '故事結局'
+    default: return ''
+  }
+})
+
+// storyboardCountdown 將在 Phase 5 中使用
+// const storyboardCountdown = computed(() => {
+//   return storyboardTimeRemaining.value ?? 0
+// })
+
+// ========== Final_Round 結局倒數 ==========
+// Requirements: 7.5, 7.6
+
+/** 是否為最後一局（分鏡模式） */
+const isStoryboardFinalRound = computed(() => {
+  if (!isStoryboardMode.value || !currentRoom.value) return false
+  // 從房間數據中獲取 is_final_round 標記
+  const room = currentRoom.value as any
+  return room?.is_final_round === true
+})
+
+/** 距離結局還有多少輪（分鏡模式最後一局時顯示） */
+const roundsUntilEnding = computed(() => {
+  if (!isStoryboardFinalRound.value) return 0
+  // 計算當前局內還剩多少輪
+  const total = totalRoundsPerGame.value
+  const current = currentRoundInGame.value
+  return Math.max(0, total - current)
+})
+
+/** Final_Round 提示文字 */
+const finalRoundHint = computed(() => {
+  if (!isStoryboardFinalRound.value) return ''
+  const remaining = roundsUntilEnding.value
+  if (remaining === 0) {
+    return '最後一輪！'
+  }
+  return `最後一局，距離結局還有 ${remaining} 輪`
+})
 
 // 當前畫家名稱
 const currentDrawerName = computed(() => {
@@ -428,7 +792,6 @@ async function handleGiveHint() {
   if (revealedIdx === null) return
   
   // 廣播提示狀態給所有玩家
-  const { broadcastGameState } = useRealtime()
   await broadcastGameState(currentRoom.value.code, {
     roundStatus: 'drawing',
     hintGiven: true,
@@ -503,11 +866,168 @@ async function handleSubmitGuess() {
   }
 }
 
+// ========== 分鏡模式事件處理 ==========
+// Requirements: 4.4, 5.3
+
+/**
+ * 處理分鏡模式句子提交
+ * Requirements: 4.4
+ */
+function handleStorySubmit(sentence: string) {
+  console.log('[RoomView] 分鏡模式句子提交:', sentence)
+  // 提交邏輯已在 StoryPanel 組件內部處理
+}
+
+/**
+ * 處理分鏡模式投票
+ * Requirements: 5.3
+ */
+async function handleStoryVote(submissionId: string) {
+  console.log('[RoomView] 分鏡模式投票:', submissionId)
+  // 投票邏輯已在 StoryPanel 組件內部處理
+}
+
+/**
+ * 處理分鏡模式故事開頭提交
+ * Requirements: 2.1, 2.2
+ * 
+ * 房主提交故事開頭後：
+ * 1. 將故事開頭存入 Story_Chain
+ * 2. 關閉 StorySetupModal
+ * 3. 開始第一輪繪畫
+ */
+async function handleStorySetupSubmit(openingSentence: string) {
+  console.log('[RoomView] 分鏡模式故事開頭提交:', openingSentence)
+  
+  if (!roomStore.isHost || !currentRoom.value || !authStore.user) {
+    console.error('[RoomView] 非房主或缺少必要數據')
+    return
+  }
+
+  try {
+    // Requirements: 2.2 - 將故事開頭作為 Story_Chain 的第一個元素存儲
+    const authorName = authStore.profile?.display_name || '房主'
+    const result = await storyStore.addStoryOpening(
+      currentRoom.value.id,
+      openingSentence,
+      authStore.user.id,
+      authorName
+    )
+
+    if (!result.success) {
+      console.error('[RoomView] 添加故事開頭失敗:', result.error)
+      showError(result.error || '添加故事開頭失敗')
+      return
+    }
+
+    console.log('[RoomView] 故事開頭已添加到 Story_Chain')
+
+    // 關閉 StorySetupModal
+    showStorySetupModal.value = false
+
+    // 開始第一輪（創建輪次並分配畫家）
+    // startDrawingPhase 會自動廣播階段變化
+    const drawingResult = await startDrawingPhase()
+    
+    if (!drawingResult.success) {
+      console.error('[RoomView] 開始繪畫階段失敗:', drawingResult.error)
+      showError(drawingResult.error || '開始繪畫階段失敗')
+    }
+  } catch (err) {
+    console.error('[RoomView] 處理故事開頭提交錯誤:', err)
+    showError(err instanceof Error ? err.message : '處理故事開頭失敗')
+  }
+}
+
+/**
+ * 處理分鏡模式階段結束
+ * Requirements: 3.5, 4.1, 4.10, 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7, 6.8
+ * 
+ * 階段流程：drawing → writing → voting → summary
+ */
+async function handleStoryboardPhaseEnd() {
+  if (!roomStore.isHost || !currentRoom.value) {
+    console.log('[RoomView] 非房主，等待廣播')
+    return
+  }
+
+  console.log('[RoomView] 分鏡模式階段結束，當前階段:', storyboardPhase.value)
+
+  switch (storyboardPhase.value) {
+    case 'drawing':
+      // Requirements: 3.5 - 繪畫時間結束自動進入編劇階段
+      console.log('[RoomView] 繪畫階段結束，進入編劇階段')
+      await enterStoryboardWritingPhase()
+      break
+    
+    case 'writing':
+      // Requirements: 4.10 - 編劇時間結束自動進入投票階段
+      console.log('[RoomView] 編劇階段結束，進入投票階段')
+      await enterStoryboardVotingPhase()
+      break
+    
+    case 'voting':
+      // Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7, 6.8
+      // 投票階段結束，執行輪次結算流程
+      console.log('[RoomView] 投票階段結束，執行輪次結算')
+      await handleStoryboardRoundSettlement()
+      break
+    
+    default:
+      console.log('[RoomView] 未知階段結束:', storyboardPhase.value)
+  }
+}
+
+/**
+ * 處理分鏡模式輪次結算
+ * Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7, 6.8
+ * 
+ * 結算流程：
+ * 1. 計算勝出句子 (6.1, 6.2, 6.3)
+ * 2. 上傳畫布截圖 (6.4)
+ * 3. 更新 Story_Chain (6.5)
+ * 4. 計算並更新玩家得分 (6.6, 6.7)
+ * 5. 進入結算階段並顯示結果 (6.8)
+ */
+async function handleStoryboardRoundSettlement() {
+  if (!roomStore.isHost || !currentRoom.value || !gameStore.currentRound) {
+    console.error('[RoomView] 無法執行結算：缺少必要數據')
+    return
+  }
+
+  try {
+    // 獲取畫布元素
+    const canvas = getCanvasElement()
+    
+    // 執行完整的輪次結算
+    const result = await finalizeStoryboardRound(canvas)
+    
+    if (result.success) {
+      console.log('[RoomView] 輪次結算成功:', result)
+      
+      // 保存結算結果用於顯示
+      storyboardRoundResult.value = result
+      
+      // 進入結算階段
+      await enterStoryboardSummaryPhase()
+    } else {
+      console.error('[RoomView] 輪次結算失敗:', result.error)
+      showError(result.error || '輪次結算失敗')
+      
+      // 即使結算失敗也進入結算階段
+      await enterStoryboardSummaryPhase()
+    }
+  } catch (err) {
+    console.error('[RoomView] 輪次結算錯誤:', err)
+    showError(err instanceof Error ? err.message : '輪次結算失敗')
+    await enterStoryboardSummaryPhase()
+  }
+}
 
 // 處理開始遊戲
 async function handleStartGame() {
   const result = await startGame()
-  if (!result.success && result.error) {
+  if (!result.success && 'error' in result && result.error) {
     showError(result.error)
   }
 }
@@ -556,6 +1076,51 @@ async function handleNewGame() {
   }
 }
 
+// 處理分鏡模式下一局
+// Requirements: 6.8 - 結算完成後繼續下一輪
+// Requirements: 7.3 - 一局結束時詢問房主是否設為最後一局
+async function handleStoryboardNextGame() {
+  if (!roomStore.isHost || !currentRoom.value) {
+    console.log('[RoomView] 非房主，無法開始下一局')
+    return
+  }
+
+  // 檢查是否完成一局（一局 = 玩家數量的輪數）
+  // Requirements: 7.3 - 一局結束且非單局模式時詢問房主
+  if (isGameRoundComplete.value) {
+    // 檢查是否為最後一局
+    const room = currentRoom.value as any
+    if (room?.is_final_round) {
+      // 最後一局結束，進入故事結局
+      console.log('[RoomView] 最後一局結束，進入故事結局')
+      await handleFinalRoundEndGame()
+      return
+    }
+    
+    // 非最後一局，顯示選擇彈窗
+    showFinalRoundChoice()
+    return
+  }
+
+  // 未完成一局，直接開始下一輪
+  try {
+    // 清除結算結果
+    storyboardRoundResult.value = null
+    
+    // 清除當前輪次的提交和投票數據
+    storyStore.clearRoundData()
+    
+    // 開始下一輪繪畫
+    const result = await startDrawingPhase()
+    if (!result.success && result.error) {
+      showError(result.error)
+    }
+  } catch (err) {
+    console.error('[RoomView] 分鏡模式下一局錯誤:', err)
+    showError(err instanceof Error ? err.message : '開始下一局失敗')
+  }
+}
+
 // 處理結束遊戲
 async function handleEndGame() {
   const result = await endGame()
@@ -563,6 +1128,259 @@ async function handleEndGame() {
     showError(result.error)
   }
 }
+
+// ========== 分鏡模式局結束處理 ==========
+// Requirements: 7.3 - 一局結束時詢問房主是否設為最後一局
+
+/**
+ * 顯示局結束選擇彈窗（僅房主）
+ * 在分鏡模式下，當一局完成時調用
+ */
+function showFinalRoundChoice() {
+  if (!roomStore.isHost || !isStoryboardMode.value) return
+  
+  // 檢查是否為單局模式
+  const room = currentRoom.value as any
+  if (room?.single_round_mode) {
+    // 單局模式：直接進入故事結局
+    console.log('[RoomView] 單局模式，直接進入故事結局')
+    handleFinalRoundEndGame()
+    return
+  }
+  
+  // 非單局模式：顯示選擇彈窗
+  console.log('[RoomView] 顯示局結束選擇彈窗')
+  showFinalRoundModal.value = true
+}
+
+/**
+ * 處理繼續下一局
+ */
+async function handleFinalRoundContinue() {
+  console.log('[RoomView] 選擇繼續下一局')
+  showFinalRoundModal.value = false
+  
+  // 清除結算結果
+  storyboardRoundResult.value = null
+  
+  // 清除當前輪次的提交和投票數據
+  storyStore.clearRoundData()
+  
+  // 開始下一輪繪畫
+  const result = await startDrawingPhase()
+  if (!result.success && result.error) {
+    showError(result.error)
+  }
+}
+
+/**
+ * 處理設為最後一局
+ * Requirements: 7.4 - 房主設定下一局為最後一局時標記該局為 Final_Round
+ */
+async function handleSetFinalRound() {
+  console.log('[RoomView] 選擇設為最後一局')
+  showFinalRoundModal.value = false
+  
+  if (!currentRoom.value) return
+  
+  // 設置最後一局標記
+  const result = await roomStore.setFinalRound(true)
+  if (!result.success) {
+    showError(result.error || '設置最後一局失敗')
+    return
+  }
+  
+  // 清除結算結果
+  storyboardRoundResult.value = null
+  
+  // 清除當前輪次的提交和投票數據
+  storyStore.clearRoundData()
+  
+  // 開始下一輪繪畫（最後一局）
+  const drawingResult = await startDrawingPhase()
+  if (!drawingResult.success && drawingResult.error) {
+    showError(drawingResult.error)
+  }
+}
+
+/**
+ * 處理直接結束遊戲（進入故事結局）
+ * Requirements: 7.7, 7.8 - 進入故事結局階段
+ */
+async function handleFinalRoundEndGame() {
+  console.log('[RoomView] 選擇結束遊戲，進入故事結局')
+  showFinalRoundModal.value = false
+  
+  // 進入故事結局階段
+  await enterStoryboardEndingPhase()
+  
+  // 顯示故事結局輸入彈窗
+  showStoryEndingModal.value = true
+}
+
+// ========== 分鏡模式故事結局處理 ==========
+// Requirements: 7.7, 7.8, 7.9
+
+/**
+ * 處理故事結尾提交
+ * Requirements: 7.8 - 房主輸入故事結尾句子
+ */
+async function handleStoryEndingSubmit(ending: string) {
+  console.log('[RoomView] 故事結尾提交:', ending)
+  
+  if (!roomStore.isHost || !currentRoom.value || !authStore.user) {
+    console.error('[RoomView] 非房主或缺少必要數據')
+    return
+  }
+  
+  try {
+    // 如果有結尾內容，添加到故事鏈
+    if (ending.trim()) {
+      const authorName = authStore.profile?.display_name || '房主'
+      const result = await storyStore.addStoryEnding(
+        currentRoom.value.id,
+        ending.trim(),
+        authStore.user.id,
+        authorName
+      )
+      
+      if (!result.success) {
+        console.error('[RoomView] 添加故事結尾失敗:', result.error)
+        showError(result.error || '添加故事結尾失敗')
+        return
+      }
+      
+      console.log('[RoomView] 故事結尾已添加到 Story_Chain')
+    }
+    
+    // 關閉故事結局彈窗
+    showStoryEndingModal.value = false
+    
+    // 進入故事回顧
+    // Requirements: 7.9 - 提交或跳過結尾後進入故事回顧
+    await enterStoryReview()
+  } catch (err) {
+    console.error('[RoomView] 處理故事結尾提交錯誤:', err)
+    showError(err instanceof Error ? err.message : '處理故事結尾失敗')
+  }
+}
+
+/**
+ * 處理跳過故事結尾
+ * Requirements: 7.9 - 跳過結尾後進入故事回顧
+ */
+async function handleStoryEndingSkip() {
+  console.log('[RoomView] 跳過故事結尾')
+  
+  // 關閉故事結局彈窗
+  showStoryEndingModal.value = false
+  
+  // 進入故事回顧
+  await enterStoryReview()
+}
+
+/**
+ * 進入故事回顧
+ * Requirements: 8.1 - 遊戲結束進入故事回顧頁面
+ */
+async function enterStoryReview() {
+  console.log('[RoomView] 進入故事回顧')
+  
+  // 結束遊戲
+  if (roomStore.isHost && currentRoom.value) {
+    await roomStore.updateRoomStatus('finished')
+  }
+  
+  // 廣播進入故事回顧
+  if (currentRoom.value) {
+    await broadcastGameState(currentRoom.value.code, {
+      roundStatus: 'summary',
+      storyboardPhase: 'review',
+    })
+  }
+  
+  // 顯示故事回顧
+  showStoryReview.value = true
+}
+
+/**
+ * 處理故事回顧重新開始
+ */
+async function handleStoryReviewRestart() {
+  console.log('[RoomView] 故事回顧：重新開始')
+  
+  // 關閉故事回顧
+  showStoryReview.value = false
+  
+  // 重置房間狀態
+  if (roomStore.isHost && currentRoom.value) {
+    // 重置房間狀態為 waiting
+    await roomStore.updateRoomStatus('waiting')
+    
+    // 重置最後一局標記
+    await roomStore.setFinalRound(false)
+    
+    // 清除故事數據
+    storyStore.clearAll()
+    
+    // 重置分鏡模式階段
+    setStoryboardPhase('setup')
+  }
+}
+
+/**
+ * 處理故事回顧返回首頁
+ */
+async function handleStoryReviewGoHome() {
+  console.log('[RoomView] 故事回顧：返回首頁')
+  
+  // 關閉故事回顧
+  showStoryReview.value = false
+  
+  // 離開房間
+  await handleLeaveRoom()
+}
+
+// ========== 分鏡模式計算屬性（用於故事回顧） ==========
+
+/** 分鏡模式參與者列表（用於 StoryReview） */
+// Requirements: 8.4 - 標註每個畫作和句子的作者名稱
+const storyboardParticipants = computed(() => {
+  return roomStore.participants.map(p => ({
+    id: p.user_id,
+    nickname: p.nickname,
+    score: p.score,
+  }))
+})
+
+/** 分鏡模式玩家得分（用於 StoryReview） */
+// Requirements: 9.5, 9.6 - 最終排行榜和貢獻統計
+const storyboardPlayerScores = computed(() => {
+  // 計算每個玩家的貢獻統計
+  const scores = roomStore.participants.map(p => {
+    // 計算句子勝出次數（排除故事開頭 roundNumber=0 和結尾 roundNumber=-1）
+    // Requirements: 9.6 - 句子勝出次數應該等於該玩家句子被選為勝出的次數
+    const sentenceWins = storyStore.storyChain.filter(
+      item => item.itemType === 'text' && item.authorId === p.user_id && item.roundNumber > 0
+    ).length
+    
+    // 計算繪畫次數
+    // Requirements: 9.6 - 繪畫次數
+    const drawingCount = storyStore.storyChain.filter(
+      item => item.itemType === 'image' && item.authorId === p.user_id
+    ).length
+    
+    return {
+      userId: p.user_id,
+      nickname: p.nickname,
+      totalScore: p.score,
+      sentenceWins,
+      drawingCount,
+    }
+  })
+  
+  return scores
+})
 
 onMounted(async () => {
   console.log('[RoomView] onMounted 開始')
@@ -584,35 +1402,51 @@ onMounted(async () => {
     // ========== 初始化遊戲狀態（修復錯過廣播的問題） ==========
     // 如果房間正在遊戲中，且有當前輪次，需要初始化 roundStatus 和倒計時
     // 這是因為玩家可能在廣播發送後才進入 RoomView，錯過了廣播
-    if (currentRoom.value.status === 'playing' && gameStore.currentRound) {
-      const round = gameStore.currentRound
-      console.log('[RoomView] 檢測到進行中的輪次:', { 
-        roundNumber: round.round_number, 
-        startedAt: round.started_at, 
-        endedAt: round.ended_at,
-        drawerId: round.drawer_id
-      })
-      
-      // 確保當前畫家 ID 被設置（用於 PlayerList 顯示畫家 badge）
-      if (round.drawer_id) {
-        roomStore.setCurrentDrawer(round.drawer_id)
+    if (currentRoom.value.status === 'playing') {
+      // ========== 分鏡模式 setup 階段處理 ==========
+      // Requirements: 2.1 - 分鏡模式遊戲開始時顯示 StorySetupModal
+      if (isStoryboardMode.value && !gameStore.currentRound) {
+        // 分鏡模式下，如果沒有輪次，說明還在 setup 階段
+        console.log('[RoomView] 分鏡模式 setup 階段，顯示 StorySetupModal')
+        setStoryboardPhase('setup')
+        showStorySetupModal.value = true
+      } else if (isStoryboardMode.value && gameStore.currentRound) {
+        // 分鏡模式下有輪次，載入故事鏈
+        console.log('[RoomView] 分鏡模式有輪次，載入故事鏈')
+        await loadStoryChain(currentRoom.value.id)
       }
+      // ========== 分鏡模式 setup 階段處理結束 ==========
       
-      // 如果輪次已開始但未結束，應該是繪畫階段
-      // 這種情況主要是頁面刷新時恢復狀態
-      if (round.started_at && !round.ended_at) {
-        console.log('[RoomView] 輪次進行中，初始化繪畫階段')
-        gameStore.setRoundStatus('drawing')
+      if (gameStore.currentRound) {
+        const round = gameStore.currentRound
+        console.log('[RoomView] 檢測到進行中的輪次:', { 
+          roundNumber: round.round_number, 
+          startedAt: round.started_at, 
+          endedAt: round.ended_at,
+          drawerId: round.drawer_id
+        })
         
-        // 頁面刷新時，根據 started_at 計算剩餘時間
-        const startTime = new Date(round.started_at).getTime()
-        const now = Date.now()
-        const elapsed = Math.floor((now - startTime) / 1000)
-        const remaining = Math.max(0, drawTime.value - elapsed)
-        console.log('[RoomView] 刷新恢復倒計時:', remaining, '秒')
-        startCountdown(remaining)
-      } else if (round.ended_at) {
-        console.log('[RoomView] 輪次已結束，可能是總結階段')
+        // 確保當前畫家 ID 被設置（用於 PlayerList 顯示畫家 badge）
+        if (round.drawer_id) {
+          roomStore.setCurrentDrawer(round.drawer_id)
+        }
+        
+        // 如果輪次已開始但未結束，應該是繪畫階段
+        // 這種情況主要是頁面刷新時恢復狀態
+        if (round.started_at && !round.ended_at) {
+          console.log('[RoomView] 輪次進行中，初始化繪畫階段')
+          gameStore.setRoundStatus('drawing')
+          
+          // 頁面刷新時，根據 started_at 計算剩餘時間
+          const startTime = new Date(round.started_at).getTime()
+          const now = Date.now()
+          const elapsed = Math.floor((now - startTime) / 1000)
+          const remaining = Math.max(0, drawTime.value - elapsed)
+          console.log('[RoomView] 刷新恢復倒計時:', remaining, '秒')
+          startCountdown(remaining)
+        } else if (round.ended_at) {
+          console.log('[RoomView] 輪次已結束，可能是總結階段')
+        }
       }
     }
     // ========== 初始化遊戲狀態結束 ==========
@@ -646,11 +1480,104 @@ onMounted(async () => {
         console.log('[RoomView] 更新提示狀態:', state.hintGiven, state.revealedIndices)
         gameStore.setHintState(state.hintGiven, state.revealedIndices)
       }
+
+      // ========== 分鏡模式階段處理 ==========
+      // Requirements: 2.1, 3.5, 4.1, 4.10, 5.1
+      if (isStoryboardMode.value && state.storyboardPhase) {
+        console.log('[RoomView] 分鏡模式階段更新:', state.storyboardPhase)
+        
+        // 更新分鏡模式階段
+        setStoryboardPhase(state.storyboardPhase)
+        
+        // Requirements: 2.1 - 分鏡模式 setup 階段顯示 StorySetupModal
+        if (state.storyboardPhase === 'setup') {
+          console.log('[RoomView] 分鏡模式進入故事設定階段，顯示 StorySetupModal')
+          showStorySetupModal.value = true
+          // 清除故事數據
+          storyStore.clearAll()
+          return // setup 階段不需要倒計時
+        }
+        
+        // 關閉 StorySetupModal（如果從 setup 階段進入其他階段）
+        if (showStorySetupModal.value && state.storyboardPhase !== 'setup') {
+          showStorySetupModal.value = false
+        }
+        
+        // 根據階段啟動對應的倒計時
+        if (state.startedAt) {
+          const startTime = new Date(state.startedAt).getTime()
+          const now = Date.now()
+          const elapsed = Math.floor((now - startTime) / 1000)
+          
+          let phaseDuration = 0
+          switch (state.storyboardPhase) {
+            case 'drawing':
+              phaseDuration = STORYBOARD_DRAWING_TIME
+              // 清除上一輪的提交和投票數據
+              storyStore.clearRoundData()
+              // 載入故事鏈以獲取最新的故事開頭
+              if (currentRoom.value) {
+                await loadStoryChain(currentRoom.value.id)
+              }
+              break
+            case 'writing':
+              phaseDuration = STORYBOARD_WRITING_TIME
+              break
+            case 'voting':
+              phaseDuration = STORYBOARD_VOTING_TIME
+              // 載入當前輪次的提交
+              if (gameStore.currentRound) {
+                await loadSubmissions(gameStore.currentRound.id)
+              }
+              break
+          }
+          
+          if (phaseDuration > 0) {
+            const remaining = Math.max(0, phaseDuration - elapsed)
+            console.log('[RoomView] 分鏡模式倒計時:', remaining, '秒')
+            startStoryboardCountdown(remaining, handleStoryboardPhaseEnd)
+          }
+        }
+        
+        // 分鏡模式結算階段
+        if (state.storyboardPhase === 'summary') {
+          stopStoryboardCountdown()
+          // 載入故事鏈以獲取最新數據
+          if (currentRoom.value) {
+            await loadStoryChain(currentRoom.value.id)
+          }
+        }
+        
+        // 分鏡模式故事結局階段
+        // Requirements: 7.7, 7.8
+        if (state.storyboardPhase === 'ending') {
+          stopStoryboardCountdown()
+          console.log('[RoomView] 分鏡模式進入故事結局階段')
+          // 顯示故事結局輸入彈窗
+          showStoryEndingModal.value = true
+        }
+        
+        // 分鏡模式故事回顧階段
+        // Requirements: 7.9, 8.1
+        if (state.storyboardPhase === 'review') {
+          stopStoryboardCountdown()
+          console.log('[RoomView] 分鏡模式進入故事回顧階段')
+          // 關閉故事結局彈窗
+          showStoryEndingModal.value = false
+          // 載入故事鏈以獲取最新數據
+          if (currentRoom.value) {
+            await loadStoryChain(currentRoom.value.id)
+          }
+          // 顯示故事回顧
+          showStoryReview.value = true
+        }
+      }
+      // ========== 分鏡模式階段處理結束 ==========
       
-      // 更新輪次狀態 - 所有人統一處理
+      // 更新輪次狀態 - 所有人統一處理（傳統模式）
       // 注意：只有當 roundStatus 變化且有 startedAt（新輪次）或是 summary 時才處理
       // 提示廣播只更新 hintGiven/revealedIndices，不會有 startedAt
-      if (state.roundStatus) {
+      if (state.roundStatus && !isStoryboardMode.value) {
         console.log('[RoomView] 更新輪次狀態:', state.roundStatus)
         
         // 進入繪畫階段（只有新輪次開始時才處理，有 startedAt 標記）
@@ -915,6 +1842,121 @@ onUnmounted(() => {
   font-weight: bold;
   font-family: var(--font-head);
   color: var(--text-primary);
+}
+
+/* ============================================
+   分鏡模式頂部提示欄樣式
+   Requirements: 3.1, 4.2
+   ============================================ */
+
+.game-header.storyboard-mode {
+  background: linear-gradient(135deg, var(--bg-card), var(--bg-highlight));
+}
+
+/* 分鏡模式階段標籤 */
+.phase-label.storyboard-phase {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-left: 0.5rem;
+}
+
+.phase-label.phase-drawing {
+  background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+  color: #1565c0;
+  border: 1px solid #64b5f6;
+}
+
+.phase-label.phase-writing {
+  background: linear-gradient(135deg, #fff3e0, #ffe0b2);
+  color: #e65100;
+  border: 1px solid #ffb74d;
+}
+
+.phase-label.phase-voting {
+  background: linear-gradient(135deg, #f3e5f5, #e1bee7);
+  color: #7b1fa2;
+  border: 1px solid #ba68c8;
+}
+
+.phase-label.phase-summary {
+  background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+  color: #2e7d32;
+  border: 1px solid #81c784;
+}
+
+/* 分鏡模式提示內容 */
+.storyboard-prompt {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+}
+
+.storyboard-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: var(--color-secondary);
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+}
+
+.storyboard-sentence {
+  font-size: 1.1rem;
+  max-width: 400px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.storyboard-hint {
+  font-size: 1rem;
+  color: var(--text-secondary);
+}
+
+.word-display.storyboard-drawing,
+.word-display.storyboard-writing,
+.word-display.storyboard-voting,
+.word-display.storyboard-summary,
+.word-display.storyboard-watching {
+  gap: 0.75rem;
+}
+
+/* 分鏡模式倒計時 */
+.time-display.storyboard {
+  position: absolute;
+  left: 1rem;
+}
+
+.round-info.storyboard {
+  position: absolute;
+  left: 5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Final_Round 結局倒數提示 */
+/* Requirements: 7.5, 7.6 */
+.final-round-hint {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: linear-gradient(135deg, #ffebee, #ffcdd2);
+  color: #c62828;
+  border: 1px solid #ef5350;
+  animation: finalRoundPulse 2s ease-in-out infinite;
+}
+
+@keyframes finalRoundPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.02); }
 }
 
 /* 詞語提示槽位（下劃線風格） */
@@ -1185,6 +2227,17 @@ onUnmounted(() => {
 
 /* 右側聊天面板（整合猜詞和聊天）- 與玩家列表同寬 */
 .game-chat-panel {
+  width: 280px;
+  min-width: 280px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  margin-left: 0.5rem;
+}
+
+/* 分鏡模式故事面板 - 與聊天面板同寬 */
+/* Requirements: 10.2 */
+.game-story-panel {
   width: 280px;
   min-width: 280px;
   display: flex;
@@ -1710,6 +2763,40 @@ onUnmounted(() => {
   40% {
     opacity: 1;
     transform: scale(1);
+  }
+}
+
+/* ============================================
+   遊戲結束容器
+   Requirements: 8.1, 9.5, 9.6
+   ============================================ */
+.game-finished-container {
+  width: 100%;
+  min-height: 100vh;
+}
+
+/* ============================================
+   故事回顧覆蓋層
+   Requirements: 7.9, 8.1
+   ============================================ */
+.story-review-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--bg-primary);
+  z-index: 3000;
+  overflow-y: auto;
+  animation: storyReviewFadeIn 0.5s ease-out;
+}
+
+@keyframes storyReviewFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
   }
 }
 </style>

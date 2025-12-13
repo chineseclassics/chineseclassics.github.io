@@ -3,6 +3,9 @@ import { ref, computed } from 'vue'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from './auth'
 
+// 遊戲模式類型
+export type GameMode = 'classic' | 'storyboard'
+
 // 房間接口
 export interface GameRoom {
   id: string
@@ -20,6 +23,10 @@ export interface GameRoom {
   }
   current_round: number
   current_drawer_id: string | null
+  // 分鏡接龍模式相關字段
+  game_mode: GameMode // 遊戲模式：classic（傳統）或 storyboard（分鏡接龍）
+  single_round_mode: boolean // 單局模式（分鏡模式專用）
+  is_final_round: boolean // 是否為最後一局
   created_at: string
   updated_at: string
 }
@@ -121,6 +128,9 @@ export const useRoomStore = defineStore('room', () => {
       word_count_per_round: number
       hints_count: number
     }
+    // 分鏡接龍模式相關參數
+    gameMode?: GameMode
+    singleRoundMode?: boolean
   }) {
     try {
       loading.value = true
@@ -143,8 +153,9 @@ export const useRoomStore = defineStore('room', () => {
         }
       }
 
-      // 驗證數據
-      if (data.words.length < 6) {
+      // 驗證數據 - 分鏡模式不需要詞語
+      const gameMode = data.gameMode || 'classic'
+      if (gameMode === 'classic' && data.words.length < 6) {
         throw new Error('至少需要 6 個詞語')
       }
 
@@ -172,6 +183,10 @@ export const useRoomStore = defineStore('room', () => {
           settings: data.settings,
           current_round: 0,
           current_drawer_id: null,
+          // 分鏡接龍模式相關字段
+          game_mode: gameMode,
+          single_round_mode: data.singleRoundMode || false,
+          is_final_round: false,
         }
 
         // 使用 Supabase 客戶端創建房間（參考句豆的實現）
@@ -695,6 +710,36 @@ export const useRoomStore = defineStore('room', () => {
     }
   }
 
+  // 設置最後一局標記（分鏡模式專用）
+  // Requirements: 7.4 - 房主設定下一局為最後一局時標記該局為 Final_Round
+  async function setFinalRound(isFinal: boolean) {
+    try {
+      if (!currentRoom.value) {
+        throw new Error('沒有當前房間')
+      }
+
+      console.log('[RoomStore] 設置最後一局標記:', { roomId: currentRoom.value.id, isFinal })
+
+      const { error: updateError } = await supabase
+        .from('game_rooms')
+        .update({ is_final_round: isFinal })
+        .eq('id', currentRoom.value.id)
+
+      if (updateError) throw updateError
+
+      if (currentRoom.value) {
+        currentRoom.value.is_final_round = isFinal
+        console.log('[RoomStore] 最後一局標記已更新:', isFinal)
+      }
+
+      return { success: true }
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : '設置最後一局標記失敗'
+      console.error('設置最後一局標記錯誤:', err)
+      return { success: false, error: error.value }
+    }
+  }
+
   return {
     // 狀態
     currentRoom,
@@ -713,6 +758,7 @@ export const useRoomStore = defineStore('room', () => {
     updateRoomDrawer,
     updateRoomSettings,
     setCurrentDrawer,
+    setFinalRound,
     clearRoom,
   }
 })

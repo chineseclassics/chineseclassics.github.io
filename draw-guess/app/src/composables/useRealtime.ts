@@ -323,6 +323,8 @@ export function useRealtime() {
     // 提示相關
     hintGiven?: boolean
     revealedIndices?: number[]
+    // 分鏡模式相關
+    storyboardPhase?: string  // 分鏡模式階段：setup, drawing, writing, voting, summary, ending
   }) {
     const channel = getRoomChannel(roomCode)
     const channelState = (channel as any).state
