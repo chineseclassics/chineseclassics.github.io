@@ -3,6 +3,7 @@ import { useRoomStore } from '../stores/room'
 import { useGameStore } from '../stores/game'
 import { useStoryStore } from '../stores/story'
 import { useRealtime } from './useRealtime'
+import { supabase } from '../lib/supabase'
 import type { StoryboardPhase } from '../types/storyboard'
 
 // 總結頁面顯示時間（秒）
@@ -411,7 +412,7 @@ export function useGame() {
     }
 
     try {
-      // 更新輪次結束時間（gameStore.endRound 內部會計算畫家得分）
+      // 1. 更新輪次結束時間（gameStore.endRound 內部會計算畫家得分並寫入數據庫）
       const endResult = await gameStore.endRound()
       if (!endResult.success) {
         return endResult
@@ -424,7 +425,8 @@ export function useGame() {
       // 這樣就不會觸發自動結束遊戲的邏輯
       const isLastRound = false  // 永遠為 false，允許無限繼續
 
-      // 廣播進入總結階段（所有人包括房主在回調中統一處理）
+      // 2. 廣播進入總結階段（所有人包括房主在回調中統一處理）
+      // 數據庫已在 gameStore.endRound() 中更新，這裡只需廣播
       const { broadcastGameState } = useRealtime()
       await broadcastGameState(roomStore.currentRoom!.code, {
         roundStatus: 'summary',
@@ -619,14 +621,30 @@ export function useGame() {
     }
 
     console.log('[useGame] 進入分鏡模式編劇階段')
+    const startedAt = new Date().toISOString()
+    
+    // 1. 先寫入數據庫（持久化）
+    const { error: dbError } = await supabase
+      .from('game_rooms')
+      .update({ 
+        storyboard_phase: 'writing',
+        updated_at: startedAt
+      })
+      .eq('id', roomStore.currentRoom.id)
+    
+    if (dbError) {
+      console.error('[useGame] 更新數據庫失敗:', dbError)
+      // 繼續執行，廣播仍然有效
+    }
+    
     setStoryboardPhase('writing')
 
-    // 廣播階段變化
+    // 2. 再廣播（快速通知）
     const { broadcastGameState } = useRealtime()
     await broadcastGameState(roomStore.currentRoom.code, {
       roundStatus: 'drawing', // 保持 roundStatus 為 drawing，用 storyboardPhase 區分
       storyboardPhase: 'writing',
-      startedAt: new Date().toISOString(),
+      startedAt: startedAt,
     })
 
     return { success: true }
@@ -643,14 +661,29 @@ export function useGame() {
     }
 
     console.log('[useGame] 進入分鏡模式投票階段')
+    const startedAt = new Date().toISOString()
+    
+    // 1. 先寫入數據庫（持久化）
+    const { error: dbError } = await supabase
+      .from('game_rooms')
+      .update({ 
+        storyboard_phase: 'voting',
+        updated_at: startedAt
+      })
+      .eq('id', roomStore.currentRoom.id)
+    
+    if (dbError) {
+      console.error('[useGame] 更新數據庫失敗:', dbError)
+    }
+    
     setStoryboardPhase('voting')
 
-    // 廣播階段變化
+    // 2. 再廣播（快速通知）
     const { broadcastGameState } = useRealtime()
     await broadcastGameState(roomStore.currentRoom.code, {
       roundStatus: 'drawing', // 保持 roundStatus 為 drawing，用 storyboardPhase 區分
       storyboardPhase: 'voting',
-      startedAt: new Date().toISOString(),
+      startedAt: startedAt,
     })
 
     return { success: true }
@@ -665,14 +698,29 @@ export function useGame() {
     }
 
     console.log('[useGame] 進入分鏡模式結算階段')
+    const startedAt = new Date().toISOString()
+    
+    // 1. 先寫入數據庫（持久化）
+    const { error: dbError } = await supabase
+      .from('game_rooms')
+      .update({ 
+        storyboard_phase: 'summary',
+        updated_at: startedAt
+      })
+      .eq('id', roomStore.currentRoom.id)
+    
+    if (dbError) {
+      console.error('[useGame] 更新數據庫失敗:', dbError)
+    }
+    
     setStoryboardPhase('summary')
 
-    // 廣播階段變化（包含 startedAt 以便其他玩家計算倒計時）
+    // 2. 再廣播（快速通知）
     const { broadcastGameState } = useRealtime()
     await broadcastGameState(roomStore.currentRoom.code, {
       roundStatus: 'summary',
       storyboardPhase: 'summary',
-      startedAt: new Date().toISOString(),
+      startedAt: startedAt,
     })
 
     return { success: true }
@@ -688,9 +736,23 @@ export function useGame() {
     }
 
     console.log('[useGame] 進入分鏡模式故事結局階段')
+    
+    // 1. 先寫入數據庫（持久化）
+    const { error: dbError } = await supabase
+      .from('game_rooms')
+      .update({ 
+        storyboard_phase: 'ending',
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', roomStore.currentRoom.id)
+    
+    if (dbError) {
+      console.error('[useGame] 更新數據庫失敗:', dbError)
+    }
+    
     setStoryboardPhase('ending')
 
-    // 廣播階段變化
+    // 2. 再廣播（快速通知）
     const { broadcastGameState } = useRealtime()
     await broadcastGameState(roomStore.currentRoom.code, {
       roundStatus: 'summary',

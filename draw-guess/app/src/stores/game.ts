@@ -173,6 +173,14 @@ export const useGameStore = defineStore('game', () => {
           wordOptions.value = data.word_options as WordOption[]
         }
         
+        // 恢復提示狀態（頁面刷新時從數據庫恢復）
+        if (data.hint_given !== undefined) {
+          hintGiven.value = data.hint_given
+        }
+        if (data.revealed_indices && Array.isArray(data.revealed_indices)) {
+          revealedIndices.value = data.revealed_indices as number[]
+        }
+        
         await loadGuesses(data.id)
       } else {
         // 沒有輪次，可能是選詞階段

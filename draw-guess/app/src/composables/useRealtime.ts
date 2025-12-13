@@ -9,6 +9,12 @@ const globalConnectionStatus = ref<'connected' | 'disconnected' | 'connecting'>(
 const globalDrawingCallbacks = new Map<string, Set<(stroke: any) => void>>()
 const globalSubscribedRooms = new Set<string>()
 const globalReconnectTimers = new Map<string, number>()
+const globalReconnectAttempts = new Map<string, number>()
+
+// 重連配置
+const MAX_RECONNECT_ATTEMPTS = 10  // 最多重連 10 次
+const RECONNECT_BASE_DELAY = 1000  // 基礎延遲 1 秒
+const RECONNECT_MAX_DELAY = 30000  // 最大延遲 30 秒
 
 const DEBUG = import.meta.env.DEV
 
@@ -18,6 +24,12 @@ function log(...args: any[]) {
 
 function warn(...args: any[]) {
   console.warn('[Realtime]', ...args)
+}
+
+// 檢測瀏覽器類型（用於針對性處理 Safari 問題）
+function isSafari(): boolean {
+  const ua = navigator.userAgent
+  return /^((?!chrome|android).)*safari/i.test(ua)
 }
 
 export function useRealtime() {
@@ -58,43 +70,112 @@ export function useRealtime() {
     userId: string,
     userData: any
   ) {
-    log('訂閱狀態:', status)
+    log('訂閱狀態:', status, '(Safari:', isSafari(), ')')
     
     if (status === 'SUBSCRIBED') {
       globalConnectionStatus.value = 'connected'
       clearReconnectTimer(roomCode)
-      channel.track({ user_id: userId, ...userData }).catch(err => {
-        warn('Presence track 失敗:', err)
-      })
+      globalReconnectAttempts.set(roomCode, 0)  // 重置重連計數
+      
+      // Safari 有時候 track 會失敗，添加重試機制
+      const trackWithRetry = async (retries = 3) => {
+        for (let i = 0; i < retries; i++) {
+          try {
+            await channel.track({ user_id: userId, ...userData })
+            log('Presence track 成功')
+            return
+          } catch (err) {
+            warn(`Presence track 失敗 (嘗試 ${i + 1}/${retries}):`, err)
+            if (i < retries - 1) {
+              await new Promise(resolve => setTimeout(resolve, 500 * (i + 1)))
+            }
+          }
+        }
+      }
+      trackWithRetry()
     } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
       globalConnectionStatus.value = 'disconnected'
-      warn('訂閱失敗:', status)
+      const attempts = globalReconnectAttempts.get(roomCode) || 0
+      warn('訂閱失敗:', status, '(嘗試次數:', attempts, ', 瀏覽器:', navigator.userAgent.slice(0, 50), ')')
       scheduleReconnect(roomCode, userId, userData)
     } else if (status === 'CLOSED') {
       globalConnectionStatus.value = 'disconnected'
+      log('Channel 已關閉')
     }
   }
 
-  function scheduleReconnect(roomCode: string, userId: string, userData: any, attempt = 0) {
-    if (attempt >= 3) {
-      warn('重連失敗次數過多，停止重連')
+  function scheduleReconnect(roomCode: string, userId: string, userData: any) {
+    const currentAttempts = globalReconnectAttempts.get(roomCode) || 0
+    
+    if (currentAttempts >= MAX_RECONNECT_ATTEMPTS) {
+      warn(`重連失敗次數過多 (${currentAttempts} 次)，停止重連。請刷新頁面重試。`)
+      globalConnectionStatus.value = 'disconnected'
       return
     }
     
     clearReconnectTimer(roomCode)
+    globalReconnectAttempts.set(roomCode, currentAttempts + 1)
     
-    const delay = Math.min(1000 * Math.pow(2, attempt), 10000)
-    log(`排程重連，${delay}ms 後嘗試 (第 ${attempt + 1} 次)`)
+    // 指數退避延遲，Safari 瀏覽器給予更長的延遲
+    const baseDelay = isSafari() ? RECONNECT_BASE_DELAY * 1.5 : RECONNECT_BASE_DELAY
+    const delay = Math.min(baseDelay * Math.pow(1.5, currentAttempts), RECONNECT_MAX_DELAY)
     
-    const timerId = window.setTimeout(() => {
-      const channel = globalChannels.get(`room:${roomCode}`)
-      if (channel && (channel as any).state !== 'joined') {
-        channel.subscribe((status) => {
-          if (status === 'SUBSCRIBED') {
-            handleSubscriptionStatus(status, channel, roomCode, userId, userData)
-          } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-            scheduleReconnect(roomCode, userId, userData, attempt + 1)
+    log(`排程重連，${Math.round(delay)}ms 後嘗試 (第 ${currentAttempts + 1}/${MAX_RECONNECT_ATTEMPTS} 次)`)
+    
+    const timerId = window.setTimeout(async () => {
+      const channelKey = `room:${roomCode}`
+      let channel = globalChannels.get(channelKey)
+      let needsRebuild = false
+      
+      // 如果 channel 處於錯誤狀態，嘗試移除並重建
+      if (channel) {
+        const channelState = (channel as any).state
+        if (channelState === 'errored' || channelState === 'closed') {
+          log('Channel 狀態異常，重建 Channel:', channelState)
+          try {
+            supabase.removeChannel(channel as any)
+          } catch (e) {
+            warn('移除舊 Channel 失敗:', e)
           }
+          globalChannels.delete(channelKey)
+          globalSubscribedRooms.delete(roomCode)
+          channel = undefined
+          needsRebuild = true
+        }
+      }
+      
+      // 如果 channel 不存在或已被移除，重新創建
+      if (!channel || needsRebuild) {
+        log('重建 Channel')
+        // 需要重新完整訂閱，包含所有監聽器
+        try {
+          // 這裡不能直接調用 subscribeRoom，因為會造成遞歸
+          // 直接創建新 channel 並重新設置監聽器
+          channel = supabase.channel(channelKey, {
+            config: {
+              presence: { key: 'user' },
+              broadcast: { self: true },
+            },
+          })
+          globalChannels.set(channelKey, channel)
+          
+          // 重新訂閱
+          globalConnectionStatus.value = 'connecting'
+          channel.subscribe((status) => {
+            handleSubscriptionStatus(status, channel!, roomCode, userId, userData)
+          })
+        } catch (e) {
+          warn('重建 Channel 失敗:', e)
+          scheduleReconnect(roomCode, userId, userData)
+        }
+        return
+      }
+      
+      // Channel 存在但未連接，嘗試重新訂閱
+      if ((channel as any).state !== 'joined') {
+        globalConnectionStatus.value = 'connecting'
+        channel.subscribe((status) => {
+          handleSubscriptionStatus(status, channel!, roomCode, userId, userData)
         })
       }
     }, delay)
@@ -388,6 +469,7 @@ export function useRealtime() {
 
     log('unsubscribeRoom - roomCode:', roomCode)
     clearReconnectTimer(roomCode)
+    globalReconnectAttempts.delete(roomCode)
 
     if (channel) {
       supabase.removeChannel(channel as any)
@@ -396,6 +478,30 @@ export function useRealtime() {
 
     globalDrawingCallbacks.delete(roomCode)
     globalSubscribedRooms.delete(roomCode)
+  }
+  
+  /**
+   * 檢查並恢復連接狀態
+   * 用於頁面可見性變化或網絡恢復時
+   */
+  async function checkAndRestoreConnection(roomCode: string, roomId: string, userId: string, userData: any) {
+    const channelKey = `room:${roomCode}`
+    const channel = globalChannels.get(channelKey)
+    
+    if (!channel) {
+      log('連接恢復：Channel 不存在，重新訂閱')
+      await subscribeRoom(roomCode, roomId, userId, userData)
+      return
+    }
+    
+    const state = (channel as any).state
+    log('連接恢復檢查：Channel 狀態:', state)
+    
+    if (state !== 'joined') {
+      log('連接恢復：Channel 未連接，嘗試重連')
+      globalReconnectAttempts.set(roomCode, 0)  // 重置重連計數
+      scheduleReconnect(roomCode, userId, userData)
+    }
   }
 
   function unsubscribeAll() {
@@ -421,5 +527,6 @@ export function useRealtime() {
     unsubscribeRoom,
     unsubscribeAll,
     getConnectionStatus,
+    checkAndRestoreConnection,
   }
 }

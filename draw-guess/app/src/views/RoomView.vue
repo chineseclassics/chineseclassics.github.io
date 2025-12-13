@@ -451,7 +451,7 @@ const roomStore = useRoomStore()
 const gameStore = useGameStore()
 const authStore = useAuthStore()
 const storyStore = useStoryStore()
-const { subscribeRoom, unsubscribeRoom, subscribeGameState, broadcastGameState } = useRealtime()
+const { subscribeRoom, unsubscribeRoom, subscribeGameState, broadcastGameState, checkAndRestoreConnection } = useRealtime()
 const {
   isPlaying,
   isWaiting,
@@ -787,16 +787,32 @@ const canShowHintButton = computed(() => {
 
 // 處理給提示
 async function handleGiveHint() {
-  if (gameStore.hintGiven || !currentRoom.value) return
+  if (gameStore.hintGiven || !currentRoom.value || !gameStore.currentRound) return
   
   const revealedIdx = gameStore.giveHint()
   if (revealedIdx === null) return
   
-  // 廣播提示狀態給所有玩家
+  const newRevealedIndices = [...gameStore.revealedIndices]
+  
+  // 1. 先寫入數據庫（持久化）
+  const { supabase } = await import('../lib/supabase')
+  const { error: dbError } = await supabase
+    .from('game_rounds')
+    .update({ 
+      hint_given: true,
+      revealed_indices: newRevealedIndices
+    })
+    .eq('id', gameStore.currentRound.id)
+  
+  if (dbError) {
+    console.error('[RoomView] 更新提示狀態到數據庫失敗:', dbError)
+  }
+  
+  // 2. 廣播提示狀態給所有玩家（快速通知）
   await broadcastGameState(currentRoom.value.code, {
     roundStatus: 'drawing',
     hintGiven: true,
-    revealedIndices: [...gameStore.revealedIndices],
+    revealedIndices: newRevealedIndices,
   })
 }
 
@@ -1421,19 +1437,38 @@ onMounted(async () => {
     // 如果房間正在遊戲中，且有當前輪次，需要初始化 roundStatus 和倒計時
     // 這是因為玩家可能在廣播發送後才進入 RoomView，錯過了廣播
     if (currentRoom.value.status === 'playing') {
-      // ========== 分鏡模式 setup 階段處理 ==========
-      // Requirements: 2.1 - 分鏡模式遊戲開始時顯示 StorySetupModal
-      if (isStoryboardMode.value && !gameStore.currentRound) {
-        // 分鏡模式下，如果沒有輪次，說明還在 setup 階段
-        console.log('[RoomView] 分鏡模式 setup 階段，顯示 StorySetupModal')
-        setStoryboardPhase('setup')
-        showStorySetupModal.value = true
-      } else if (isStoryboardMode.value && gameStore.currentRound) {
-        // 分鏡模式下有輪次，載入故事鏈
-        console.log('[RoomView] 分鏡模式有輪次，載入故事鏈')
-        await loadStoryChain(currentRoom.value.id)
+      // ========== 分鏡模式狀態恢復 ==========
+      // 從數據庫讀取 storyboard_phase，確保頁面刷新後能恢復正確狀態
+      if (isStoryboardMode.value) {
+        const dbPhase = (currentRoom.value as any).storyboard_phase
+        console.log('[RoomView] 分鏡模式從數據庫恢復階段:', dbPhase)
+        
+        if (dbPhase && dbPhase !== 'setup') {
+          // 恢復分鏡模式階段
+          setStoryboardPhase(dbPhase)
+          
+          // 載入故事鏈
+          await loadStoryChain(currentRoom.value.id)
+          
+          // 如果是結算階段，不需要倒計時
+          if (dbPhase === 'summary' || dbPhase === 'ending' || dbPhase === 'review') {
+            console.log('[RoomView] 分鏡模式恢復到結算/結局/回顧階段')
+            if (dbPhase === 'ending') {
+              showStoryEndingModal.value = true
+            } else if (dbPhase === 'review') {
+              showStoryReview.value = true
+            }
+          }
+          // 其他階段的倒計時需要根據 updated_at 計算，但由於沒有精確的階段開始時間
+          // 這裡選擇不自動啟動倒計時，等待下一次廣播或房主操作
+        } else if (!gameStore.currentRound) {
+          // 分鏡模式下，如果沒有輪次，說明還在 setup 階段
+          console.log('[RoomView] 分鏡模式 setup 階段，顯示 StorySetupModal')
+          setStoryboardPhase('setup')
+          showStorySetupModal.value = true
+        }
       }
-      // ========== 分鏡模式 setup 階段處理結束 ==========
+      // ========== 分鏡模式狀態恢復結束 ==========
       
       if (gameStore.currentRound) {
         const round = gameStore.currentRound
@@ -1676,7 +1711,41 @@ onMounted(async () => {
   }
 })
 
+// 頁面可見性變化時檢查並恢復連接（處理 Safari 等瀏覽器的休眠問題）
+function handleVisibilityChange() {
+  if (document.visibilityState === 'visible' && currentRoom.value && authStore.user) {
+    console.log('[RoomView] 頁面可見，檢查連接狀態')
+    checkAndRestoreConnection(
+      currentRoom.value.code,
+      currentRoom.value.id,
+      authStore.user.id,
+      { nickname: authStore.profile?.display_name || '玩家' }
+    )
+  }
+}
+
+// 網絡恢復時檢查並恢復連接
+function handleOnline() {
+  if (currentRoom.value && authStore.user) {
+    console.log('[RoomView] 網絡恢復，檢查連接狀態')
+    checkAndRestoreConnection(
+      currentRoom.value.code,
+      currentRoom.value.id,
+      authStore.user.id,
+      { nickname: authStore.profile?.display_name || '玩家' }
+    )
+  }
+}
+
+// 添加事件監聽
+document.addEventListener('visibilitychange', handleVisibilityChange)
+window.addEventListener('online', handleOnline)
+
 onUnmounted(() => {
+  // 移除事件監聽
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
+  window.removeEventListener('online', handleOnline)
+  
   if (currentRoom.value) {
     unsubscribeRoom(currentRoom.value.code)
   }
