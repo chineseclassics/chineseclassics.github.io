@@ -85,6 +85,23 @@ export function useStoryboard() {
            !isSubmitting.value
   })
 
+  /** 是否所有編劇（非畫家）都已提交句子（用於提前結束編劇階段） */
+  const allSubmitted = computed(() => {
+    // 獲取當前畫家 ID
+    const drawerId = gameStore.currentRound?.drawer_id
+    if (!drawerId) return false
+    
+    // 獲取所有編劇（非畫家的參與者）
+    const screenwriters = roomStore.participants.filter(p => p.user_id !== drawerId)
+    if (screenwriters.length === 0) return false
+    
+    // 檢查是否所有編劇都已提交句子
+    const submitterIds = new Set(submissions.value.map(s => s.userId))
+    const allScreenwritersSubmitted = screenwriters.every(s => submitterIds.has(s.user_id))
+    
+    return allScreenwritersSubmitted
+  })
+
   // ============================================
   // 句子提交邏輯
   // Requirements: 4.4, 4.7, 4.8
@@ -417,11 +434,13 @@ export function useStoryboard() {
       )
 
       if (!uploadResult.success || !uploadResult.data) {
-        // 如果上傳失敗，使用佔位圖
+        // 如果上傳失敗，使用 Base64 內聯佔位圖
         console.warn('[useStoryboard] 截圖上傳失敗，使用佔位圖')
       }
 
-      const imageUrl = uploadResult.data || '/placeholder-image.png'
+      // Base64 佔位圖：簡單的灰色背景 + 「圖片載入失敗」文字
+      const placeholderImage = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300"%3E%3Crect fill="%23f0f0f0" width="400" height="300"/%3E%3Ctext fill="%23999" font-family="sans-serif" font-size="16" x="50%25" y="50%25" text-anchor="middle" dy=".3em"%3E圖片載入失敗%3C/text%3E%3C/svg%3E'
+      const imageUrl = uploadResult.data || placeholderImage
 
       // 2. 添加畫布截圖到故事鏈
       const imageResult = await addCanvasSnapshotToChain(
@@ -511,6 +530,7 @@ export function useStoryboard() {
     inputLength,
     isInputOverLimit,
     canSubmit,
+    allSubmitted,
 
     // 常量
     SENTENCE_MAX_LENGTH,

@@ -9,6 +9,7 @@ import { ref, computed } from 'vue'
 import { useStoryStore } from '../stores/story'
 import { useAuthStore } from '../stores/auth'
 import { useGameStore } from '../stores/game'
+import { useRoomStore } from '../stores/room'
 import type { Submission, Vote } from '../types/storyboard'
 
 /** 操作結果類型 */
@@ -22,6 +23,7 @@ export function useVoting() {
   const storyStore = useStoryStore()
   const authStore = useAuthStore()
   const gameStore = useGameStore()
+  const roomStore = useRoomStore()
 
   // ============================================
   // 本地狀態
@@ -67,11 +69,21 @@ export function useVoting() {
   /** 總投票人數 */
   const totalVoters = computed(() => votes.value.length)
 
-  /** 是否所有人都已投票（用於提前結束投票） */
+  /** 是否所有編劇（非畫家）都已投票（用於提前結束投票） */
   const allVoted = computed(() => {
-    // 需要知道總參與人數才能判斷
-    // 這裡暫時返回 false，實際邏輯需要結合房間參與者數量
-    return false
+    // 獲取當前畫家 ID
+    const drawerId = gameStore.currentRound?.drawer_id
+    if (!drawerId) return false
+    
+    // 獲取所有編劇（非畫家的參與者）
+    const screenwriters = roomStore.participants.filter(p => p.user_id !== drawerId)
+    if (screenwriters.length === 0) return false
+    
+    // 檢查是否所有編劇都已投票
+    const voterIds = new Set(votes.value.map(v => v.voterId))
+    const allScreenwritersVoted = screenwriters.every(s => voterIds.has(s.user_id))
+    
+    return allScreenwritersVoted
   })
 
   // ============================================

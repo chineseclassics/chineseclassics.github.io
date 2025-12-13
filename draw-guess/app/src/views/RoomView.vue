@@ -432,8 +432,6 @@ import StoryboardSummary from '../components/StoryboardSummary.vue'
 import FinalRoundModal from '../components/FinalRoundModal.vue'
 import StoryEndingModal from '../components/StoryEndingModal.vue'
 import StoryReview from '../components/StoryReview.vue'
-// VotingModal 將在 Phase 5 中使用
-// import VotingModal from '../components/VotingModal.vue'
 import { useRoomStore } from '../stores/room'
 import { useGameStore } from '../stores/game'
 import { useAuthStore } from '../stores/auth'
@@ -444,6 +442,7 @@ import { useRoom } from '../composables/useRoom'
 import { useGuessing } from '../composables/useGuessing'
 import { useStoryboard } from '../composables/useStoryboard'
 import { useVoting } from '../composables/useVoting'
+import type { StoryboardRoundResult } from '../types/storyboard'
 
 const route = useRoute()
 const router = useRouter()
@@ -512,6 +511,7 @@ const {
   latestSentence,
   loadStoryChain,
   loadSubmissions,
+  allSubmitted,
 } = useStoryboard()
 
 // ========== 分鏡模式故事設定彈窗狀態 ==========
@@ -532,6 +532,7 @@ const showStoryReview = ref(false)
 
 const {
   myVote,
+  allVoted,
   // castVote 和 loadVotes 將在 Phase 5 中使用
 } = useVoting()
 
@@ -544,22 +545,9 @@ const isLeavingRoom = ref(false)
 // ========== 分鏡模式狀態 ==========
 // Requirements: 10.2 - 根據 game_mode 切換 UI 模式
 
-// showVotingModal 將在 Phase 5 中使用
-// const showVotingModal = ref(false)
 
-/** 分鏡模式輪次結算結果 */
+/** 分鏡模式輪次結算結果 - 類型定義在 types/storyboard.ts */
 // Requirements: 6.8 - 顯示結算結果
-interface StoryboardRoundResult {
-  success: boolean
-  error?: string
-  winningSentence?: string
-  winnerName?: string
-  winnerId?: string
-  winnerVoteCount?: number
-  drawerScore?: number
-  screenwriterScore?: number
-  imageUrl?: string
-}
 const storyboardRoundResult = ref<StoryboardRoundResult | null>(null)
 
 /** 分鏡模式故事歷史（用於 StoryPanel） */
@@ -865,6 +853,27 @@ watch(isSummary, (newVal, oldVal) => {
   if (newVal && !oldVal && currentRoundNumber.value > 0) {
     // 剛剛進入總結階段，保存當前輪信息
     saveLastRoundInfo()
+  }
+})
+
+// ========== 分鏡模式提前結束監聽 ==========
+// 當所有編劇都提交句子後，提前結束編劇階段
+watch(allSubmitted, (newVal) => {
+  if (newVal && isStoryboardWriting.value && roomStore.isHost) {
+    console.log('[RoomView] 所有編劇都已提交，提前結束編劇階段')
+    // 停止倒計時並進入投票階段
+    stopStoryboardCountdown()
+    enterStoryboardVotingPhase()
+  }
+})
+
+// 當所有編劇都投票後，提前結束投票階段
+watch(allVoted, (newVal) => {
+  if (newVal && isStoryboardVoting.value && roomStore.isHost) {
+    console.log('[RoomView] 所有編劇都已投票，提前結束投票階段')
+    // 停止倒計時並執行輪次結算
+    stopStoryboardCountdown()
+    handleStoryboardRoundSettlement()
   }
 })
 
@@ -1745,6 +1754,11 @@ onUnmounted(() => {
   // 移除事件監聽
   document.removeEventListener('visibilitychange', handleVisibilityChange)
   window.removeEventListener('online', handleOnline)
+  
+  // 清理所有倒計時，避免內存洩漏
+  stopCountdown()
+  stopSummaryCountdown()
+  stopStoryboardCountdown()
   
   if (currentRoom.value) {
     unsubscribeRoom(currentRoom.value.code)

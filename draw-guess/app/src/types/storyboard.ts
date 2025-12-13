@@ -27,10 +27,23 @@ export type StoryboardPhase =
 /** 故事鏈項目類型 */
 export type StoryChainItemType = 'text' | 'image'
 
-/** 故事鏈項目 */
+/** 
+ * 故事鏈項目
+ * 
+ * 注意 roundNumber 的特殊值：
+ * - 0：故事開頭（由房主在遊戲開始時設定）
+ * - 正數：正常輪次的內容（圖片和勝出句子）
+ * - -1：故事結尾（由房主在最後一局結束時設定，可選）
+ */
 export interface StoryChainItem {
   id: string
   roomId: string
+  /** 
+   * 輪次編號
+   * - 0 = 故事開頭
+   * - 正數 = 正常輪次
+   * - -1 = 故事結尾
+   */
   roundNumber: number
   itemType: StoryChainItemType
   content: string  // 文字內容或圖片 URL
@@ -134,14 +147,6 @@ export interface StoryPanelProps {
   votedSubmissionId?: string
 }
 
-/** VotingModal 組件 Props */
-export interface VotingModalProps {
-  submissions: Submission[]
-  myUserId: string
-  votedId?: string
-  timeRemaining: number
-}
-
 /** StoryReview 組件 Props */
 export interface StoryReviewProps {
   storyChain: StoryChainItem[]
@@ -179,6 +184,22 @@ export interface PlayerScore {
 export interface VoteCount {
   submissionId: string
   count: number
+}
+
+/** 
+ * 分鏡模式輪次結算結果
+ * 用於顯示結算頁面和傳遞結算數據
+ */
+export interface StoryboardRoundResult {
+  success: boolean
+  error?: string
+  winningSentence?: string
+  winnerName?: string
+  winnerId?: string
+  winnerVoteCount?: number
+  drawerScore?: number
+  screenwriterScore?: number
+  imageUrl?: string
 }
 
 // ============================================

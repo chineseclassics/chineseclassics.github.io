@@ -17,43 +17,50 @@
               <span>故事即將開始...</span>
             </div>
             
-            <!-- 故事項目 -->
+            <!-- 故事開頭（獨立顯示） -->
+            <div v-if="storyOpening" class="story-item is-opening">
+              <div class="story-opening-item">
+                <span class="story-badge opening-badge">故事開頭</span>
+                <p class="story-text opening-text">{{ storyOpening.content }}</p>
+                <span class="story-author" v-if="storyOpening.authorName">
+                  <PhUser :size="12" weight="fill" /> {{ storyOpening.authorName }}
+                </span>
+              </div>
+            </div>
+            
+            <!-- 漫畫分鏡：圖像+文字合併顯示 -->
             <div 
-              v-for="(item, index) in storyHistory" 
-              :key="item.id"
-              class="story-item"
-              :class="{ 
-                'is-text': item.itemType === 'text',
-                'is-image': item.itemType === 'image',
-                'is-opening': index === 0 && item.itemType === 'text'
-              }"
+              v-for="panel in comicPanels" 
+              :key="panel.roundNumber"
+              class="story-item comic-panel"
             >
-              <!-- 文字項目 -->
-              <template v-if="item.itemType === 'text'">
-                <div class="story-text-item">
-                  <span class="story-badge" v-if="index === 0">開頭</span>
-                  <span class="story-badge" v-else>第 {{ Math.ceil(index / 2) }} 幕</span>
-                  <p class="story-text">{{ item.content }}</p>
-                  <span class="story-author" v-if="item.authorName">
-                    <PhUser :size="12" weight="fill" /> {{ item.authorName }}
-                  </span>
-                </div>
-              </template>
-              
-              <!-- 圖片項目 -->
-              <template v-else-if="item.itemType === 'image'">
-                <div class="story-image-item">
+              <div class="comic-panel-content">
+                <!-- 分鏡標籤 -->
+                <span class="story-badge panel-badge">第 {{ panel.roundNumber }} 幕</span>
+                
+                <!-- 圖像區域 -->
+                <div class="comic-image-area" v-if="panel.image">
                   <img 
-                    :src="item.content" 
-                    :alt="`第 ${Math.ceil(index / 2)} 幕畫作`"
-                    class="story-image"
+                    :src="panel.image.content" 
+                    :alt="`第 ${panel.roundNumber} 幕畫作`"
+                    class="comic-image"
                     loading="lazy"
                   />
-                  <span class="story-author" v-if="item.authorName">
-                    <PhPaintBrush :size="12" weight="fill" /> {{ item.authorName }}
+                  <span class="comic-author drawer-author" v-if="panel.image.authorName">
+                    <PhPaintBrush :size="11" weight="fill" /> {{ panel.image.authorName }}
                   </span>
                 </div>
-              </template>
+                
+                <!-- 文字區域（對話氣泡風格） -->
+                <div class="comic-text-area" v-if="panel.text">
+                  <div class="speech-bubble">
+                    <p class="comic-text">{{ panel.text.content }}</p>
+                  </div>
+                  <span class="comic-author writer-author" v-if="panel.text.authorName">
+                    <PhUser :size="11" weight="fill" /> {{ panel.text.authorName }}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -304,6 +311,50 @@ const hasSubmitted = computed(() => {
   return !!props.mySubmission && !isEditing.value
 })
 
+/** 故事開頭（第一個 roundNumber = 0 的文字項目） */
+const storyOpening = computed(() => {
+  return props.storyHistory.find(
+    item => item.itemType === 'text' && item.roundNumber === 0
+  ) || null
+})
+
+/** 漫畫分鏡數據（將圖像和對應文字配對） */
+interface ComicPanel {
+  roundNumber: number
+  image: typeof props.storyHistory[0] | null
+  text: typeof props.storyHistory[0] | null
+}
+
+const comicPanels = computed<ComicPanel[]>(() => {
+  // 過濾掉故事開頭（roundNumber = 0）和結尾（roundNumber = -1）
+  const panels = props.storyHistory.filter(
+    item => item.roundNumber > 0 && item.roundNumber !== -1
+  )
+  
+  // 按輪次分組
+  const panelMap = new Map<number, ComicPanel>()
+  
+  for (const item of panels) {
+    if (!panelMap.has(item.roundNumber)) {
+      panelMap.set(item.roundNumber, {
+        roundNumber: item.roundNumber,
+        image: null,
+        text: null
+      })
+    }
+    
+    const panel = panelMap.get(item.roundNumber)!
+    if (item.itemType === 'image') {
+      panel.image = item
+    } else if (item.itemType === 'text') {
+      panel.text = item
+    }
+  }
+  
+  // 按輪次排序返回
+  return Array.from(panelMap.values()).sort((a, b) => a.roundNumber - b.roundNumber)
+})
+
 // ============================================
 // 方法
 // ============================================
@@ -498,18 +549,13 @@ watch(() => props.mySubmission, (newVal) => {
   }
 }
 
-/* 文字項目 */
-.story-text-item {
-  background: linear-gradient(135deg, var(--bg-highlight), var(--bg-secondary));
-  border: 2px solid var(--border-light);
+/* 故事開頭項目 */
+.story-opening-item {
+  background: linear-gradient(135deg, #fff8e1, #ffecb3);
+  border: 2px solid var(--color-warning);
   border-radius: 8px;
   padding: 0.75rem;
   position: relative;
-}
-
-.story-item.is-opening .story-text-item {
-  background: linear-gradient(135deg, var(--color-warning-light), var(--bg-highlight));
-  border-color: var(--color-warning);
 }
 
 .story-badge {
@@ -525,9 +571,18 @@ watch(() => props.mySubmission, (newVal) => {
   margin-bottom: 0.5rem;
 }
 
-.story-item.is-opening .story-badge {
-  color: var(--color-warning);
+.story-badge.opening-badge {
+  color: #e65100;
+  background: linear-gradient(135deg, #fff3e0, #ffe0b2);
   border-color: var(--color-warning);
+}
+
+.story-badge.panel-badge {
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  z-index: 1;
+  margin-bottom: 0;
 }
 
 .story-text {
@@ -536,6 +591,11 @@ watch(() => props.mySubmission, (newVal) => {
   color: var(--text-primary);
   line-height: 1.5;
   margin: 0;
+}
+
+.opening-text {
+  text-align: center;
+  font-size: 1rem;
 }
 
 .story-author {
@@ -547,27 +607,101 @@ watch(() => props.mySubmission, (newVal) => {
   margin-top: 0.5rem;
 }
 
-/* 圖片項目 */
-.story-image-item {
+/* ============================================
+   漫畫分鏡樣式 - 圖文合併
+   ============================================ */
+
+.comic-panel {
+  margin-bottom: 0.5rem;
+}
+
+.comic-panel-content {
+  background: var(--bg-card);
   border: 2px solid var(--border-light);
   border-radius: 8px;
   overflow: hidden;
-  background: var(--bg-card);
+  position: relative;
 }
 
-.story-image {
-  width: 100%;
-  height: auto;
-  max-height: 150px;
-  object-fit: contain;
-  display: block;
+/* 圖像區域 */
+.comic-image-area {
+  position: relative;
   background: white;
 }
 
-.story-image-item .story-author {
-  padding: 0.5rem;
-  background: var(--bg-secondary);
-  margin-top: 0;
+.comic-image {
+  width: 100%;
+  height: auto;
+  max-height: 120px;
+  object-fit: contain;
+  display: block;
+}
+
+.comic-author {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  font-size: 0.7rem;
+  color: var(--text-tertiary);
+  padding: 0.2rem 0.4rem;
+  border-radius: 3px;
+}
+
+.drawer-author {
+  position: absolute;
+  bottom: 0.25rem;
+  right: 0.25rem;
+  background: rgba(255, 255, 255, 0.85);
+}
+
+/* 文字區域 - 對話氣泡風格 */
+.comic-text-area {
+  padding: 0.6rem 0.75rem;
+  background: linear-gradient(135deg, var(--bg-highlight), var(--bg-secondary));
+  border-top: 1px dashed var(--border-light);
+}
+
+.speech-bubble {
+  position: relative;
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  padding: 0.5rem 0.65rem;
+  box-shadow: 1px 1px 0 var(--shadow-color);
+}
+
+/* 對話氣泡尖角 */
+.speech-bubble::before {
+  content: '';
+  position: absolute;
+  left: 15px;
+  top: -6px;
+  border-width: 0 6px 6px 6px;
+  border-style: solid;
+  border-color: transparent transparent var(--border-light) transparent;
+}
+
+.speech-bubble::after {
+  content: '';
+  position: absolute;
+  left: 16px;
+  top: -4px;
+  border-width: 0 5px 5px 5px;
+  border-style: solid;
+  border-color: transparent transparent var(--bg-card) transparent;
+}
+
+.comic-text {
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  line-height: 1.4;
+  margin: 0;
+}
+
+.writer-author {
+  margin-top: 0.35rem;
+  display: flex;
 }
 
 /* ============================================

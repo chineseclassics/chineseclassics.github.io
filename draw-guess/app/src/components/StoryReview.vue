@@ -38,49 +38,44 @@
           </div>
         </div>
 
-        <!-- 分鏡內容（圖文交替） -->
-        <template v-for="(panel, index) in storyPanels" :key="panel.id">
-          <!-- 圖片分鏡 -->
-          <div 
-            v-if="panel.itemType === 'image'" 
-            class="story-panel image-panel"
-            :style="{ animationDelay: `${index * 0.1}s` }"
-          >
-            <div class="panel-badge">
-              <PhPaintBrush :size="14" weight="fill" /> 第 {{ getPanelNumber(index) }} 幕
-            </div>
-            <div class="panel-content">
-              <img 
-                :src="panel.content" 
-                :alt="`第 ${getPanelNumber(index)} 幕畫作`"
-                class="panel-image"
-                loading="lazy"
-                @error="handleImageError"
-              />
-            </div>
-            <div class="panel-author" v-if="panel.authorName">
-              <PhPaintBrush :size="14" weight="fill" />
-              <span>{{ panel.authorName }}</span>
+        <!-- 分鏡內容（圖文合併顯示） -->
+        <div 
+          v-for="(panel, index) in comicPanels" 
+          :key="panel.roundNumber"
+          class="story-panel comic-panel"
+          :style="{ animationDelay: `${index * 0.1}s` }"
+        >
+          <!-- 分鏡標籤 -->
+          <div class="panel-badge comic-badge">
+            <PhFilmStrip :size="14" weight="fill" /> 第 {{ panel.roundNumber }} 幕
+          </div>
+          
+          <!-- 圖像區域 -->
+          <div class="panel-content comic-image-section" v-if="panel.image">
+            <img 
+              :src="panel.image.content" 
+              :alt="`第 ${panel.roundNumber} 幕畫作`"
+              class="panel-image"
+              loading="lazy"
+              @error="handleImageError"
+            />
+            <div class="image-author" v-if="panel.image.authorName">
+              <PhPaintBrush :size="12" weight="fill" />
+              <span>{{ panel.image.authorName }}</span>
             </div>
           </div>
-
-          <!-- 文字分鏡（勝出句子） -->
-          <div 
-            v-else-if="panel.itemType === 'text'" 
-            class="story-panel text-panel-wrapper"
-            :style="{ animationDelay: `${index * 0.1}s` }"
-          >
-            <div class="panel-content text-panel">
-              <div class="speech-bubble">
-                <p class="panel-text">{{ panel.content }}</p>
-              </div>
+          
+          <!-- 文字區域（對話氣泡風格） -->
+          <div class="panel-content comic-text-section" v-if="panel.text">
+            <div class="comic-speech-bubble">
+              <p class="panel-text">{{ panel.text.content }}</p>
             </div>
-            <div class="panel-author" v-if="panel.authorName">
-              <PhPen :size="14" weight="fill" />
-              <span>{{ panel.authorName }}</span>
+            <div class="text-author" v-if="panel.text.authorName">
+              <PhPen :size="12" weight="fill" />
+              <span>{{ panel.text.authorName }}</span>
             </div>
           </div>
-        </template>
+        </div>
 
         <!-- 故事結尾（如果有） -->
         <div 
@@ -275,19 +270,44 @@ const storyEnding = computed(() => {
 })
 
 /**
- * 分鏡內容（排除開頭和結尾）
- * Requirements: 8.2, 8.3 - 圖文交替展示
+ * 漫畫分鏡數據（將圖像和對應文字配對）
+ * 每個分鏡包含同一輪次的圖像和文字
+ * Requirements: 8.2, 8.3 - 圖文合併展示
  */
-const storyPanels = computed(() => {
-  return props.storyChain.filter(
+interface ComicPanel {
+  roundNumber: number
+  image: StoryChainItem | null
+  text: StoryChainItem | null
+}
+
+const comicPanels = computed<ComicPanel[]>(() => {
+  // 過濾掉故事開頭（roundNumber = 0）和結尾（roundNumber = -1）
+  const panels = props.storyChain.filter(
     item => item.roundNumber > 0 && item.roundNumber !== -1
-  ).sort((a, b) => {
-    // 先按輪次排序，再按創建時間排序
-    if (a.roundNumber !== b.roundNumber) {
-      return a.roundNumber - b.roundNumber
+  )
+  
+  // 按輪次分組
+  const panelMap = new Map<number, ComicPanel>()
+  
+  for (const item of panels) {
+    if (!panelMap.has(item.roundNumber)) {
+      panelMap.set(item.roundNumber, {
+        roundNumber: item.roundNumber,
+        image: null,
+        text: null
+      })
     }
-    return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-  })
+    
+    const panel = panelMap.get(item.roundNumber)!
+    if (item.itemType === 'image') {
+      panel.image = item
+    } else if (item.itemType === 'text') {
+      panel.text = item
+    }
+  }
+  
+  // 按輪次排序返回
+  return Array.from(panelMap.values()).sort((a, b) => a.roundNumber - b.roundNumber)
 })
 
 /**
@@ -308,20 +328,6 @@ const sortedScores = computed(() => {
 // ============================================
 // 方法
 // ============================================
-
-/**
- * 獲取分鏡編號
- */
-function getPanelNumber(index: number): number {
-  // 計算當前是第幾個圖片分鏡
-  let imageCount = 0
-  for (let i = 0; i <= index; i++) {
-    if (storyPanels.value[i]?.itemType === 'image') {
-      imageCount++
-    }
-  }
-  return imageCount
-}
 
 /**
  * 處理圖片載入錯誤
@@ -493,24 +499,107 @@ function handleGoHome() {
   padding: 0;
 }
 
-/* 圖片分鏡 */
-.image-panel .panel-content {
+/* ============================================
+   漫畫分鏡樣式 - 圖文合併顯示
+   ============================================ */
+
+.comic-panel {
+  overflow: visible;
+}
+
+.comic-badge {
+  background: linear-gradient(135deg, var(--color-secondary), #5a9ea0);
+}
+
+/* 圖像區域 */
+.comic-image-section {
   background: white;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   min-height: 200px;
+  position: relative;
 }
 
 .panel-image {
   width: 100%;
   height: auto;
-  max-height: 400px;
+  max-height: 350px;
   object-fit: contain;
   display: block;
 }
 
-/* 文字分鏡 */
+.image-author {
+  position: absolute;
+  bottom: 0.5rem;
+  right: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.9);
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+/* 文字區域 - 對話氣泡風格 */
+.comic-text-section {
+  padding: 1rem 1.25rem;
+  background: linear-gradient(135deg, var(--bg-highlight), var(--bg-secondary));
+  border-top: 2px dashed var(--border-light);
+}
+
+.comic-speech-bubble {
+  position: relative;
+  background: var(--bg-card);
+  border: 2px solid var(--border-light);
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  box-shadow: 2px 2px 0 var(--shadow-color);
+}
+
+/* 對話氣泡尖角指向上方的圖像 */
+.comic-speech-bubble::before {
+  content: '';
+  position: absolute;
+  left: 24px;
+  top: -10px;
+  border-width: 0 10px 10px 10px;
+  border-style: solid;
+  border-color: transparent transparent var(--border-light) transparent;
+}
+
+.comic-speech-bubble::after {
+  content: '';
+  position: absolute;
+  left: 26px;
+  top: -7px;
+  border-width: 0 8px 8px 8px;
+  border-style: solid;
+  border-color: transparent transparent var(--bg-card) transparent;
+}
+
+.text-author {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  margin-top: 0.5rem;
+}
+
+.panel-text {
+  font-family: var(--font-body);
+  font-size: 1.1rem;
+  color: var(--text-primary);
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* 舊的文字分鏡樣式（保留兼容性） */
 .text-panel {
   padding: 1.5rem;
   background: linear-gradient(135deg, var(--bg-highlight), var(--bg-secondary));
@@ -547,14 +636,6 @@ function handleGoHome() {
   border-width: 0 8px 8px 8px;
   border-style: solid;
   border-color: transparent transparent var(--bg-card) transparent;
-}
-
-.panel-text {
-  font-family: var(--font-body);
-  font-size: 1.1rem;
-  color: var(--text-primary);
-  line-height: 1.6;
-  margin: 0;
 }
 
 .opening-text {

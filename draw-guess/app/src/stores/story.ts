@@ -18,43 +18,11 @@ import type {
   VoteDB,
   StoryboardPhase,
 } from '../types/storyboard'
-
-// 重新導出類型轉換函數（避免循環依賴）
-function convertToStoryChainItem(db: StoryChainItemDB): StoryChainItem {
-  return {
-    id: db.id,
-    roomId: db.room_id,
-    roundNumber: db.round_number,
-    itemType: db.item_type,
-    content: db.content,
-    authorId: db.author_id,
-    authorName: db.author_name,
-    createdAt: db.created_at,
-  }
-}
-
-function convertToSubmission(db: SubmissionDB): Submission {
-  return {
-    id: db.id,
-    roundId: db.round_id,
-    userId: db.user_id,
-    sentence: db.sentence,
-    voteCount: db.vote_count,
-    isWinner: db.is_winner,
-    createdAt: db.created_at,
-    updatedAt: db.updated_at,
-  }
-}
-
-function convertToVote(db: VoteDB): Vote {
-  return {
-    id: db.id,
-    roundId: db.round_id,
-    voterId: db.voter_id,
-    submissionId: db.submission_id,
-    createdAt: db.created_at,
-  }
-}
+import {
+  toStoryChainItem as convertToStoryChainItem,
+  toSubmission as convertToSubmission,
+  toVote as convertToVote,
+} from '../types/storyboard'
 
 export const useStoryStore = defineStore('story', () => {
   const authStore = useAuthStore()
