@@ -234,8 +234,7 @@
                 <div class="card-body" style="padding: 0.5rem;">
                   <DrawingToolbar v-if="isCurrentDrawer" :horizontal="true" />
                   <div v-else class="drawing-preview-hint">
-                    <div class="preview-tip">🎨 分鏡師作畫中，準備好描述畫面了嗎？</div>
-                    <div class="preview-note">💡 查看右側故事進展區了解上下文</div>
+                    <div class="preview-tip">仔細觀察上方分鏡繪畫，準備用文字描述畫面，續寫故事</div>
                   </div>
                 </div>
               </div>
@@ -258,7 +257,7 @@
                       v-model="writingInput"
                       type="text"
                       class="writing-input"
-                      placeholder="接著上一句，這個鏡頭裡..."
+                      placeholder="描述上方分鏡畫面，續寫故事"
                       maxlength="100"
                       :disabled="writingSubmitting"
                     />
