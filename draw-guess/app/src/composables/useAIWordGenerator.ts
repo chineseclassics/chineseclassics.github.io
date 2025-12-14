@@ -11,8 +11,8 @@ const RATE_LIMIT_KEY = 'ai-word-generator-rate-limit'
 const MAX_CALLS_PER_WINDOW = 10
 const WINDOW_DURATION_MS = 5 * 60 * 1000 // 5 分鐘
 
-// API 超時配置
-const API_TIMEOUT_MS = 15000 // 15 秒
+// API 超時配置（詩句類主題需要更長時間生成）
+const API_TIMEOUT_MS = 30000 // 30 秒
 
 // 響應類型
 interface GenerateWordsResponse {
