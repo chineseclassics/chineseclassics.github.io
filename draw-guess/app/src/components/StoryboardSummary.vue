@@ -125,17 +125,32 @@
         <div class="round-complete-label">
           <PhConfetti :size="20" weight="duotone" /> 一場完成！
         </div>
+        <p class="round-complete-desc">
+          所有玩家都已輪流擔任分鏡師一次。
+        </p>
         <div class="round-complete-actions">
+          <!-- 繼續下一場 -->
           <button 
             class="paper-btn btn-primary next-game-btn"
-            @click="$emit('next-game')"
+            @click="$emit('continue-next-game')"
           >
-            下一場
+            <PhArrowRight :size="18" weight="bold" />
+            繼續下一場
           </button>
+          <!-- 設為最後一場 -->
+          <button 
+            class="paper-btn btn-warning set-final-btn"
+            @click="$emit('set-final-round')"
+          >
+            <PhFlag :size="18" weight="bold" />
+            設為最後一場
+          </button>
+          <!-- 結束遊戲 -->
           <button 
             class="paper-btn btn-secondary end-game-btn"
             @click="$emit('end-game')"
           >
+            <PhStop :size="18" weight="bold" />
             結束遊戲
           </button>
         </div>
@@ -155,7 +170,10 @@ import {
   PhPen,
   PhStar, 
   PhConfetti,
-  PhSmileySad
+  PhSmileySad,
+  PhArrowRight,
+  PhFlag,
+  PhStop
 } from '@phosphor-icons/vue'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../stores/auth'
@@ -195,7 +213,8 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'rating-submitted', rating: number): void
-  (e: 'next-game'): void
+  (e: 'continue-next-game'): void
+  (e: 'set-final-round'): void
   (e: 'end-game'): void
 }>()
 
@@ -838,7 +857,13 @@ watch(() => props.roundId, () => {
   align-items: center;
   justify-content: center;
   gap: 0.4rem;
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.25rem;
+}
+
+.round-complete-desc {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin: 0 0 0.75rem 0;
 }
 
 .round-complete-actions {
@@ -848,8 +873,23 @@ watch(() => props.roundId, () => {
 }
 
 .next-game-btn,
+.set-final-btn,
 .end-game-btn {
   width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.btn-warning {
+  background: linear-gradient(135deg, #fff3e0, #ffe0b2);
+  border-color: var(--color-warning);
+  color: #e65100;
+}
+
+.btn-warning:hover {
+  background: linear-gradient(135deg, #ffe0b2, #ffcc80);
 }
 
 /* 移動端優化 */

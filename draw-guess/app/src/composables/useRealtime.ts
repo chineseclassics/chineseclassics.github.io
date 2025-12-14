@@ -2,6 +2,8 @@ import { ref } from 'vue'
 import { supabase } from '../lib/supabase'
 import { useRoomStore } from '../stores/room'
 import { useGameStore } from '../stores/game'
+import { useStoryStore } from '../stores/story'
+import { toVote } from '../types/storyboard'
 
 /**
  * Realtime 訂閱管理 - 簡化版
@@ -33,6 +35,7 @@ function warn(...args: any[]) {
 export function useRealtime() {
   const roomStore = useRoomStore()
   const gameStore = useGameStore()
+  const storyStore = useStoryStore()
 
   /**
    * 獲取或創建房間 Channel
@@ -263,6 +266,35 @@ export function useRealtime() {
               await endRound()
             }
           }
+        }
+      })
+      
+      // 分鏡模式投票記錄 - 實時同步以支持提前結束投票階段
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'story_votes',
+      }, (payload) => {
+        const newVote = payload.new as any
+        if (newVote && gameStore.currentRound && newVote.round_id === gameStore.currentRound.id) {
+          log('收到新投票:', newVote)
+          // 使用 toVote 轉換並更新本地狀態
+          const vote = toVote(newVote)
+          storyStore.addVoteLocal(vote)
+        }
+      })
+      
+      // 分鏡模式句子提交 - 實時同步
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'story_submissions',
+      }, async (payload) => {
+        const newSubmission = payload.new as any
+        if (newSubmission && gameStore.currentRound && newSubmission.round_id === gameStore.currentRound.id) {
+          log('收到新句子提交:', newSubmission)
+          // 重新載入提交列表以獲取完整數據
+          await storyStore.loadSubmissions(gameStore.currentRound.id)
         }
       })
       

@@ -211,8 +211,9 @@
                   :next-drawer-name="isLastRound ? '' : nextDrawerName"
                   :is-game-round-complete="isGameRoundComplete"
                   @rating-submitted="handleRating"
-                  @next-game="handleStoryboardNextGame"
-                  @end-game="handleEndGame"
+                  @continue-next-game="handleFinalRoundContinue"
+                  @set-final-round="handleSetFinalRound"
+                  @end-game="handleFinalRoundEndGame"
                 />
               </div>
             </div>
@@ -435,15 +436,6 @@
       @submit="handleStorySetupSubmit"
     />
 
-    <!-- 分鏡模式局結束彈窗 -->
-    <!-- Requirements: 7.3 - 一局結束時詢問房主是否設為最後一局 -->
-    <FinalRoundModal
-      v-if="showFinalRoundModal"
-      @continue="handleFinalRoundContinue"
-      @set-final-round="handleSetFinalRound"
-      @end-game="handleFinalRoundEndGame"
-    />
-
     <!-- 分鏡模式故事結局彈窗 -->
     <!-- Requirements: 7.7, 7.8 - 最後一局結束時顯示故事結尾輸入 -->
     <StoryEndingModal
@@ -482,7 +474,6 @@ import RoundSummary from '../components/RoundSummary.vue'
 import StoryPanel from '../components/StoryPanel.vue'
 import StorySetupModal from '../components/StorySetupModal.vue'
 import StoryboardSummary from '../components/StoryboardSummary.vue'
-import FinalRoundModal from '../components/FinalRoundModal.vue'
 import StoryEndingModal from '../components/StoryEndingModal.vue'
 import StoryReview from '../components/StoryReview.vue'
 import { useRoomStore } from '../stores/room'
@@ -571,10 +562,6 @@ const {
 // ========== 分鏡模式故事設定彈窗狀態 ==========
 // Requirements: 2.1 - 分鏡接龍模式遊戲開始時顯示 StorySetupModal
 const showStorySetupModal = ref(false)
-
-// ========== 分鏡模式局結束彈窗狀態 ==========
-// Requirements: 7.3 - 一局結束時詢問房主是否設為最後一局
-const showFinalRoundModal = ref(false)
 
 // ========== 分鏡模式故事結局彈窗狀態 ==========
 // Requirements: 7.7, 7.8 - 最後一局結束時顯示故事結尾輸入
@@ -1276,6 +1263,12 @@ async function handleStoryboardNextGame() {
 
   // 未完成一局，直接開始下一輪
   try {
+    // 停止倒計時（如果還在運行）
+    stopStoryboardCountdown()
+    
+    // 先設置階段為 drawing，立即隱藏結算面板，避免閃爍
+    setStoryboardPhase('drawing')
+    
     // 清除結算結果
     storyboardRoundResult.value = null
     
@@ -1305,8 +1298,9 @@ async function handleEndGame() {
 // Requirements: 7.3 - 一局結束時詢問房主是否設為最後一局
 
 /**
- * 顯示局結束選擇彈窗（僅房主）
+ * 顯示局結束選擇（僅房主）
  * 在分鏡模式下，當一局完成時調用
+ * 注意：選擇按鈕已融合到 StoryboardSummary 組件中，不再顯示額外彈窗
  */
 function showFinalRoundChoice() {
   if (!roomStore.isHost || !isStoryboardMode.value) return
@@ -1320,9 +1314,8 @@ function showFinalRoundChoice() {
     return
   }
   
-  // 非單局模式：顯示選擇彈窗
-  console.log('[RoomView] 顯示局結束選擇彈窗')
-  showFinalRoundModal.value = true
+  // 非單局模式：選擇按鈕已在 StoryboardSummary 組件中顯示，無需額外彈窗
+  console.log('[RoomView] 一場完成，等待房主在結算面板中選擇')
 }
 
 /**
@@ -1330,7 +1323,12 @@ function showFinalRoundChoice() {
  */
 async function handleFinalRoundContinue() {
   console.log('[RoomView] 選擇繼續下一局')
-  showFinalRoundModal.value = false
+  
+  // 停止倒計時（如果還在運行）
+  stopStoryboardCountdown()
+  
+  // 先設置階段為 drawing，立即隱藏結算面板，避免閃爍
+  setStoryboardPhase('drawing')
   
   // 清除結算結果
   storyboardRoundResult.value = null
@@ -1351,7 +1349,6 @@ async function handleFinalRoundContinue() {
  */
 async function handleSetFinalRound() {
   console.log('[RoomView] 選擇設為最後一局')
-  showFinalRoundModal.value = false
   
   if (!currentRoom.value) return
   
@@ -1361,6 +1358,12 @@ async function handleSetFinalRound() {
     showError(result.error || '設置最後一局失敗')
     return
   }
+  
+  // 停止倒計時（如果還在運行）
+  stopStoryboardCountdown()
+  
+  // 先設置階段為 drawing，立即隱藏結算面板，避免閃爍
+  setStoryboardPhase('drawing')
   
   // 清除結算結果
   storyboardRoundResult.value = null
@@ -1381,7 +1384,6 @@ async function handleSetFinalRound() {
  */
 async function handleFinalRoundEndGame() {
   console.log('[RoomView] 選擇結束遊戲，進入故事結局')
-  showFinalRoundModal.value = false
   
   // 進入故事結局階段
   await enterStoryboardEndingPhase()
