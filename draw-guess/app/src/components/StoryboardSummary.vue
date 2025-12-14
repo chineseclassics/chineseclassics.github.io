@@ -5,10 +5,10 @@
       <div class="summary-header">
         <h2 class="summary-title">
           <PhFilmStrip :size="24" weight="duotone" class="title-icon" />
-          本幕完成
+          本鏡完成
         </h2>
         <div class="round-info">
-          第 {{ gameNumber || 1 }} 局 · 第 {{ roundNumber }} / {{ totalRounds }} 幕
+          第 {{ gameNumber || 1 }} 場 · 第 {{ roundNumber }} / {{ totalRounds }} 鏡
         </div>
       </div>
 
@@ -31,11 +31,11 @@
         </div>
       </div>
 
-      <!-- 畫家信息 -->
+      <!-- 分鏡師信息 -->
       <div class="drawer-section">
         <div class="drawer-info">
           <PhPaintBrush :size="18" weight="duotone" class="drawer-icon" />
-          <span class="drawer-label">畫家</span>
+          <span class="drawer-label">分鏡師</span>
           <span class="drawer-name">{{ drawerName }}</span>
           <span class="drawer-score" v-if="drawerScore > 0">+{{ drawerScore }} 分</span>
         </div>
@@ -67,7 +67,7 @@
       <!-- 無提交提示 -->
       <div class="no-submissions" v-else>
         <PhSmileySad :size="24" weight="duotone" />
-        <span>本輪沒有編劇提交句子</span>
+        <span>本鏡沒有編劇提交句子</span>
       </div>
 
       <!-- 畫作評分區域 -->
@@ -93,25 +93,25 @@
         </div>
       </div>
 
-      <!-- 下一輪提示 -->
+      <!-- 下一鏡提示 -->
       <div class="next-round-info" v-if="nextDrawerName && !isLastRound">
-        <div class="next-drawer-label">下一輪畫手</div>
+        <div class="next-drawer-label">下一鏡分鏡師</div>
         <div class="next-drawer-name-display">
           <PhPencil :size="18" weight="duotone" /> {{ nextDrawerName }}
         </div>
       </div>
 
-      <!-- 完成一局提示和按鈕 -->
+      <!-- 完成一場提示和按鈕 -->
       <div class="game-round-complete" v-if="isGameRoundComplete && isHost">
         <div class="round-complete-label">
-          <PhConfetti :size="20" weight="duotone" /> 一局完成！
+          <PhConfetti :size="20" weight="duotone" /> 一場完成！
         </div>
         <div class="round-complete-actions">
           <button 
             class="paper-btn btn-primary next-game-btn"
             @click="$emit('next-game')"
           >
-            下一局
+            下一場
           </button>
           <button 
             class="paper-btn btn-secondary end-game-btn"

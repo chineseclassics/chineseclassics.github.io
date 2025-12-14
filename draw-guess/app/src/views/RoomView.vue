@@ -98,10 +98,10 @@
               <span class="time-label">秒</span>
             </div>
             
-            <!-- 輪次和階段信息 -->
+            <!-- 場次和鏡數信息 -->
             <div class="round-info storyboard">
               <span class="round-label">
-                第 {{ currentGameNumber }} 局 · 第 {{ currentRoundInGame }} / {{ totalRoundsPerGame }} 輪
+                第 {{ currentGameNumber }} 場 · 第 {{ currentRoundInGame }} / {{ totalRoundsPerGame }} 鏡
               </span>
               <span class="phase-label storyboard-phase" :class="'phase-' + storyboardPhase">
                 {{ storyboardPhaseLabel }}
@@ -115,54 +115,39 @@
             
             <!-- 分鏡模式提示內容 -->
             <div class="storyboard-prompt">
-              <!-- 繪畫階段：顯示上一輪勝出句子，畫手需要畫出接下來的情節 -->
+              <!-- 繪畫階段：顯示上一鏡勝出句子，分鏡師需要畫出接下來的情節 -->
               <!-- Requirements: 3.1 -->
               <template v-if="isStoryboardDrawing">
-                <div v-if="isCurrentDrawer" class="word-display storyboard-drawing drawer-task">
-                  <div class="drawer-task-header">
-                    <span class="word-label storyboard-label">
-                      <PhBookOpen :size="16" weight="fill" /> 上一句故事
-                    </span>
-                    <span class="word-text storyboard-sentence">{{ latestSentence?.content || '故事即將開始...' }}</span>
-                  </div>
-                  <div class="drawer-task-instruction">
-                    <PhPencilLine :size="18" weight="fill" class="instruction-icon" />
-                    <span class="instruction-text">畫出【接下來發生了什麼】，讓編劇續寫故事！</span>
-                  </div>
+                <div v-if="isCurrentDrawer" class="word-display storyboard-drawing drawer-task-compact">
+                  <span class="task-sentence">「{{ latestSentence?.content || '故事即將開始...' }}」</span>
+                  <span class="task-arrow">→</span>
+                  <span class="task-hint">畫接下來發生什麼</span>
                 </div>
-                <div v-else class="word-display storyboard-watching">
-                  <span class="drawer-hint">
-                    <PhPaintBrush :size="18" weight="fill" class="hint-icon" /> 
-                    {{ currentDrawerName }} 正在繪畫
-                  </span>
+                <div v-else class="word-display storyboard-compact">
+                  <PhPaintBrush :size="16" weight="fill" class="hint-icon" /> 
+                  <span class="compact-hint">分鏡師 {{ currentDrawerName }} 作畫中</span>
                 </div>
               </template>
               
-              <!-- 編劇階段：顯示上一輪勝出句子和當前畫作背景 -->
-              <!-- Requirements: 4.2 -->
+              <!-- 編劇階段 -->
               <template v-else-if="isStoryboardWriting">
-                <div class="word-display storyboard-writing">
-                  <span class="word-label storyboard-label">
-                    <PhBookOpen :size="16" weight="fill" /> 上一句
-                  </span>
-                  <span class="word-text storyboard-sentence">{{ latestSentence?.content || '故事開始...' }}</span>
+                <div class="word-display storyboard-compact">
+                  <span class="compact-sentence">「{{ latestSentence?.content || '故事開始...' }}」</span>
+                  <span class="compact-hint">→ 續寫故事</span>
                 </div>
               </template>
               
               <!-- 投票階段 -->
               <template v-else-if="isStoryboardVoting">
-                <div class="word-display storyboard-voting">
-                  <span class="word-label storyboard-label">
-                    <PhHandPointing :size="16" weight="fill" /> 投票中
-                  </span>
-                  <span class="word-text storyboard-hint">選擇你認為最好的句子</span>
+                <div class="word-display storyboard-compact">
+                  <span class="compact-hint voting">🗳️ 選擇最佳句子</span>
                 </div>
               </template>
               
               <!-- 結算階段 -->
               <template v-else-if="isStoryboardSummary">
-                <div class="word-display storyboard-summary">
-                  <span class="word-label storyboard-label">🎬 本幕完成</span>
+                <div class="word-display storyboard-compact">
+                  <span class="compact-hint">🎬 本鏡完成</span>
                 </div>
               </template>
             </div>
@@ -425,7 +410,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { PhPaintBrush, PhGameController, PhCheckCircle, PhX, PhConfetti, PhLightbulb, PhBookOpen, PhPencilLine, PhHandPointing } from '@phosphor-icons/vue'
+import { PhPaintBrush, PhGameController, PhCheckCircle, PhX, PhConfetti, PhLightbulb } from '@phosphor-icons/vue'
 import DrawingCanvas from '../components/DrawingCanvas.vue'
 import DrawingToolbar from '../components/DrawingToolbar.vue'
 import PlayerList from '../components/PlayerList.vue'
@@ -638,29 +623,29 @@ const finalRoundHint = computed(() => {
   if (!isStoryboardFinalRound.value) return ''
   const remaining = roundsUntilEnding.value
   if (remaining === 0) {
-    return '最後一輪！'
+    return '最後一鏡！'
   }
-  return `最後一局，距離結局還有 ${remaining} 輪`
+  return `最後一場，距離結局還有 ${remaining} 鏡`
 })
 
-// 當前畫家名稱
+// 當前分鏡師名稱
 const currentDrawerName = computed(() => {
   const drawerId = currentRoom.value?.current_drawer_id
-  if (!drawerId) return '畫家'
+  if (!drawerId) return '分鏡師'
   const participant = roomStore.participants.find(p => p.user_id === drawerId)
-  return participant?.nickname || '畫家'
+  return participant?.nickname || '分鏡師'
 })
 
-// 下一位畫手名稱（用於總結畫面顯示）
+// 下一位分鏡師名稱（用於總結畫面顯示）
 const nextDrawerName = computed(() => {
   if (!currentRoom.value || roomStore.participants.length === 0) return ''
   
   const currentRoundNum = currentRoom.value.current_round || 0
-  // 下一輪的畫家索引
+  // 下一鏡的分鏡師索引
   const nextDrawerIndex = currentRoundNum % roomStore.participants.length
   const nextDrawer = roomStore.participants[nextDrawerIndex]
   
-  return nextDrawer?.nickname || '下一位畫家'
+  return nextDrawer?.nickname || '下一位分鏡師'
 })
 
 // 單局總輪數（優先使用設定，否則使用目前玩家數量）
@@ -1986,20 +1971,22 @@ onUnmounted(() => {
 
 .game-header.storyboard-mode {
   background: linear-gradient(135deg, var(--bg-card), var(--bg-highlight));
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   min-height: auto;
-  padding: 0.5rem 1rem;
+  padding: 0.4rem 1rem;
+  gap: 0.75rem;
 }
 
-/* 分鏡模式頂部佈局：三行結構 */
+/* 分鏡模式頂部佈局：單行結構 */
 .game-header.storyboard-mode .time-display.storyboard,
 .game-header.storyboard-mode .round-info.storyboard {
   position: static;
+  flex-shrink: 0;
 }
 
 .game-header.storyboard-mode .storyboard-prompt {
-  width: 100%;
-  margin-top: 0.25rem;
+  flex: 1;
+  min-width: 0;
 }
 
 /* 分鏡模式階段標籤 */
@@ -2075,56 +2062,73 @@ onUnmounted(() => {
   gap: 0.75rem;
 }
 
-/* ========== 畫手任務區域（分鏡模式） ========== */
-.word-display.drawer-task {
-  flex-direction: column;
-  align-items: stretch;
-  gap: 0.5rem;
-  padding: 0.75rem 1rem;
-  background: linear-gradient(135deg, #f8f9fa, #fff);
-  border-radius: 8px;
-  border: 2px solid var(--border-light);
-}
-
-.drawer-task-header {
+/* ========== 畫手任務區域（分鏡模式）- 緊湊版 ========== */
+.word-display.drawer-task-compact {
   display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.drawer-task-header .word-label {
-  font-size: 0.75rem;
-  color: var(--text-tertiary);
-}
-
-.drawer-task-header .word-text {
-  font-size: 1rem;
-  color: var(--text-primary);
-  font-weight: 500;
-  line-height: 1.4;
-}
-
-.drawer-task-instruction {
-  display: flex;
+  flex-direction: row;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.5rem 0.75rem;
-  background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
-  border: 2px solid var(--color-success);
-  border-radius: 6px;
-  margin-top: 0.25rem;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
-.drawer-task-instruction .instruction-icon {
+.drawer-task-compact .task-sentence {
+  font-size: 0.95rem;
+  color: var(--text-primary);
+  font-weight: 500;
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.drawer-task-compact .task-arrow {
   color: var(--color-success);
-  flex-shrink: 0;
+  font-weight: bold;
+  font-size: 1.1rem;
 }
 
-.drawer-task-instruction .instruction-text {
+.drawer-task-compact .task-hint {
   font-size: 0.9rem;
   font-weight: 600;
   color: #2e7d32;
-  font-family: var(--font-body);
+  background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+  padding: 0.25rem 0.6rem;
+  border-radius: 4px;
+  border: 1px solid var(--color-success);
+}
+
+/* 分鏡模式緊湊顯示（編劇/投票/結算階段） */
+.word-display.storyboard-compact {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.storyboard-compact .compact-sentence {
+  font-size: 0.95rem;
+  color: var(--text-primary);
+  font-weight: 500;
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.storyboard-compact .compact-hint {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-secondary);
+  padding: 0.2rem 0.5rem;
+  background: var(--bg-secondary);
+  border-radius: 4px;
+}
+
+.storyboard-compact .compact-hint.voting {
+  background: linear-gradient(135deg, #f3e5f5, #e1bee7);
+  color: #7b1fa2;
 }
 
 /* 分鏡模式倒計時和輪次信息 - 改為流式佈局 */

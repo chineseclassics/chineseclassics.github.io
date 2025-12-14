@@ -5,39 +5,39 @@
       <div class="modal-header">
         <h2 class="modal-title">
           <PhFilmStrip :size="24" weight="duotone" class="title-icon" />
-          一局完成！
+          一場完成！
         </h2>
       </div>
 
       <!-- 內容 -->
       <div class="modal-body">
         <p class="modal-description">
-          所有玩家都已輪流擔任畫家一次。<br />
+          所有玩家都已輪流擔任分鏡師一次。<br />
           請選擇接下來的遊戲方式：
         </p>
 
         <div class="options-container">
-          <!-- 繼續下一局 -->
+          <!-- 繼續下一場 -->
           <button 
             class="option-btn continue-btn"
             @click="handleContinue"
           >
             <PhArrowRight :size="24" weight="bold" class="option-icon" />
             <div class="option-content">
-              <span class="option-title">繼續下一局</span>
+              <span class="option-title">繼續下一場</span>
               <span class="option-desc">故事繼續發展</span>
             </div>
           </button>
 
-          <!-- 設為最後一局 -->
+          <!-- 設為最後一場 -->
           <button 
             class="option-btn final-btn"
             @click="handleSetFinalRound"
           >
             <PhFlag :size="24" weight="bold" class="option-icon" />
             <div class="option-content">
-              <span class="option-title">設為最後一局</span>
-              <span class="option-desc">下一局結束後進入故事結局</span>
+              <span class="option-title">設為最後一場</span>
+              <span class="option-desc">下一場結束後進入故事結局</span>
             </div>
           </button>
 

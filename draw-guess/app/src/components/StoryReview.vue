@@ -47,14 +47,14 @@
         >
           <!-- 分鏡標籤 -->
           <div class="panel-badge comic-badge">
-            <PhFilmStrip :size="14" weight="fill" /> 第 {{ panel.roundNumber }} 幕
+            <PhFilmStrip :size="14" weight="fill" /> 第 {{ panel.roundNumber }} 鏡
           </div>
           
           <!-- 圖像區域 -->
           <div class="panel-content comic-image-section" v-if="panel.image">
             <img 
               :src="panel.image.content" 
-              :alt="`第 ${panel.roundNumber} 幕畫作`"
+              :alt="`第 ${panel.roundNumber} 鏡畫作`"
               class="panel-image"
               loading="lazy"
               @error="handleImageError"

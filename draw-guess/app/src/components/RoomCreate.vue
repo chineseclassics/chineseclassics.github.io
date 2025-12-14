@@ -55,15 +55,15 @@
             </div>
           </div>
 
-          <!-- 單局模式選項（分鏡模式專用） -->
+          <!-- 單場模式選項（分鏡模式專用） -->
           <div v-if="form.gameMode === 'storyboard'" class="form-group single-round-group">
             <label class="checkbox-label">
               <input
                 type="checkbox"
                 v-model="form.singleRoundMode"
               />
-              <span class="checkbox-text">單局模式</span>
-              <span class="checkbox-hint">（勾選後遊戲只進行一局即結束）</span>
+              <span class="checkbox-text">單場模式</span>
+              <span class="checkbox-hint">（勾選後遊戲只進行一場即結束）</span>
             </label>
           </div>
 
@@ -214,10 +214,10 @@
             <div class="info-card">
               <h4>📖 分鏡接龍模式說明</h4>
               <ul>
-                <li>🎨 畫家根據上一輪勝出句子繪畫</li>
+                <li>🎨 分鏡師根據上一鏡勝出句子繪畫</li>
                 <li>✍️ 編劇根據畫作創作下一句故事</li>
                 <li>🗳️ 所有玩家投票選出最佳句子</li>
-                <li>📚 最終產出一個圖文交替的故事漫畫</li>
+                <li>📚 最終產出一個圖文交替的故事板</li>
               </ul>
               <p class="info-note">⚠️ 分鏡模式需要至少 3 位玩家</p>
             </div>

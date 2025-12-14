@@ -36,13 +36,13 @@
             >
               <div class="comic-panel-content">
                 <!-- 分鏡標籤 -->
-                <span class="story-badge panel-badge">第 {{ panel.roundNumber }} 幕</span>
+                <span class="story-badge panel-badge">第 {{ panel.roundNumber }} 鏡</span>
                 
                 <!-- 圖像區域 -->
                 <div class="comic-image-area" v-if="panel.image">
                   <img 
                     :src="panel.image.content" 
-                    :alt="`第 ${panel.roundNumber} 幕畫作`"
+                    :alt="`第 ${panel.roundNumber} 鏡畫作`"
                     class="comic-image"
                     loading="lazy"
                   />
@@ -70,7 +70,7 @@
           <div class="section-divider"></div>
           <h4 class="section-title">
             <PhPencilLine :size="18" weight="fill" class="title-icon" />
-            撰寫下一句
+            描述這一鏡
           </h4>
           
           <!-- 已提交狀態 -->
