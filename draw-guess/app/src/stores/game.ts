@@ -57,6 +57,7 @@ export const useGameStore = defineStore('game', () => {
   // 當前輪次
   const currentRound = ref<GameRound | null>(null)
   const currentWord = ref<string | null>(null) // 當前詞語（僅畫家可見）
+  const currentWordLength = ref<number>(0) // 當前詞語長度（所有玩家可見，用於顯示下劃線）
   const guesses = ref<Guess[]>([]) // 整場遊戲的猜測記錄（累積所有輪次）
   const correctGuesses = computed(() => guesses.value.filter(g => g.is_correct))
   // 當前輪次的猜測記錄
@@ -74,6 +75,7 @@ export const useGameStore = defineStore('game', () => {
   // 提示功能狀態
   const hintGiven = ref(false) // 當前輪次是否已給提示
   const revealedIndices = ref<number[]>([]) // 已揭示的字符索引
+  const revealedChars = ref<string[]>([]) // 已揭示的字符（與 revealedIndices 對應）
   const averageRating = computed(() => {
     if (ratings.value.length === 0) return 0
     const sum = ratings.value.reduce((acc, r) => acc + r.rating, 0)
@@ -107,10 +109,12 @@ export const useGameStore = defineStore('game', () => {
   }
 
   // 給提示（揭示一個隨機字符）
-  function giveHint(): number | null {
+  // 返回 { index: 揭示位置, char: 揭示字符 } 或 null
+  function giveHint(): { index: number; char: string } | null {
     if (hintGiven.value || !currentWord.value) return null
     
-    const wordLength = currentWord.value.length
+    const word = currentWord.value
+    const wordLength = word.length
     // 找出尚未揭示的索引
     const unrevealedIndices: number[] = []
     for (let i = 0; i < wordLength; i++) {
@@ -126,22 +130,33 @@ export const useGameStore = defineStore('game', () => {
     const revealIdx = unrevealedIndices[randomIdx]
     if (revealIdx === undefined) return null
     
+    const revealChar = word[revealIdx]
+    if (!revealChar) return null  // 字符不存在
+    
     revealedIndices.value.push(revealIdx)
+    revealedChars.value.push(revealChar)
     hintGiven.value = true
     
-    return revealIdx
+    return { index: revealIdx, char: revealChar }
   }
 
   // 設置提示狀態（用於廣播同步）
-  function setHintState(given: boolean, indices: number[]) {
+  function setHintState(given: boolean, indices: number[], chars: string[] = []) {
     hintGiven.value = given
     revealedIndices.value = indices
+    revealedChars.value = chars
+  }
+
+  // 設置詞語長度（用於非畫家顯示下劃線）
+  function setWordLength(length: number) {
+    currentWordLength.value = length
   }
 
   // 重置提示狀態（新輪次時調用）
   function resetHint() {
     hintGiven.value = false
     revealedIndices.value = []
+    revealedChars.value = []
   }
 
   // 載入當前輪次
@@ -350,12 +365,14 @@ export const useGameStore = defineStore('game', () => {
   function clearGame() {
     currentRound.value = null
     currentWord.value = null
+    currentWordLength.value = 0
     guesses.value = []
     roundStatus.value = 'drawing'
     wordOptions.value = []
     ratings.value = []
     hintGiven.value = false
     revealedIndices.value = []
+    revealedChars.value = []
   }
 
   // 提交評分到數據庫
@@ -414,6 +431,7 @@ export const useGameStore = defineStore('game', () => {
     // 狀態
     currentRound,
     currentWord,
+    currentWordLength,
     guesses,
     correctGuesses,
     currentRoundGuesses,
@@ -427,6 +445,7 @@ export const useGameStore = defineStore('game', () => {
     // 提示狀態
     hintGiven,
     revealedIndices,
+    revealedChars,
     // 方法
     loadCurrentRound,
     loadGuesses,
@@ -445,6 +464,7 @@ export const useGameStore = defineStore('game', () => {
     // 提示方法
     giveHint,
     setHintState,
+    setWordLength,
     resetHint,
   }
 })

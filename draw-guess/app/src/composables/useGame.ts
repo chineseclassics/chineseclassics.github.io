@@ -379,6 +379,7 @@ export function useGame() {
         await broadcastGameState(roomStore.currentRoom!.code, {
           roundStatus: 'drawing',
           wordOptions: [],
+          wordLength: word.text.length,  // 傳遞詞語長度給非畫家顯示下劃線
           drawerId: drawer.user_id,
           drawerName: drawer.nickname,
           roundNumber: nextRoundNum,

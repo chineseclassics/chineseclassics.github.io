@@ -9,17 +9,19 @@
             <div class="detail-item margin-bottom-small">
               房間碼：<span class="badge badge-secondary room-code-badge">{{ room?.code }}</span>
             </div>
-            <div class="detail-item margin-bottom-small">
-              狀態：<span class="badge">{{ getStatusText(room?.status) }}</span>
-            </div>
-            <!-- 遊戲模式標識 -->
-            <div class="detail-item">
-              模式：<span 
-                class="badge" 
-                :class="room?.game_mode === 'storyboard' ? 'badge-success' : 'badge-primary'"
-              >
-                {{ getGameModeText(room?.game_mode) }}
-              </span>
+            <!-- 狀態和模式放在同一行 -->
+            <div class="detail-row">
+              <div class="detail-item">
+                狀態：<span class="badge">{{ getStatusText(room?.status) }}</span>
+              </div>
+              <div class="detail-item">
+                模式：<span 
+                  class="badge" 
+                  :class="room?.game_mode === 'storyboard' ? 'badge-success' : 'badge-primary'"
+                >
+                  {{ getGameModeText(room?.game_mode) }}
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -182,6 +184,17 @@ async function handleLeaveRoom() {
   font-size: 0.9rem;
   color: var(--text-secondary);
   font-family: var(--font-body);
+}
+
+/* 狀態和模式同一行顯示：狀態靠左，模式靠右 */
+.detail-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+  flex-wrap: wrap;
+  padding: 0 1rem;
+  margin-bottom: 0.75rem;  /* 與底部虛線的間距 */
 }
 
 .detail-item {

@@ -839,16 +839,36 @@ const getInputPlaceholder = computed(() => {
 
 // 獲取詞語提示（類似 skribbl.io 的下劃線風格，支持揭示提示）
 const getWordHint = computed(() => {
-  if (!gameStore.currentWord) return '猜猜畫的是什麼？'
-  const word = gameStore.currentWord
-  const revealed = gameStore.revealedIndices
-  // 將每個字替換為下劃線，已揭示的顯示實際字符
-  return word.split('').map((char, idx) => {
-    if (revealed.includes(idx)) {
-      return char
-    }
-    return '_'
-  }).join(' ')
+  // 如果有完整詞語（畫家或總結階段），使用詞語生成提示
+  if (gameStore.currentWord) {
+    const word = gameStore.currentWord
+    const revealed = gameStore.revealedIndices
+    // 將每個字替換為下劃線，已揭示的顯示實際字符
+    return word.split('').map((char, idx) => {
+      if (revealed.includes(idx)) {
+        return char
+      }
+      return '_'
+    }).join(' ')
+  }
+  
+  // 如果只有詞語長度（非畫家），根據長度顯示下劃線
+  if (gameStore.currentWordLength > 0) {
+    const length = gameStore.currentWordLength
+    const revealedIndices = gameStore.revealedIndices
+    const revealedChars = gameStore.revealedChars
+    
+    // 生成對應長度的下劃線，已揭示的位置顯示實際字符
+    return Array.from({ length }, (_, idx) => {
+      const revealedPos = revealedIndices.indexOf(idx)
+      if (revealedPos !== -1 && revealedChars[revealedPos]) {
+        return revealedChars[revealedPos] // 顯示揭示的實際字符
+      }
+      return '_'
+    }).join(' ')
+  }
+  
+  return '猜猜畫的是什麼？'
 })
 
 // 是否可以顯示提示按鈕（30秒後）
@@ -864,10 +884,11 @@ const canShowHintButton = computed(() => {
 async function handleGiveHint() {
   if (gameStore.hintGiven || !currentRoom.value || !gameStore.currentRound) return
   
-  const revealedIdx = gameStore.giveHint()
-  if (revealedIdx === null) return
+  const hintResult = gameStore.giveHint()
+  if (hintResult === null) return
   
   const newRevealedIndices = [...gameStore.revealedIndices]
+  const newRevealedChars = [...gameStore.revealedChars]
   
   // 1. 先寫入數據庫（持久化）
   const { supabase } = await import('../lib/supabase')
@@ -884,10 +905,12 @@ async function handleGiveHint() {
   }
   
   // 2. 廣播提示狀態給所有玩家（快速通知）
+  // 包含揭示的字符，讓非畫家也能看到提示
   await broadcastGameState(currentRoom.value.code, {
     roundStatus: 'drawing',
     hintGiven: true,
     revealedIndices: newRevealedIndices,
+    revealedChars: newRevealedChars,
   })
 }
 
@@ -1636,14 +1659,20 @@ onMounted(async () => {
       // 如果只是提示更新（沒有 startedAt），不需要重新載入輪次
       const isHintOnlyUpdate = state.hintGiven !== undefined && state.revealedIndices !== undefined && !state.startedAt
       if (state.hintGiven !== undefined && state.revealedIndices !== undefined) {
-        console.log('[RoomView] 更新提示狀態:', state.hintGiven, state.revealedIndices)
-        gameStore.setHintState(state.hintGiven, state.revealedIndices)
+        console.log('[RoomView] 更新提示狀態:', state.hintGiven, state.revealedIndices, state.revealedChars)
+        gameStore.setHintState(state.hintGiven, state.revealedIndices, state.revealedChars || [])
         
         // 如果只是提示更新，不需要重新載入輪次，直接返回
         if (isHintOnlyUpdate) {
           console.log('[RoomView] 只是提示更新，跳過重新載入輪次')
           return
         }
+      }
+
+      // 處理詞語長度更新（用於非畫家顯示下劃線）
+      if (state.wordLength !== undefined && state.wordLength > 0) {
+        console.log('[RoomView] 更新詞語長度:', state.wordLength)
+        gameStore.setWordLength(state.wordLength)
       }
 
       // ========== 分鏡模式階段處理 ==========

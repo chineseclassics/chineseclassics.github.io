@@ -354,11 +354,13 @@ export function useRealtime() {
     drawerId?: string
     drawerName?: string
     wordOptions?: any[]
+    wordLength?: number  // 詞語長度（非畫家用於顯示下劃線）
     roundNumber?: number
     isLastRound?: boolean
     startedAt?: string
     hintGiven?: boolean
     revealedIndices?: number[]
+    revealedChars?: string[]
     storyboardPhase?: string
     storyboardRoundResult?: {
       winningSentence: string
