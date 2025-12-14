@@ -29,6 +29,11 @@
         </div>
       </div>
 
+      <!-- 畫作展示 -->
+      <div class="drawing-display" v-if="roundImage">
+        <img :src="roundImage" alt="本輪畫作" class="round-drawing" />
+      </div>
+
       <!-- 正確答案 -->
       <div class="answer-reveal">
         <div class="answer-label">正確答案</div>
@@ -151,6 +156,8 @@ const props = defineProps<{
   nextDrawerName?: string
   // 是否完成一局（一局 = 玩家數量的輪數）
   isGameRoundComplete?: boolean
+  // 本輪畫作截圖（Data URL）
+  roundImage?: string
 }>()
 
 const emit = defineEmits<{
@@ -352,6 +359,27 @@ watch(() => props.roundId, () => {
   display: inline-block;
   padding: 0.2rem 0.6rem;
   border-radius: 0;
+}
+
+/* 畫作展示 */
+.drawing-display {
+  background: #f5f5f5;
+  border: 3px solid var(--border-color);
+  border-radius: 0;
+  overflow: hidden;
+  box-shadow: 3px 3px 0 var(--shadow-color);
+}
+
+.round-drawing {
+  width: 100%;
+  max-height: 180px;
+  object-fit: contain;
+  display: block;
+  background: white;
+  /* 移除 paper.css 的不規則邊框效果 */
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
 }
 
 /* 答案顯示 */
@@ -836,6 +864,11 @@ watch(() => props.roundId, () => {
   .round-info {
     font-size: 0.8rem;
     padding: 0.15rem 0.5rem;
+  }
+
+  /* 畫作展示 */
+  .round-drawing {
+    max-height: 140px;
   }
 
   /* 答案顯示 */

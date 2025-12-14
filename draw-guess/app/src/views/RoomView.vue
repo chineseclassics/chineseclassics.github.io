@@ -180,6 +180,7 @@
                   :is-last-round="isLastRound"
                   :next-drawer-name="isLastRound ? '' : nextDrawerName"
                   :is-game-round-complete="isGameRoundComplete"
+                  :round-image="classicRoundImage"
                   @rating-submitted="handleRating"
                   @next-game="handleNewGame"
                   @end-game="handleEndGame"
@@ -591,6 +592,9 @@ const isLeavingRoom = ref(false)
 /** 分鏡模式輪次結算結果 - 類型定義在 types/storyboard.ts */
 // Requirements: 6.8 - 顯示結算結果
 const storyboardRoundResult = ref<StoryboardRoundResult | null>(null)
+
+/** 經典模式本輪畫作截圖（Data URL） */
+const classicRoundImage = ref<string>('')
 
 /** 分鏡模式故事歷史（用於 StoryPanel） */
 const storyHistory = computed(() => storyStore.storyChain)
@@ -1866,6 +1870,18 @@ onMounted(async () => {
           gameStore.setRoundStatus(state.roundStatus)
           // 停止繪畫倒計時
           stopCountdown()
+          
+          // 截取當前畫布作為本輪畫作（在清空前截取）
+          const canvas = document.querySelector('canvas.drawing-canvas') as HTMLCanvasElement
+          if (canvas) {
+            try {
+              classicRoundImage.value = canvas.toDataURL('image/png', 0.8)
+              console.log('[RoomView] 經典模式畫作截圖已保存')
+            } catch (err) {
+              console.error('[RoomView] 截取畫布失敗:', err)
+              classicRoundImage.value = ''
+            }
+          }
           
           // 重新載入房間數據以獲取最新的 current_round
           if (currentRoom.value) {
