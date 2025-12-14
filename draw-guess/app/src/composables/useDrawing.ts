@@ -3,6 +3,7 @@ import { useDrawingStore } from '../stores/drawing'
 import { getCanvasCoordinates, drawStroke, generateStrokeId, redrawCanvas, type Stroke } from '../lib/canvas-utils'
 import { useRoomStore } from '../stores/room'
 import { useAuthStore } from '../stores/auth'
+import { useStoryStore } from '../stores/story'
 import { useRealtime } from './useRealtime'
 
 // 模組級單例 - 確保所有 useDrawing() 調用共享同一個 canvas 引用
@@ -15,12 +16,27 @@ export function useDrawing() {
   const drawingStore = useDrawingStore()
   const roomStore = useRoomStore()
   const authStore = useAuthStore()
+  const storyStore = useStoryStore()
   const { sendDrawing } = useRealtime()
   
   // 判斷當前用戶是否為畫家
   const isCurrentDrawer = computed(() => {
     if (!authStore.user || !roomStore.currentRoom) return false
     return roomStore.currentRoom.current_drawer_id === authStore.user.id
+  })
+  
+  // 判斷當前是否可以繪畫
+  // 分鏡模式下只有 drawing 階段可以繪畫，編劇/投票/結算階段禁止
+  const canDraw = computed(() => {
+    if (!isCurrentDrawer.value) return false
+    
+    // 分鏡模式：只有 drawing 階段可以繪畫
+    if (roomStore.currentRoom?.game_mode === 'storyboard') {
+      return storyStore.currentPhase === 'drawing'
+    }
+    
+    // 經典模式：畫家在繪畫階段可以繪畫
+    return true
   })
 
   // 節流相關
@@ -89,9 +105,9 @@ export function useDrawing() {
   function startDrawing(event: MouseEvent | TouchEvent) {
     if (!canvasRef.value) return
     
-    // 只有當前畫家可以繪畫
-    if (!isCurrentDrawer.value) {
-      console.log('[useDrawing] 非畫家不能繪畫')
+    // 檢查是否可以繪畫（考慮分鏡模式階段）
+    if (!canDraw.value) {
+      console.log('[useDrawing] 當前不能繪畫（非畫家或非繪畫階段）')
       return
     }
 

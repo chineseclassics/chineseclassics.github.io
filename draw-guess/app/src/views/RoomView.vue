@@ -130,7 +130,7 @@
                   <span class="task-hint">✍️ 接續劇情，描述這一鏡</span>
                 </template>
                 <template v-else-if="isStoryboardVoting">
-                  <span class="phase-action">🗳️ 選擇最佳句子</span>
+                  <span class="phase-action voting-action">🗳️ 在右側面板選擇最佳句子 👉</span>
                 </template>
                 <template v-else-if="isStoryboardSummary">
                   <span class="phase-action">🎬 本鏡完成</span>
@@ -363,7 +363,7 @@
 
           <!-- 分鏡模式：故事面板 -->
           <!-- Requirements: 10.2, 10.7, 10.8, 10.9 -->
-          <div v-else class="game-story-panel">
+          <div v-else class="game-story-panel" :class="{ 'voting-highlight': isStoryboardVoting }">
             <StoryPanel
               :phase="storyboardPhase"
               :story-history="storyHistory"
@@ -1770,6 +1770,9 @@ onMounted(async () => {
           // 載入故事鏈以獲取最新數據
           if (currentRoom.value) {
             await loadStoryChain(currentRoom.value.id)
+            // 載入最新的參與者分數，確保排行榜和分數顯示正確
+            // 房主已在本地更新分數，非房主需要從數據庫載入
+            await roomStore.loadParticipants(currentRoom.value.id)
           }
           
           // 載入最新的提交和投票數據，確保投票統計顯示正確
@@ -2289,6 +2292,21 @@ onUnmounted(() => {
   color: var(--text-secondary);
 }
 
+/* 投票階段特殊高亮提示 */
+.phase-action.voting-action {
+  color: var(--color-primary);
+  animation: votingTextPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes votingTextPulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
 /* Final_Round 結局倒數提示 */
 /* Requirements: 7.5, 7.6 */
 .final-round-hint {
@@ -2735,6 +2753,22 @@ onUnmounted(() => {
   flex-direction: column;
   overflow: hidden;
   margin-left: 0.5rem;
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+/* 投票階段高亮效果 - 吸引用戶注意右側投票區 */
+.game-story-panel.voting-highlight {
+  box-shadow: 0 0 0 3px var(--color-primary), 0 0 20px rgba(var(--color-primary-rgb), 0.4);
+  animation: votingPulse 2s ease-in-out infinite;
+}
+
+@keyframes votingPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 3px var(--color-primary), 0 0 20px rgba(var(--color-primary-rgb), 0.3);
+  }
+  50% {
+    box-shadow: 0 0 0 4px var(--color-primary), 0 0 30px rgba(var(--color-primary-rgb), 0.5);
+  }
 }
 
 .chat-messages-container {
