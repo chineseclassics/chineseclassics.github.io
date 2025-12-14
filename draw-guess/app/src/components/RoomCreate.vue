@@ -193,7 +193,22 @@
 
           <!-- 自定義詞語（傳統模式專用） -->
           <div v-if="form.gameMode === 'classic'" class="form-group words-input-group">
-            <label>自定義詞語（至少 6 個，支持中英文詞語）</label>
+            <div class="words-label-row">
+              <label>自定義詞語（至少 6 個，支持中英文詞語）</label>
+              <button
+                type="button"
+                class="ai-generate-btn"
+                :disabled="aiGenerating || aiRateLimited"
+                @click="handleAIGenerate"
+              >
+                <span v-if="aiGenerating" class="ai-btn-loading">⏳ 生成中...</span>
+                <span v-else-if="aiRateLimited" class="ai-btn-limited">🚫 請稍後再試</span>
+                <span v-else>✨ AI 生成</span>
+              </button>
+            </div>
+            <!-- AI 生成提示信息 -->
+            <div v-if="aiError" class="ai-error-message">{{ aiError }}</div>
+            <div v-if="aiInfoMessage" class="ai-info-message">{{ aiInfoMessage }}</div>
             <textarea
               v-model="form.wordsText"
               rows="6"
@@ -274,6 +289,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoom } from '../composables/useRoom'
 import { useWordLibrary } from '../composables/useWordLibrary'
+import { useAIWordGenerator, formatWordsForInput } from '../composables/useAIWordGenerator'
 
 const emit = defineEmits<{
   cancel: []
@@ -289,6 +305,16 @@ const {
   loadCollections,
   loadEntries,
 } = useWordLibrary()
+
+// AI 智能詞語生成
+const {
+  isGenerating: aiGenerating,
+  isRateLimited: aiRateLimited,
+  error: aiError,
+  generateWords: aiGenerateWords,
+} = useAIWordGenerator()
+
+const aiInfoMessage = ref<string | null>(null)
 
 const form = ref({
   name: '',
@@ -496,6 +522,34 @@ function handleClickOutside(event: MouseEvent) {
   }
 }
 
+// AI 智能生成詞語
+async function handleAIGenerate() {
+  // 檢查主題是否已填寫
+  if (!form.value.name.trim()) {
+    aiInfoMessage.value = '請先輸入詞句主題'
+    return
+  }
+
+  aiInfoMessage.value = null
+  
+  const result = await aiGenerateWords(form.value.name.trim())
+  
+  if (result) {
+    // 將生成的詞語填入輸入框（清空現有內容）
+    form.value.wordsText = formatWordsForInput(result.words)
+    
+    // 顯示提示信息
+    if (result.isThemeAdjusted && result.adjustedTheme) {
+      aiInfoMessage.value = `已根據「${result.adjustedTheme}」主題生成 ${result.words.length} 個詞語`
+    } else {
+      aiInfoMessage.value = `已生成 ${result.words.length} 個詞語`
+    }
+    
+    // 清空詞庫來源記錄（AI 生成的詞語不算詞庫來源）
+    libraryWords.value = new Set()
+  }
+}
+
 onMounted(() => {
   loadCollections()
   document.addEventListener('click', handleClickOutside)
@@ -579,6 +633,85 @@ async function handleSubmit() {
 /* 自定義詞語輸入組 */
 .words-input-group {
   margin-top: 1.5rem;
+}
+
+/* 詞語標籤行（包含標籤和 AI 生成按鈕） */
+.words-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.words-label-row label {
+  margin-bottom: 0;
+}
+
+/* AI 生成按鈕 */
+.ai-generate-btn {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.85rem;
+  font-family: var(--font-body);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: 2px solid #5a67d8;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 2px 2px 0 rgba(90, 103, 216, 0.3);
+  white-space: nowrap;
+}
+
+.ai-generate-btn:hover:not(:disabled) {
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 rgba(90, 103, 216, 0.4);
+}
+
+.ai-generate-btn:active:not(:disabled) {
+  transform: translate(0, 0);
+  box-shadow: 1px 1px 0 rgba(90, 103, 216, 0.3);
+}
+
+.ai-generate-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: #9ca3af;
+  border-color: #9ca3af;
+}
+
+.ai-btn-loading {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.ai-btn-limited {
+  color: #fbbf24;
+}
+
+/* AI 生成提示信息 */
+.ai-error-message {
+  font-size: 0.85rem;
+  color: #e8590c;
+  margin-bottom: 0.5rem;
+  padding: 0.5rem;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 4px;
+}
+
+.ai-info-message {
+  font-size: 0.85rem;
+  color: #059669;
+  margin-bottom: 0.5rem;
+  padding: 0.5rem;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  border-radius: 4px;
 }
 
 .words-textarea {
