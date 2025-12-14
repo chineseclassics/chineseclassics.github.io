@@ -1644,7 +1644,7 @@ onMounted(async () => {
       console.error('[RoomView] Realtime Channel 連接失敗:', err)
     }
 
-    // 訂閱遊戲狀態廣播（同步 roundStatus、wordOptions 等）
+    // 訂閱遊戲狀態廣播（同步 roundStatus、詞語長度等）
     // 現在 broadcast self: true，所有人（包括房主）都會收到廣播，統一處理
     subscribeGameState(currentRoom.value.code, async (state) => {
       console.log('[RoomView] 收到遊戲狀態廣播:', state)

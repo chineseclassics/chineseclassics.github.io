@@ -7,7 +7,7 @@ import { supabase } from '../lib/supabase'
 import type { StoryboardPhase } from '../types/storyboard'
 
 // 總結頁面顯示時間（秒）
-const SUMMARY_TIME = 6
+const SUMMARY_TIME = 5
 
 // ========== 分鏡模式配置 ==========
 // 各階段時間（秒）
@@ -347,6 +347,10 @@ export function useGame() {
       // 更新房間當前畫家
       await roomStore.updateRoomDrawer(drawer.user_id)
 
+      // ⭐ 重要：在創建新輪次之前，先重置 roundStatus 為 'drawing'
+      // 這避免了在 createRound 設置 currentWord 後，總結階段 UI 短暫顯示新詞語的問題
+      gameStore.setRoundStatus('drawing')
+
       // 創建新輪次
       const result = await gameStore.createRound(
         roomStore.currentRoom.id,
@@ -378,7 +382,6 @@ export function useGame() {
         // 傳統模式：廣播傳統模式狀態
         await broadcastGameState(roomStore.currentRoom!.code, {
           roundStatus: 'drawing',
-          wordOptions: [],
           wordLength: word.text.length,  // 傳遞詞語長度給非畫家顯示下劃線
           drawerId: drawer.user_id,
           drawerName: drawer.nickname,
@@ -431,7 +434,6 @@ export function useGame() {
       const { broadcastGameState } = useRealtime()
       await broadcastGameState(roomStore.currentRoom!.code, {
         roundStatus: 'summary',
-        wordOptions: [],
         drawerId: roomStore.currentRoom!.current_drawer_id ?? undefined,
         isLastRound: isLastRound
       })

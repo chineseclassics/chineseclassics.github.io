@@ -5,15 +5,8 @@ import { useAuthStore } from './auth'
 import { useRoomStore } from './room'
 import { useScoring } from '../composables/useScoring'
 
-// 輪次狀態類型
-export type RoundStatus = 'selecting' | 'drawing' | 'summary'
-
-// 詞語選項接口
-export interface WordOption {
-  text: string
-  source: 'wordlist' | 'custom'
-  difficulty?: 'easy' | 'medium' | 'hard'
-}
+// 輪次狀態類型（已移除 'selecting'，現在系統自動分配詞語）
+export type RoundStatus = 'drawing' | 'summary'
 
 // 評分接口
 export interface DrawingRating {
@@ -33,7 +26,6 @@ export interface GameRound {
   drawer_id: string
   word_text: string
   word_source: 'wordlist' | 'custom'
-  word_options?: WordOption[]
   status: RoundStatus
   started_at: string
   ended_at: string | null
@@ -69,7 +61,6 @@ export const useGameStore = defineStore('game', () => {
 
   // 輪次狀態管理
   const roundStatus = ref<RoundStatus>('drawing')
-  const wordOptions = ref<WordOption[]>([])
   const ratings = ref<DrawingRating[]>([])
   
   // 提示功能狀態
@@ -85,11 +76,6 @@ export const useGameStore = defineStore('game', () => {
   // 設置輪次狀態
   function setRoundStatus(status: RoundStatus) {
     roundStatus.value = status
-  }
-
-  // 設置詞語選項
-  function setWordOptions(options: WordOption[]) {
-    wordOptions.value = options
   }
 
   // 添加評分
@@ -191,11 +177,6 @@ export const useGameStore = defineStore('game', () => {
         // 因為 'summary' 狀態只存在於前端內存中，數據庫沒有這個狀態
         // 如果從數據庫同步，會覆蓋掉 'summary' 狀態，導致總結頁面一閃而過
         // roundStatus 完全由前端的 gameStore.setRoundStatus() 控制
-        
-        // 同步詞語選項（如果有）
-        if (data.word_options && Array.isArray(data.word_options)) {
-          wordOptions.value = data.word_options as WordOption[]
-        }
         
         // 恢復提示狀態（頁面刷新時從數據庫恢復）
         if (data.hint_given !== undefined) {
@@ -368,7 +349,6 @@ export const useGameStore = defineStore('game', () => {
     currentWordLength.value = 0
     guesses.value = []
     roundStatus.value = 'drawing'
-    wordOptions.value = []
     ratings.value = []
     hintGiven.value = false
     revealedIndices.value = []
@@ -439,7 +419,6 @@ export const useGameStore = defineStore('game', () => {
     isCurrentDrawer,
     // 輪次狀態
     roundStatus,
-    wordOptions,
     ratings,
     averageRating,
     // 提示狀態
@@ -456,7 +435,6 @@ export const useGameStore = defineStore('game', () => {
     clearGame,
     // 輪次狀態方法
     setRoundStatus,
-    setWordOptions,
     addRating,
     clearRatings,
     submitRating,

@@ -362,7 +362,6 @@ export function useRealtime() {
     roundStatus: string
     drawerId?: string
     drawerName?: string
-    wordOptions?: any[]
     wordLength?: number  // 詞語長度（非畫家用於顯示下劃線）
     roundNumber?: number
     isLastRound?: boolean
