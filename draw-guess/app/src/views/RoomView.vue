@@ -388,13 +388,6 @@
       @submit="handleStorySetupSubmit"
     />
 
-    <!-- 分鏡模式畫手教學彈窗 -->
-    <!-- 玩家第一次成為畫手時顯示，說明「續創」vs「圖解」的區別 -->
-    <DrawerTutorialModal
-      v-if="showDrawerTutorial"
-      @close="handleDrawerTutorialClose"
-    />
-
     <!-- 分鏡模式局結束彈窗 -->
     <!-- Requirements: 7.3 - 一局結束時詢問房主是否設為最後一局 -->
     <FinalRoundModal
@@ -445,7 +438,6 @@ import StoryboardSummary from '../components/StoryboardSummary.vue'
 import FinalRoundModal from '../components/FinalRoundModal.vue'
 import StoryEndingModal from '../components/StoryEndingModal.vue'
 import StoryReview from '../components/StoryReview.vue'
-import DrawerTutorialModal from '../components/DrawerTutorialModal.vue'
 import { useRoomStore } from '../stores/room'
 import { useGameStore } from '../stores/game'
 import { useAuthStore } from '../stores/auth'
@@ -543,29 +535,6 @@ const showStoryEndingModal = ref(false)
 // ========== 分鏡模式故事回顧狀態 ==========
 // Requirements: 7.9, 8.1 - 提交或跳過結尾後進入故事回顧
 const showStoryReview = ref(false)
-
-// ========== 畫手教學彈窗狀態 ==========
-// 分鏡模式中，玩家第一次成為畫手時顯示教學
-const showDrawerTutorial = ref(false)
-const DRAWER_TUTORIAL_STORAGE_KEY = 'draw-guess-drawer-tutorial-shown'
-
-/** 檢查是否需要顯示畫手教學 */
-function checkShowDrawerTutorial() {
-  // 檢查 localStorage 是否已經顯示過
-  const hasShown = localStorage.getItem(DRAWER_TUTORIAL_STORAGE_KEY)
-  if (hasShown === 'true') {
-    return false
-  }
-  return true
-}
-
-/** 處理畫手教學彈窗關閉 */
-function handleDrawerTutorialClose(dontShowAgain: boolean) {
-  showDrawerTutorial.value = false
-  if (dontShowAgain) {
-    localStorage.setItem(DRAWER_TUTORIAL_STORAGE_KEY, 'true')
-  }
-}
 
 const {
   myVote,
@@ -1617,10 +1586,6 @@ onMounted(async () => {
               // 載入故事鏈以獲取最新的故事開頭
               if (currentRoom.value) {
                 await loadStoryChain(currentRoom.value.id)
-              }
-              // 如果當前用戶是畫手，檢查是否需要顯示教學彈窗
-              if (isCurrentDrawer.value && checkShowDrawerTutorial()) {
-                showDrawerTutorial.value = true
               }
               break
             case 'writing':
