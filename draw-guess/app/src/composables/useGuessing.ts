@@ -62,7 +62,20 @@ export function useGuessing() {
       error.value = null
 
       const guessText = guessInput.value.trim()
-      const correctWord = gameStore.currentWord || ''
+      
+      // 從數據庫獲取正確答案（因為非畫家的 gameStore.currentWord 為 null）
+      // 這樣可以確保猜測匹配不依賴前端狀態
+      const { data: roundData, error: fetchError } = await supabase
+        .from('game_rounds')
+        .select('word_text')
+        .eq('id', gameStore.currentRound.id)
+        .single()
+      
+      if (fetchError || !roundData) {
+        throw new Error('無法獲取當前輪次信息')
+      }
+      
+      const correctWord = roundData.word_text || ''
 
       // 匹配判斷（精確匹配，忽略首尾空格）
       const isCorrect = matchGuess(guessText, correctWord)
