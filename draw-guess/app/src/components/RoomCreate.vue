@@ -5,20 +5,7 @@
         <h2 class="card-title text-hand-title">創建房間</h2>
 
         <form @submit.prevent="handleSubmit">
-          <!-- 房間主題 -->
-          <div class="form-group room-theme-group">
-            <label>房間主題</label>
-            <input
-              v-model="form.name"
-              type="text"
-              placeholder="輸入房間主題（例如：古代作家、紅樓夢等）"
-              maxlength="50"
-              required
-              class="room-theme-input"
-            />
-          </div>
-
-          <!-- 遊戲模式選擇 -->
+          <!-- 遊戲模式選擇（放在最上面） -->
           <div class="form-group game-mode-group">
             <label>遊戲模式</label>
             <div class="game-mode-options">
@@ -53,6 +40,21 @@
                 </div>
               </label>
             </div>
+          </div>
+
+          <!-- 房間主題/故事標題（根據模式動態變化） -->
+          <div class="form-group room-theme-group">
+            <label>{{ form.gameMode === 'storyboard' ? '故事標題' : '詞句主題' }}</label>
+            <input
+              v-model="form.name"
+              type="text"
+              :placeholder="form.gameMode === 'storyboard' 
+                ? '決定集體創作故事的走向，如「林黛玉的港漂日記」' 
+                : '為玩家提示猜詞範圍，如「香港小吃」'"
+              maxlength="50"
+              required
+              class="room-theme-input"
+            />
           </div>
 
           <!-- 單場模式選項（分鏡模式專用） -->
