@@ -193,7 +193,7 @@
 
           <!-- 自定義詞語（傳統模式專用） -->
           <div v-if="form.gameMode === 'classic'" class="form-group words-input-group">
-            <label>自定義詞語（至少 6 個，每個 1-32 字符，最多 600 字符）</label>
+            <label>自定義詞語（至少 6 個，支持中英文詞語）</label>
             <textarea
               v-model="form.wordsText"
               rows="6"
