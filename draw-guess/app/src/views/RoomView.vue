@@ -1758,6 +1758,14 @@ onMounted(async () => {
             await loadStoryChain(currentRoom.value.id)
           }
           
+          // 載入最新的提交和投票數據，確保投票統計顯示正確
+          // 這對非房主玩家尤其重要，避免實時同步遺漏導致顯示不準確
+          if (gameStore.currentRound) {
+            console.log('[RoomView] 載入提交和投票數據以顯示投票結果')
+            await storyStore.loadSubmissions(gameStore.currentRound.id)
+            await storyStore.loadVotes(gameStore.currentRound.id)
+          }
+          
           // 如果廣播中包含結算結果，更新本地結算結果（非房主玩家）
           if (state.storyboardRoundResult && !roomStore.isHost) {
             console.log('[RoomView] 從廣播接收結算結果:', state.storyboardRoundResult)
@@ -1781,9 +1789,20 @@ onMounted(async () => {
           if (isGameComplete) {
             console.log('[RoomView] 分鏡模式完成一局，等待房主選擇')
           } else {
-            // 未完成一局，啟動 5 秒倒計時後自動進入下一輪
-            console.log('[RoomView] 分鏡模式結算開始，', STORYBOARD_SUMMARY_TIME, '秒後自動進入下一輪')
-            startStoryboardCountdown(STORYBOARD_SUMMARY_TIME, handleStoryboardSummaryEnd)
+            // 未完成一局，啟動倒計時後自動進入下一輪
+            // 使用 startedAt 計算剩餘時間，確保所有玩家同步
+            if (state.startedAt) {
+              const startTime = new Date(state.startedAt).getTime()
+              const now = Date.now()
+              const elapsed = Math.floor((now - startTime) / 1000)
+              const remaining = Math.max(0, STORYBOARD_SUMMARY_TIME - elapsed)
+              console.log('[RoomView] 分鏡模式結算倒計時同步:', remaining, '秒 (elapsed:', elapsed, '秒)')
+              startStoryboardCountdown(remaining, handleStoryboardSummaryEnd)
+            } else {
+              // 降級：如果沒有 startedAt，使用固定時間
+              console.log('[RoomView] 分鏡模式結算開始，', STORYBOARD_SUMMARY_TIME, '秒後自動進入下一輪')
+              startStoryboardCountdown(STORYBOARD_SUMMARY_TIME, handleStoryboardSummaryEnd)
+            }
           }
         }
         
@@ -1868,7 +1887,18 @@ onMounted(async () => {
             // 不開始倒計時，不自動跳轉，等待用戶點擊按鈕
           } else {
             // 還有下一輪（未完成一局），開始總結倒計時，自動進入下一輪
-            startSummaryCountdown()
+            // 使用 startedAt 計算剩餘時間，確保所有玩家同步
+            if (state.startedAt) {
+              const startTime = new Date(state.startedAt).getTime()
+              const now = Date.now()
+              const elapsed = Math.floor((now - startTime) / 1000)
+              const remaining = Math.max(0, 5 - elapsed)  // SUMMARY_TIME = 5
+              console.log('[RoomView] 總結倒計時同步:', remaining, '秒 (elapsed:', elapsed, '秒)')
+              startSummaryCountdown(remaining)
+            } else {
+              // 降級：如果沒有 startedAt，使用固定時間
+              startSummaryCountdown()
+            }
           }
           return // 已經載入過了，不需要再載入
         }

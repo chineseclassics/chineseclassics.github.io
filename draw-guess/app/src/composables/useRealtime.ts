@@ -270,15 +270,18 @@ export function useRealtime() {
       })
       
       // 分鏡模式投票記錄 - 實時同步以支持提前結束投票階段
+      // 注意：必須監聽 * 事件（INSERT 和 UPDATE），因為 castVote 使用 upsert
+      // 首次投票觸發 INSERT，更改投票觸發 UPDATE
       .on('postgres_changes', {
-        event: 'INSERT',
+        event: '*',
         schema: 'public',
         table: 'story_votes',
       }, (payload) => {
         const newVote = payload.new as any
         if (newVote && gameStore.currentRound && newVote.round_id === gameStore.currentRound.id) {
-          log('收到新投票:', newVote)
+          log('收到投票變更:', payload.eventType, newVote)
           // 使用 toVote 轉換並更新本地狀態
+          // addVoteLocal 會正確處理新增和更新
           const vote = toVote(newVote)
           storyStore.addVoteLocal(vote)
         }

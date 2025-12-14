@@ -150,16 +150,18 @@ export function useGame() {
     globalTimeRemaining.value = null
   }
 
-  // 開始總結倒計時（每輪結束後顯示 3 秒總結）
-  function startSummaryCountdown() {
+  // 開始總結倒計時（每輪結束後顯示總結）
+  // @param remainingSeconds 可選的剩餘時間（用於時間同步），若不提供則使用 SUMMARY_TIME
+  function startSummaryCountdown(remainingSeconds?: number) {
     console.log('[useGame] startSummaryCountdown 開始')
     
     if (globalSummaryTimer) {
       clearInterval(globalSummaryTimer)
     }
 
-    globalSummaryTimeRemaining.value = SUMMARY_TIME
-    console.log('[useGame] 開始總結倒計時:', SUMMARY_TIME, '秒')
+    const duration = remainingSeconds ?? SUMMARY_TIME
+    globalSummaryTimeRemaining.value = duration
+    console.log('[useGame] 開始總結倒計時:', duration, '秒')
 
     globalSummaryTimer = window.setInterval(async () => {
       if (globalSummaryTimeRemaining.value !== null && globalSummaryTimeRemaining.value > 0) {
@@ -431,11 +433,13 @@ export function useGame() {
 
       // 2. 廣播進入總結階段（所有人包括房主在回調中統一處理）
       // 數據庫已在 gameStore.endRound() 中更新，這裡只需廣播
+      // 包含 startedAt 以確保所有玩家的總結倒計時同步
       const { broadcastGameState } = useRealtime()
       await broadcastGameState(roomStore.currentRoom!.code, {
         roundStatus: 'summary',
         drawerId: roomStore.currentRoom!.current_drawer_id ?? undefined,
-        isLastRound: isLastRound
+        isLastRound: isLastRound,
+        startedAt: new Date().toISOString()
       })
 
       return { success: true, gameEnded: isLastRound }
@@ -882,6 +886,14 @@ export function useGame() {
     console.log('[useGame] 開始分鏡模式輪次結算，輪次:', roundNumber)
 
     try {
+      // ========== 0. 確保數據完整性 ==========
+      // 從數據庫載入最新的提交和投票數據，避免實時同步遺漏
+      const roundId = gameStore.currentRound.id
+      console.log('[useGame] 載入最新的提交和投票數據，輪次 ID:', roundId)
+      await storyStore.loadSubmissions(roundId)
+      await storyStore.loadVotes(roundId)
+      console.log('[useGame] 數據載入完成 - 提交:', storyStore.submissions.length, '投票:', storyStore.votes.length)
+
       // ========== 1. 計算勝出句子 ==========
       // Requirements: 6.1, 6.2, 6.3
       const { submission: winningSubmission, voteCount, hasTie } = calculateWinningSentence()
