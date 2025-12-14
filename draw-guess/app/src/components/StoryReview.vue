@@ -144,10 +144,12 @@
       <div class="action-buttons">
         <button 
           class="action-btn btn-primary"
-          @click="handleRestart"
+          :disabled="isSaving"
+          @click="handleSaveAsPdf"
         >
-          <PhArrowCounterClockwise :size="20" weight="bold" />
-          重新開始
+          <PhDownloadSimple v-if="!isSaving" :size="20" weight="bold" />
+          <PhSpinnerGap v-else :size="20" weight="bold" class="spin-icon" />
+          {{ isSaving ? '生成中...' : '保存故事' }}
         </button>
         <button 
           class="action-btn btn-secondary"
@@ -187,7 +189,8 @@ import {
   PhSealCheck,
   PhTrophy,
   PhCrown,
-  PhArrowCounterClockwise,
+  PhDownloadSimple,
+  PhSpinnerGap,
   PhHouse
 } from '@phosphor-icons/vue'
 import type { StoryChainItem, PlayerScore, Participant } from '../types/storyboard'
@@ -221,8 +224,6 @@ const props = withDefaults(defineProps<Props>(), {
 // ============================================
 
 const emit = defineEmits<{
-  /** 重新開始遊戲 */
-  (e: 'restart'): void
   /** 返回首頁 */
   (e: 'go-home'): void
 }>()
@@ -232,6 +233,12 @@ const emit = defineEmits<{
 // ============================================
 
 const panelsRef = ref<HTMLElement | null>(null)
+
+// ============================================
+// 狀態
+// ============================================
+
+const isSaving = ref(false)
 
 // ============================================
 // 計算屬性
@@ -338,11 +345,103 @@ function handleImageError(event: Event) {
 }
 
 /**
- * 處理重新開始
- * Requirements: 8.6
+ * 處理保存為 PDF
+ * 將故事板轉換為 PDF 並下載
  */
-function handleRestart() {
-  emit('restart')
+async function handleSaveAsPdf() {
+  if (!panelsRef.value || isSaving.value) return
+  
+  isSaving.value = true
+  
+  try {
+    // 動態導入 html2canvas 和 jsPDF（減少初始載入體積）
+    const [html2canvasModule, jspdfModule] = await Promise.all([
+      import('html2canvas'),
+      import('jspdf')
+    ])
+    const html2canvas = html2canvasModule.default
+    const { jsPDF } = jspdfModule
+    
+    // 獲取整個故事回顧容器
+    const container = panelsRef.value.closest('.review-container') as HTMLElement
+    if (!container) {
+      console.error('[StoryReview] 找不到容器元素')
+      return
+    }
+    
+    // 隱藏操作按鈕區域（不需要包含在 PDF 中）
+    const actionButtons = container.querySelector('.action-buttons') as HTMLElement
+    if (actionButtons) {
+      actionButtons.style.display = 'none'
+    }
+    
+    // 使用 html2canvas 截圖
+    const canvas = await html2canvas(container, {
+      scale: 2, // 提高解析度
+      useCORS: true, // 允許跨域圖片
+      logging: false,
+      backgroundColor: '#f5f0e6', // 與背景色匹配
+      windowWidth: 800, // 固定寬度確保一致性
+    })
+    
+    // 恢復操作按鈕
+    if (actionButtons) {
+      actionButtons.style.display = ''
+    }
+    
+    // 計算 PDF 尺寸（A4 紙張）
+    const imgWidth = 190 // A4 寬度減去邊距
+    const imgHeight = (canvas.height * imgWidth) / canvas.width
+    
+    // 創建 PDF
+    const pdf = new jsPDF({
+      orientation: imgHeight > 270 ? 'portrait' : 'portrait',
+      unit: 'mm',
+      format: 'a4'
+    })
+    
+    // 添加標題
+    const title = displayTitle.value || '分鏡故事'
+    
+    // 如果內容很長，需要分頁
+    const pageHeight = 287 // A4 高度減去邊距
+    let position = 10 // 起始位置
+    
+    // 添加圖片到 PDF
+    const imgData = canvas.toDataURL('image/jpeg', 0.95)
+    
+    if (imgHeight <= pageHeight) {
+      // 單頁
+      pdf.addImage(imgData, 'JPEG', 10, position, imgWidth, imgHeight)
+    } else {
+      // 多頁
+      let heightLeft = imgHeight
+      let currentPosition = position
+      
+      while (heightLeft > 0) {
+        pdf.addImage(imgData, 'JPEG', 10, currentPosition, imgWidth, imgHeight)
+        heightLeft -= pageHeight
+        
+        if (heightLeft > 0) {
+          pdf.addPage()
+          currentPosition = -pageHeight + position + (imgHeight - heightLeft)
+        }
+      }
+    }
+    
+    // 生成檔案名
+    const filename = `${title.replace(/[^\u4e00-\u9fa5a-zA-Z0-9]/g, '_')}_分鏡故事.pdf`
+    
+    // 下載 PDF
+    pdf.save(filename)
+    
+    console.log('[StoryReview] PDF 已生成並下載:', filename)
+  } catch (err) {
+    console.error('[StoryReview] PDF 生成失敗:', err)
+    alert('PDF 生成失敗，請稍後再試')
+  } finally {
+    isSaving.value = false
+  }
 }
 
 /**
@@ -922,6 +1021,16 @@ function handleGoHome() {
 
 .btn-secondary:hover {
   background: var(--bg-secondary);
+}
+
+/* 旋轉動畫 */
+.spin-icon {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 /* ============================================

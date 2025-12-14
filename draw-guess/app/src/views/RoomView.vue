@@ -389,7 +389,6 @@
         :title="currentRoom?.name || ''"
         :participants="storyboardParticipants"
         :scores="storyboardPlayerScores"
-        @restart="handleStoryReviewRestart"
         @go-home="handleStoryReviewGoHome"
       />
       
@@ -455,7 +454,6 @@
         :title="currentRoom?.name || ''"
         :participants="storyboardParticipants"
         :scores="storyboardPlayerScores"
-        @restart="handleStoryReviewRestart"
         @go-home="handleStoryReviewGoHome"
       />
     </div>
@@ -1482,31 +1480,6 @@ async function enterStoryReview() {
   
   // 顯示故事回顧
   showStoryReview.value = true
-}
-
-/**
- * 處理故事回顧重新開始
- */
-async function handleStoryReviewRestart() {
-  console.log('[RoomView] 故事回顧：重新開始')
-  
-  // 關閉故事回顧
-  showStoryReview.value = false
-  
-  // 重置房間狀態
-  if (roomStore.isHost && currentRoom.value) {
-    // 重置房間狀態為 waiting
-    await roomStore.updateRoomStatus('waiting')
-    
-    // 重置最後一局標記
-    await roomStore.setFinalRound(false)
-    
-    // 清除故事數據
-    storyStore.clearAll()
-    
-    // 重置分鏡模式階段
-    setStoryboardPhase('setup')
-  }
 }
 
 /**
