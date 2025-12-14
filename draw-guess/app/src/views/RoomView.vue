@@ -47,42 +47,46 @@
               <span class="time-label">秒後繼續</span>
             </div>
             
-            <!-- 輪次信息 -->
-            <div class="round-info">
-              <span class="round-label">
-                第 {{ currentGameNumber }} 局 · 第 {{ currentRoundInGame }} / {{ totalRoundsPerGame }} 輪
-              </span>
-              <span v-if="isSummary" class="phase-label">輪次結算</span>
-            </div>
-            
-            <!-- 當前詞語（僅繪畫階段且畫家可見） -->
-            <div v-if="isDrawing && isCurrentDrawer && gameStore.currentWord" class="word-display">
-              <span class="word-label">你的詞語</span>
-              <span class="word-text">{{ gameStore.currentWord }}</span>
-              <!-- 提示按鈕：30秒後顯示，未給過提示時可點擊 -->
-              <button 
-                v-if="canShowHintButton" 
-                class="hint-btn"
-                :disabled="gameStore.hintGiven"
-                @click="handleGiveHint"
-                :title="gameStore.hintGiven ? '已給過提示' : '揭示一個字給猜測者'"
-              >
-                <PhLightbulb :size="18" weight="fill" />
-                {{ gameStore.hintGiven ? '已提示' : '給提示' }}
-              </button>
-            </div>
-            <!-- 非畫家顯示提示和畫家名稱（繪畫階段） -->
-            <div v-else-if="isDrawing" class="word-display">
-              <span class="drawer-hint"><PhPaintBrush :size="18" weight="fill" class="hint-icon" /> {{ currentDrawerName }} 正在畫</span>
-              <span class="word-slots" :class="{ 'hint-revealed': gameStore.hintGiven }">{{ getWordHint }}</span>
-              <span v-if="gameStore.hintGiven" class="hint-badge">
-                <PhLightbulb :size="14" weight="fill" /> 已提示
-              </span>
-            </div>
-            <!-- 總結階段：顯示答案 -->
-            <div v-else-if="isSummary && gameStore.currentWord" class="word-display summary-word">
-              <span class="word-label">答案是</span>
-              <span class="word-text revealed">{{ gameStore.currentWord }}</span>
+            <!-- 傳統模式右側信息區：兩行佈局 -->
+            <div class="traditional-info-area">
+              <!-- 上行：輪次信息 -->
+              <div class="round-info">
+                <span class="round-label">
+                  第 {{ currentGameNumber }} 局 · 第 {{ currentRoundInGame }} / {{ totalRoundsPerGame }} 輪
+                </span>
+                <span v-if="isSummary" class="phase-label">輪次結算</span>
+              </div>
+              
+              <!-- 下行：當前詞語或畫家信息 -->
+              <!-- 當前詞語（僅繪畫階段且畫家可見） -->
+              <div v-if="isDrawing && isCurrentDrawer && gameStore.currentWord" class="word-display">
+                <span class="word-label">你的詞語</span>
+                <span class="word-text">{{ gameStore.currentWord }}</span>
+                <!-- 提示按鈕：30秒後顯示，未給過提示時可點擊 -->
+                <button 
+                  v-if="canShowHintButton" 
+                  class="hint-btn"
+                  :disabled="gameStore.hintGiven"
+                  @click="handleGiveHint"
+                  :title="gameStore.hintGiven ? '已給過提示' : '揭示一個字給猜測者'"
+                >
+                  <PhLightbulb :size="18" weight="fill" />
+                  {{ gameStore.hintGiven ? '已提示' : '給提示' }}
+                </button>
+              </div>
+              <!-- 非畫家顯示提示和畫家名稱（繪畫階段） -->
+              <div v-else-if="isDrawing" class="word-display">
+                <span class="drawer-hint"><PhPaintBrush :size="18" weight="fill" class="hint-icon" /> {{ currentDrawerName }} 正在畫</span>
+                <span class="word-slots" :class="{ 'hint-revealed': gameStore.hintGiven }">{{ getWordHint }}</span>
+                <span v-if="gameStore.hintGiven" class="hint-badge">
+                  <PhLightbulb :size="14" weight="fill" /> 已提示
+                </span>
+              </div>
+              <!-- 總結階段：顯示答案 -->
+              <div v-else-if="isSummary && gameStore.currentWord" class="word-display summary-word">
+                <span class="word-label">答案是</span>
+                <span class="word-text revealed">{{ gameStore.currentWord }}</span>
+              </div>
             </div>
           </template>
 
@@ -1537,7 +1541,8 @@ onMounted(async () => {
   // 如果已有房間，載入當前輪次並訂閱實時更新
   if (currentRoom.value && authStore.user) {
     console.log('[RoomView] 房間狀態:', currentRoom.value.status)
-    await gameStore.loadCurrentRound(currentRoom.value.id)
+    // 初始載入時，先不設置詞語（稍後根據輪次狀態決定）
+    await gameStore.loadCurrentRound(currentRoom.value.id, false)
 
     // ========== 初始化遊戲狀態（修復錯過廣播的問題） ==========
     // 如果房間正在遊戲中，且有當前輪次，需要初始化 roundStatus 和倒計時
@@ -1604,7 +1609,10 @@ onMounted(async () => {
           console.log('[RoomView] 刷新恢復倒計時:', remaining, '秒')
           startCountdown(remaining)
         } else if (round.ended_at) {
-          console.log('[RoomView] 輪次已結束，可能是總結階段')
+          console.log('[RoomView] 輪次已結束，進入總結階段')
+          gameStore.setRoundStatus('summary')
+          // 總結階段：重新載入輪次，讓所有人都能看到答案
+          await gameStore.loadCurrentRound(currentRoom.value!.id, true)
         }
       }
     }
@@ -1635,9 +1643,17 @@ onMounted(async () => {
       }
       
       // 處理提示狀態更新（不改變 roundStatus）
+      // 如果只是提示更新（沒有 startedAt），不需要重新載入輪次
+      const isHintOnlyUpdate = state.hintGiven !== undefined && state.revealedIndices !== undefined && !state.startedAt
       if (state.hintGiven !== undefined && state.revealedIndices !== undefined) {
         console.log('[RoomView] 更新提示狀態:', state.hintGiven, state.revealedIndices)
         gameStore.setHintState(state.hintGiven, state.revealedIndices)
+        
+        // 如果只是提示更新，不需要重新載入輪次，直接返回
+        if (isHintOnlyUpdate) {
+          console.log('[RoomView] 只是提示更新，跳過重新載入輪次')
+          return
+        }
       }
 
       // ========== 分鏡模式階段處理 ==========
@@ -1799,6 +1815,8 @@ onMounted(async () => {
           // 重新載入房間數據以獲取最新的 current_round
           if (currentRoom.value) {
             await roomStore.loadRoom(currentRoom.value.id)
+            // 總結階段載入輪次時，所有人都可以看到答案
+            await gameStore.loadCurrentRound(currentRoom.value.id, true)
           }
           
           // 檢查是否完成一局（一局 = 玩家數量的輪數）
@@ -1816,13 +1834,14 @@ onMounted(async () => {
             // 還有下一輪（未完成一局），開始總結倒計時，自動進入下一輪
             startSummaryCountdown()
           }
+          return // 已經載入過了，不需要再載入
         }
       }
       
-      // 重新載入房間和輪次以獲取最新數據
+      // 重新載入房間和輪次以獲取最新數據（非總結階段）
       if (currentRoom.value) {
         await roomStore.loadRoom(currentRoom.value.id)
-        await gameStore.loadCurrentRound(currentRoom.value.id)
+        await gameStore.loadCurrentRound(currentRoom.value.id, false)
       }
     })
 
@@ -2010,18 +2029,29 @@ onUnmounted(() => {
   }
 }
 
+/* 傳統模式右側信息區：兩行佈局 */
+.traditional-info-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
 /* 輪次信息 */
 .round-info {
-  position: absolute;
-  left: 5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .round-label {
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   color: var(--text-secondary);
   font-family: var(--font-head);
   background: var(--bg-secondary);
-  padding: 0.25rem 0.5rem;
+  padding: 0.2rem 0.5rem;
   border-radius: 4px;
 }
 
@@ -2932,11 +2962,12 @@ onUnmounted(() => {
     min-width: 2rem;
   }
 
+  .traditional-info-area {
+    align-items: center;
+  }
+
   .round-info {
-    position: static;
-    order: 0;
-    flex: 1;
-    text-align: center;
+    justify-content: center;
   }
 
   .round-label {
@@ -2947,7 +2978,6 @@ onUnmounted(() => {
   .word-display {
     width: 100%;
     justify-content: center;
-    order: 1;
     flex-wrap: wrap;
     gap: 0.5rem;
   }

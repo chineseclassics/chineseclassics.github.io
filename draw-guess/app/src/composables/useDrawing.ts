@@ -108,7 +108,10 @@ export function useDrawing() {
     const coords = getCanvasCoordinates(canvasRef.value, event)
     if (!coords) return
 
-    // 創建新筆觸
+    // 獲取當前 canvas 的 CSS 尺寸（用於後續縮放）
+    const rect = canvasRef.value.getBoundingClientRect()
+    
+    // 創建新筆觸（記錄繪製時的 canvas 尺寸）
     currentStroke.value = {
       id: generateStrokeId(),
       tool: drawingStore.tool,
@@ -116,6 +119,7 @@ export function useDrawing() {
       lineWidth: drawingStore.lineWidth,
       points: [coords],
       timestamp: Date.now(),
+      canvasSize: { width: rect.width, height: rect.height },
     }
 
     lastPoint.value = coords
@@ -250,8 +254,17 @@ export function useDrawing() {
     // 添加到筆觸列表
     drawingStore.addStroke(stroke)
 
-    // 立即繪製
-    drawStroke(ctxRef.value, stroke)
+    // 計算縮放比例（支持不同設備 canvas 尺寸）
+    let scaleX = 1
+    let scaleY = 1
+    if (stroke.canvasSize) {
+      const rect = canvasRef.value.getBoundingClientRect()
+      scaleX = rect.width / stroke.canvasSize.width
+      scaleY = rect.height / stroke.canvasSize.height
+    }
+
+    // 立即繪製（應用縮放）
+    drawStroke(ctxRef.value, stroke, scaleX, scaleY)
   }
 
   // 本地清空畫布（不廣播，用於輪次切換等）

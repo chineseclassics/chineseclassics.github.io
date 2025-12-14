@@ -145,7 +145,8 @@ export const useGameStore = defineStore('game', () => {
   }
 
   // 載入當前輪次
-  async function loadCurrentRound(roomId: string) {
+  // isSummaryPhase: 如果為 true，表示在總結階段，所有人都可以看到詞語
+  async function loadCurrentRound(roomId: string, isSummaryPhase: boolean = false) {
     try {
       const { data, error } = await supabase
         .from('game_rounds')
@@ -161,7 +162,15 @@ export const useGameStore = defineStore('game', () => {
 
       if (data) {
         currentRound.value = data as GameRound
-        currentWord.value = data.word_text
+        
+        // 總結階段：所有人都可以看到答案
+        // 繪畫階段：只有畫家才能看到詞語，避免其他玩家短暫看到答案
+        if (isSummaryPhase || (authStore.user && data.drawer_id === authStore.user.id)) {
+          currentWord.value = data.word_text
+        } else {
+          // 非畫家在繪畫階段：清除詞語
+          currentWord.value = null
+        }
         
         // 注意：不要從數據庫同步 roundStatus！
         // 因為 'summary' 狀態只存在於前端內存中，數據庫沒有這個狀態

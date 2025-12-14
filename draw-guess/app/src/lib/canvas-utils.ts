@@ -35,18 +35,22 @@ export function getCanvasCoordinates(
 }
 
 // 繪製筆觸
+// scaleX, scaleY: 縮放比例（用於窗口尺寸變化時的重繪）
 export function drawStroke(
   ctx: CanvasRenderingContext2D,
-  stroke: Stroke
+  stroke: Stroke,
+  scaleX: number = 1,
+  scaleY: number = 1
 ) {
   ctx.save()
 
-  // 填充工具：填充整個畫布
+  // 填充工具：填充整個畫布（使用當前畫布尺寸，不是原始尺寸）
   if (stroke.tool === 'fill') {
-    if (stroke.canvasSize) {
-      ctx.fillStyle = stroke.color
-      ctx.fillRect(0, 0, stroke.canvasSize.width, stroke.canvasSize.height)
-    }
+    // 獲取畫布的 CSS 尺寸
+    const canvas = ctx.canvas
+    const rect = canvas.getBoundingClientRect()
+    ctx.fillStyle = stroke.color
+    ctx.fillRect(0, 0, rect.width, rect.height)
     ctx.restore()
     return
   }
@@ -58,25 +62,26 @@ export function drawStroke(
 
   if (stroke.tool === 'pen') {
     ctx.strokeStyle = stroke.color
-    ctx.lineWidth = stroke.lineWidth
+    // 線寬也需要按比例縮放（使用平均縮放比例）
+    ctx.lineWidth = stroke.lineWidth * ((scaleX + scaleY) / 2)
     ctx.lineCap = 'round'
     ctx.lineJoin = 'round'
   } else if (stroke.tool === 'eraser') {
     ctx.globalCompositeOperation = 'destination-out'
-    ctx.lineWidth = stroke.lineWidth
+    ctx.lineWidth = stroke.lineWidth * ((scaleX + scaleY) / 2)
     ctx.lineCap = 'round'
     ctx.lineJoin = 'round'
   }
 
   ctx.beginPath()
   if (stroke.points[0]) {
-    ctx.moveTo(stroke.points[0].x, stroke.points[0].y)
+    ctx.moveTo(stroke.points[0].x * scaleX, stroke.points[0].y * scaleY)
   }
 
   for (let i = 1; i < stroke.points.length; i++) {
     const point = stroke.points[i]
     if (point) {
-      ctx.lineTo(point.x, point.y)
+      ctx.lineTo(point.x * scaleX, point.y * scaleY)
     }
   }
 
@@ -84,7 +89,7 @@ export function drawStroke(
   ctx.restore()
 }
 
-// 重繪所有筆觸
+// 重繪所有筆觸（支持窗口縮放）
 export function redrawCanvas(
   canvas: HTMLCanvasElement,
   strokes: Stroke[]
@@ -92,19 +97,31 @@ export function redrawCanvas(
   const ctx = canvas.getContext('2d')
   if (!ctx) return
 
-  // 獲取 CSS 尺寸用於填充背景
+  // 獲取當前 CSS 尺寸
   const rect = canvas.getBoundingClientRect()
+  const currentWidth = rect.width
+  const currentHeight = rect.height
 
   // 清空畫布（使用實際像素尺寸）
   ctx.clearRect(0, 0, canvas.width, canvas.height)
   
   // 填充白色背景（使用 CSS 尺寸，因為 ctx 已經 scale 過了）
   ctx.fillStyle = '#FFFFFF'
-  ctx.fillRect(0, 0, rect.width, rect.height)
+  ctx.fillRect(0, 0, currentWidth, currentHeight)
 
   // 重繪所有筆觸
   strokes.forEach(stroke => {
-    drawStroke(ctx, stroke)
+    // 計算縮放比例
+    let scaleX = 1
+    let scaleY = 1
+    
+    if (stroke.canvasSize) {
+      // 根據筆觸繪製時的 canvas 尺寸計算縮放比例
+      scaleX = currentWidth / stroke.canvasSize.width
+      scaleY = currentHeight / stroke.canvasSize.height
+    }
+    
+    drawStroke(ctx, stroke, scaleX, scaleY)
   })
 }
 
