@@ -6,9 +6,9 @@
         <div class="header-decoration">
           <PhBookOpenText :size="32" weight="duotone" class="header-icon" />
         </div>
-        <h2 class="modal-title">開始你的故事</h2>
+        <h2 class="modal-title">🎬 開機！</h2>
         <p class="modal-subtitle">
-          {{ isHost ? '作為房主，請為故事寫下開頭' : '等待房主設定故事開頭...' }}
+          {{ isHost ? '作為導演，請為故事板寫下第一句' : '等待導演設定故事開頭...' }}
         </p>
       </div>
 
@@ -17,7 +17,7 @@
         <!-- 提示文字 -->
         <div class="input-hint">
           <PhLightbulb :size="18" weight="fill" class="hint-icon" />
-          <span>寫一個引人入勝的開頭，讓故事從這裡展開</span>
+          <span>寫一個引人入勝的開頭，分鏡師將根據這句話創作第一鏡</span>
         </div>
 
         <!-- 輸入框 -->

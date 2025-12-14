@@ -89,32 +89,34 @@
           <!-- ========== 分鏡模式頂部提示 ========== -->
           <!-- Requirements: 3.1, 4.2 - 顯示上一輪勝出句子、階段倒計時 -->
           <template v-else>
-            <!-- 分鏡模式倒計時 -->
-            <div v-if="storyboardTimeRemaining !== null && storyboardTimeRemaining > 0" class="time-display storyboard">
-              <span class="time-number" :class="{ 
-                'time-warning': storyboardTimeRemaining <= 10,
-                'time-critical-pulse': storyboardTimeRemaining <= 5 
-              }">{{ storyboardTimeRemaining }}</span>
-              <span class="time-label">秒</span>
-            </div>
-            
-            <!-- 場次和鏡數信息 -->
-            <div class="round-info storyboard">
-              <span class="round-label">
-                第 {{ currentGameNumber }} 場 · 第 {{ currentRoundInGame }} / {{ totalRoundsPerGame }} 鏡
-              </span>
-              <span class="phase-label storyboard-phase" :class="'phase-' + storyboardPhase">
-                {{ storyboardPhaseLabel }}
-              </span>
-              <!-- Final_Round 結局倒數顯示 -->
-              <!-- Requirements: 7.5, 7.6 -->
-              <span v-if="isStoryboardFinalRound" class="final-round-hint">
-                {{ finalRoundHint }}
-              </span>
-            </div>
-            
-            <!-- 分鏡模式提示內容 -->
-            <div class="storyboard-prompt">
+            <!-- 分鏡模式頂部：左側倒計時 + 右側信息區 -->
+            <div class="storyboard-header-layout">
+              <!-- 倒計時（左側） -->
+              <div v-if="storyboardTimeRemaining !== null && storyboardTimeRemaining > 0" class="storyboard-timer">
+                <span class="timer-number" :class="{ 
+                  'time-warning': storyboardTimeRemaining <= 10,
+                  'time-critical-pulse': storyboardTimeRemaining <= 5 
+                }">{{ storyboardTimeRemaining }}</span>
+                <span class="timer-label">秒</span>
+              </div>
+              
+              <!-- 右側信息區 -->
+              <div class="storyboard-info-area">
+                <!-- 上部：場次和階段 -->
+                <div class="storyboard-meta">
+                  <span class="meta-round">
+                    第 {{ currentGameNumber }} 場 · 第 {{ currentRoundInGame }} / {{ totalRoundsPerGame }} 鏡
+                  </span>
+                  <span class="phase-label storyboard-phase" :class="'phase-' + storyboardPhase">
+                    {{ storyboardPhaseLabel }}
+                  </span>
+                  <span v-if="isStoryboardFinalRound" class="final-round-hint">
+                    {{ finalRoundHint }}
+                  </span>
+                </div>
+                
+                <!-- 下部：提示內容 -->
+                <div class="storyboard-prompt">
               <!-- 繪畫階段：顯示上一鏡勝出句子，分鏡師需要畫出接下來的情節 -->
               <!-- Requirements: 3.1 -->
               <template v-if="isStoryboardDrawing">
@@ -150,6 +152,8 @@
                   <span class="compact-hint">🎬 本鏡完成</span>
                 </div>
               </template>
+                </div>
+              </div>
             </div>
           </template>
           
@@ -206,6 +210,7 @@
                   :round-number="currentRoundInGame"
                   :total-rounds="totalRoundsPerGame"
                   :game-number="currentGameNumber"
+                  :round-image="currentRoundImage"
                   :winning-sentence="storyboardRoundResult?.winningSentence || '故事繼續發展中...'"
                   :winner-name="storyboardRoundResult?.winnerName || ''"
                   :winner-id="storyboardRoundResult?.winnerId || ''"
@@ -230,12 +235,79 @@
               </div>
             </div>
             
-            <!-- 工具欄 - 橫向放在畫布下方 -->
-            <div class="game-toolbar card" :class="{ disabled: isSummary }">
+            <!-- 工具欄區域 - 根據模式和階段顯示不同內容 -->
+            <!-- 傳統模式：繪畫工具欄 -->
+            <div v-if="!isStoryboardMode" class="game-toolbar card" :class="{ disabled: isSummary }">
               <div class="card-body" style="padding: 0.5rem;">
                 <DrawingToolbar :horizontal="true" />
               </div>
             </div>
+            
+            <!-- 分鏡模式：根據階段切換 -->
+            <template v-else>
+              <!-- 繪畫階段：分鏡師顯示工具欄，其他人顯示預覽提示 -->
+              <div v-if="isStoryboardDrawing" class="game-toolbar card" :class="{ disabled: !isCurrentDrawer }">
+                <div class="card-body" style="padding: 0.5rem;">
+                  <DrawingToolbar v-if="isCurrentDrawer" :horizontal="true" />
+                  <div v-else class="drawing-preview-hint">
+                    <div class="preview-context">
+                      <span class="context-label">上一句：</span>
+                      <span class="context-sentence">「{{ latestSentence?.content || '故事開始...' }}」</span>
+                    </div>
+                    <div class="preview-tip">🎨 分鏡師正在畫「接下來發生什麼」，準備好描述畫面了嗎？</div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- 編劇階段：句子輸入區 -->
+              <div v-else-if="isStoryboardWriting" class="game-writing-area card">
+                <div class="card-body writing-input-area">
+                  <!-- 已提交狀態（非編輯模式） -->
+                  <div v-if="mySubmissionText && !isEditingWriting" class="submitted-inline">
+                    <PhCheckCircle :size="18" weight="fill" class="submitted-icon" />
+                    <span class="submitted-text">「{{ mySubmissionText }}」</span>
+                    <button class="edit-btn-inline" @click="handleEditSubmission">
+                      <PhPencil :size="14" weight="fill" /> 修改
+                    </button>
+                  </div>
+                  
+                  <!-- 輸入表單（未提交或編輯模式） -->
+                  <form v-else @submit.prevent="handleWritingSubmit" class="writing-form-inline">
+                    <input
+                      v-model="writingInput"
+                      type="text"
+                      class="writing-input"
+                      placeholder="描述這一鏡的故事情節..."
+                      maxlength="100"
+                      :disabled="writingSubmitting"
+                    />
+                    <button 
+                      type="submit"
+                      class="paper-btn btn-primary submit-btn"
+                      :disabled="!writingInput.trim() || writingSubmitting"
+                    >
+                      {{ writingSubmitting ? '提交中...' : '提交' }}
+                    </button>
+                  </form>
+                </div>
+              </div>
+              
+              <!-- 投票/結算階段：簡單提示 -->
+              <div v-else class="game-toolbar card phase-hint-bar">
+                <div class="card-body" style="padding: 0.5rem;">
+                  <div class="phase-hint-content">
+                    <template v-if="isStoryboardVoting">
+                      <PhHandPointing :size="18" weight="duotone" />
+                      <span>請在右側面板投票選擇最佳句子</span>
+                    </template>
+                    <template v-else-if="isStoryboardSummary">
+                      <PhFilmStrip :size="18" weight="duotone" />
+                      <span>本鏡完成，查看結果</span>
+                    </template>
+                  </div>
+                </div>
+              </div>
+            </template>
           </div>
 
           <!-- ========== 右側面板：根據遊戲模式切換 ========== -->
@@ -410,7 +482,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { PhPaintBrush, PhGameController, PhCheckCircle, PhX, PhConfetti, PhLightbulb } from '@phosphor-icons/vue'
+import { PhPaintBrush, PhGameController, PhCheckCircle, PhX, PhConfetti, PhLightbulb, PhHandPointing, PhFilmStrip, PhPencil } from '@phosphor-icons/vue'
 import DrawingCanvas from '../components/DrawingCanvas.vue'
 import DrawingToolbar from '../components/DrawingToolbar.vue'
 import PlayerList from '../components/PlayerList.vue'
@@ -544,11 +616,45 @@ const storyboardRoundResult = ref<StoryboardRoundResult | null>(null)
 /** 分鏡模式故事歷史（用於 StoryPanel） */
 const storyHistory = computed(() => storyStore.storyChain)
 
+/** 當前輪次的畫作圖像（用於結算頁面圖文結合顯示） */
+const currentRoundImage = computed(() => {
+  const currentRoundNum = gameStore.currentRound?.round_number || 0
+  const imageItem = storyStore.storyChain.find(
+    item => item.itemType === 'image' && item.roundNumber === currentRoundNum
+  )
+  return imageItem?.content || ''
+})
+
 /** 分鏡模式當前輪次提交列表 */
 const currentSubmissions = computed(() => storyStore.submissions)
 
 /** 當前用戶已提交的句子內容 */
 const mySubmissionText = computed(() => mySubmission.value?.sentence || '')
+
+// ========== 編劇輸入區狀態（畫布下方） ==========
+const writingInput = ref('')
+const writingSubmitting = ref(false)
+const isEditingWriting = ref(false)
+
+/** 處理編劇提交（畫布下方輸入區） */
+async function handleWritingSubmit() {
+  if (!writingInput.value.trim() || writingSubmitting.value) return
+  
+  writingSubmitting.value = true
+  try {
+    await handleStorySubmit(writingInput.value.trim())
+    writingInput.value = ''
+    isEditingWriting.value = false
+  } finally {
+    writingSubmitting.value = false
+  }
+}
+
+/** 處理編輯已提交的句子 */
+function handleEditSubmission() {
+  writingInput.value = mySubmissionText.value
+  isEditingWriting.value = true
+}
 
 /** 當前用戶已投票的句子 ID */
 const votedSubmissionId = computed(() => myVote.value?.submissionId || '')
@@ -1971,32 +2077,85 @@ onUnmounted(() => {
 
 .game-header.storyboard-mode {
   background: linear-gradient(135deg, var(--bg-card), var(--bg-highlight));
-  flex-wrap: nowrap;
   min-height: auto;
-  padding: 0.4rem 1rem;
-  gap: 0.75rem;
+  padding: 0.5rem 1rem;
+  justify-content: flex-start;
 }
 
-/* 分鏡模式頂部佈局：單行結構 */
-.game-header.storyboard-mode .time-display.storyboard,
-.game-header.storyboard-mode .round-info.storyboard {
-  position: static;
-  flex-shrink: 0;
-}
-
-.game-header.storyboard-mode .storyboard-prompt {
+/* 分鏡模式頂部佈局：左側倒計時 + 右側信息區 */
+.storyboard-header-layout {
+  display: flex;
+  align-items: stretch;
+  gap: 1rem;
   flex: 1;
   min-width: 0;
+}
+
+/* 左側倒計時區塊 */
+.storyboard-timer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: var(--bg-secondary);
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  border: 2px solid var(--border-color);
+  box-shadow: 2px 2px 0 var(--shadow-color);
+  min-width: 50px;
+}
+
+.storyboard-timer .timer-number {
+  font-size: 1.4rem;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+  line-height: 1;
+}
+
+.storyboard-timer .timer-label {
+  font-size: 0.7rem;
+  color: var(--text-tertiary);
+}
+
+/* 右側信息區 */
+.storyboard-info-area {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+/* 上部：場次和階段 */
+.storyboard-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.storyboard-meta .meta-round {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+/* 下部：提示內容 */
+.game-header.storyboard-mode .storyboard-prompt {
+  display: flex;
+  align-items: center;
 }
 
 /* 分鏡模式階段標籤 */
 .phase-label.storyboard-phase {
   display: inline-block;
-  padding: 0.2rem 0.6rem;
+  padding: 0.15rem 0.5rem;
   border-radius: 4px;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   font-weight: 600;
-  margin-left: 0.5rem;
+  white-space: nowrap;
 }
 
 .phase-label.phase-drawing {
@@ -2062,40 +2221,38 @@ onUnmounted(() => {
   gap: 0.75rem;
 }
 
-/* ========== 畫手任務區域（分鏡模式）- 緊湊版 ========== */
+/* ========== 畫手任務區域（分鏡模式） ========== */
 .word-display.drawer-task-compact {
   display: flex;
   flex-direction: row;
   align-items: center;
   gap: 0.5rem;
   flex-wrap: wrap;
-  justify-content: center;
 }
 
 .drawer-task-compact .task-sentence {
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   color: var(--text-primary);
   font-weight: 500;
-  max-width: 300px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .drawer-task-compact .task-arrow {
   color: var(--color-success);
   font-weight: bold;
-  font-size: 1.1rem;
+  font-size: 1rem;
+  flex-shrink: 0;
 }
 
 .drawer-task-compact .task-hint {
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-weight: 600;
   color: #2e7d32;
   background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
-  padding: 0.25rem 0.6rem;
+  padding: 0.2rem 0.5rem;
   border-radius: 4px;
   border: 1px solid var(--color-success);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 /* 分鏡模式緊湊顯示（編劇/投票/結算階段） */
@@ -2104,17 +2261,12 @@ onUnmounted(() => {
   align-items: center;
   gap: 0.5rem;
   flex-wrap: wrap;
-  justify-content: center;
 }
 
 .storyboard-compact .compact-sentence {
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   color: var(--text-primary);
   font-weight: 500;
-  max-width: 300px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .storyboard-compact .compact-hint {
@@ -2124,6 +2276,8 @@ onUnmounted(() => {
   padding: 0.2rem 0.5rem;
   background: var(--bg-secondary);
   border-radius: 4px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .storyboard-compact .compact-hint.voting {
@@ -2402,6 +2556,141 @@ onUnmounted(() => {
 .game-toolbar.disabled {
   opacity: 0.5;
   pointer-events: none;
+}
+
+/* ========== 分鏡模式編劇輸入區（畫布下方） ========== */
+.game-writing-area {
+  flex-shrink: 0;
+}
+
+.writing-input-area {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0.75rem !important;
+}
+
+.writing-form-inline {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+}
+
+.writing-input {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.95rem;
+  font-family: var(--font-body);
+  border: 2px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-card);
+  transition: border-color 0.2s;
+}
+
+.writing-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.writing-input::placeholder {
+  color: var(--text-tertiary);
+}
+
+.submitted-inline {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+}
+
+.submitted-inline .submitted-icon {
+  color: var(--color-success);
+  flex-shrink: 0;
+}
+
+.submitted-inline .submitted-text {
+  flex: 1;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.edit-btn-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.3rem 0.6rem;
+  font-size: 0.8rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.edit-btn-inline:hover {
+  background: var(--bg-highlight);
+}
+
+/* 等待提示（舊版） */
+.waiting-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  color: var(--text-tertiary);
+  font-size: 0.9rem;
+  padding: 0.25rem 0;
+}
+
+/* 繪畫預覽提示（其他玩家等待時顯示） */
+.drawing-preview-hint {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0;
+}
+
+.drawing-preview-hint .preview-context {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+}
+
+.drawing-preview-hint .context-label {
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+}
+
+.drawing-preview-hint .context-sentence {
+  color: var(--text-primary);
+  font-weight: 500;
+  max-width: 400px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.drawing-preview-hint .preview-tip {
+  font-size: 0.8rem;
+  color: var(--color-secondary);
+}
+
+/* 階段提示欄 */
+.phase-hint-bar {
+  flex-shrink: 0;
+}
+
+.phase-hint-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
 }
 
 /* 時間進度條 */

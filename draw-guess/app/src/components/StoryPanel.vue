@@ -65,65 +65,12 @@
           </div>
         </div>
 
-        <!-- 編劇階段：句子輸入區域 -->
-        <div v-if="phase === 'writing'" class="writing-section">
+        <!-- 編劇階段：提示信息（輸入區已移至畫布下方） -->
+        <div v-if="phase === 'writing'" class="writing-hint-section">
           <div class="section-divider"></div>
-          <h4 class="section-title">
-            <PhPencilLine :size="18" weight="fill" class="title-icon" />
-            描述這一鏡
-          </h4>
-          
-          <!-- 已提交狀態 -->
-          <div v-if="hasSubmitted" class="submitted-state">
-            <div class="submitted-card">
-              <PhCheckCircle :size="24" weight="fill" class="submitted-icon" />
-              <div class="submitted-content">
-                <span class="submitted-label">劇本已提交</span>
-                <p class="submitted-text">{{ mySubmission }}</p>
-              </div>
-            </div>
-            <button 
-              class="wired-button wired-button-secondary edit-btn"
-              @click="handleEditSubmission"
-            >
-              <PhPencil :size="16" weight="fill" /> 修改
-            </button>
-          </div>
-          
-          <!-- 輸入表單 -->
-          <form v-else @submit.prevent="handleSubmit" class="writing-form">
-            <div class="wired-input-wrapper">
-              <textarea
-                ref="sentenceInputRef"
-                v-model="sentenceInput"
-                class="wired-textarea"
-                placeholder="根據畫面，寫下故事的下一句..."
-                :maxlength="maxLength"
-                rows="3"
-                :disabled="isSubmitting"
-                @input="clearError"
-              ></textarea>
-              <div class="input-footer">
-                <span 
-                  class="char-count"
-                  :class="{ 'over-limit': isOverLimit }"
-                >
-                  {{ inputLength }} / {{ maxLength }}
-                </span>
-              </div>
-            </div>
-            <button
-              type="submit"
-              :disabled="!canSubmit"
-              class="wired-button wired-button-primary submit-btn"
-            >
-              {{ isSubmitting ? '提交中...' : '提交劇本' }}
-            </button>
-          </form>
-          
-          <!-- 錯誤提示 -->
-          <div v-if="error" class="error-message">
-            {{ error }}
+          <div class="writing-hint">
+            <PhPencilLine :size="18" weight="fill" class="hint-icon" />
+            <span>請在畫布下方輸入框描述這一鏡的故事</span>
           </div>
         </div>
 
@@ -223,14 +170,11 @@ import {
   PhUser, 
   PhPaintBrush,
   PhPencilLine,
-  PhCheckCircle,
-  PhPencil,
   PhHandPointing,
   PhWarningCircle,
   PhCircle,
   PhTrophy
 } from '@phosphor-icons/vue'
-import { useStoryboard } from '../composables/useStoryboard'
 import { useVoting } from '../composables/useVoting'
 import { useAuthStore } from '../stores/auth'
 import type { StoryChainItem, Submission, StoryboardPhase } from '../types/storyboard'
@@ -274,17 +218,6 @@ const emit = defineEmits<{
 // ============================================
 
 const authStore = useAuthStore()
-const { 
-  sentenceInput, 
-  isSubmitting, 
-  error,
-  inputLength,
-  isInputOverLimit: isOverLimit,
-  canSubmit,
-  SENTENCE_MAX_LENGTH: maxLength,
-  submitSentence,
-  clearError
-} = useStoryboard()
 
 const {
   castVote,
@@ -295,9 +228,7 @@ const {
 // 本地狀態
 // ============================================
 
-const sentenceInputRef = ref<HTMLTextAreaElement | null>(null)
 const historyListRef = ref<HTMLElement | null>(null)
-const isEditing = ref(false)
 
 // ============================================
 // 計算屬性
@@ -305,11 +236,6 @@ const isEditing = ref(false)
 
 /** 當前用戶 ID */
 const currentUserId = computed(() => authStore.user?.id || '')
-
-/** 是否已提交句子 */
-const hasSubmitted = computed(() => {
-  return !!props.mySubmission && !isEditing.value
-})
 
 /** 故事開頭（第一個 roundNumber = 0 的文字項目） */
 const storyOpening = computed(() => {
@@ -360,32 +286,6 @@ const comicPanels = computed<ComicPanel[]>(() => {
 // ============================================
 
 /**
- * 處理提交句子
- * Requirements: 4.4, 4.5
- */
-async function handleSubmit() {
-  if (!canSubmit.value) return
-  
-  const result = await submitSentence()
-  if (result.success) {
-    isEditing.value = false
-    emit('submit', sentenceInput.value)
-  }
-}
-
-/**
- * 處理編輯已提交的句子
- * Requirements: 4.9
- */
-function handleEditSubmission() {
-  isEditing.value = true
-  sentenceInput.value = props.mySubmission || ''
-  nextTick(() => {
-    sentenceInputRef.value?.focus()
-  })
-}
-
-/**
  * 處理投票
  * Requirements: 5.3, 5.4, 5.5
  */
@@ -421,19 +321,6 @@ watch(() => props.storyHistory.length, () => {
   nextTick(scrollHistoryToBottom)
 })
 
-// 當階段變化時，重置編輯狀態
-watch(() => props.phase, (newPhase) => {
-  if (newPhase !== 'writing') {
-    isEditing.value = false
-  }
-})
-
-// 當 mySubmission 更新時，同步到編輯狀態
-watch(() => props.mySubmission, (newVal) => {
-  if (newVal && !isEditing.value) {
-    // 如果有新的提交且不在編輯狀態，保持顯示已提交狀態
-  }
-})
 </script>
 
 
@@ -587,15 +474,15 @@ watch(() => props.mySubmission, (newVal) => {
 
 .story-text {
   font-family: var(--font-body);
-  font-size: 0.95rem;
+  font-size: 0.85rem;
   color: var(--text-primary);
-  line-height: 1.5;
+  line-height: 1.4;
   margin: 0;
 }
 
 .opening-text {
   text-align: center;
-  font-size: 1rem;
+  font-size: 0.9rem;
 }
 
 .story-author {
@@ -696,9 +583,9 @@ watch(() => props.mySubmission, (newVal) => {
 
 .comic-text {
   font-family: var(--font-body);
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   color: var(--text-primary);
-  line-height: 1.4;
+  line-height: 1.35;
   margin: 0;
 }
 
@@ -712,6 +599,27 @@ watch(() => props.mySubmission, (newVal) => {
    Requirements: 4.2, 4.5
    ============================================ */
 
+/* 編劇階段提示（輸入區已移至畫布下方） */
+.writing-hint-section {
+  flex-shrink: 0;
+  border-top: 2px solid var(--border-light);
+  padding: 0.75rem;
+}
+
+.writing-hint {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  justify-content: center;
+}
+
+.writing-hint .hint-icon {
+  color: var(--color-primary);
+}
+
+/* 保留舊樣式供兼容 */
 .writing-section {
   flex-shrink: 0;
   border-top: 2px solid var(--border-light);

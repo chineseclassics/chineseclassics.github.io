@@ -12,22 +12,41 @@
         </div>
       </div>
 
-      <!-- 勝出句子 -->
-      <div class="winning-sentence-section">
-        <div class="section-label">
-          <PhTrophy :size="18" weight="fill" class="trophy-icon" />
-          勝出句子
+      <!-- 本鏡圖文展示（漫畫分鏡風格） -->
+      <div class="comic-panel-section">
+        <!-- 分鏡標籤 -->
+        <div class="panel-badge">
+          <PhFilmStrip :size="14" weight="fill" /> 第 {{ roundNumber }} 鏡
         </div>
-        <div class="winning-sentence">{{ winningSentence }}</div>
-        <div class="winner-info">
-          <span class="winner-label">作者：</span>
-          <span class="winner-name">{{ winnerName }}</span>
-          <span class="winner-score" v-if="screenwriterScore > 0">+{{ screenwriterScore }} 分</span>
+        
+        <!-- 圖像區域 -->
+        <div class="panel-image-area" v-if="roundImage">
+          <img :src="roundImage" :alt="`第 ${roundNumber} 鏡畫作`" class="panel-image" />
+          <div class="image-author">
+            <PhPaintBrush :size="12" weight="fill" />
+            <span>{{ drawerName }}</span>
+            <span class="author-score" v-if="drawerScore > 0">+{{ drawerScore }}</span>
+          </div>
         </div>
-        <div class="vote-info" v-if="winnerVoteCount > 0">
-          <PhHeart :size="14" weight="fill" class="vote-icon" />
-          {{ winnerVoteCount }} 票
-          <span v-if="hasTie" class="tie-badge">平票隨機</span>
+        
+        <!-- 文字區域（勝出句子，明顯標識） -->
+        <div class="panel-text-area winning">
+          <div class="winning-label">
+            <PhTrophy :size="16" weight="fill" class="trophy-icon" />
+            <span>勝出句子</span>
+          </div>
+          <div class="speech-bubble winning-bubble">
+            <p class="panel-text">{{ winningSentence }}</p>
+          </div>
+          <div class="text-author">
+            <PhPen :size="12" weight="fill" />
+            <span>{{ winnerName }}</span>
+            <span class="author-score" v-if="screenwriterScore > 0">+{{ screenwriterScore }}</span>
+            <span class="vote-count" v-if="winnerVoteCount > 0">
+              <PhHeart :size="12" weight="fill" /> {{ winnerVoteCount }}票
+            </span>
+            <span v-if="hasTie" class="tie-badge">平票隨機</span>
+          </div>
         </div>
       </div>
 
@@ -133,6 +152,7 @@ import {
   PhHeart, 
   PhPaintBrush, 
   PhPencil, 
+  PhPen,
   PhStar, 
   PhConfetti,
   PhSmileySad
@@ -146,6 +166,8 @@ const props = defineProps<{
   roundNumber: number
   totalRounds: number
   gameNumber?: number
+  // 當前輪次畫作圖像
+  roundImage?: string
   // 勝出句子信息
   winningSentence: string
   winnerName: string
@@ -326,6 +348,171 @@ watch(() => props.roundId, () => {
 }
 
 /* 勝出句子區域 */
+/* ========== 漫畫分鏡風格展示 ========== */
+.comic-panel-section {
+  background: var(--bg-card);
+  border: 3px solid var(--border-color);
+  border-radius: 0;
+  box-shadow: 3px 3px 0 var(--shadow-color);
+  overflow: hidden;
+  animation: revealPulse 0.6s ease-out;
+}
+
+.comic-panel-section .panel-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: white;
+  background: var(--color-primary);
+  padding: 0.2rem 0.5rem;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+}
+
+.panel-image-area {
+  position: relative;
+  background: #f5f5f5;
+  border-bottom: 2px dashed var(--border-light);
+}
+
+.panel-image-area .panel-image {
+  width: 100%;
+  max-height: 200px;
+  object-fit: contain;
+  display: block;
+  /* 移除 paper.css 的不規則邊框效果 */
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+.panel-image-area .image-author {
+  position: absolute;
+  bottom: 0.3rem;
+  right: 0.3rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  font-size: 0.7rem;
+  color: var(--text-tertiary);
+  background: rgba(255, 255, 255, 0.9);
+  padding: 0.15rem 0.4rem;
+  border-radius: 3px;
+}
+
+.panel-text-area {
+  padding: 0.6rem 0.75rem;
+  background: linear-gradient(135deg, var(--bg-highlight), var(--bg-secondary));
+}
+
+/* 勝出句子明顯標識 */
+.panel-text-area.winning {
+  background: linear-gradient(135deg, #fff8e1, #ffecb3);
+  border-top: 3px solid #ffc107;
+}
+
+.winning-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #e65100;
+  margin-bottom: 0.5rem;
+}
+
+.winning-label .trophy-icon {
+  color: #ffc107;
+}
+
+.speech-bubble.winning-bubble {
+  border-color: #ffc107;
+  background: white;
+}
+
+.panel-text-area .speech-bubble {
+  background: var(--bg-card);
+  border: 2px solid var(--border-light);
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  position: relative;
+  box-shadow: 2px 2px 0 var(--shadow-color);
+}
+
+.panel-text-area .speech-bubble::before {
+  content: '';
+  position: absolute;
+  left: 20px;
+  top: -8px;
+  border-width: 0 8px 8px 8px;
+  border-style: solid;
+  border-color: transparent transparent var(--border-light) transparent;
+}
+
+.panel-text-area .speech-bubble::after {
+  content: '';
+  position: absolute;
+  left: 21px;
+  top: -5px;
+  border-width: 0 7px 7px 7px;
+  border-style: solid;
+  border-color: transparent transparent var(--bg-card) transparent;
+}
+
+.panel-text-area .panel-text {
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  line-height: 1.4;
+  margin: 0;
+}
+
+.panel-text-area .text-author {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  margin-top: 0.5rem;
+}
+
+.author-score {
+  color: var(--color-success);
+  font-weight: 600;
+}
+
+.vote-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+  color: #e91e63;
+  font-weight: 600;
+  margin-left: 0.3rem;
+}
+
+.trophy-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+  color: #ffc107;
+  font-weight: 600;
+  margin-left: 0.3rem;
+}
+
+.tie-badge {
+  font-size: 0.65rem;
+  color: var(--text-tertiary);
+  background: var(--bg-secondary);
+  padding: 0.1rem 0.3rem;
+  border-radius: 3px;
+  margin-left: 0.3rem;
+}
+
+/* 舊的勝出句子區域樣式（保留兼容性） */
 .winning-sentence-section {
   text-align: center;
   padding: 0.75rem 1rem;
