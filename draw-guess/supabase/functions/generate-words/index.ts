@@ -41,12 +41,14 @@ function buildPrompt(theme: string): DeepSeekMessage[] {
   const systemPrompt = `你是一個「你畫我猜」遊戲的詞語生成助手。請根據用戶提供的主題生成適合遊戲的詞語。
 
 要求：
-1. 生成 50 個詞語
+1. 生成 50 個【不重複】的詞語，每個詞語必須是唯一的
 2. 每個詞語長度在 2-8 個中文字符之間
 3. 詞語應符合用戶設定的主題
 4. 可以包含具體名詞、動物、物品、動作，也可以包含抽象概念、心情、成語等
 5. 詞語難度適中，適合中學生理解
 6. 如果主題不適合中學生或無法理解，請自動選擇安全主題（如動物、食物、日常用品），並在返回中標記 isThemeAdjusted 為 true
+7. 【重要】確保所有詞語都是不同的，不要有任何重複！
+8. 如果該主題無法生成 50 個詞語，請用相關聯的主題詞語來補充，確保總數達到 50 個。例如：主題是「香港小吃」但只能想到 30 個，可以用「中式小吃」「街頭美食」等相關詞語補充
 
 請以 JSON 格式返回，不要包含任何其他文字：
 {
@@ -77,11 +79,20 @@ function parseAIResponse(content: string): { words: string[], isThemeAdjusted: b
       return null
     }
     
-    // 過濾和驗證詞語
+    // 過濾、驗證和去重詞語
+    const seen = new Set<string>()
     const validWords = parsed.words
       .filter((word: unknown): word is string => typeof word === 'string')
       .map((word: string) => word.trim())
       .filter((word: string) => word.length >= 2 && word.length <= 8)
+      .filter((word: string) => {
+        // 去重：只保留第一次出現的詞語
+        if (seen.has(word)) {
+          return false
+        }
+        seen.add(word)
+        return true
+      })
     
     return {
       words: validWords,
