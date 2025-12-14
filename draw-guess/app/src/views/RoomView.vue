@@ -240,8 +240,8 @@
                 </div>
               </div>
               
-              <!-- 編劇階段：句子輸入區 -->
-              <div v-else-if="isStoryboardWriting" class="game-writing-area card">
+              <!-- 編劇階段：句子輸入區（高亮吸引注意） -->
+              <div v-else-if="isStoryboardWriting" class="game-writing-area card writing-highlight">
                 <div class="card-body writing-input-area">
                   <!-- 已提交狀態（非編輯模式） -->
                   <div v-if="mySubmissionText && !isEditingWriting" class="submitted-inline">
@@ -594,6 +594,9 @@ const storyboardRoundResult = ref<StoryboardRoundResult | null>(null)
 /** 經典模式本輪畫作截圖（Data URL） */
 const classicRoundImage = ref<string>('')
 
+/** 分鏡模式本輪畫作前端截圖（Data URL）- 用於即時顯示 */
+const storyboardRoundLocalImage = ref<string>('')
+
 /** DrawingCanvas 組件 ref - 用於顯式調用清空畫布 */
 const drawingCanvasRef = ref<{ clearCanvas: () => void } | null>(null)
 
@@ -601,7 +604,13 @@ const drawingCanvasRef = ref<{ clearCanvas: () => void } | null>(null)
 const storyHistory = computed(() => storyStore.storyChain)
 
 /** 當前輪次的畫作圖像（用於結算頁面圖文結合顯示） */
+// 優先使用本地前端截圖（即時顯示），如果沒有則使用從後台獲取的圖片
 const currentRoundImage = computed(() => {
+  // 優先使用本地截圖（即時可用）
+  if (storyboardRoundLocalImage.value) {
+    return storyboardRoundLocalImage.value
+  }
+  // 備選：從 storyChain 獲取（需等待後台上傳完成）
   const currentRoundNum = gameStore.currentRound?.round_number || 0
   const imageItem = storyStore.storyChain.find(
     item => item.itemType === 'image' && item.roundNumber === currentRoundNum
@@ -1129,12 +1138,10 @@ async function handleStoryboardPhaseEnd() {
  * 處理分鏡模式輪次結算
  * Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7, 6.8
  * 
- * 結算流程：
- * 1. 計算勝出句子 (6.1, 6.2, 6.3)
- * 2. 上傳畫布截圖 (6.4)
- * 3. 更新 Story_Chain (6.5)
- * 4. 計算並更新玩家得分 (6.6, 6.7)
- * 5. 進入結算階段並顯示結果 (6.8)
+ * 優化流程（先顯示結算頁面，後台更新故事進展區）：
+ * 1. 快速計算勝出句子 (6.1, 6.2, 6.3)
+ * 2. 立即進入結算階段並顯示結果 (6.8)
+ * 3. 後台異步執行：上傳畫布截圖 (6.4)、更新 Story_Chain (6.5)、計算得分 (6.6, 6.7)
  */
 async function handleStoryboardRoundSettlement() {
   if (!roomStore.isHost || !currentRoom.value || !gameStore.currentRound) {
@@ -1146,24 +1153,80 @@ async function handleStoryboardRoundSettlement() {
     // 獲取畫布元素
     const canvas = getCanvasElement()
     
-    // 執行完整的輪次結算
-    const result = await finalizeStoryboardRound(canvas)
-    
-    if (result.success) {
-      console.log('[RoomView] 輪次結算成功:', result)
-      
-      // 保存結算結果用於顯示
-      storyboardRoundResult.value = result
-      
-      // 進入結算階段，並將結算結果廣播給其他玩家
-      await enterStoryboardSummaryPhase(result)
-    } else {
-      console.error('[RoomView] 輪次結算失敗:', result.error)
-      showError(result.error || '輪次結算失敗')
-      
-      // 即使結算失敗也進入結算階段
-      await enterStoryboardSummaryPhase()
+    // 立即截取畫布為 Data URL（前端截圖，即時可用）
+    if (canvas) {
+      storyboardRoundLocalImage.value = canvas.toDataURL('image/webp', 0.8)
+      console.log('[RoomView] 分鏡模式前端截圖完成，大小:', storyboardRoundLocalImage.value.length)
     }
+    
+    // 使用非阻塞模式執行輪次結算：
+    // 第一步：快速計算勝出結果（不等待後台操作）
+    // 第二步：立即顯示結算頁面
+    // 第三步：後台異步完成上傳和更新
+    
+    // 啟動結算流程（返回結果用於立即顯示，後台操作異步執行）
+    const resultPromise = finalizeStoryboardRound(canvas)
+    
+    // 先獲取基本結算數據用於快速顯示
+    // 從本地狀態快速計算結果（不等待後台操作）
+    const { calculateWinningSentence, SCREENWRITER_WIN_SCORE, DIRECTOR_BASE_SCORE, DIRECTOR_VOTE_BONUS } = useGame()
+    const { submission: winningSubmission, voteCount } = calculateWinningSentence()
+    
+    const drawerId = gameStore.currentRound.drawer_id
+    const drawerParticipant = roomStore.participants.find(p => p.user_id === drawerId)
+    const drawerName = drawerParticipant?.nickname || '畫家'
+    const voterCount = storyStore.votes.length
+    
+    let quickResult: StoryboardRoundResult
+    
+    if (winningSubmission) {
+      const winnerParticipant = roomStore.participants.find(p => p.user_id === winningSubmission.userId)
+      quickResult = {
+        success: true,
+        winningSentence: winningSubmission.sentence,
+        winnerName: winnerParticipant?.nickname || '編劇',
+        winnerId: winningSubmission.userId,
+        winnerVoteCount: voteCount,
+        drawerScore: DIRECTOR_BASE_SCORE + (voterCount * DIRECTOR_VOTE_BONUS),
+        screenwriterScore: SCREENWRITER_WIN_SCORE,
+        imageUrl: '', // 稍後後台更新
+      }
+    } else {
+      quickResult = {
+        success: true,
+        winningSentence: '故事繼續發展中...',
+        winnerName: drawerName,
+        winnerId: drawerId,
+        winnerVoteCount: 0,
+        drawerScore: DIRECTOR_BASE_SCORE,
+        screenwriterScore: 0,
+        imageUrl: '',
+      }
+    }
+    
+    console.log('[RoomView] 快速結算結果（用於立即顯示）:', quickResult)
+    
+    // 立即保存結算結果用於顯示
+    storyboardRoundResult.value = quickResult
+    
+    // 立即進入結算階段，不等待後台操作完成
+    await enterStoryboardSummaryPhase(quickResult)
+    
+    // 後台繼續完成完整的結算操作（上傳截圖、更新故事鏈、更新得分）
+    resultPromise.then(fullResult => {
+      if (fullResult.success) {
+        console.log('[RoomView] 後台結算完成:', fullResult)
+        // 可選：更新結果中的 imageUrl
+        if (fullResult.imageUrl) {
+          storyboardRoundResult.value = fullResult
+        }
+      } else {
+        console.error('[RoomView] 後台結算失敗:', fullResult.error)
+      }
+    }).catch(err => {
+      console.error('[RoomView] 後台結算錯誤:', err)
+    })
+    
   } catch (err) {
     console.error('[RoomView] 輪次結算錯誤:', err)
     showError(err instanceof Error ? err.message : '輪次結算失敗')
@@ -1651,6 +1714,9 @@ onMounted(async () => {
       if (state.clearCanvas) {
         console.log('[RoomView] 收到清空畫布指令')
         drawingCanvasRef.value?.clearCanvas()
+        // 同時清空本地截圖（新輪次開始時需要新截圖）
+        storyboardRoundLocalImage.value = ''
+        classicRoundImage.value = ''
       }
       
       // 先更新當前畫家 ID
@@ -1740,6 +1806,16 @@ onMounted(async () => {
         // 分鏡模式結算階段
         if (state.storyboardPhase === 'summary') {
           stopStoryboardCountdown()
+          
+          // 非房主玩家：在進入結算前截取畫布（前端截圖，即時可用）
+          if (!roomStore.isHost) {
+            const canvas = getCanvasElement()
+            if (canvas) {
+              storyboardRoundLocalImage.value = canvas.toDataURL('image/webp', 0.8)
+              console.log('[RoomView] 非房主：分鏡模式前端截圖完成')
+            }
+          }
+          
           // 載入故事鏈以獲取最新數據
           if (currentRoom.value) {
             await loadStoryChain(currentRoom.value.id)
@@ -2552,6 +2628,22 @@ onUnmounted(() => {
 /* ========== 分鏡模式編劇輸入區（畫布下方） ========== */
 .game-writing-area {
   flex-shrink: 0;
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+/* 編劇階段高亮效果 - 吸引用戶注意輸入區 */
+.game-writing-area.writing-highlight {
+  box-shadow: 0 0 0 3px #5ca8dc, 0 0 15px rgba(92, 168, 220, 0.5);
+  animation: writingPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes writingPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 3px #5ca8dc, 0 0 12px rgba(92, 168, 220, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 5px #5ca8dc, 0 0 22px rgba(92, 168, 220, 0.6);
+  }
 }
 
 .writing-input-area {
@@ -2731,16 +2823,16 @@ onUnmounted(() => {
 
 /* 投票階段高亮效果 - 吸引用戶注意右側投票區 */
 .game-story-panel.voting-highlight {
-  box-shadow: 0 0 0 3px var(--color-primary), 0 0 20px rgba(var(--color-primary-rgb), 0.4);
-  animation: votingPulse 2s ease-in-out infinite;
+  box-shadow: 0 0 0 3px #e07b67, 0 0 20px rgba(224, 123, 103, 0.5);
+  animation: votingPulse 1.5s ease-in-out infinite;
 }
 
 @keyframes votingPulse {
   0%, 100% {
-    box-shadow: 0 0 0 3px var(--color-primary), 0 0 20px rgba(var(--color-primary-rgb), 0.3);
+    box-shadow: 0 0 0 3px #e07b67, 0 0 15px rgba(224, 123, 103, 0.4);
   }
   50% {
-    box-shadow: 0 0 0 4px var(--color-primary), 0 0 30px rgba(var(--color-primary-rgb), 0.5);
+    box-shadow: 0 0 0 5px #e07b67, 0 0 25px rgba(224, 123, 103, 0.6);
   }
 }
 
