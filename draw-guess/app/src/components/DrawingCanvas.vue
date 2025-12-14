@@ -15,13 +15,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useDrawing } from '../composables/useDrawing'
 import { useRealtime } from '../composables/useRealtime'
 import { useRoomStore } from '../stores/room'
 import { useAuthStore } from '../stores/auth'
 import { useDrawingStore } from '../stores/drawing'
-import { useGameStore } from '../stores/game'
 import type { Stroke } from '../stores/drawing'
 
 const {
@@ -35,17 +34,15 @@ const {
 const roomStore = useRoomStore()
 const authStore = useAuthStore()
 const drawingStore = useDrawingStore()
-const gameStore = useGameStore()
 const { subscribeDrawing } = useRealtime()
 
 const canvasElement = ref<HTMLCanvasElement | null>(null)
 
-// 追蹤上次清空的輪次 ID，避免重複清空
-let lastClearedRoundId: string | null = null
-
 // 本地清空畫布函數 - 直接操作當前組件的 canvas 元素
+// 現在只響應 RoomView 的顯式調用（通過 clearCanvas 廣播指令觸發）
+// 這是根本性解決方案，避免 Safari 頁面恢復時響應式系統導致的誤清空
 function localClearCanvas() {
-  console.log('[DrawingCanvas] localClearCanvas 被調用')
+  console.log('[DrawingCanvas] clearCanvas 被調用')
   
   if (!canvasElement.value) {
     console.warn('[DrawingCanvas] canvas 元素不存在')
@@ -77,33 +74,6 @@ function localClearCanvas() {
   
   console.log('[DrawingCanvas] 畫布已清空')
 }
-
-// 監聯 currentRound.id 變化，新輪次開始時清空畫布
-// 組件現在始終掛載（不會被 v-if 銷毀），所以簡單 watch 即可
-// 
-// 防護機制：
-// 1. 使用 lastClearedRoundId 追蹤已清空的輪次，避免重複清空
-// 2. 這解決了 Postgres Changes 和 Broadcast 競爭條件導致的問題
-watch(
-  () => gameStore.currentRound?.id,
-  (newRoundId, oldRoundId) => {
-    console.log('[DrawingCanvas] watch currentRound.id:', { oldRoundId, newRoundId, lastClearedRoundId })
-    
-    // 輪次 ID 變化時清空畫布
-    if (newRoundId && newRoundId !== oldRoundId) {
-      // 額外檢查：如果這個輪次已經被清空過，跳過
-      // 這可能發生在 Postgres Changes 和 game_state 廣播都觸發更新的情況下
-      if (newRoundId === lastClearedRoundId) {
-        console.log('[DrawingCanvas] 輪次', newRoundId, '已經清空過，跳過')
-        return
-      }
-      
-      console.log('[DrawingCanvas] 新輪次開始，清空畫布')
-      lastClearedRoundId = newRoundId
-      localClearCanvas()
-    }
-  }
-)
 
 // 暴露清空方法給父組件
 defineExpose({

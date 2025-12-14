@@ -151,7 +151,7 @@
           <div class="game-canvas-wrapper">
             <div class="game-canvas">
               <!-- 畫布始終渲染，確保 watch 持續有效 -->
-              <DrawingCanvas />
+              <DrawingCanvas ref="drawingCanvasRef" />
               
               <!-- 進度條（繪畫階段顯示） -->
               <div v-if="!isSummary && isCountingDown && timeRemaining !== null" class="time-progress">
@@ -595,6 +595,9 @@ const storyboardRoundResult = ref<StoryboardRoundResult | null>(null)
 
 /** 經典模式本輪畫作截圖（Data URL） */
 const classicRoundImage = ref<string>('')
+
+/** DrawingCanvas 組件 ref - 用於顯式調用清空畫布 */
+const drawingCanvasRef = ref<{ clearCanvas: () => void } | null>(null)
 
 /** 分鏡模式故事歷史（用於 StoryPanel） */
 const storyHistory = computed(() => storyStore.storyChain)
@@ -1669,6 +1672,13 @@ onMounted(async () => {
     // 現在 broadcast self: true，所有人（包括房主）都會收到廣播，統一處理
     subscribeGameState(currentRoom.value.code, async (state) => {
       console.log('[RoomView] 收到遊戲狀態廣播:', state)
+      
+      // 處理顯式清空畫布指令（新輪次開始時發送）
+      // 這是根本性解決方案，避免 Safari 頁面恢復時的誤清空
+      if (state.clearCanvas) {
+        console.log('[RoomView] 收到清空畫布指令')
+        drawingCanvasRef.value?.clearCanvas()
+      }
       
       // 先更新當前畫家 ID
       if (state.drawerId && currentRoom.value) {

@@ -379,6 +379,7 @@ export function useGame() {
           drawerName: drawer.nickname,
           roundNumber: nextRoundNum,
           startedAt: result.round.started_at,
+          clearCanvas: true,  // 顯式清空畫布指令
         })
       } else {
         // 傳統模式：廣播傳統模式狀態
@@ -389,6 +390,7 @@ export function useGame() {
           drawerName: drawer.nickname,
           roundNumber: nextRoundNum,
           startedAt: result.round.started_at,
+          clearCanvas: true,  // 顯式清空畫布指令
         })
       }
 
@@ -613,6 +615,7 @@ export function useGame() {
       roundStatus: 'drawing',
       storyboardPhase: 'drawing',
       startedAt: new Date().toISOString(),
+      clearCanvas: true,  // 顯式清空畫布指令
     })
 
     return { success: true }

@@ -405,6 +405,7 @@ export function useRealtime() {
     revealedIndices?: number[]
     revealedChars?: string[]
     storyboardPhase?: string
+    clearCanvas?: boolean  // 顯式清空畫布指令（新輪次開始時發送）
     storyboardRoundResult?: {
       winningSentence: string
       winnerName: string
