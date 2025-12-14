@@ -635,6 +635,9 @@ watch(() => props.mySubmission, (newVal) => {
   max-height: 120px;
   object-fit: contain;
   display: block;
+  /* 覆蓋 PaperCSS 的手繪風格圖片邊框 */
+  border: none;
+  border-radius: 0;
 }
 
 .comic-author {

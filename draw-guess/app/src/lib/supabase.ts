@@ -30,6 +30,22 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   db: {
     schema: 'public',
   },
+  // Realtime 配置 - 針對 Safari 等瀏覽器的兼容性優化
+  realtime: {
+    params: {
+      eventsPerSecond: 10, // 限制每秒事件數，減少連接壓力
+    },
+    heartbeatIntervalMs: 15000, // 每 15 秒發送一次心跳，保持連接活躍
+    timeout: 30000, // 連接超時設置為 30 秒
+    reconnectAfterMs: (attempts: number) => {
+      // 指數退避重連策略，Safari 給予更長的延遲
+      const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent)
+      const baseDelay = isSafari ? 1500 : 1000
+      const delay = Math.min(baseDelay * Math.pow(1.5, attempts), 30000)
+      console.log('[Supabase Realtime] 重連延遲:', delay, 'ms (嘗試次數:', attempts, ', Safari:', isSafari, ')')
+      return delay
+    },
+  },
 })
 
 // 超時包裝器：為 Supabase 客戶端添加超時保護
