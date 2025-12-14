@@ -140,6 +140,14 @@
         </div>
       </div>
     </div>
+    
+    <!-- 版權和作者信息 -->
+    <footer class="home-footer">
+      <div class="footer-content">
+        <p class="footer-text">© 2025 太虛幻境</p>
+        <p class="footer-text">作者：張老師</p>
+      </div>
+    </footer>
   </div>
 </template>
 
@@ -550,6 +558,37 @@ function formatNumber(num: number): string {
 
   .stat-value {
     font-size: 1.25rem;
+  }
+}
+
+/* 底部版權信息 */
+.home-footer {
+  margin-top: 3rem;
+  padding: 2rem 1rem;
+  border-top: 1px solid var(--border-light);
+}
+
+.footer-content {
+  text-align: center;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.footer-text {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  margin: 0.25rem 0;
+  font-family: var(--font-body);
+}
+
+@media (max-width: 480px) {
+  .home-footer {
+    margin-top: 2rem;
+    padding: 1.5rem 0.75rem;
+  }
+
+  .footer-text {
+    font-size: 0.75rem;
   }
 }
 </style>
