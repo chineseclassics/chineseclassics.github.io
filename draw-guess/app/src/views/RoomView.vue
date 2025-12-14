@@ -117,43 +117,25 @@
                 </span>
               </div>
               
-              <!-- 下行：任務提示內容 -->
-              <!-- 繪畫階段：顯示上一鏡勝出句子，分鏡師需要畫出接下來的情節 -->
-              <!-- Requirements: 3.1 -->
-              <template v-if="isStoryboardDrawing">
-                <div v-if="isCurrentDrawer" class="word-display storyboard-task">
-                  <span class="task-sentence">「{{ latestSentence?.content || '故事開始了' }}」</span>
-                  <span class="task-arrow">→</span>
-                  <span class="task-hint">畫接下來發生什麼</span>
-                </div>
-                <div v-else class="word-display">
-                  <PhPaintBrush :size="16" weight="fill" class="hint-icon" /> 
-                  <span class="drawer-hint">分鏡師 {{ currentDrawerName }} 作畫中</span>
-                </div>
-              </template>
-              
-              <!-- 編劇階段 -->
-              <template v-else-if="isStoryboardWriting">
-                <div class="word-display storyboard-task">
-                  <span class="task-sentence">「{{ latestSentence?.content || '故事開始...' }}」</span>
-                  <span class="task-arrow">→</span>
-                  <span class="task-hint">續寫故事</span>
-                </div>
-              </template>
-              
-              <!-- 投票階段 -->
-              <template v-else-if="isStoryboardVoting">
-                <div class="word-display">
+              <!-- 下行：簡短任務提示（完整上下文從右側故事進展區查看） -->
+              <div class="word-display">
+                <template v-if="isStoryboardDrawing">
+                  <span v-if="isCurrentDrawer" class="task-hint">🎨 畫接下來發生什麼</span>
+                  <span v-else class="drawer-hint">
+                    <PhPaintBrush :size="16" weight="fill" class="hint-icon" /> 
+                    分鏡師 {{ currentDrawerName }} 作畫中
+                  </span>
+                </template>
+                <template v-else-if="isStoryboardWriting">
+                  <span class="task-hint">✍️ 接續劇情，描述這一鏡</span>
+                </template>
+                <template v-else-if="isStoryboardVoting">
                   <span class="phase-action">🗳️ 選擇最佳句子</span>
-                </div>
-              </template>
-              
-              <!-- 結算階段 -->
-              <template v-else-if="isStoryboardSummary">
-                <div class="word-display">
+                </template>
+                <template v-else-if="isStoryboardSummary">
                   <span class="phase-action">🎬 本鏡完成</span>
-                </div>
-              </template>
+                </template>
+              </div>
             </div>
           </template>
           
@@ -245,16 +227,13 @@
             
             <!-- 分鏡模式：根據階段切換 -->
             <template v-else>
-              <!-- 繪畫階段：分鏡師顯示工具欄，其他人顯示預覽提示 -->
+              <!-- 繪畫階段：分鏡師顯示工具欄，其他人顯示等待提示 -->
               <div v-if="isStoryboardDrawing" class="game-toolbar card" :class="{ disabled: !isCurrentDrawer }">
                 <div class="card-body" style="padding: 0.5rem;">
                   <DrawingToolbar v-if="isCurrentDrawer" :horizontal="true" />
                   <div v-else class="drawing-preview-hint">
-                    <div class="preview-context">
-                      <span class="context-label">上一句：</span>
-                      <span class="context-sentence">「{{ latestSentence?.content || '故事開始...' }}」</span>
-                    </div>
-                    <div class="preview-tip">🎨 分鏡師正在畫「接下來發生什麼」，準備好描述畫面了嗎？</div>
+                    <div class="preview-tip">🎨 分鏡師作畫中，準備好描述畫面了嗎？</div>
+                    <div class="preview-note">💡 查看右側故事進展區了解上下文</div>
                   </div>
                 </div>
               </div>
@@ -277,7 +256,7 @@
                       v-model="writingInput"
                       type="text"
                       class="writing-input"
-                      placeholder="描述這一鏡的故事情節..."
+                      placeholder="接著上一句，這個鏡頭裡..."
                       maxlength="100"
                       :disabled="writingSubmitting"
                     />
@@ -292,18 +271,28 @@
                 </div>
               </div>
               
-              <!-- 投票/結算階段：簡單提示 -->
-              <div v-else class="game-toolbar card phase-hint-bar">
+              <!-- 投票階段：顯示玩家自己提交的句子 -->
+              <div v-else-if="isStoryboardVoting" class="game-toolbar card phase-hint-bar">
                 <div class="card-body" style="padding: 0.5rem;">
                   <div class="phase-hint-content">
-                    <template v-if="isStoryboardVoting">
+                    <template v-if="mySubmissionText">
+                      <PhPencilLine :size="18" weight="duotone" />
+                      <span class="my-submission-preview">你的句子：「{{ mySubmissionText }}」</span>
+                    </template>
+                    <template v-else>
                       <PhHandPointing :size="18" weight="duotone" />
                       <span>請在右側面板投票選擇最佳句子</span>
                     </template>
-                    <template v-else-if="isStoryboardSummary">
-                      <PhFilmStrip :size="18" weight="duotone" />
-                      <span>本鏡完成，查看結果</span>
-                    </template>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- 結算階段：簡單提示 -->
+              <div v-else class="game-toolbar card phase-hint-bar">
+                <div class="card-body" style="padding: 0.5rem;">
+                  <div class="phase-hint-content">
+                    <PhFilmStrip :size="18" weight="duotone" />
+                    <span>本鏡完成，查看結果</span>
                   </div>
                 </div>
               </div>
@@ -483,7 +472,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { PhPaintBrush, PhGameController, PhCheckCircle, PhX, PhConfetti, PhLightbulb, PhHandPointing, PhFilmStrip, PhPencil } from '@phosphor-icons/vue'
+import { PhPaintBrush, PhGameController, PhCheckCircle, PhX, PhConfetti, PhLightbulb, PhHandPointing, PhFilmStrip, PhPencil, PhPencilLine } from '@phosphor-icons/vue'
 import DrawingCanvas from '../components/DrawingCanvas.vue'
 import DrawingToolbar from '../components/DrawingToolbar.vue'
 import PlayerList from '../components/PlayerList.vue'
@@ -572,7 +561,6 @@ const {
   // storyChain 直接使用 storyStore.storyChain
   // submissions 直接使用 storyStore.submissions
   mySubmission,
-  latestSentence,
   loadStoryChain,
   loadSubmissions,
   allSubmitted,
@@ -2178,46 +2166,18 @@ onUnmounted(() => {
   border: 1px solid #81c784;
 }
 
-/* ========== 任務區域（分鏡模式下行） ========== */
-.word-display.storyboard-task {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  max-width: 100%;
-  overflow: hidden;
-}
+/* ========== 任務提示（分鏡模式頂部下行） ========== */
 
-/* 任務句子（可能很長，需要截斷） */
-.task-sentence {
-  font-size: 0.95rem;
-  color: var(--text-primary);
-  font-weight: 500;
-  max-width: 50%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  flex-shrink: 1;
-}
-
-/* 任務箭頭 */
-.task-arrow {
-  color: var(--color-success);
-  font-weight: bold;
-  font-size: 1rem;
-  flex-shrink: 0;
-}
-
-/* 任務提示（固定文字） */
+/* 任務提示標籤 */
 .task-hint {
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   font-weight: 600;
   color: #2e7d32;
   background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
-  padding: 0.2rem 0.5rem;
+  padding: 0.25rem 0.6rem;
   border-radius: 4px;
   border: 1px solid var(--color-success);
   white-space: nowrap;
-  flex-shrink: 0;
 }
 
 /* 階段動作提示（投票/結算） */
@@ -2587,34 +2547,19 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.3rem;
   padding: 0.25rem 0;
 }
 
-.drawing-preview-hint .preview-context {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  font-size: 0.85rem;
-}
-
-.drawing-preview-hint .context-label {
-  color: var(--text-tertiary);
-  flex-shrink: 0;
-}
-
-.drawing-preview-hint .context-sentence {
-  color: var(--text-primary);
-  font-weight: 500;
-  max-width: 400px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .drawing-preview-hint .preview-tip {
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   color: var(--color-secondary);
+  font-weight: 500;
+}
+
+.drawing-preview-hint .preview-note {
+  font-size: 0.8rem;
+  color: var(--text-tertiary);
 }
 
 /* 階段提示欄 */
@@ -2629,6 +2574,16 @@ onUnmounted(() => {
   gap: 0.5rem;
   color: var(--text-secondary);
   font-size: 0.9rem;
+}
+
+/* 投票階段顯示自己的句子 */
+.my-submission-preview {
+  color: var(--text-primary);
+  font-weight: 500;
+  max-width: 500px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* 時間進度條 */
@@ -2908,14 +2863,9 @@ onUnmounted(() => {
     font-size: 0.8rem;
   }
 
-  .task-sentence {
-    font-size: 0.85rem;
-    max-width: 45%;
-  }
-
   .task-hint {
-    font-size: 0.75rem;
-    padding: 0.15rem 0.35rem;
+    font-size: 0.8rem;
+    padding: 0.2rem 0.4rem;
   }
 
   .hint-btn {
@@ -3074,17 +3024,9 @@ onUnmounted(() => {
     letter-spacing: 0.1em;
   }
 
-  .task-sentence {
-    font-size: 0.8rem;
-    max-width: 40%;
-  }
-
-  .task-arrow {
-    font-size: 0.85rem;
-  }
-
   .task-hint {
-    font-size: 0.7rem;
+    font-size: 0.75rem;
+    padding: 0.15rem 0.35rem;
   }
 
   .game-canvas-wrapper {

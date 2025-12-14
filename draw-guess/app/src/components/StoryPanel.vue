@@ -33,6 +33,7 @@
               v-for="panel in comicPanels" 
               :key="panel.roundNumber"
               class="story-item comic-panel"
+              :class="{ 'is-latest': panel.roundNumber === latestRoundNumber }"
             >
               <div class="comic-panel-content">
                 <!-- 分鏡標籤 -->
@@ -163,7 +164,7 @@
  * Requirements: 3.4, 4.2, 4.3, 4.5, 5.1
  */
 
-import { ref, computed, watch, nextTick } from 'vue'
+import { ref, computed, watch, nextTick, onMounted } from 'vue'
 import { 
   PhBookOpen, 
   PhNotePencil, 
@@ -281,6 +282,13 @@ const comicPanels = computed<ComicPanel[]>(() => {
   return Array.from(panelMap.values()).sort((a, b) => a.roundNumber - b.roundNumber)
 })
 
+/** 最新輪次號（用於高亮顯示） */
+const latestRoundNumber = computed(() => {
+  if (comicPanels.value.length === 0) return 0
+  const lastPanel = comicPanels.value[comicPanels.value.length - 1]
+  return lastPanel?.roundNumber ?? 0
+})
+
 // ============================================
 // 方法
 // ============================================
@@ -318,6 +326,11 @@ function scrollHistoryToBottom() {
 
 // 當故事歷史更新時，滾動到底部
 watch(() => props.storyHistory.length, () => {
+  nextTick(scrollHistoryToBottom)
+})
+
+// 組件掛載時，滾動到最新內容
+onMounted(() => {
   nextTick(scrollHistoryToBottom)
 })
 
@@ -502,12 +515,53 @@ watch(() => props.storyHistory.length, () => {
   margin-bottom: 0.5rem;
 }
 
+/* 最新分鏡高亮效果 */
+.comic-panel.is-latest {
+  animation: latestPanelHighlight 2s ease-in-out infinite;
+}
+
+.comic-panel.is-latest .comic-panel-content {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 12px rgba(107, 175, 178, 0.3);
+}
+
+.comic-panel.is-latest .panel-badge {
+  background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+  color: white;
+  border-color: var(--color-primary);
+  animation: badgePulse 2s ease-in-out infinite;
+}
+
+.comic-panel.is-latest .panel-badge::after {
+  content: ' · 最新';
+  font-size: 0.65rem;
+}
+
+@keyframes latestPanelHighlight {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.01);
+  }
+}
+
+@keyframes badgePulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
 .comic-panel-content {
   background: var(--bg-card);
   border: 2px solid var(--border-light);
   border-radius: 8px;
   overflow: hidden;
   position: relative;
+  transition: border-color 0.3s, box-shadow 0.3s;
 }
 
 /* 圖像區域 */
