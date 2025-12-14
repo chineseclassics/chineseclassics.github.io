@@ -178,6 +178,36 @@ export function useWordLibrary() {
     return { success: true, entry }
   }
 
+  // 更新條目
+  async function updateEntry(entryId: string, collectionId: string, newText: string) {
+    await refreshAdminStatus()
+    if (!isAdmin.value) {
+      return { success: false, error: '您沒有管理員權限' }
+    }
+
+    const cleanText = newText.trim()
+    if (!cleanText) {
+      return { success: false, error: '詞句不可為空' }
+    }
+
+    const { error: updateError } = await supabase
+      .from('word_entries')
+      .update({ text: cleanText })
+      .eq('id', entryId)
+
+    if (updateError) {
+      return { success: false, error: updateError.message || '更新失敗' }
+    }
+
+    // 更新本地緩存
+    const existing = entriesMap.value[collectionId] || []
+    entriesMap.value[collectionId] = existing.map(e =>
+      e.id === entryId ? { ...e, text: cleanText } : e
+    )
+
+    return { success: true }
+  }
+
   // 刪除條目
   async function deleteEntry(entryId: string, collectionId: string) {
     await refreshAdminStatus()
@@ -238,6 +268,7 @@ export function useWordLibrary() {
     loadEntries,
     addCollection,
     addEntry,
+    updateEntry,
     deleteEntry,
     toggleCollectionActive,
   }
