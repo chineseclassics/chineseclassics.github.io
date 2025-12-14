@@ -799,22 +799,17 @@ const sortedGuesses = computed(() => {
   )
 })
 
-// 自動滾動到聊天底部（智能滾動：只有當用戶在底部附近時才自動滾動）
-function scrollToBottom(force = false) {
+// 自動滾動到聊天底部（始終滾動到最新消息）
+function scrollToBottom() {
   if (!chatMessagesRef.value) return
   
   const el = chatMessagesRef.value
-  // 判斷用戶是否在底部附近（距離底部 100px 以內）
-  const isNearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 100
-  
-  if (force || isNearBottom) {
-    el.scrollTop = el.scrollHeight
-  }
+  el.scrollTop = el.scrollHeight
 }
 
-// 監聽猜測記錄變化，智能滾動
+// 監聽猜測記錄變化，自動滾動到底部
 watch(sortedGuesses, () => {
-  nextTick(() => scrollToBottom(false))
+  nextTick(() => scrollToBottom())
 }, { deep: true })
 
 // 監聽參與者列表變化，檢測是否被踢出
