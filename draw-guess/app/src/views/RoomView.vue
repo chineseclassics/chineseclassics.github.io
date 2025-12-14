@@ -351,6 +351,7 @@
             <!-- 輸入區 - 總結階段也可以輸入 -->
             <div class="chat-input-area">
               <input
+                ref="guessInputRef"
                 v-model="guessInput"
                 type="text"
                 :placeholder="getInputPlaceholder"
@@ -603,6 +604,7 @@ const currentRoom = computed(() => roomStore.currentRoom)
 const loading = computed(() => guessingLoading.value)
 const errorMessage = ref<string | null>(null)
 const chatMessagesRef = ref<HTMLElement | null>(null)
+const guessInputRef = ref<HTMLInputElement | null>(null)
 const isLeavingRoom = ref(false)
 
 // ========== 分鏡模式狀態 ==========
@@ -986,6 +988,10 @@ function showError(message: string) {
 async function handleSubmitGuess() {
   if (!isCurrentDrawer.value && guessInput.value.trim()) {
     await submitGuess()
+    // 提交後重新聚焦輸入框，方便玩家快速再猜
+    nextTick(() => {
+      guessInputRef.value?.focus()
+    })
   }
 }
 
