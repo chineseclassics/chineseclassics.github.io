@@ -152,7 +152,6 @@
                         @change="toggleEntrySelection(selectedCollection.id, entry.id)"
                       />
                       <span class="entry-text">{{ entry.text }}</span>
-                      <span v-if="entry.category" class="entry-category">({{ entry.category }})</span>
                     </label>
                   </div>
                 </div>
