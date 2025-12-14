@@ -564,6 +564,8 @@ const {
   loadStoryChain,
   loadSubmissions,
   allSubmitted,
+  submitSentence,
+  updateSubmission,
 } = useStoryboard()
 
 // ========== 分鏡模式故事設定彈窗狀態 ==========
@@ -632,9 +634,22 @@ async function handleWritingSubmit() {
   
   writingSubmitting.value = true
   try {
-    await handleStorySubmit(writingInput.value.trim())
-    writingInput.value = ''
-    isEditingWriting.value = false
+    // 如果是編輯模式（已有提交），使用 updateSubmission
+    // 否則使用 submitSentence 創建新提交
+    let result
+    if (isEditingWriting.value && mySubmission.value) {
+      result = await updateSubmission(writingInput.value.trim())
+    } else {
+      result = await submitSentence(writingInput.value.trim())
+    }
+    
+    if (result.success) {
+      console.log('[RoomView] 句子提交/更新成功')
+      writingInput.value = ''
+      isEditingWriting.value = false
+    } else {
+      console.error('[RoomView] 句子提交/更新失敗:', result.error)
+    }
   } finally {
     writingSubmitting.value = false
   }
