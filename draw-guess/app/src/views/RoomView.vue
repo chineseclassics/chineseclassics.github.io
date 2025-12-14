@@ -2085,25 +2085,26 @@ onUnmounted(() => {
 /* 分鏡模式頂部佈局：左側倒計時 + 右側信息區 */
 .storyboard-header-layout {
   display: flex;
-  align-items: stretch;
+  align-items: flex-start;
   gap: 1rem;
   flex: 1;
   min-width: 0;
 }
 
-/* 左側倒計時區塊 */
+/* 左側倒計時區塊 - 獨立靠左對齊 */
 .storyboard-timer {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  align-self: stretch;
   background: var(--bg-secondary);
-  padding: 0.4rem 0.8rem;
+  padding: 0.5rem 1rem;
   border-radius: 6px;
   border: 2px solid var(--border-color);
   box-shadow: 2px 2px 0 var(--shadow-color);
-  min-width: 50px;
+  min-width: 55px;
 }
 
 .storyboard-timer .timer-number {
