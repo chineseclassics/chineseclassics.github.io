@@ -389,6 +389,10 @@
                 #taixuFloatingLogo img {
                     display: block;
                     transition: transform 0.3s ease, opacity 0.3s ease;
+                    /* 覆蓋 PaperCSS 的手繪風格圖片邊框 */
+                    border: none !important;
+                    border-radius: 0 !important;
+                    box-shadow: none !important;
                 }
                 
                 #taixuFloatingLogo:hover img {
