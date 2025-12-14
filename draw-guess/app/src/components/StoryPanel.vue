@@ -66,15 +66,6 @@
           </div>
         </div>
 
-        <!-- 編劇階段：提示信息（輸入區已移至畫布下方） -->
-        <div v-if="phase === 'writing'" class="writing-hint-section">
-          <div class="section-divider"></div>
-          <div class="writing-hint">
-            <PhPencilLine :size="18" weight="fill" class="hint-icon" />
-            <span>請在畫布下方輸入框描述這一鏡的故事</span>
-          </div>
-        </div>
-
         <!-- 投票階段：投票選項列表 -->
         <div v-if="phase === 'voting'" class="voting-section">
           <div class="section-divider"></div>
@@ -170,7 +161,6 @@ import {
   PhNotePencil, 
   PhUser, 
   PhPaintBrush,
-  PhPencilLine,
   PhHandPointing,
   PhWarningCircle,
   PhCircle,
@@ -652,26 +642,6 @@ onMounted(() => {
    編劇階段：句子輸入區域
    Requirements: 4.2, 4.5
    ============================================ */
-
-/* 編劇階段提示（輸入區已移至畫布下方） */
-.writing-hint-section {
-  flex-shrink: 0;
-  border-top: 2px solid var(--border-light);
-  padding: 0.75rem;
-}
-
-.writing-hint {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: var(--text-secondary);
-  font-size: 0.9rem;
-  justify-content: center;
-}
-
-.writing-hint .hint-icon {
-  color: var(--color-primary);
-}
 
 /* 保留舊樣式供兼容 */
 .writing-section {

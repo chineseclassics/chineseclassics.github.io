@@ -375,13 +375,23 @@ async function handleSaveAsPdf() {
       actionButtons.style.display = 'none'
     }
     
-    // 使用 html2canvas 截圖
+    // 獲取容器實際寬度
+    const containerRect = container.getBoundingClientRect()
+    const containerWidth = containerRect.width
+    
+    // 使用 html2canvas 截圖 - 優化配置
     const canvas = await html2canvas(container, {
       scale: 2, // 提高解析度
       useCORS: true, // 允許跨域圖片
+      allowTaint: true,
       logging: false,
-      backgroundColor: '#f5f0e6', // 與背景色匹配
-      windowWidth: 800, // 固定寬度確保一致性
+      backgroundColor: '#FFFFFF', // 使用純白背景避免矇版效果
+      width: containerWidth, // 使用實際寬度
+      scrollX: 0,
+      scrollY: 0,
+      x: 0,
+      y: 0,
+      // 移除 windowWidth，讓 html2canvas 使用實際尺寸
     })
     
     // 恢復操作按鈕
@@ -389,47 +399,74 @@ async function handleSaveAsPdf() {
       actionButtons.style.display = ''
     }
     
-    // 計算 PDF 尺寸（A4 紙張）
-    const imgWidth = 190 // A4 寬度減去邊距
-    const imgHeight = (canvas.height * imgWidth) / canvas.width
+    // 計算 PDF 尺寸（A4 紙張：210mm x 297mm）
+    const pdfWidth = 210
+    const pdfHeight = 297
+    const margin = 10 // 邊距
+    const contentWidth = pdfWidth - (margin * 2) // 可用寬度 190mm
+    
+    // 計算圖片在 PDF 中的尺寸（保持原始比例）
+    const imgRatio = canvas.height / canvas.width
+    const imgWidth = contentWidth
+    const imgHeight = contentWidth * imgRatio
     
     // 創建 PDF
     const pdf = new jsPDF({
-      orientation: imgHeight > 270 ? 'portrait' : 'portrait',
+      orientation: 'portrait',
       unit: 'mm',
       format: 'a4'
     })
     
-    // 添加標題
-    const title = displayTitle.value || '分鏡故事'
-    
-    // 如果內容很長，需要分頁
-    const pageHeight = 287 // A4 高度減去邊距
-    let position = 10 // 起始位置
-    
     // 添加圖片到 PDF
-    const imgData = canvas.toDataURL('image/jpeg', 0.95)
+    const imgData = canvas.toDataURL('image/png', 1.0) // 使用 PNG 格式保持質量
     
-    if (imgHeight <= pageHeight) {
-      // 單頁
-      pdf.addImage(imgData, 'JPEG', 10, position, imgWidth, imgHeight)
+    // 計算需要多少頁
+    const pageContentHeight = pdfHeight - (margin * 2) // 每頁可用高度 277mm
+    
+    if (imgHeight <= pageContentHeight) {
+      // 單頁：居中顯示
+      pdf.addImage(imgData, 'PNG', margin, margin, imgWidth, imgHeight)
     } else {
-      // 多頁
-      let heightLeft = imgHeight
-      let currentPosition = position
+      // 多頁：按頁分割
+      let remainingHeight = imgHeight
+      let sourceY = 0
+      let pageIndex = 0
       
-      while (heightLeft > 0) {
-        pdf.addImage(imgData, 'JPEG', 10, currentPosition, imgWidth, imgHeight)
-        heightLeft -= pageHeight
-        
-        if (heightLeft > 0) {
+      while (remainingHeight > 0) {
+        if (pageIndex > 0) {
           pdf.addPage()
-          currentPosition = -pageHeight + position + (imgHeight - heightLeft)
         }
+        
+        // 計算本頁顯示的高度
+        const thisPageHeight = Math.min(remainingHeight, pageContentHeight)
+        
+        // 計算源圖片中對應的區域
+        const sourceHeight = (thisPageHeight / imgHeight) * canvas.height
+        
+        // 創建臨時 canvas 來裁剪圖片
+        const tempCanvas = document.createElement('canvas')
+        tempCanvas.width = canvas.width
+        tempCanvas.height = sourceHeight
+        const tempCtx = tempCanvas.getContext('2d')
+        if (tempCtx) {
+          tempCtx.drawImage(
+            canvas,
+            0, sourceY, canvas.width, sourceHeight, // 源區域
+            0, 0, canvas.width, sourceHeight // 目標區域
+          )
+          
+          const pageImgData = tempCanvas.toDataURL('image/png', 1.0)
+          pdf.addImage(pageImgData, 'PNG', margin, margin, imgWidth, thisPageHeight)
+        }
+        
+        sourceY += sourceHeight
+        remainingHeight -= thisPageHeight
+        pageIndex++
       }
     }
     
     // 生成檔案名
+    const title = displayTitle.value || '分鏡故事'
     const filename = `${title.replace(/[^\u4e00-\u9fa5a-zA-Z0-9]/g, '_')}_分鏡故事.pdf`
     
     // 下載 PDF
