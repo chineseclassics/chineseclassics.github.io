@@ -338,7 +338,7 @@
               </div>
             </div>
             
-            <!-- 輸入區 - 總結階段也可以輸入 -->
+            <!-- 輸入區 - 按 Enter 發送，無需按鈕 -->
             <div class="chat-input-area">
               <input
                 ref="guessInputRef"
@@ -348,15 +348,9 @@
                 maxlength="32"
                 :disabled="loading || hasGuessed || isCurrentDrawer"
                 @keyup.enter="handleSubmitGuess"
-                class="chat-input-field"
+                enterkeyhint="send"
+                class="chat-input-field chat-input-full"
               />
-              <button 
-                @click="handleSubmitGuess"
-                :disabled="loading || hasGuessed || isCurrentDrawer || !guessInput.trim()"
-                class="paper-btn btn-secondary chat-send-btn"
-              >
-                發送
-              </button>
             </div>
           </div>
 
@@ -849,7 +843,7 @@ function getParticipantName(userId: string): string {
 const getInputPlaceholder = computed(() => {
   if (isCurrentDrawer.value) return '你是畫家，不能打字哦~'
   if (hasGuessed.value) return '你已猜中！等待其他人...'
-  return '輸入你的猜測...'
+  return '輸入猜測，按 Enter 發送'
 })
 
 // 獲取詞語提示（類似 skribbl.io 的下劃線風格，支持揭示提示）
@@ -2923,6 +2917,7 @@ onUnmounted(() => {
   display: flex;
   gap: 0.5rem;
   background: var(--bg-secondary);
+  overflow: hidden; /* 防止內容溢出 */
 }
 
 .chat-input-field {
@@ -2950,10 +2945,9 @@ onUnmounted(() => {
   opacity: 0.6;
 }
 
-.chat-send-btn {
-  /* PaperCSS paper-btn 樣式已提供基礎樣式 */
-  padding: 0.6rem 1.25rem;
-  white-space: nowrap;
+/* 輸入框佔滿寬度（無發送按鈕模式） */
+.chat-input-full {
+  width: 100%;
 }
 
 /* 響應式 */
@@ -2979,7 +2973,20 @@ onUnmounted(() => {
     width: 200px;
     min-width: 200px;
   }
-}
+  
+  /* 輸入區域在窄屏幕上更緊湊 */
+  .chat-input-area {
+    padding: 0.5rem;
+    gap: 0.35rem;
+  }
+  
+  .chat-input-field {
+    padding: 0.5rem 0.6rem;
+    font-size: 0.85rem;
+    min-width: 0; /* 允許輸入框收縮 */
+  }
+  
+  }
 
 /* ============================================
    移動端優化 (768px 以下)
@@ -3163,12 +3170,6 @@ onUnmounted(() => {
     border-radius: 8px;
   }
 
-  .chat-send-btn {
-    padding: 0.6rem 1rem;
-    font-size: 0.9rem;
-    min-width: 60px;
-  }
-
   /* 總結覆蓋層 - 移動端適配 */
   .summary-overlay {
     padding: 0.5rem;
@@ -3245,11 +3246,7 @@ onUnmounted(() => {
     padding: 0.5rem 0.6rem;
   }
 
-  .chat-send-btn {
-    padding: 0.5rem 0.75rem;
-    min-width: 50px;
   }
-}
 
 /* ============================================
    橫屏移動端優化
