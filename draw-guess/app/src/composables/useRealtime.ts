@@ -17,6 +17,7 @@ import { useGameStore } from '../stores/game'
 const globalChannels = new Map<string, ReturnType<typeof supabase.channel>>()
 const globalConnectionStatus = ref<'connected' | 'disconnected' | 'connecting'>('disconnected')
 const globalDrawingCallbacks = new Map<string, Set<(stroke: any) => void>>()
+const globalGameStateCallbacks = new Map<string, Set<(state: any) => void>>()
 const globalSubscribedRooms = new Set<string>()
 
 const DEBUG = import.meta.env.DEV
@@ -275,6 +276,16 @@ export function useRealtime() {
         }
       })
       
+      // 遊戲狀態廣播（在 channel subscribe 之前添加，確保所有玩家都能收到）
+      .on('broadcast', { event: 'game_state' }, (payload) => {
+        log('收到 game_state 廣播:', payload.payload)
+        const callbacks = globalGameStateCallbacks.get(roomCode)
+        if (callbacks && payload.payload) {
+          log('分發給', callbacks.size, '個遊戲狀態回調')
+          callbacks.forEach(cb => cb(payload.payload))
+        }
+      })
+      
       // Presence 同步
       .on('presence', { event: 'sync' }, () => {
         const state = channel.presenceState()
@@ -328,22 +339,20 @@ export function useRealtime() {
 
   /**
    * 訂閱遊戲狀態廣播
+   * 使用回調機制，確保在 channel subscribe 之前或之後都能正確接收
    */
   function subscribeGameState(roomCode: string, onGameState: (state: any) => void) {
-    const channel = getRoomChannel(roomCode)
+    log('註冊遊戲狀態回調，roomCode:', roomCode)
     
-    const listenerKey = `gameState:${roomCode}`
-    if ((channel as any)[listenerKey]) {
-      return channel
+    if (!globalGameStateCallbacks.has(roomCode)) {
+      globalGameStateCallbacks.set(roomCode, new Set())
     }
+    globalGameStateCallbacks.get(roomCode)!.add(onGameState)
 
-    channel.on('broadcast', { event: 'game_state' }, (payload) => {
-      log('收到遊戲狀態廣播:', payload.payload)
-      onGameState(payload.payload)
-    })
-
-    ;(channel as any)[listenerKey] = true
-    return channel
+    // 返回取消訂閱的函數
+    return () => {
+      globalGameStateCallbacks.get(roomCode)?.delete(onGameState)
+    }
   }
 
   /**
