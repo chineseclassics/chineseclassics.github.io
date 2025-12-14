@@ -31,8 +31,10 @@
                 />
                 <div class="mode-content">
                   <span class="mode-icon">🎨</span>
-                  <span class="mode-name">傳統模式</span>
-                  <span class="mode-desc">猜詞競技，猜對得分</span>
+                  <div class="mode-text">
+                    <span class="mode-name">傳統模式</span>
+                    <span class="mode-desc">猜詞競技，猜對得分</span>
+                  </div>
                 </div>
               </label>
               <label class="game-mode-option" :class="{ active: form.gameMode === 'storyboard' }">
@@ -44,8 +46,10 @@
                 />
                 <div class="mode-content">
                   <span class="mode-icon">📖</span>
-                  <span class="mode-name">分鏡接龍</span>
-                  <span class="mode-desc">合作創作故事漫畫</span>
+                  <div class="mode-text">
+                    <span class="mode-name">分鏡接龍</span>
+                    <span class="mode-desc">合作創作故事漫畫</span>
+                  </div>
                 </div>
               </label>
             </div>
@@ -906,9 +910,10 @@ async function handleSubmit() {
 
 .game-mode-option .mode-content {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  padding: 1rem;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
   background: var(--bg-card);
   border: 3px solid var(--border-color);
   border-radius: 0;
@@ -929,22 +934,26 @@ async function handleSubmit() {
 }
 
 .mode-icon {
-  font-size: 2rem;
-  margin-bottom: 0.5rem;
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.mode-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
 }
 
 .mode-name {
   font-weight: 600;
   font-family: var(--font-head);
   color: var(--text-primary);
-  font-size: 1.1rem;
-  margin-bottom: 0.25rem;
+  font-size: 1rem;
 }
 
 .mode-desc {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   color: var(--text-secondary);
-  text-align: center;
 }
 
 /* 單局模式選項 */
