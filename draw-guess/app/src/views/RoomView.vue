@@ -93,71 +93,67 @@
           <!-- ========== 分鏡模式頂部提示 ========== -->
           <!-- Requirements: 3.1, 4.2 - 顯示上一輪勝出句子、階段倒計時 -->
           <template v-else>
-            <!-- 分鏡模式頂部：左側倒計時 + 右側信息區 -->
-            <div class="storyboard-header-layout">
-              <!-- 倒計時（左側） -->
-              <div v-if="storyboardTimeRemaining !== null && storyboardTimeRemaining > 0" class="storyboard-timer">
-                <span class="timer-number" :class="{ 
-                  'time-warning': storyboardTimeRemaining <= 10,
-                  'time-critical-pulse': storyboardTimeRemaining <= 5 
-                }">{{ storyboardTimeRemaining }}</span>
-                <span class="timer-label">秒</span>
+            <!-- 倒計時（絕對定位靠左，與傳統模式一致） -->
+            <div v-if="storyboardTimeRemaining !== null && storyboardTimeRemaining > 0" class="time-display">
+              <span class="time-number" :class="{ 
+                'time-warning': storyboardTimeRemaining <= 10,
+                'time-critical-pulse': storyboardTimeRemaining <= 5 
+              }">{{ storyboardTimeRemaining }}</span>
+              <span class="time-label">秒</span>
+            </div>
+            
+            <!-- 分鏡模式信息區：兩行佈局（與傳統模式結構一致） -->
+            <div class="storyboard-info-area">
+              <!-- 上行：場次、鏡數和階段 -->
+              <div class="round-info">
+                <span class="round-label">
+                  第 {{ currentGameNumber }} 場 · 第 {{ currentRoundInGame }} / {{ totalRoundsPerGame }} 鏡
+                </span>
+                <span class="phase-label storyboard-phase" :class="'phase-' + storyboardPhase">
+                  {{ storyboardPhaseLabel }}
+                </span>
+                <span v-if="isStoryboardFinalRound" class="final-round-hint">
+                  {{ finalRoundHint }}
+                </span>
               </div>
               
-              <!-- 右側信息區 -->
-              <div class="storyboard-info-area">
-                <!-- 上部：場次和階段 -->
-                <div class="storyboard-meta">
-                  <span class="meta-round">
-                    第 {{ currentGameNumber }} 場 · 第 {{ currentRoundInGame }} / {{ totalRoundsPerGame }} 鏡
-                  </span>
-                  <span class="phase-label storyboard-phase" :class="'phase-' + storyboardPhase">
-                    {{ storyboardPhaseLabel }}
-                  </span>
-                  <span v-if="isStoryboardFinalRound" class="final-round-hint">
-                    {{ finalRoundHint }}
-                  </span>
-                </div>
-                
-                <!-- 下部：提示內容 -->
-                <div class="storyboard-prompt">
+              <!-- 下行：任務提示內容 -->
               <!-- 繪畫階段：顯示上一鏡勝出句子，分鏡師需要畫出接下來的情節 -->
               <!-- Requirements: 3.1 -->
               <template v-if="isStoryboardDrawing">
-                <div v-if="isCurrentDrawer" class="word-display storyboard-drawing drawer-task-compact">
-                  <span class="task-sentence">「{{ latestSentence?.content || '故事即將開始...' }}」</span>
+                <div v-if="isCurrentDrawer" class="word-display storyboard-task">
+                  <span class="task-sentence">「{{ latestSentence?.content || '故事開始了' }}」</span>
                   <span class="task-arrow">→</span>
                   <span class="task-hint">畫接下來發生什麼</span>
                 </div>
-                <div v-else class="word-display storyboard-compact">
+                <div v-else class="word-display">
                   <PhPaintBrush :size="16" weight="fill" class="hint-icon" /> 
-                  <span class="compact-hint">分鏡師 {{ currentDrawerName }} 作畫中</span>
+                  <span class="drawer-hint">分鏡師 {{ currentDrawerName }} 作畫中</span>
                 </div>
               </template>
               
               <!-- 編劇階段 -->
               <template v-else-if="isStoryboardWriting">
-                <div class="word-display storyboard-compact">
-                  <span class="compact-sentence">「{{ latestSentence?.content || '故事開始...' }}」</span>
-                  <span class="compact-hint">→ 續寫故事</span>
+                <div class="word-display storyboard-task">
+                  <span class="task-sentence">「{{ latestSentence?.content || '故事開始...' }}」</span>
+                  <span class="task-arrow">→</span>
+                  <span class="task-hint">續寫故事</span>
                 </div>
               </template>
               
               <!-- 投票階段 -->
               <template v-else-if="isStoryboardVoting">
-                <div class="word-display storyboard-compact">
-                  <span class="compact-hint voting">🗳️ 選擇最佳句子</span>
+                <div class="word-display">
+                  <span class="phase-action">🗳️ 選擇最佳句子</span>
                 </div>
               </template>
               
               <!-- 結算階段 -->
               <template v-else-if="isStoryboardSummary">
-                <div class="word-display storyboard-compact">
-                  <span class="compact-hint">🎬 本鏡完成</span>
+                <div class="word-display">
+                  <span class="phase-action">🎬 本鏡完成</span>
                 </div>
               </template>
-                </div>
-              </div>
             </div>
           </template>
           
@@ -1943,22 +1939,26 @@ onUnmounted(() => {
   min-width: 0;
 }
 
-/* 頂部提示區 */
+/* 頂部提示區 - 統一佈局 */
 .game-header {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 1rem;
   padding: 0.75rem 1rem;
+  padding-left: 5rem; /* 為左側絕對定位的倒計時留出空間 */
   position: relative;
+  min-height: 70px;
 }
 
 .word-display {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.5rem;
   transition: all 0.3s ease;
   animation: slideDown 0.3s ease-out;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 @keyframes slideDown {
@@ -2029,14 +2029,15 @@ onUnmounted(() => {
   }
 }
 
-/* 傳統模式右側信息區：兩行佈局 */
+/* 傳統模式信息區：兩行佈局 */
 .traditional-info-area {
   flex: 1;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 0.3rem;
+  gap: 0.25rem;
   min-width: 0;
+  overflow: hidden;
 }
 
 /* 輪次信息 */
@@ -2094,10 +2095,20 @@ onUnmounted(() => {
 }
 
 .word-text {
-  font-size: 1.5rem;
+  font-size: 1.3rem;
   font-weight: bold;
   font-family: var(--font-head);
   color: var(--text-primary);
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 長詞語時縮小字體 */
+.word-text.long-word {
+  font-size: 1.1rem;
+  max-width: 400px;
 }
 
 /* ============================================
@@ -2107,86 +2118,34 @@ onUnmounted(() => {
 
 .game-header.storyboard-mode {
   background: linear-gradient(135deg, var(--bg-card), var(--bg-highlight));
-  min-height: auto;
-  padding: 0.5rem 1rem;
-  justify-content: flex-start;
 }
 
-/* 分鏡模式頂部佈局：左側倒計時 + 右側信息區 */
-.storyboard-header-layout {
-  display: flex;
-  align-items: flex-start;
-  gap: 1rem;
-  flex: 1;
-  min-width: 0;
-}
-
-/* 左側倒計時區塊 - 獨立靠左對齊 */
-.storyboard-timer {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  align-self: stretch;
-  background: var(--bg-secondary);
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
-  border: 2px solid var(--border-color);
-  box-shadow: 2px 2px 0 var(--shadow-color);
-  min-width: 55px;
-}
-
-.storyboard-timer .timer-number {
-  font-size: 1.4rem;
-  font-weight: 700;
-  font-family: var(--font-mono);
-  color: var(--text-primary);
-  line-height: 1;
-}
-
-.storyboard-timer .timer-label {
-  font-size: 0.7rem;
-  color: var(--text-tertiary);
-}
-
-/* 右側信息區 */
+/* 分鏡模式信息區：兩行佈局（與傳統模式結構一致） */
 .storyboard-info-area {
   flex: 1;
-  min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.3rem;
+  align-items: flex-start;
+  gap: 0.25rem;
+  min-width: 0;
+  overflow: hidden;
 }
 
-/* 上部：場次和階段 */
-.storyboard-meta {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-
-.storyboard-meta .meta-round {
-  font-size: 0.85rem;
-  font-weight: 500;
-  color: var(--text-secondary);
-}
-
-/* 下部：提示內容 */
-.game-header.storyboard-mode .storyboard-prompt {
-  display: flex;
-  align-items: center;
-}
-
-/* 分鏡模式階段標籤 */
-.phase-label.storyboard-phase {
+/* 階段標籤（通用） */
+.phase-label {
   display: inline-block;
   padding: 0.15rem 0.5rem;
   border-radius: 4px;
   font-size: 0.75rem;
   font-weight: 600;
   white-space: nowrap;
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+}
+
+/* 分鏡模式階段標籤 */
+.phase-label.storyboard-phase {
+  /* 繼承通用樣式 */
 }
 
 .phase-label.phase-drawing {
@@ -2213,68 +2172,37 @@ onUnmounted(() => {
   border: 1px solid #81c784;
 }
 
-/* 分鏡模式提示內容 */
-.storyboard-prompt {
-  flex: 1;
+/* ========== 任務區域（分鏡模式下行） ========== */
+.word-display.storyboard-task {
   display: flex;
-  justify-content: center;
-}
-
-.storyboard-label {
-  display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
-  background: var(--color-secondary);
-  color: white;
-  padding: 0.25rem 0.75rem;
-  border-radius: 4px;
-  font-size: 0.85rem;
+  gap: 0.5rem;
+  max-width: 100%;
+  overflow: hidden;
 }
 
-.storyboard-sentence {
-  font-size: 1.1rem;
-  max-width: 400px;
+/* 任務句子（可能很長，需要截斷） */
+.task-sentence {
+  font-size: 0.95rem;
+  color: var(--text-primary);
+  font-weight: 500;
+  max-width: 50%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  flex-shrink: 1;
 }
 
-.storyboard-hint {
-  font-size: 1rem;
-  color: var(--text-secondary);
-}
-
-.word-display.storyboard-drawing,
-.word-display.storyboard-writing,
-.word-display.storyboard-voting,
-.word-display.storyboard-summary,
-.word-display.storyboard-watching {
-  gap: 0.75rem;
-}
-
-/* ========== 畫手任務區域（分鏡模式） ========== */
-.word-display.drawer-task-compact {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-
-.drawer-task-compact .task-sentence {
-  font-size: 0.9rem;
-  color: var(--text-primary);
-  font-weight: 500;
-}
-
-.drawer-task-compact .task-arrow {
+/* 任務箭頭 */
+.task-arrow {
   color: var(--color-success);
   font-weight: bold;
   font-size: 1rem;
   flex-shrink: 0;
 }
 
-.drawer-task-compact .task-hint {
+/* 任務提示（固定文字） */
+.task-hint {
   font-size: 0.85rem;
   font-weight: 600;
   color: #2e7d32;
@@ -2286,50 +2214,11 @@ onUnmounted(() => {
   flex-shrink: 0;
 }
 
-/* 分鏡模式緊湊顯示（編劇/投票/結算階段） */
-.word-display.storyboard-compact {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-
-.storyboard-compact .compact-sentence {
+/* 階段動作提示（投票/結算） */
+.phase-action {
   font-size: 0.9rem;
-  color: var(--text-primary);
-  font-weight: 500;
-}
-
-.storyboard-compact .compact-hint {
-  font-size: 0.85rem;
   font-weight: 600;
-  color: var(--color-secondary);
-  padding: 0.2rem 0.5rem;
-  background: var(--bg-secondary);
-  border-radius: 4px;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-.storyboard-compact .compact-hint.voting {
-  background: linear-gradient(135deg, #f3e5f5, #e1bee7);
-  color: #7b1fa2;
-}
-
-/* 分鏡模式倒計時和輪次信息 - 改為流式佈局 */
-.time-display.storyboard {
-  display: flex;
-  align-items: baseline;
-  gap: 0.25rem;
-  flex-shrink: 0;
-}
-
-.round-info.storyboard {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-  flex: 1;
+  color: var(--text-secondary);
 }
 
 /* Final_Round 結局倒數提示 */
@@ -2353,11 +2242,15 @@ onUnmounted(() => {
 
 /* 詞語提示槽位（下劃線風格） */
 .word-slots {
-  font-size: 1.5rem;
+  font-size: 1.3rem;
   font-weight: bold;
   font-family: monospace;
-  letter-spacing: 0.3em;
+  letter-spacing: 0.25em;
   color: var(--text-primary);
+  max-width: 350px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* 提示按鈕 */
@@ -2426,10 +2319,18 @@ onUnmounted(() => {
   100% { transform: scale(1); opacity: 1; }
 }
 
-.word-hint {
-  font-size: 1.1rem;
+/* 畫家提示（非畫家看到的提示） */
+.drawer-hint {
+  font-size: 0.9rem;
   color: var(--text-secondary);
   font-family: var(--font-head);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.drawer-hint .hint-icon {
+  color: var(--color-primary);
 }
 
 .skip-btn {
@@ -2947,57 +2848,68 @@ onUnmounted(() => {
   /* 頂部提示區域 - 移動端緊湊化 */
   .game-header {
     padding: 0.5rem 0.75rem;
+    padding-left: 4rem; /* 縮小左側空間 */
     gap: 0.5rem;
     flex-wrap: wrap;
-    min-height: auto;
+    min-height: 60px;
   }
 
   .time-display {
-    position: static;
-    order: -1;
+    left: 0.5rem;
   }
 
   .time-number {
-    font-size: 1.5rem;
+    font-size: 1.4rem;
     min-width: 2rem;
   }
 
-  .traditional-info-area {
-    align-items: center;
+  .traditional-info-area,
+  .storyboard-info-area {
+    align-items: flex-start;
   }
 
   .round-info {
-    justify-content: center;
+    flex-wrap: wrap;
   }
 
   .round-label {
-    font-size: 0.8rem;
-    padding: 0.2rem 0.4rem;
+    font-size: 0.75rem;
+    padding: 0.15rem 0.35rem;
   }
 
   .word-display {
-    width: 100%;
-    justify-content: center;
     flex-wrap: wrap;
-    gap: 0.5rem;
+    gap: 0.35rem;
   }
 
   .word-label {
-    font-size: 0.75rem;
-    padding: 0.2rem 0.5rem;
+    font-size: 0.7rem;
+    padding: 0.15rem 0.4rem;
   }
 
   .word-text {
-    font-size: 1.2rem;
+    font-size: 1.1rem;
+    max-width: 200px;
   }
 
   .word-slots {
-    font-size: 1.2rem;
-    letter-spacing: 0.2em;
+    font-size: 1rem;
+    letter-spacing: 0.15em;
+    max-width: 200px;
   }
 
   .drawer-hint {
-    font-size: 0.9rem;
+    font-size: 0.8rem;
+  }
+
+  .task-sentence {
+    font-size: 0.85rem;
+    max-width: 45%;
+  }
+
+  .task-hint {
+    font-size: 0.75rem;
+    padding: 0.15rem 0.35rem;
   }
 
   .hint-btn {
@@ -3009,8 +2921,19 @@ onUnmounted(() => {
   .leave-btn {
     position: absolute;
     right: 0.25rem;
-    top: 0.25rem;
+    top: 50%;
+    transform: translateY(-50%);
     padding: 0.2rem 0.4rem;
+  }
+
+  .phase-label {
+    font-size: 0.7rem;
+    padding: 0.1rem 0.35rem;
+  }
+
+  .final-round-hint {
+    font-size: 0.7rem;
+    padding: 0.15rem 0.4rem;
   }
 
   /* 主要內容區域 - 移動端垂直排列 */
@@ -3113,18 +3036,49 @@ onUnmounted(() => {
 
   .game-header {
     padding: 0.4rem 0.5rem;
+    padding-left: 3.5rem;
+    min-height: 55px;
+  }
+
+  .time-display {
+    left: 0.35rem;
   }
 
   .time-number {
-    font-size: 1.3rem;
+    font-size: 1.2rem;
+    min-width: 1.8rem;
   }
 
-  .round-label {
+  .time-label {
     font-size: 0.75rem;
   }
 
-  .word-text, .word-slots {
-    font-size: 1.1rem;
+  .round-label {
+    font-size: 0.7rem;
+  }
+
+  .word-text {
+    font-size: 1rem;
+    max-width: 150px;
+  }
+  
+  .word-slots {
+    font-size: 0.9rem;
+    max-width: 150px;
+    letter-spacing: 0.1em;
+  }
+
+  .task-sentence {
+    font-size: 0.8rem;
+    max-width: 40%;
+  }
+
+  .task-arrow {
+    font-size: 0.85rem;
+  }
+
+  .task-hint {
+    font-size: 0.7rem;
   }
 
   .game-canvas-wrapper {
@@ -3177,6 +3131,8 @@ onUnmounted(() => {
     z-index: 10;
     background: var(--bg-card);
     padding: 0.35rem 0.5rem;
+    padding-left: 4rem;
+    min-height: 50px;
   }
 
   .game-content-area {
