@@ -753,12 +753,19 @@ const nextDrawerName = computed(() => {
   return nextDrawer?.nickname || '下一位分鏡師'
 })
 
-// 單局總輪數（優先使用設定，否則使用目前玩家數量）
+// 單局總輪數
+// ⭐ 修復：當有玩家中途離開時，總輪數應該調整為較小值
+// 原因：如果開始時 9 人但有 1 人離開，不應該等待第 9 輪（沒有第 9 個畫家）
 const totalRoundsPerGame = computed(() => {
   const settingRounds = totalRounds.value || 0
   const participantCount = roomStore.participants.length
-  if (settingRounds > 0) return settingRounds
-  return participantCount
+  
+  // 如果沒有設定輪數，使用參與者數量
+  if (settingRounds <= 0) return participantCount
+  
+  // 如果參與者數量 < 設定輪數（有人離開），使用較小值
+  // 這確保每個玩家只畫一次，不會出現「等待不存在的畫家」的情況
+  return Math.min(settingRounds, participantCount)
 })
 
 // 當前局數與局內輪次
@@ -1596,6 +1603,18 @@ onMounted(async () => {
   console.log('[RoomView] 路由參數:', route.params)
   console.log('[RoomView] 當前房間:', currentRoom.value)
   console.log('[RoomView] 當前用戶:', authStore.user?.id)
+
+  // ⭐ 修復：重置本地組件狀態，避免從上一個遊戲殘留的狀態影響新遊戲
+  // 這對於從一個遊戲模式切換到另一個模式尤其重要
+  showStorySetupModal.value = false
+  showStoryEndingModal.value = false
+  showStoryReview.value = false
+  storyboardRoundResult.value = null
+  classicRoundImage.value = ''
+  storyboardRoundLocalImage.value = ''
+  writingInput.value = ''
+  isEditingWriting.value = false
+  console.log('[RoomView] 本地組件狀態已重置')
 
   // 如果從路由參數獲取房間碼，嘗試載入房間
   const roomCode = route.params.code as string

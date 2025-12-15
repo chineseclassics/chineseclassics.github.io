@@ -535,6 +535,7 @@ export function useRealtime() {
 
   /**
    * 取消訂閱房間
+   * 清理所有相關的全局狀態，避免舊房間的回調影響新房間
    */
   function unsubscribeRoom(roomCode: string) {
     const channelKey = `room:${roomCode}`
@@ -547,7 +548,9 @@ export function useRealtime() {
       globalChannels.delete(channelKey)
     }
 
+    // 清理所有相關的回調 Map
     globalDrawingCallbacks.delete(roomCode)
+    globalGameStateCallbacks.delete(roomCode)  // ⭐ 修復：之前遺漏了這行
     globalSubscribedRooms.delete(roomCode)
   }
   

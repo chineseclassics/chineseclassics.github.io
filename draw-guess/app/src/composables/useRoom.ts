@@ -1,8 +1,14 @@
 import { computed } from 'vue'
 import { useRoomStore } from '../stores/room'
+import { useGameStore } from '../stores/game'
+import { useStoryStore } from '../stores/story'
+import { useRealtime } from './useRealtime'
 
 export function useRoom() {
   const roomStore = useRoomStore()
+  const gameStore = useGameStore()
+  const storyStore = useStoryStore()
+  const { unsubscribeRoom } = useRealtime()
 
   // 計算屬性
   const currentRoom = computed(() => roomStore.currentRoom)
@@ -22,6 +28,28 @@ export function useRoom() {
     return participants.value.length >= minPlayersRequired.value
   })
 
+  /**
+   * 清理舊遊戲狀態
+   * 在創建或加入新房間前調用，避免舊狀態殘留導致的問題
+   */
+  function cleanupOldGameState() {
+    // 如果有舊房間，先取消 Realtime 訂閱
+    const oldRoom = roomStore.currentRoom
+    if (oldRoom) {
+      console.log('[useRoom] 清理舊房間狀態:', oldRoom.code)
+      unsubscribeRoom(oldRoom.code)
+    }
+    
+    // 清理 GameStore 狀態（輪次、猜測、評分等）
+    gameStore.clearGame()
+    
+    // 清理 StoryStore 狀態（故事鏈、提交、投票等）
+    storyStore.clearAll()
+    
+    // 清理 RoomStore 狀態（房間、參與者）
+    roomStore.clearRoom()
+  }
+
   // 創建房間
   async function createRoom(data: {
     name: string
@@ -36,11 +64,17 @@ export function useRoom() {
     gameMode?: 'classic' | 'storyboard'
     singleRoundMode?: boolean
   }) {
+    // ⭐ 修復：在創建新房間前清理舊狀態，避免狀態殘留
+    cleanupOldGameState()
+    
     return await roomStore.createRoom(data)
   }
 
   // 加入房間
   async function joinRoom(code: string, nickname: string) {
+    // ⭐ 修復：在加入新房間前清理舊狀態，避免狀態殘留
+    cleanupOldGameState()
+    
     return await roomStore.joinRoom(code, nickname)
   }
 
