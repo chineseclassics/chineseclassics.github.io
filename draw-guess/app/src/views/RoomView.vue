@@ -894,22 +894,26 @@ async function handleGiveHint() {
   const newRevealedIndices = [...gameStore.revealedIndices]
   const newRevealedChars = [...gameStore.revealedChars]
   
-  // 1. 先寫入數據庫（持久化）
+  // ⭐ 寫入數據庫（持久化）
+  // 注意：同時保存 revealed_chars，這樣頁面刷新後也能恢復提示
+  // 數據庫觸發器會自動廣播這個更新給所有玩家
   const { supabase } = await import('../lib/supabase')
   const { error: dbError } = await supabase
     .from('game_rounds')
     .update({ 
       hint_given: true,
-      revealed_indices: newRevealedIndices
+      revealed_indices: newRevealedIndices,
+      revealed_chars: newRevealedChars  // ⭐ 新增：保存揭示的字符
     })
     .eq('id', gameStore.currentRound.id)
   
   if (dbError) {
     console.error('[RoomView] 更新提示狀態到數據庫失敗:', dbError)
+    return
   }
   
-  // 2. 廣播提示狀態給所有玩家（快速通知）
-  // 包含揭示的字符，讓非畫家也能看到提示
+  // ⭐ 客戶端廣播作為備用方案
+  // 主要依賴數據庫觸發器的廣播，這裡作為快速通知的補充
   await broadcastGameState(currentRoom.value.code, {
     roundStatus: 'drawing',
     hintGiven: true,

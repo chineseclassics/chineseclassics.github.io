@@ -39,6 +39,12 @@ export function useRealtime() {
 
   /**
    * 獲取或創建房間 Channel
+   * 
+   * 使用 private channel + Broadcast Replay 功能：
+   * 1. private: true 確保安全性，與數據庫端 realtime.send(..., true) 匹配
+   * 2. replay 功能確保即使錯過初始廣播，連接後也能收到歷史消息
+   * 
+   * 參考：https://supabase.com/docs/guides/realtime/broadcast#broadcast-replay
    */
   function getRoomChannel(roomCode: string) {
     const channelKey = `room:${roomCode}`
@@ -50,8 +56,17 @@ export function useRealtime() {
     log('創建新 channel:', channelKey)
     const channel = supabase.channel(channelKey, {
       config: {
+        private: true,  // ⭐ 使用 private channel，與數據庫端匹配
         presence: { key: 'user' },
-        broadcast: { self: true },  // 房主也收到自己的廣播，統一處理邏輯
+        broadcast: { 
+          self: true,  // 房主也收到自己的廣播，統一處理邏輯
+          // ⭐ Broadcast Replay：確保即使錯過初始廣播也能收到歷史消息
+          // 注意：只有 Database Broadcast 的消息才能被重播
+          replay: {
+            since: Date.now() - 10 * 60 * 1000,  // 重播最近 10 分鐘的消息
+            limit: 20  // 最多 20 條
+          }
+        },
       },
     })
 
@@ -91,21 +106,33 @@ export function useRealtime() {
 
   /**
    * 訂閱房間
-   * 簡化版：移除複雜的重連邏輯
+   * 
+   * 改進：
+   * 1. 使用 private channel + setAuth() 確保 Realtime Authorization
+   * 2. 支持 Broadcast Replay 功能
    */
-  function subscribeRoom(
+  async function subscribeRoom(
     roomCode: string, 
     roomId: string, 
     userId: string, 
     userData: any
   ): Promise<ReturnType<typeof supabase.channel>> {
-    return new Promise((resolve, reject) => {
-      if (!roomCode || !roomId) {
-        warn('缺少 roomCode 或 roomId')
-        reject(new Error('缺少 roomCode 或 roomId'))
-        return
-      }
+    if (!roomCode || !roomId) {
+      warn('缺少 roomCode 或 roomId')
+      throw new Error('缺少 roomCode 或 roomId')
+    }
 
+    // ⭐ 設置 Realtime Auth - 這對 private channel 是必須的
+    // 參考：https://supabase.com/docs/guides/realtime/broadcast#broadcast-record-changes
+    try {
+      await supabase.realtime.setAuth()
+      log('Realtime Auth 設置成功')
+    } catch (authError) {
+      warn('Realtime Auth 設置失敗:', authError)
+      // 繼續嘗試連接，可能在某些情況下仍然可以工作
+    }
+
+    return new Promise((resolve, reject) => {
       const channel = getRoomChannel(roomCode)
       const channelState = (channel as any).state
 
@@ -311,13 +338,47 @@ export function useRealtime() {
         }
       })
       
-      // 遊戲狀態廣播（在 channel subscribe 之前添加，確保所有玩家都能收到）
+      // 遊戲狀態廣播
+      // 支持兩種來源：
+      // 1. 客戶端 broadcastGameState() 發送的（傳統方式）
+      // 2. 數據庫觸發器 broadcast_game_round_changes() 發送的（新方式，更可靠）
       .on('broadcast', { event: 'game_state' }, (payload) => {
-        log('收到 game_state 廣播:', payload.payload)
+        const isReplayed = payload?.meta?.replayed === true
+        const state = payload.payload
+        
+        if (isReplayed) {
+          log('📜 收到重播的 game_state 廣播:', state)
+        } else {
+          log('🆕 收到新的 game_state 廣播:', state)
+        }
+        
+        // ⭐ 直接處理來自數據庫的廣播（type === 'round_update'）
+        // 這確保即使玩家錯過了原始廣播，也能通過 Replay 恢復狀態
+        if (state?.type === 'round_update') {
+          log('處理數據庫廣播的輪次更新:', {
+            wordLength: state.wordLength,
+            drawerId: state.drawerId,
+            hintGiven: state.hintGiven
+          })
+          
+          // 更新 gameStore 狀態
+          if (state.wordLength > 0) {
+            gameStore.setWordLength(state.wordLength)
+          }
+          if (state.hintGiven !== undefined) {
+            gameStore.setHintState(
+              state.hintGiven,
+              state.revealedIndices || [],
+              state.revealedChars || []
+            )
+          }
+        }
+        
+        // 分發給註冊的回調（兼容現有邏輯）
         const callbacks = globalGameStateCallbacks.get(roomCode)
-        if (callbacks && payload.payload) {
+        if (callbacks && state) {
           log('分發給', callbacks.size, '個遊戲狀態回調')
-          callbacks.forEach(cb => cb(payload.payload))
+          callbacks.forEach(cb => cb(state))
         }
       })
       

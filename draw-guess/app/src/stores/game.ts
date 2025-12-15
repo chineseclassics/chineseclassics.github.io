@@ -164,6 +164,13 @@ export const useGameStore = defineStore('game', () => {
       if (data) {
         currentRound.value = data as GameRound
         
+        // ⭐ 設置詞語長度（所有玩家都可見，用於顯示下劃線）
+        // 這是解決「玩家看不到下劃線」問題的關鍵修復
+        if (data.word_text) {
+          currentWordLength.value = data.word_text.length
+          console.log('[loadCurrentRound] 設置 wordLength:', currentWordLength.value)
+        }
+        
         // 總結階段：所有人都可以看到答案
         // 繪畫階段：只有畫家才能看到詞語，避免其他玩家短暫看到答案
         if (isSummaryPhase || (authStore.user && data.drawer_id === authStore.user.id)) {
@@ -178,12 +185,17 @@ export const useGameStore = defineStore('game', () => {
         // 如果從數據庫同步，會覆蓋掉 'summary' 狀態，導致總結頁面一閃而過
         // roundStatus 完全由前端的 gameStore.setRoundStatus() 控制
         
-        // 恢復提示狀態（頁面刷新時從數據庫恢復）
+        // ⭐ 恢復提示狀態（頁面刷新時從數據庫恢復）
         if (data.hint_given !== undefined) {
           hintGiven.value = data.hint_given
         }
         if (data.revealed_indices && Array.isArray(data.revealed_indices)) {
           revealedIndices.value = data.revealed_indices as number[]
+        }
+        // ⭐ 新增：恢復已揭示的字符
+        if (data.revealed_chars && Array.isArray(data.revealed_chars)) {
+          revealedChars.value = data.revealed_chars as string[]
+          console.log('[loadCurrentRound] 恢復 revealedChars:', revealedChars.value)
         }
         
         await loadGuesses(data.id)
