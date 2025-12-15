@@ -256,6 +256,40 @@ export function useWordLibrary() {
     return { success: true }
   }
 
+  // 刪除主題（會一併刪除所有關聯的詞條）
+  async function deleteCollection(collectionId: string) {
+    await refreshAdminStatus()
+    if (!isAdmin.value) {
+      return { success: false, error: '您沒有管理員權限' }
+    }
+
+    // 先刪除所有關聯的詞條（如果數據庫沒有設置級聯刪除）
+    const { error: deleteEntriesError } = await supabase
+      .from('word_entries')
+      .delete()
+      .eq('collection_id', collectionId)
+
+    if (deleteEntriesError) {
+      return { success: false, error: deleteEntriesError.message || '刪除詞條失敗' }
+    }
+
+    // 刪除主題
+    const { error: deleteCollectionError } = await supabase
+      .from('word_collections')
+      .delete()
+      .eq('id', collectionId)
+
+    if (deleteCollectionError) {
+      return { success: false, error: deleteCollectionError.message || '刪除主題失敗' }
+    }
+
+    // 更新本地狀態
+    collections.value = collections.value.filter(c => c.id !== collectionId)
+    delete entriesMap.value[collectionId]
+
+    return { success: true }
+  }
+
   return {
     collections,
     entriesMap,
@@ -271,6 +305,7 @@ export function useWordLibrary() {
     updateEntry,
     deleteEntry,
     toggleCollectionActive,
+    deleteCollection,
   }
 }
 

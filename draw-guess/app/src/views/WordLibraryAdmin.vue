@@ -51,6 +51,13 @@
                     />
                     <span>啟用主題</span>
                   </label>
+                  <button
+                    v-if="selectedCollectionId"
+                    class="paper-btn btn-danger btn-small"
+                    @click="showDeleteConfirm = true"
+                  >
+                    刪除主題
+                  </button>
                 </div>
               </div>
 
@@ -78,9 +85,9 @@
 
                 <!-- 手動新增 -->
                 <div class="form-row">
-                  <input v-model="newEntryText" type="text" placeholder="詞條（必填）" class="form-input" />
-                  <button class="paper-btn btn-primary" @click="handleAddEntry">
-                    新增條目
+                  <input v-model="newEntryText" type="text" placeholder="詞條（必填，可用逗號分隔批量添加）" class="form-input" />
+                  <button class="paper-btn btn-primary" @click="handleAddEntry" :disabled="batchAdding">
+                    {{ batchAdding ? '添加中...' : '新增條目' }}
                   </button>
                 </div>
 
@@ -192,6 +199,37 @@
         </div>
       </div>
     </div>
+
+    <!-- 刪除確認對話框 -->
+    <div v-if="showDeleteConfirm" class="modal-overlay" @click="showDeleteConfirm = false">
+      <div class="modal-dialog" @click.stop>
+        <div class="modal-header">
+          <h3 class="text-hand-title">確認刪除主題</h3>
+        </div>
+        <div class="modal-body">
+          <p class="delete-warning">
+            ⚠️ 此操作無法撤銷！
+          </p>
+          <p v-if="selectedCollection">
+            您即將刪除主題「<strong>{{ selectedCollection.title }}</strong>」
+          </p>
+          <p v-if="selectedCollection && selectedCollection.entry_count > 0" class="delete-info">
+            此主題包含 <strong>{{ selectedCollection.entry_count }}</strong> 個詞條，刪除主題將一併刪除所有詞條。
+          </p>
+          <p v-else class="delete-info">
+            此主題目前沒有詞條。
+          </p>
+        </div>
+        <div class="modal-footer">
+          <button class="paper-btn btn-secondary" @click="showDeleteConfirm = false">
+            取消
+          </button>
+          <button class="paper-btn btn-danger" @click="handleDeleteCollection" :disabled="deletingCollection">
+            {{ deletingCollection ? '刪除中...' : '確認刪除' }}
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -216,6 +254,7 @@ const {
   deleteEntry,
   toggleCollectionActive,
   addCollection,
+  deleteCollection,
 } = useWordLibrary()
 
 // AI 生成相關
@@ -238,6 +277,10 @@ const batchAdding = ref(false)
 // 就地編輯狀態
 const editingEntryId = ref<string | null>(null)
 const editingText = ref('')
+
+// 刪除主題相關狀態
+const showDeleteConfirm = ref(false)
+const deletingCollection = ref(false)
 
 const selectedCollection = computed(() =>
   collections.value.find(c => c.id === selectedCollectionId.value) || null
@@ -288,19 +331,69 @@ async function handleAddEntry() {
     return
   }
 
-  const result = await addEntry(
-    selectedCollectionId.value,
-    newEntryText.value,
-    'manual' // 手動添加
-  )
-
-  if (result.success) {
-    message.value = '已新增詞條'
-    newEntryText.value = ''
-    await loadEntries(selectedCollectionId.value, true)
-  } else {
-    errorMsg.value = result.error || '新增失敗'
+  const inputText = newEntryText.value.trim()
+  if (!inputText) {
+    errorMsg.value = '請輸入詞條'
+    return
   }
+
+  // 解析逗號分隔的詞條（支持中文逗號和英文逗號）
+  const words = inputText
+    .split(/[，,]/)
+    .map(w => w.trim())
+    .filter(w => w.length > 0)
+
+  if (words.length === 0) {
+    errorMsg.value = '請輸入有效的詞條'
+    return
+  }
+
+  batchAdding.value = true
+  let successCount = 0
+  let skipCount = 0
+  let errorCount = 0
+
+  // 獲取現有詞條用於去重
+  const existingTexts = new Set(currentEntries.value.map(e => e.text))
+
+  for (const word of words) {
+    // 跳過重複的詞條
+    if (existingTexts.has(word)) {
+      skipCount++
+      continue
+    }
+
+    const result = await addEntry(selectedCollectionId.value, word, 'manual')
+    if (result.success) {
+      successCount++
+      existingTexts.add(word)
+    } else {
+      errorCount++
+    }
+  }
+
+  batchAdding.value = false
+  newEntryText.value = ''
+
+  // 構建結果消息
+  const parts: string[] = []
+  if (successCount > 0) {
+    parts.push(`已添加 ${successCount} 個詞條`)
+  }
+  if (skipCount > 0) {
+    parts.push(`跳過 ${skipCount} 個重複詞條`)
+  }
+  if (errorCount > 0) {
+    parts.push(`${errorCount} 個詞條添加失敗`)
+  }
+
+  if (parts.length > 0) {
+    message.value = parts.join('，')
+  } else {
+    errorMsg.value = '沒有成功添加任何詞條'
+  }
+
+  await loadEntries(selectedCollectionId.value, true)
 }
 
 // AI 生成詞條（使用當前選中的主題）
@@ -456,6 +549,34 @@ async function handleCreateCollection() {
   }
 }
 
+async function handleDeleteCollection() {
+  clearMessages()
+  if (!selectedCollectionId.value || !selectedCollection.value) return
+
+  deletingCollection.value = true
+  const collectionToDelete = selectedCollection.value
+  const result = await deleteCollection(selectedCollectionId.value)
+
+  deletingCollection.value = false
+  showDeleteConfirm.value = false
+
+  if (result.success) {
+    message.value = `已刪除主題「${collectionToDelete.title}」`
+    
+    // 切換到第一個可用主題
+    await loadCollections({ includeInactive: true })
+    const firstCollection = collections.value[0]
+    if (firstCollection) {
+      selectedCollectionId.value = firstCollection.id
+      await loadEntries(selectedCollectionId.value, true)
+    } else {
+      selectedCollectionId.value = ''
+    }
+  } else {
+    errorMsg.value = result.error || '刪除主題失敗'
+  }
+}
+
 onMounted(() => {
   initAdmin()
 })
@@ -513,6 +634,12 @@ onMounted(() => {
   gap: 1rem;
   flex-wrap: wrap;
   align-items: center;
+}
+
+.collection-row .btn-small {
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  white-space: nowrap;
 }
 
 .collection-row select {
@@ -915,6 +1042,90 @@ onMounted(() => {
   .entry-row {
     padding: 0.75rem;
   }
+}
+
+/* 刪除確認對話框樣式 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.modal-dialog {
+  background: var(--bg-card);
+  border: 2px solid var(--border-color);
+  border-radius: 0;
+  max-width: 500px;
+  width: 100%;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header {
+  padding: 1.5rem;
+  border-bottom: 2px solid var(--border-color);
+}
+
+.modal-header h3 {
+  margin: 0;
+}
+
+.modal-body {
+  padding: 1.5rem;
+}
+
+.delete-warning {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #e8590c;
+  margin: 0 0 1rem 0;
+}
+
+.delete-info {
+  margin: 0.5rem 0;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.delete-info strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.modal-footer {
+  padding: 1.5rem;
+  border-top: 2px solid var(--border-color);
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+}
+
+.modal-footer .paper-btn {
+  min-width: 100px;
+}
+
+.btn-danger {
+  background: #ef4444;
+  color: white;
+  border: 2px solid #dc2626;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: #dc2626;
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 rgba(220, 38, 38, 0.4);
+}
+
+.btn-danger:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 </style>
 
