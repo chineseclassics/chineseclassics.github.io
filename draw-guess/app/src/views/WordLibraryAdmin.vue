@@ -4,15 +4,15 @@
       <div class="col-12 col-lg-10">
         <div class="card">
           <div class="card-body">
-            <div class="header-row">
-              <div>
-                <h2 class="card-title text-hand-title">詞句庫管理</h2>
-                <p class="text-secondary">
-                  僅限指定管理員：gnoluy@gmail.com、ylzhang@isf.edu.hk
-                </p>
+              <div class="header-row">
+                <div>
+                  <h2 class="card-title text-hand-title">詞句庫管理</h2>
+                  <p class="text-secondary">
+                    僅限指定管理員：gnoluy@gmail.com、ylzhang@isf.edu.hk
+                  </p>
+                </div>
+                <router-link to="/" class="paper-btn btn-secondary">返回首頁</router-link>
               </div>
-              <router-link to="/" class="paper-btn btn-secondary btn-small">返回首頁</router-link>
-            </div>
 
             <div v-if="!authStore.user" class="alert alert-warning margin-top-small">
               請先登入 Google 帳號後再管理詞句庫。
@@ -30,7 +30,7 @@
                     <p class="text-small text-secondary">可切換主題、啟用 / 停用</p>
                   </div>
                   <div class="inline-actions">
-                    <button class="paper-btn btn-secondary btn-small" @click="refreshCollections">
+                    <button class="paper-btn btn-secondary" @click="refreshCollections">
                       重新載入
                     </button>
                   </div>
@@ -59,15 +59,11 @@
                 <div class="panel-header">
                   <h4 class="text-hand-title">新增主題</h4>
                 </div>
-                <div class="row">
-                  <div class="col-12 col-md-8">
-                    <input v-model="newCollectionTitle" type="text" placeholder="主題名稱" />
-                  </div>
-                  <div class="col-12 col-md-4">
-                    <button class="paper-btn btn-primary btn-block" @click="handleCreateCollection">
-                      新增主題
-                    </button>
-                  </div>
+                <div class="form-row">
+                  <input v-model="newCollectionTitle" type="text" placeholder="主題名稱" class="form-input" />
+                  <button class="paper-btn btn-primary" @click="handleCreateCollection">
+                    新增主題
+                  </button>
                 </div>
               </div>
 
@@ -81,40 +77,32 @@
                 </div>
 
                 <!-- 手動新增 -->
-                <div class="row align-center">
-                  <div class="col-12 col-md-8">
-                    <input v-model="newEntryText" type="text" placeholder="詞條（必填）" />
-                  </div>
-                  <div class="col-12 col-md-4">
-                    <button class="paper-btn btn-primary btn-block" @click="handleAddEntry">
-                      新增條目
-                    </button>
-                  </div>
+                <div class="form-row">
+                  <input v-model="newEntryText" type="text" placeholder="詞條（必填）" class="form-input" />
+                  <button class="paper-btn btn-primary" @click="handleAddEntry">
+                    新增條目
+                  </button>
                 </div>
 
                 <!-- AI 生成 -->
                 <div class="ai-generate-section">
-                  <div class="row align-center">
-                    <div class="col-12 col-md-6">
-                      <button 
-                        class="paper-btn btn-ai btn-block" 
-                        @click="handleAIGenerate"
-                        :disabled="aiGenerating || !selectedCollection"
-                      >
-                        <span v-if="aiGenerating">⏳ 生成中...</span>
-                        <span v-else>✨ AI 生成「{{ selectedCollection?.title || '' }}」詞條</span>
-                      </button>
-                    </div>
-                    <div class="col-12 col-md-6">
-                      <button 
-                        v-if="aiGeneratedWords.length > 0"
-                        class="paper-btn btn-success btn-block" 
-                        @click="handleBatchAddAIWords"
-                        :disabled="batchAdding"
-                      >
-                        {{ batchAdding ? '添加中...' : `批量添加 ${aiGeneratedWords.length} 條` }}
-                      </button>
-                    </div>
+                  <div class="ai-buttons-row">
+                    <button 
+                      class="paper-btn btn-ai" 
+                      @click="handleAIGenerate"
+                      :disabled="aiGenerating || !selectedCollection"
+                    >
+                      <span v-if="aiGenerating">⏳ 生成中...</span>
+                      <span v-else>✨ AI 生成詞條</span>
+                    </button>
+                    <button 
+                      v-if="aiGeneratedWords.length > 0"
+                      class="paper-btn btn-success" 
+                      @click="handleBatchAddAIWords"
+                      :disabled="batchAdding"
+                    >
+                      {{ batchAdding ? '添加中...' : `批量添加 ${aiGeneratedWords.length} 條` }}
+                    </button>
                   </div>
                   <div v-if="aiError" class="ai-error-message">{{ aiError }}</div>
                   
@@ -138,10 +126,10 @@
                 </div>
 
                 <div class="entry-list" v-if="selectedCollectionId">
-                  <div class="entry-row header">
-                    <span>詞條</span>
-                    <span>來源</span>
-                    <span>操作</span>
+                  <div class="entry-row entry-header">
+                    <span class="entry-text-header">詞條</span>
+                    <span class="entry-source-header">來源</span>
+                    <span class="entry-actions-header">操作</span>
                   </div>
                   <div
                     v-if="loadingEntries[selectedCollectionId]"
@@ -177,13 +165,13 @@
                         <button class="icon-btn edit-btn" @click="startEdit(entry)" title="編輯">✎</button>
                       </template>
                     </span>
-                    <span>
+                    <span class="entry-source">
                       <span v-if="entry.category === 'ai'" class="source-tag source-ai">AI</span>
                       <span v-else class="source-tag source-manual">手動</span>
                     </span>
-                    <span>
+                    <span class="entry-actions">
                       <button
-                        class="paper-btn btn-danger btn-small"
+                        class="paper-btn btn-danger"
                         @click="handleDeleteEntry(entry.id)"
                       >
                         刪除
@@ -488,22 +476,31 @@ onMounted(() => {
 .admin-body {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 1.5rem;
 }
 
 .panel {
-  border: 1px dashed var(--border-light);
-  border-radius: 12px;
-  padding: 12px;
-  background: var(--bg-secondary);
+  border: 2px solid var(--border-color);
+  border-radius: 0;
+  padding: 1.5rem;
+  background: var(--bg-card);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .panel-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.panel-header h4 {
+  margin: 0 0 0.25rem 0;
+}
+
+.panel-header p {
+  margin: 0;
 }
 
 .inline-actions {
@@ -513,82 +510,160 @@ onMounted(() => {
 
 .collection-row {
   display: flex;
-  gap: 12px;
+  gap: 1rem;
   flex-wrap: wrap;
   align-items: center;
+}
+
+.collection-row select {
+  flex: 1;
+  min-width: 200px;
+  padding: 0.625rem 0.875rem;
+  font-size: 1rem;
+  line-height: 1.5;
+  border: 2px solid var(--border-color);
+  border-radius: 0;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  height: auto;
+}
+
+.collection-row select:focus {
+  outline: none;
+  border-color: var(--color-primary);
 }
 
 .toggle {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 0.5rem;
+  font-size: 0.95rem;
+  white-space: nowrap;
+}
+
+.toggle input[type="checkbox"] {
+  width: 1.25rem;
+  height: 1.25rem;
+  cursor: pointer;
 }
 
 .entry-list {
-  margin-top: 12px;
-  border: 1px solid var(--border-light);
-  border-radius: 10px;
+  margin-top: 1rem;
+  border: 2px solid var(--border-color);
+  border-radius: 0;
   overflow: hidden;
 }
 
 .entry-row {
   display: grid;
-  grid-template-columns: 1fr 60px 80px;
-  padding: 10px;
-  border-bottom: 1px dashed var(--border-light);
+  grid-template-columns: 1fr 100px 120px;
+  padding: 1rem;
+  border-bottom: 1px solid var(--border-light);
   align-items: center;
-}
-
-.entry-row.header {
-  background: var(--bg-highlight);
-  font-weight: 700;
+  gap: 1rem;
 }
 
 .entry-row:last-child {
   border-bottom: none;
 }
 
+.entry-header {
+  background: var(--bg-secondary);
+  font-weight: 600;
+  padding: 0.75rem 1rem;
+  border-bottom: 2px solid var(--border-color);
+}
+
+.entry-text-header,
+.entry-source-header,
+.entry-actions-header {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
 .entry-text-cell {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 0.5rem;
+  min-width: 0;
 }
 
 .entry-text {
-  font-weight: 600;
+  font-weight: 500;
+  font-size: 1rem;
+  flex: 1;
+  min-width: 0;
+  word-break: break-word;
+}
+
+.entry-source {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.entry-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.entry-actions .paper-btn {
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  min-width: auto;
 }
 
 .edit-input {
   flex: 1;
-  padding: 4px 8px;
-  font-size: 0.9rem;
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
+  padding: 0.5rem 0.75rem;
+  font-size: 1rem;
+  border: 2px solid var(--border-color);
+  border-radius: 0;
   min-width: 0;
+  font-family: var(--font-body);
+}
+
+.edit-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
 }
 
 .icon-btn {
   background: none;
-  border: none;
+  border: 2px solid transparent;
   cursor: pointer;
-  font-size: 0.9rem;
-  padding: 2px 4px;
-  border-radius: 4px;
-  transition: all 0.15s ease;
-  opacity: 0.6;
+  font-size: 1rem;
+  padding: 0.375rem 0.5rem;
+  border-radius: 0;
+  transition: all 0.2s ease;
+  opacity: 0.7;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2rem;
+  height: 2rem;
 }
 
 .icon-btn:hover {
   opacity: 1;
+  transform: translateY(-1px);
 }
 
 .edit-btn {
-  color: #6b7280;
+  color: var(--text-secondary);
 }
 
 .edit-btn:hover {
-  background: #f3f4f6;
-  color: #374151;
+  background: var(--bg-secondary);
+  border-color: var(--border-color);
+  color: var(--text-primary);
 }
 
 .save-btn {
@@ -597,6 +672,7 @@ onMounted(() => {
 
 .save-btn:hover {
   background: #ecfdf5;
+  border-color: #10b981;
 }
 
 .cancel-btn {
@@ -605,13 +681,54 @@ onMounted(() => {
 
 .cancel-btn:hover {
   background: #fef2f2;
+  border-color: #ef4444;
+}
+
+/* 表單行 */
+.form-row {
+  display: flex;
+  gap: 0.75rem;
+  align-items: stretch;
+}
+
+.form-input {
+  flex: 1;
+  padding: 0.625rem 0.875rem;
+  font-size: 1rem;
+  border: 2px solid var(--border-color);
+  border-radius: 0;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  min-width: 0;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.form-row .paper-btn {
+  white-space: nowrap;
+  min-width: 120px;
 }
 
 /* AI 生成區域 */
 .ai-generate-section {
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px dashed var(--border-light);
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 2px dashed var(--border-light);
+}
+
+.ai-buttons-row {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.ai-buttons-row .paper-btn {
+  flex: 1;
+  min-width: 160px;
 }
 
 .btn-ai {
@@ -701,10 +818,12 @@ onMounted(() => {
 /* 來源標籤 */
 .source-tag {
   display: inline-block;
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-size: 0.75rem;
+  padding: 0.25rem 0.625rem;
+  border-radius: 0;
+  font-size: 0.8rem;
   font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .source-ai {
@@ -717,9 +836,84 @@ onMounted(() => {
   color: #374151;
 }
 
+/* 響應式設計 */
 @media (max-width: 768px) {
+  .header-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .panel-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .panel {
+    padding: 1rem;
+  }
+
+  .form-row {
+    flex-direction: column;
+  }
+
+  .form-row .paper-btn {
+    width: 100%;
+    min-width: auto;
+  }
+
+  .collection-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .collection-row select {
+    width: 100%;
+    min-width: auto;
+  }
+
+  .ai-buttons-row {
+    flex-direction: column;
+  }
+
+  .ai-buttons-row .paper-btn {
+    width: 100%;
+    min-width: auto;
+  }
+
   .entry-row {
-    grid-template-columns: 1fr 50px 70px;
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+    padding: 0.875rem;
+  }
+
+  .entry-text-cell {
+    order: 1;
+  }
+
+  .entry-source {
+    order: 2;
+    justify-content: flex-start;
+  }
+
+  .entry-actions {
+    order: 3;
+    justify-content: flex-start;
+  }
+
+  .entry-header {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .panel {
+    padding: 0.875rem;
+  }
+
+  .entry-row {
+    padding: 0.75rem;
   }
 }
 </style>

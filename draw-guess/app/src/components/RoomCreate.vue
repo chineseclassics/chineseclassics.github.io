@@ -43,14 +43,12 @@
           </div>
 
           <!-- 房間主題/故事標題（根據模式動態變化） -->
-          <div class="form-group room-theme-group">
-            <label>{{ form.gameMode === 'storyboard' ? '故事標題' : '詞句主題' }}</label>
+          <div v-if="form.gameMode === 'storyboard'" class="form-group room-theme-group">
+            <label>故事標題</label>
             <input
               v-model="form.name"
               type="text"
-              :placeholder="form.gameMode === 'storyboard' 
-                ? '決定集體創作故事的走向，如「林黛玉的港漂日記」' 
-                : '為玩家提示猜詞範圍，如「香港小吃」'"
+              placeholder="決定集體創作故事的走向，如「林黛玉的港漂日記」"
               maxlength="50"
               required
               class="room-theme-input"
@@ -69,9 +67,9 @@
             </label>
           </div>
 
-        <!-- 主題詞句庫（傳統模式專用） -->
+        <!-- 預設主題詞句庫（傳統模式專用） -->
         <div v-if="form.gameMode === 'classic'" class="form-group">
-          <label class="library-label">主題詞句庫</label>
+          <label class="library-label">預設主題詞句庫</label>
           <div v-if="loadingCollections" class="text-small text-secondary">詞句庫載入中...</div>
           <div v-else class="word-library-dropdown">
             <!-- 下拉選擇器 -->
@@ -190,19 +188,29 @@
           </div>
         </div>
 
-          <!-- 自定義詞語（傳統模式專用） -->
+          <!-- 自定義詞句主題和詞語輸入（傳統模式專用） -->
           <div v-if="form.gameMode === 'classic'" class="form-group words-input-group">
             <div class="words-label-row">
-              <label>自定義詞語（至少 6 個，支持中英文詞語）</label>
+              <div class="form-group room-theme-group-inline">
+                <label>自定義詞句主題</label>
+                <input
+                  v-model="form.name"
+                  type="text"
+                  placeholder="為玩家提示猜詞範圍，如「香港小吃」"
+                  maxlength="50"
+                  required
+                  class="room-theme-input"
+                />
+              </div>
               <button
                 type="button"
-                class="ai-generate-btn"
+                class="paper-btn ai-generate-btn"
                 :disabled="aiGenerating || aiRateLimited"
                 @click="handleAIGenerate"
               >
                 <span v-if="aiGenerating" class="ai-btn-loading">⏳ 生成中...</span>
                 <span v-else-if="aiRateLimited" class="ai-btn-limited">🚫 請稍後再試</span>
-                <span v-else>✨ AI 生成</span>
+                <span v-else>✨ 生成詞句庫</span>
               </button>
             </div>
             <!-- AI 生成提示信息 -->
@@ -211,7 +219,7 @@
             <textarea
               v-model="form.wordsText"
               rows="6"
-              placeholder="輸入詞語，用逗號（，或,）或換行分隔&#10;例如：春天，友誼，勇氣"
+              placeholder="自定義詞語（至少 6 個，支持中英文詞語）&#10;輸入詞語，用逗號（，或,）或換行分隔&#10;例如：春天，友誼，勇氣"
               @input="handleWordsInput"
               class="words-textarea"
             ></textarea>
@@ -241,8 +249,6 @@
 
           <!-- 遊戲設置 -->
           <div class="margin-top-medium game-settings-section">
-            <h4 class="text-hand-title">遊戲設置</h4>
-
             <!-- 繪畫時間設置 -->
             <div class="form-group">
               <label>繪畫時間（秒）</label>
@@ -618,6 +624,11 @@ async function handleSubmit() {
   width: 100%;
 }
 
+.room-theme-group-inline {
+  flex: 1;
+  margin-bottom: 0;
+}
+
 .room-theme-input {
   width: 100%;
   font-family: var(--font-body);
@@ -637,29 +648,36 @@ async function handleSubmit() {
 /* 詞語標籤行（包含標籤和 AI 生成按鈕） */
 .words-label-row {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  align-items: flex-end;
   gap: 1rem;
   margin-bottom: 0.5rem;
 }
 
-.words-label-row label {
-  margin-bottom: 0;
+.words-label-row .room-theme-group-inline {
+  flex: 1;
+  min-width: 0;
 }
 
-/* AI 生成按鈕 */
-.ai-generate-btn {
-  padding: 0.35rem 0.75rem;
-  font-size: 0.85rem;
-  font-family: var(--font-body);
+.words-label-row .room-theme-group-inline label {
+  margin-bottom: 0.5rem !important;
+  display: block;
+}
+
+.words-label-row .ai-generate-btn {
+  flex-shrink: 0;
+  align-self: flex-end;
+}
+
+/* AI 生成按鈕 - 使用 PaperCSS 手繪風格 */
+.paper-btn.ai-generate-btn {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
-  border: 2px solid #5a67d8;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 2px 2px 0 rgba(90, 103, 216, 0.3);
+  border-color: #5a67d8;
   white-space: nowrap;
+  padding: 0.4rem 0.75rem;
+  font-size: 1rem;
+  line-height: 1.4;
+  /* 減少高度以匹配輸入框 */
 }
 
 .ai-generate-btn:hover:not(:disabled) {
@@ -726,14 +744,14 @@ async function handleSubmit() {
   gap: 0.25rem;
 }
 
-/* 遊戲設置區域 - 增加底部間距 */
+/* 遊戲設置區域 */
 .game-settings-section {
-  margin-bottom: 2rem;
+  margin-top: 1.5rem;
 }
 
-/* 提交按鈕區域 - 增加頂部間距 */
+/* 提交按鈕區域 */
 .submit-buttons-section {
-  margin-top: 2rem;
+  margin-top: 1.5rem;
 }
 
 .dropdown-wrapper {
@@ -1161,6 +1179,23 @@ async function handleSubmit() {
   font-size: 0.9rem;
   color: #e8590c;
   font-weight: 500;
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+  .words-label-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .words-label-row .room-theme-group-inline {
+    width: 100%;
+  }
+
+  .words-label-row .ai-generate-btn {
+    width: 100%;
+    align-self: stretch;
+  }
 }
 </style>
 
