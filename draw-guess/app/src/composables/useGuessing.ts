@@ -21,8 +21,8 @@ export function useGuessing() {
     return null
   })
 
-  // 已猜中玩家列表
-  const correctGuesses = computed(() => gameStore.correctGuesses)
+  // 已猜中玩家列表（當前輪次）
+  const correctGuesses = computed(() => gameStore.currentRoundCorrectGuesses)
 
   // 是否已猜中
   const hasGuessed = computed(() => {

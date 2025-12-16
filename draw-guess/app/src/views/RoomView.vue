@@ -1168,13 +1168,13 @@ async function handleStoryboardRoundSettlement() {
     
     // 先獲取基本結算數據用於快速顯示
     // 從本地狀態快速計算結果（不等待後台操作）
-    const { calculateWinningSentence, SCREENWRITER_WIN_SCORE, DIRECTOR_BASE_SCORE, DIRECTOR_VOTE_BONUS } = useGame()
+    const { calculateWinningSentence, calculateScreenwriterScore, calculateDirectorScore } = useGame()
     const { submission: winningSubmission, voteCount } = calculateWinningSentence()
     
     const drawerId = gameStore.currentRound.drawer_id
     const drawerParticipant = roomStore.participants.find(p => p.user_id === drawerId)
     const drawerName = drawerParticipant?.nickname || '畫家'
-    const voterCount = storyStore.votes.length
+    const averageRating = gameStore.averageRating || 0
     
     let quickResult: StoryboardRoundResult
     
@@ -1186,8 +1186,8 @@ async function handleStoryboardRoundSettlement() {
         winnerName: winnerParticipant?.nickname || '編劇',
         winnerId: winningSubmission.userId,
         winnerVoteCount: voteCount,
-        drawerScore: DIRECTOR_BASE_SCORE + (voterCount * DIRECTOR_VOTE_BONUS),
-        screenwriterScore: SCREENWRITER_WIN_SCORE,
+        drawerScore: calculateDirectorScore(averageRating),
+        screenwriterScore: calculateScreenwriterScore(voteCount),
         imageUrl: '', // 稍後後台更新
       }
     } else {
@@ -1197,7 +1197,7 @@ async function handleStoryboardRoundSettlement() {
         winnerName: drawerName,
         winnerId: drawerId,
         winnerVoteCount: 0,
-        drawerScore: DIRECTOR_BASE_SCORE,
+        drawerScore: calculateDirectorScore(averageRating),
         screenwriterScore: 0,
         imageUrl: '',
       }

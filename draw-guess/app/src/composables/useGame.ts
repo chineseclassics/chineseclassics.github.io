@@ -7,21 +7,22 @@ import { supabase } from '../lib/supabase'
 import type { StoryboardPhase } from '../types/storyboard'
 
 // 總結頁面顯示時間（秒）
-const SUMMARY_TIME = 5
+const SUMMARY_TIME = 6
 
 // ========== 分鏡模式配置 ==========
 // 各階段時間（秒）
 const STORYBOARD_DRAWING_TIME = 60  // 繪畫階段
 const STORYBOARD_WRITING_TIME = 60  // 編劇階段
 const STORYBOARD_VOTING_TIME = 60   // 投票階段
-const STORYBOARD_SUMMARY_TIME = 5   // 結算階段（自動跳轉前的展示時間）
+const STORYBOARD_SUMMARY_TIME = 6   // 結算階段（自動跳轉前的展示時間）
 
 // 分鏡模式得分配置
-// Requirements: 6.6, 6.7, 9.4
-const SCREENWRITER_WIN_SCORE = 10   // 編劇勝出 +10 分
-const DIRECTOR_BASE_SCORE = 5       // 畫家基礎分
-const DIRECTOR_VOTE_BONUS = 2       // 每個投票人數 ×2 分
-const RATING_BONUS_MULTIPLIER = 3   // 平均評星 ×3 分
+// 編劇得分：以得票數為主要依據
+const SCREENWRITER_BASE_SCORE = 10  // 編劇基礎分（有人投票即得）
+const SCREENWRITER_VOTE_BONUS = 10  // 每票 +10 分
+// 畫家得分：以評分為輔助
+const DIRECTOR_BASE_SCORE = 10      // 畫家基礎分
+const RATING_BONUS_MULTIPLIER = 6   // 平均評星 ×6 分
 
 // ========== 全局單例狀態（所有 useGame() 調用共享） ==========
 // 倒計時相關
@@ -990,21 +991,22 @@ export function useGame() {
       console.log('[useGame] Story_Chain 已更新')
 
       // ========== 4. 計算並更新玩家得分 ==========
-      // Requirements: 6.6, 6.7
-      const voterCount = storyStore.votes.length
+      // 編劇得分以得票數為主，畫家得分以評分為輔
       
-      // 編劇勝出得分（只有當有實際提交時才給分）
+      // 編劇勝出得分（基礎分 + 得票數 × 10）
       let screenwriterScore = 0
-      if (winningSubmission) {
-        screenwriterScore = SCREENWRITER_WIN_SCORE
+      if (winningSubmission && voteCount > 0) {
+        screenwriterScore = calculateScreenwriterScore(voteCount)
         await updateStoryboardPlayerScore(winnerId, screenwriterScore)
-        console.log('[useGame] 編劇勝出得分:', screenwriterScore, '分給', winnerName)
+        console.log('[useGame] 編劇得分:', screenwriterScore, '分給', winnerName, '(得票數:', voteCount, ')')
       }
 
-      // 畫家得分
-      const directorScore = DIRECTOR_BASE_SCORE + (voterCount * DIRECTOR_VOTE_BONUS)
+      // 畫家得分（基礎分 + 平均評星 × 6）
+      // 注意：這裡使用 gameStore.averageRating 獲取當前輪次的平均評分
+      const averageRating = gameStore.averageRating || 0
+      const directorScore = calculateDirectorScore(averageRating)
       await updateStoryboardPlayerScore(drawerId, directorScore)
-      console.log('[useGame] 畫家得分:', directorScore, '分給', drawerName, '(投票人數:', voterCount, ')')
+      console.log('[useGame] 畫家得分:', directorScore, '分給', drawerName, '(平均評星:', averageRating, ')')
 
       // ========== 5. 返回結算結果 ==========
       // Requirements: 6.8
@@ -1060,28 +1062,32 @@ export function useGame() {
   }
 
   // ========== 分鏡模式得分計算 ==========
-  // Requirements: 6.6, 6.7, 9.4
+  // 編劇得分以得票數為主，畫家得分以評分為輔
 
   /**
-   * 計算編劇勝出得分
-   * Requirements: 6.6, 9.2 - 編劇勝出 +10 分
+   * 計算編劇得分（以得票數為主要依據）
+   * 公式：基礎分 10 + 得票數 × 10
+   * @param voteCount 該編劇獲得的票數
    */
-  function calculateScreenwriterWinScore(): number {
-    return SCREENWRITER_WIN_SCORE
+  function calculateScreenwriterScore(voteCount: number): number {
+    if (voteCount === 0) {
+      return 0 // 沒有票數則不得分
+    }
+    return SCREENWRITER_BASE_SCORE + (voteCount * SCREENWRITER_VOTE_BONUS)
   }
 
   /**
-   * 計算畫家得分
-   * Requirements: 6.7, 9.3 - 畫家 5 + 投票人數×2 分
-   * @param voterCount 投票人數
+   * 計算畫家得分（以評分為輔助依據）
+   * 公式：基礎分 10 + 平均評星 × 6
+   * @param averageRating 平均評星（1-5）
    */
-  function calculateDirectorScore(voterCount: number): number {
-    return DIRECTOR_BASE_SCORE + (voterCount * DIRECTOR_VOTE_BONUS)
+  function calculateDirectorScore(averageRating: number = 0): number {
+    const ratingBonus = Math.round(averageRating * RATING_BONUS_MULTIPLIER)
+    return DIRECTOR_BASE_SCORE + ratingBonus
   }
 
   /**
-   * 計算評星加分
-   * Requirements: 9.4 - 平均評星 × 3 分
+   * 計算評星加分（供其他地方使用）
    * @param averageRating 平均評星（1-5）
    */
   function calculateRatingBonus(averageRating: number): number {
@@ -1090,17 +1096,17 @@ export function useGame() {
 
   /**
    * 計算分鏡模式輪次結算得分
-   * Requirements: 6.6, 6.7, 9.4
+   * 編劇得分以得票數為主，畫家得分以評分為輔
    * 
    * @param winnerId 勝出句子作者 ID
    * @param drawerId 畫家 ID
-   * @param voterCount 投票人數
+   * @param winnerVoteCount 勝出編劇的得票數
    * @param averageRating 平均評星（可選）
    */
   async function calculateStoryboardRoundScores(
     winnerId: string,
     drawerId: string,
-    voterCount: number,
+    winnerVoteCount: number,
     averageRating: number = 0
   ): Promise<{ success: boolean; error?: string }> {
     if (!roomStore.currentRoom) {
@@ -1108,25 +1114,17 @@ export function useGame() {
     }
 
     try {
-      // 1. 編劇勝出得分
-      const screenwriterScore = calculateScreenwriterWinScore()
-      console.log('[useGame] 編劇勝出得分:', screenwriterScore, '分給', winnerId)
-      
-      await updateStoryboardPlayerScore(winnerId, screenwriterScore)
-
-      // 2. 畫家得分
-      const directorScore = calculateDirectorScore(voterCount)
-      console.log('[useGame] 畫家得分:', directorScore, '分給', drawerId, '(投票人數:', voterCount, ')')
-      
-      await updateStoryboardPlayerScore(drawerId, directorScore)
-
-      // 3. 評星加分（如果有評星）
-      if (averageRating > 0) {
-        const ratingBonus = calculateRatingBonus(averageRating)
-        console.log('[useGame] 評星加分:', ratingBonus, '分給', drawerId, '(平均評星:', averageRating, ')')
-        
-        await updateStoryboardPlayerScore(drawerId, ratingBonus)
+      // 1. 編劇得分（基礎分 + 得票數 × 10）
+      if (winnerVoteCount > 0) {
+        const screenwriterScore = calculateScreenwriterScore(winnerVoteCount)
+        console.log('[useGame] 編劇得分:', screenwriterScore, '分給', winnerId, '(得票數:', winnerVoteCount, ')')
+        await updateStoryboardPlayerScore(winnerId, screenwriterScore)
       }
+
+      // 2. 畫家得分（基礎分 + 平均評星 × 6）
+      const directorScore = calculateDirectorScore(averageRating)
+      console.log('[useGame] 畫家得分:', directorScore, '分給', drawerId, '(平均評星:', averageRating, ')')
+      await updateStoryboardPlayerScore(drawerId, directorScore)
 
       return { success: true }
     } catch (err) {
@@ -1250,7 +1248,7 @@ export function useGame() {
     finalizeStoryboardRound,
     getCanvasElement,
     // 分鏡模式得分計算方法
-    calculateScreenwriterWinScore,
+    calculateScreenwriterScore,
     calculateDirectorScore,
     calculateRatingBonus,
     calculateStoryboardRoundScores,
@@ -1260,9 +1258,9 @@ export function useGame() {
     STORYBOARD_WRITING_TIME,
     STORYBOARD_VOTING_TIME,
     STORYBOARD_SUMMARY_TIME,
-    SCREENWRITER_WIN_SCORE,
+    SCREENWRITER_BASE_SCORE,
+    SCREENWRITER_VOTE_BONUS,
     DIRECTOR_BASE_SCORE,
-    DIRECTOR_VOTE_BONUS,
     RATING_BONUS_MULTIPLIER,
   }
 }

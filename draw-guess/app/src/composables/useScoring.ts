@@ -3,37 +3,33 @@ import { supabase } from '../lib/supabase'
 import { useRoomStore } from '../stores/room'
 
 // 計分配置
-const GUESS_BASE_SCORE = 100 // 猜中基礎分數
-const DRAWING_BASE_SCORE = 50 // 繪畫基礎分數
-const DRAWING_BONUS_PER_GUESS = 10 // 每個猜中玩家的額外加分
-const RATING_BONUS_PER_STAR = 10 // 每顆星的額外加分（平均評分 × 10）
+const GUESS_BASE_SCORE = 100 // 猜中基礎分數（第一名得分）
+const GUESS_DECREMENT = 10 // 每名遞減分數
+const GUESS_MIN_SCORE = 10 // 猜中最低分數
+const DRAWING_SCORE_PER_GUESS = 10 // 畫家得分：每個猜中玩家 × 10
+const RATING_BONUS_PER_STAR = 6 // 評分獎勵：平均評分 × 6
 const WINNER_BONUS = 100 // 獲勝獎勵
-
-// 猜中順序係數（根據順序：100%, 80%, 60%, 40%, 20%...）
-const GUESS_ORDER_MULTIPLIERS = [1.0, 0.8, 0.6, 0.4, 0.2]
 
 export function useScoring() {
   const roomStore = useRoomStore()
 
-  // 計算猜中得分（根據順序）
+  // 計算猜中得分（根據順序：100, 90, 80, 70, 60...，最低10分）
   function calculateGuessScore(guessOrder: number): number {
     // guessOrder 是已猜中玩家的數量（0 表示第一個猜中）
-    const multiplierIndex = Math.min(guessOrder, GUESS_ORDER_MULTIPLIERS.length - 1)
-    const multiplier = GUESS_ORDER_MULTIPLIERS[multiplierIndex] ?? 0
-    const score = Math.round(GUESS_BASE_SCORE * multiplier)
-    return score
+    // 第1名(order=0): 100, 第2名(order=1): 90, 第3名(order=2): 80...
+    const score = GUESS_BASE_SCORE - (guessOrder * GUESS_DECREMENT)
+    return Math.max(score, GUESS_MIN_SCORE)
   }
 
-  // 計算繪畫得分（根據猜中玩家數量和平均評分）
+  // 計算繪畫得分（猜中人數 × 10 + 評分獎勵）
   function calculateDrawingScore(correctGuessCount: number, averageRating: number = 0): number {
     if (correctGuessCount === 0) {
       return 0 // 沒有人猜中，繪畫得分為 0
     }
-    // 基礎分 + 猜中獎勵 + 評分獎勵
-    const guessBonus = correctGuessCount * DRAWING_BONUS_PER_GUESS
+    // 猜中人數 × 10 + 評分獎勵（平均星 × 6）
+    const guessScore = correctGuessCount * DRAWING_SCORE_PER_GUESS
     const ratingBonus = Math.round(averageRating * RATING_BONUS_PER_STAR)
-    const score = DRAWING_BASE_SCORE + guessBonus + ratingBonus
-    return score
+    return guessScore + ratingBonus
   }
 
   // 更新畫家分數（輪次結束時調用）
@@ -155,8 +151,10 @@ export function useScoring() {
   return {
     // 配置
     GUESS_BASE_SCORE,
-    DRAWING_BASE_SCORE,
-    DRAWING_BONUS_PER_GUESS,
+    GUESS_DECREMENT,
+    GUESS_MIN_SCORE,
+    DRAWING_SCORE_PER_GUESS,
+    RATING_BONUS_PER_STAR,
     WINNER_BONUS,
     // 計算函數
     calculateGuessScore,
