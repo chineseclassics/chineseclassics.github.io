@@ -281,7 +281,8 @@ watch(() => props.roundId, () => {
   margin: 0 auto;
   padding: 0.5rem;
   max-height: calc(100vh - 2rem);
-  overflow-y: visible;
+  overflow-y: auto; /* 啟用滾動 */
+  -webkit-overflow-scrolling: touch; /* iOS 平滑滾動 */
   animation: summaryPopIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
   display: flex;
   flex-direction: column;

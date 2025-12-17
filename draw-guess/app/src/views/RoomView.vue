@@ -3401,6 +3401,49 @@ onUnmounted(() => {
     max-height: 30vh;
     margin-left: 0;
   }
+
+  /* 編劇輸入區 - 移動端優化 */
+  .game-writing-area {
+    flex-shrink: 0;
+  }
+
+  .writing-input-area {
+    padding: 0.5rem !important;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .writing-form-inline {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .writing-input {
+    flex: 1;
+    min-width: 0;
+    padding: 0.6rem 0.75rem;
+    font-size: 16px; /* 防止 iOS 縮放 */
+    border-radius: 8px;
+    /* 增大觸摸區域 */
+    min-height: 44px;
+  }
+
+  .submitted-inline {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .submitted-inline .submitted-text {
+    font-size: 0.9rem;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .edit-btn-inline {
+    padding: 0.4rem 0.7rem;
+    font-size: 0.85rem;
+    min-height: 36px;
+  }
 }
 
 /* ============================================
@@ -3478,6 +3521,25 @@ onUnmounted(() => {
   .game-story-panel {
     min-height: 140px;
     max-height: 35vh;
+  }
+
+  /* 編劇輸入區 - 小屏幕進一步緊湊 */
+  .writing-input-area {
+    padding: 0.4rem !important;
+    gap: 0.4rem;
+  }
+
+  .writing-input {
+    padding: 0.5rem 0.6rem;
+  }
+
+  .submitted-inline .submitted-text {
+    font-size: 0.85rem;
+  }
+
+  .edit-btn-inline {
+    padding: 0.35rem 0.6rem;
+    font-size: 0.8rem;
   }
 }
 

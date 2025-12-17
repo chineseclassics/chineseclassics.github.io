@@ -981,4 +981,162 @@ onMounted(() => {
 .voting-list::-webkit-scrollbar-thumb:hover {
   background: var(--border-color);
 }
+
+/* ============================================
+   移動端優化
+   ============================================ */
+@media (max-width: 768px) {
+  .story-panel {
+    height: auto;
+    min-height: 0;
+  }
+
+  .wired-card {
+    border-width: 2px;
+    box-shadow: 2px 2px 0 var(--shadow-color);
+    border-radius: 8px;
+  }
+
+  .section-title {
+    font-size: 0.9rem;
+    padding: 0.5rem 0.75rem;
+  }
+
+  .title-icon {
+    font-size: 16px;
+  }
+
+  /* 故事歷史區域緊湊化 */
+  .story-history-list {
+    padding: 0.5rem;
+    gap: 0.5rem;
+  }
+
+  /* 故事開頭 */
+  .story-opening-item {
+    padding: 0.5rem;
+    border-width: 1px;
+  }
+
+  .story-badge {
+    font-size: 0.65rem;
+    padding: 0.1rem 0.4rem;
+    margin-bottom: 0.3rem;
+  }
+
+  .story-text, .opening-text {
+    font-size: 0.8rem;
+    line-height: 1.35;
+  }
+
+  .story-author {
+    font-size: 0.7rem;
+    margin-top: 0.35rem;
+  }
+
+  /* 漫畫分鏡緊湊化 */
+  .comic-panel {
+    margin-bottom: 0.35rem;
+  }
+
+  .comic-panel-content {
+    border-width: 1px;
+  }
+
+  .comic-image {
+    max-height: 100px;
+  }
+
+  .comic-text-area {
+    padding: 0.4rem 0.5rem;
+  }
+
+  .speech-bubble {
+    padding: 0.35rem 0.5rem;
+    border-radius: 6px;
+  }
+
+  .comic-text {
+    font-size: 0.75rem;
+    line-height: 1.3;
+  }
+
+  .comic-author {
+    font-size: 0.65rem;
+    padding: 0.15rem 0.3rem;
+  }
+
+  .writer-author {
+    margin-top: 0.25rem;
+  }
+
+  /* 投票區域緊湊化 */
+  .voting-section {
+    max-height: 45%;
+  }
+
+  .voting-list {
+    padding: 0.5rem;
+    gap: 0.35rem;
+  }
+
+  .voting-option {
+    padding: 0.6rem;
+    border-radius: 6px;
+    /* 增大觸摸區域 */
+    min-height: 44px;
+  }
+
+  .option-text {
+    font-size: 0.85rem;
+  }
+
+  .mine-badge {
+    font-size: 0.65rem;
+  }
+
+  .vote-status,
+  .vote-hint {
+    padding: 0.35rem 0.5rem;
+    font-size: 0.75rem;
+  }
+
+  /* 空狀態 */
+  .empty-state {
+    padding: 1rem;
+  }
+
+  .empty-icon {
+    font-size: 24px;
+  }
+}
+
+@media (max-width: 480px) {
+  .wired-card {
+    border-radius: 6px;
+  }
+
+  .section-title {
+    font-size: 0.85rem;
+    padding: 0.4rem 0.6rem;
+    gap: 0.35rem;
+  }
+
+  .story-history-list {
+    padding: 0.4rem;
+    gap: 0.4rem;
+  }
+
+  .comic-image {
+    max-height: 80px;
+  }
+
+  .voting-option {
+    padding: 0.5rem;
+  }
+
+  .option-text {
+    font-size: 0.8rem;
+  }
+}
 </style>

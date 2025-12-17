@@ -70,14 +70,20 @@ defineProps<{
 const drawingStore = useDrawingStore()
 const { setTool: setDrawingTool, setColor: setDrawingColor, setLineWidth: setDrawingLineWidth, clearCanvas } = useDrawing()
 
-// 24色調色板（參考 Gartic.io）
+// 12色調色板（簡筆畫常用色）
 const colors = [
-  '#000000', '#FFFFFF', '#808080', '#C0C0C0',
-  '#FF0000', '#FF8000', '#FFFF00', '#80FF00',
-  '#00FF00', '#00FF80', '#00FFFF', '#0080FF',
-  '#0000FF', '#8000FF', '#FF00FF', '#FF0080',
-  '#800000', '#804000', '#808000', '#008000',
-  '#008080', '#000080', '#800080', '#400040',
+  '#000000', // 黑色 - 主線條
+  '#FFFFFF', // 白色 - 背景/修正
+  '#808080', // 灰色 - 陰影/金屬
+  '#8B4513', // 棕色 - 木頭/土地/頭髮
+  '#FF0000', // 紅色 - 強調/唇
+  '#FF8000', // 橙色 - 水果/火焰
+  '#FFFF00', // 黃色 - 太陽/星星
+  '#00AA00', // 綠色 - 草地/植物
+  '#0080FF', // 藍色 - 天空/水
+  '#8000FF', // 紫色 - 裝飾
+  '#FF69B4', // 粉色 - 臉頰/花
+  '#FFCC99', // 膚色 - 人物皮膚
 ]
 
 const tool = computed(() => drawingStore.tool)
@@ -198,12 +204,12 @@ async function handleClear() {
 
 .color-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(4, 1fr); /* 4×3 = 12色 */
   gap: 4px;
 }
 
 .color-grid-horizontal {
-  grid-template-columns: repeat(12, 1fr);
+  grid-template-columns: repeat(6, 1fr); /* 6×2 = 12色 */
   grid-template-rows: repeat(2, 1fr);
 }
 
@@ -325,14 +331,14 @@ async function handleClear() {
   }
 
   .color-grid-horizontal {
-    grid-template-columns: repeat(8, 1fr);
-    grid-template-rows: repeat(3, 1fr);
-    gap: 2px;
+    grid-template-columns: repeat(6, 1fr); /* 6×2 = 12色 */
+    grid-template-rows: repeat(2, 1fr);
+    gap: 3px;
   }
 
   .color-cell {
-    min-width: 22px;
-    min-height: 22px;
+    min-width: 26px;
+    min-height: 26px;
     /* 增加觸摸反饋 */
     -webkit-tap-highlight-color: transparent;
   }
@@ -391,14 +397,14 @@ async function handleClear() {
   }
 
   .color-grid-horizontal {
-    grid-template-columns: repeat(6, 1fr);
-    grid-template-rows: repeat(4, 1fr);
+    grid-template-columns: repeat(4, 1fr); /* 4×3 = 12色 */
+    grid-template-rows: repeat(3, 1fr);
     gap: 2px;
   }
 
   .color-cell {
-    min-width: 18px;
-    min-height: 18px;
+    min-width: 22px;
+    min-height: 22px;
   }
 
   .toolbar-horizontal .size-section {
