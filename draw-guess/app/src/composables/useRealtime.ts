@@ -467,6 +467,8 @@ export function useRealtime() {
     revealedChars?: string[]
     storyboardPhase?: string
     clearCanvas?: boolean  // 顯式清空畫布指令（新輪次開始時發送）
+    // 分鏡編劇詞句（依詞句庫編劇模式專用）
+    storyboardWritingPromptText?: string  // 本輪指定詞句
     storyboardRoundResult?: {
       winningSentence: string
       winnerName: string

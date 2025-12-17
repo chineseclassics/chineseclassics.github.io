@@ -67,8 +67,45 @@
             </label>
           </div>
 
-        <!-- 預設主題詞句庫（傳統模式專用） -->
-        <div v-if="form.gameMode === 'classic'" class="form-group">
+          <!-- 編劇模式選項（分鏡模式專用） -->
+          <div v-if="form.gameMode === 'storyboard'" class="form-group writing-mode-group">
+            <label>編劇模式</label>
+            <div class="writing-mode-options">
+              <label class="writing-mode-option" :class="{ active: form.storyboardWritingMode === 'free' }">
+                <input
+                  type="radio"
+                  v-model="form.storyboardWritingMode"
+                  value="free"
+                  name="storyboardWritingMode"
+                />
+                <div class="writing-mode-content">
+                  <span class="writing-mode-icon">✍️</span>
+                  <div class="writing-mode-text">
+                    <span class="writing-mode-name">自由編劇</span>
+                    <span class="writing-mode-desc">自由發揮，不限詞句</span>
+                  </div>
+                </div>
+              </label>
+              <label class="writing-mode-option" :class="{ active: form.storyboardWritingMode === 'wordlist' }">
+                <input
+                  type="radio"
+                  v-model="form.storyboardWritingMode"
+                  value="wordlist"
+                  name="storyboardWritingMode"
+                />
+                <div class="writing-mode-content">
+                  <span class="writing-mode-icon">📝</span>
+                  <div class="writing-mode-text">
+                    <span class="writing-mode-name">依詞句庫編劇</span>
+                    <span class="writing-mode-desc">每輪須使用指定詞句</span>
+                  </div>
+                </div>
+              </label>
+            </div>
+          </div>
+
+        <!-- 預設主題詞句庫（需要詞句庫時顯示） -->
+        <div v-if="isWordLibraryEnabled" class="form-group">
           <label class="library-label">預設主題詞句庫</label>
           <div v-if="loadingCollections" class="text-small text-secondary">詞句庫載入中...</div>
           <div v-else class="word-library-dropdown">
@@ -188,10 +225,11 @@
           </div>
         </div>
 
-          <!-- 自定義詞句主題和詞語輸入（傳統模式專用） -->
-          <div v-if="form.gameMode === 'classic'" class="form-group words-input-group">
+          <!-- 自定義詞句主題和詞語輸入（需要詞句庫時顯示） -->
+          <div v-if="isWordLibraryEnabled" class="form-group words-input-group">
             <div class="words-label-row">
-              <div class="form-group room-theme-group-inline">
+              <!-- 傳統模式：顯示可編輯的主題輸入框 -->
+              <div v-if="form.gameMode === 'classic'" class="form-group room-theme-group-inline">
                 <label>自定義詞句主題</label>
                 <input
                   v-model="form.name"
@@ -202,10 +240,17 @@
                   class="room-theme-input"
                 />
               </div>
+              <!-- 分鏡模式：顯示只讀提示，主題沿用故事標題 -->
+              <div v-else class="form-group room-theme-group-inline">
+                <label>詞句主題</label>
+                <div class="theme-readonly-hint">
+                  <span class="theme-readonly-text">沿用故事標題：{{ form.name || '（請先輸入故事標題）' }}</span>
+                </div>
+              </div>
               <button
                 type="button"
                 class="paper-btn ai-generate-btn"
-                :disabled="aiGenerating || aiRateLimited"
+                :disabled="aiGenerating || aiRateLimited || !form.name.trim()"
                 @click="handleAIGenerate"
               >
                 <span v-if="aiGenerating" class="ai-btn-loading">⏳ 生成中...</span>
@@ -333,6 +378,7 @@ const form = ref({
   // 分鏡接龍模式相關
   gameMode: 'classic' as 'classic' | 'storyboard',
   singleRoundMode: false,
+  storyboardWritingMode: 'free' as 'free' | 'wordlist', // 編劇模式：自由編劇 / 依詞句庫編劇
 })
 
 const error = ref<string | null>(null)
@@ -371,22 +417,29 @@ const uniqueWords = computed(() => {
 const wordCount = computed(() => uniqueWords.value.length)
 const totalChars = computed(() => form.value.wordsText.length)
 
+// 是否需要詞句庫：傳統模式一律需要；分鏡模式僅在「依詞句庫編劇」時需要
+const isWordLibraryEnabled = computed(() => {
+  if (form.value.gameMode === 'classic') {
+    return true
+  }
+  return form.value.storyboardWritingMode === 'wordlist'
+})
+
 const isFormValid = computed(() => {
   // 基本驗證：房間名稱
   const nameValid = form.value.name.trim().length > 0 && form.value.name.length <= 50
   
-  // 分鏡模式不需要詞語驗證
-  if (form.value.gameMode === 'storyboard') {
+  // 分鏡模式 + 自由編劇：只需驗證故事標題
+  if (form.value.gameMode === 'storyboard' && form.value.storyboardWritingMode === 'free') {
     return nameValid
   }
   
-  // 傳統模式需要詞語驗證
+  // 傳統模式 或 分鏡模式 + 依詞句庫編劇：需要詞語驗證
   return (
     nameValid &&
     wordCount.value >= 6 &&
     totalChars.value <= 600 &&
     uniqueWords.value.every(word => word.length >= 1 && word.length <= 32)
-    // 移除輪數驗證，輪數將在開始遊戲時自動設定
   )
 })
 
@@ -575,18 +628,33 @@ async function handleSubmit() {
   pruneLibraryWords()
 
   try {
-    // 構建詞語列表（分鏡模式可以為空）
-    const wordsList = form.value.gameMode === 'storyboard' 
-      ? [] 
-      : uniqueWords.value.map(text => ({
+    // 構建詞語列表
+    // - 傳統模式：始終需要詞語
+    // - 分鏡模式 + 自由編劇：不需要詞語
+    // - 分鏡模式 + 依詞句庫編劇：需要詞語
+    const needsWords = form.value.gameMode === 'classic' || 
+      (form.value.gameMode === 'storyboard' && form.value.storyboardWritingMode === 'wordlist')
+    
+    const wordsList = needsWords
+      ? uniqueWords.value.map(text => ({
           text,
           source: libraryWords.value.has(text) ? ('wordlist' as const) : ('custom' as const),
         }))
+      : []
+
+    // 構建設置，包含分鏡編劇模式
+    const settings = {
+      ...form.value.settings,
+      // 分鏡模式時保存編劇模式設定
+      ...(form.value.gameMode === 'storyboard' && {
+        storyboard_writing_mode: form.value.storyboardWritingMode,
+      }),
+    }
 
     const result = await createRoom({
       name: form.value.name.trim(),
       words: wordsList,
-      settings: form.value.settings,
+      settings,
       // 分鏡接龍模式相關參數
       gameMode: form.value.gameMode,
       singleRoundMode: form.value.singleRoundMode,
@@ -1138,6 +1206,89 @@ async function handleSubmit() {
 .checkbox-hint {
   font-size: 0.85rem;
   color: var(--text-secondary);
+}
+
+/* 編劇模式選項（分鏡模式專用） */
+.writing-mode-group {
+  margin-top: 0.75rem;
+}
+
+.writing-mode-options {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.writing-mode-option {
+  flex: 1;
+  min-width: 160px;
+  cursor: pointer;
+}
+
+.writing-mode-option input[type="radio"] {
+  display: none;
+}
+
+.writing-mode-option .writing-mode-content {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--bg-card);
+  border: 2px solid var(--border-light);
+  border-radius: 0;
+  transition: all 0.2s ease;
+  box-shadow: 2px 2px 0 var(--shadow-color);
+}
+
+.writing-mode-option:hover .writing-mode-content {
+  background: var(--bg-hover);
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 var(--shadow-color);
+}
+
+.writing-mode-option.active .writing-mode-content {
+  border-color: var(--primary-color, #4a90d9);
+  background: var(--bg-secondary);
+  box-shadow: 2px 2px 0 var(--primary-color, #4a90d9);
+}
+
+.writing-mode-icon {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.writing-mode-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.writing-mode-name {
+  font-weight: 600;
+  font-family: var(--font-head);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+}
+
+.writing-mode-desc {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+/* 只讀主題提示（分鏡模式詞句庫用） */
+.theme-readonly-hint {
+  padding: 0.5rem 0.75rem;
+  background: var(--bg-secondary);
+  border: 2px dashed var(--border-light);
+  border-radius: 4px;
+}
+
+.theme-readonly-text {
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  font-family: var(--font-body);
 }
 
 /* 分鏡模式說明 */

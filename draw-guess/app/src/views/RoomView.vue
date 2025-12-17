@@ -125,9 +125,17 @@
                     <PhPaintBrush :size="16" weight="fill" class="hint-icon" /> 
                     分鏡師 {{ currentDrawerName }} 作畫中
                   </span>
+                  <!-- 依詞句庫編劇模式：顯示本輪詞句 -->
+                  <span v-if="isWordlistWritingMode && storyboardWritingPromptText" class="prompt-tag">
+                    📝 詞句：<strong class="prompt-text">{{ storyboardWritingPromptText }}</strong>
+                  </span>
                 </template>
                 <template v-else-if="isStoryboardWriting">
-                  <span class="task-hint">✍️ 接續劇情，描述這一鏡</span>
+                  <!-- 依詞句庫編劇模式：醒目顯示本輪詞句 -->
+                  <span v-if="isWordlistWritingMode && storyboardWritingPromptText" class="task-hint writing-prompt">
+                    ✍️ 須包含：<strong class="prompt-text-highlight">{{ storyboardWritingPromptText }}</strong>
+                  </span>
+                  <span v-else class="task-hint">✍️ 接續劇情，描述這一鏡</span>
                 </template>
                 <template v-else-if="isStoryboardVoting">
                   <span class="phase-action voting-action">🗳️ 在右側面板選擇最佳句子 👉</span>
@@ -234,7 +242,11 @@
                 <div class="card-body" style="padding: 0.5rem;">
                   <DrawingToolbar v-if="isCurrentDrawer" :horizontal="true" />
                   <div v-else class="drawing-preview-hint">
-                    <div class="preview-tip">仔細觀察上方分鏡繪畫，準備用文字描述畫面，續寫故事</div>
+                    <!-- 依詞句庫編劇模式：把詞句融入提示語 -->
+                    <div v-if="isWordlistWritingMode && storyboardWritingPromptText" class="preview-tip">
+                      仔細觀察上方分鏡繪畫，準備用上詞語 <strong class="prompt-inline">{{ storyboardWritingPromptText }}</strong> 來描述畫面，續寫故事
+                    </div>
+                    <div v-else class="preview-tip">仔細觀察上方分鏡繪畫，準備用文字描述畫面，續寫故事</div>
                   </div>
                 </div>
               </div>
@@ -242,6 +254,12 @@
               <!-- 編劇階段：句子輸入區（高亮吸引注意） -->
               <div v-else-if="isStoryboardWriting" class="game-writing-area card writing-highlight">
                 <div class="card-body writing-input-area">
+                  <!-- 依詞句庫編劇模式：顯示本輪詞句提示 -->
+                  <div v-if="isWordlistWritingMode && storyboardWritingPromptText" class="prompt-hint-bar">
+                    <span class="prompt-hint-label">須包含：</span>
+                    <span class="prompt-hint-text">{{ storyboardWritingPromptText }}</span>
+                  </div>
+                  
                   <!-- 已提交狀態（非編輯模式） -->
                   <div v-if="mySubmissionText && !isEditingWriting" class="submitted-inline">
                     <PhCheckCircle :size="18" weight="fill" class="submitted-icon" />
@@ -257,7 +275,7 @@
                       v-model="writingInput"
                       type="text"
                       class="writing-input"
-                      placeholder="描述上方分鏡畫面，續寫故事"
+                      :placeholder="isWordlistWritingMode && storyboardWritingPromptText ? `描述畫面，須包含「${storyboardWritingPromptText}」` : '描述上方分鏡畫面，續寫故事'"
                       maxlength="100"
                       :disabled="writingSubmitting"
                     />
@@ -421,6 +439,13 @@
       </div>
     </div>
 
+    <!-- 依詞句庫編劇模式：驗證失敗氣泡提示 -->
+    <Teleport to="body">
+      <div v-if="promptToastMessage" class="prompt-toast">
+        💡 {{ promptToastMessage }}
+      </div>
+    </Teleport>
+
     <!-- 分鏡模式故事設定彈窗 -->
     <!-- Requirements: 2.1 - 分鏡接龍模式遊戲開始時顯示 StorySetupModal -->
     <StorySetupModal
@@ -579,6 +604,14 @@ const isLeavingRoom = ref(false)
 // ========== 分鏡模式狀態 ==========
 // Requirements: 10.2 - 根據 game_mode 切換 UI 模式
 
+/** 是否為「依詞句庫編劇」模式 */
+const isWordlistWritingMode = computed(() => {
+  const room = roomStore.currentRoom as any
+  return room?.settings?.storyboard_writing_mode === 'wordlist'
+})
+
+/** 本輪指定詞句（依詞句庫編劇模式專用） */
+const storyboardWritingPromptText = ref<string | null>(null)
 
 /** 分鏡模式輪次結算結果 - 類型定義在 types/storyboard.ts */
 // Requirements: 6.8 - 顯示結算結果
@@ -622,9 +655,49 @@ const writingInput = ref('')
 const writingSubmitting = ref(false)
 const isEditingWriting = ref(false)
 
+// 氣泡提示狀態（驗證失敗時顯示）
+const promptToastMessage = ref<string | null>(null)
+let promptToastTimer: number | null = null
+
+/** 文字標準化（去空白/全形空白、英文轉小寫）- 復用 useGuessing 的策略 */
+function normalizeText(str: string): string {
+  return str
+    .replace(/[\s\u3000]+/g, '') // 移除所有空格（包括全形空格 \u3000）
+    .toLowerCase() // 轉小寫（處理英文混合情況）
+    .trim()
+}
+
+/** 檢查句子是否包含指定詞句 */
+function sentenceContainsPrompt(sentence: string, prompt: string): boolean {
+  const normalizedSentence = normalizeText(sentence)
+  const normalizedPrompt = normalizeText(prompt)
+  return normalizedSentence.includes(normalizedPrompt)
+}
+
+/** 顯示氣泡提示 */
+function showPromptToast(message: string) {
+  promptToastMessage.value = message
+  
+  // 自動隱藏
+  if (promptToastTimer) {
+    clearTimeout(promptToastTimer)
+  }
+  promptToastTimer = window.setTimeout(() => {
+    promptToastMessage.value = null
+  }, 3000)
+}
+
 /** 處理編劇提交（畫布下方輸入區） */
 async function handleWritingSubmit() {
   if (!writingInput.value.trim() || writingSubmitting.value) return
+  
+  // 依詞句庫編劇模式：驗證句子是否包含指定詞句
+  if (isWordlistWritingMode.value && storyboardWritingPromptText.value) {
+    if (!sentenceContainsPrompt(writingInput.value, storyboardWritingPromptText.value)) {
+      showPromptToast(`句子需包含「${storyboardWritingPromptText.value}」，請編輯後再提交`)
+      return
+    }
+  }
   
   writingSubmitting.value = true
   try {
@@ -1642,6 +1715,13 @@ onMounted(async () => {
           // 恢復分鏡模式階段
           setStoryboardPhase(dbPhase)
           
+          // 恢復本輪詞句（依詞句庫編劇模式）
+          const dbPromptText = (currentRoom.value as any).storyboard_writing_prompt_text
+          if (dbPromptText) {
+            console.log('[RoomView] 恢復本輪詞句:', dbPromptText)
+            storyboardWritingPromptText.value = dbPromptText
+          }
+          
           // 載入故事鏈
           await loadStoryChain(currentRoom.value.id)
           
@@ -1812,6 +1892,12 @@ onMounted(async () => {
             console.log('[RoomView] 分鏡模式倒計時:', remaining, '秒')
             startStoryboardCountdown(remaining, handleStoryboardPhaseEnd)
           }
+        }
+        
+        // 處理依詞句庫編劇模式的本輪詞句
+        if (state.storyboardWritingPromptText !== undefined) {
+          console.log('[RoomView] 更新本輪詞句:', state.storyboardWritingPromptText)
+          storyboardWritingPromptText.value = state.storyboardWritingPromptText
         }
         
         // 分鏡模式結算階段
@@ -2345,6 +2431,90 @@ onUnmounted(() => {
   white-space: nowrap;
 }
 
+/* ========== 依詞句庫編劇模式樣式 ========== */
+
+/* 頂部詞句標籤（繪畫階段） */
+.prompt-tag {
+  font-size: 0.85rem;
+  color: var(--text-primary);
+  background: linear-gradient(135deg, #fff3e0, #ffe0b2);
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  border: 1px solid #ffb74d;
+  margin-left: 0.5rem;
+}
+
+.prompt-tag .prompt-text {
+  color: #e65100;
+  font-weight: 700;
+}
+
+/* 編劇模式頂部醒目顯示 */
+.task-hint.writing-prompt {
+  background: linear-gradient(135deg, #fff3e0, #ffcc80);
+  color: #e65100;
+  border-color: #ff9800;
+}
+
+.prompt-text-highlight {
+  color: #bf360c;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* 編劇輸入區上方的詞句提示條 */
+.prompt-hint-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: linear-gradient(135deg, #fff8e1, #ffecb3);
+  padding: 0.4rem 0.75rem;
+  border-radius: 4px;
+  border: 1px dashed #ffa000;
+  margin-bottom: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.prompt-hint-label {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.prompt-hint-text {
+  color: #e65100;
+  font-weight: 700;
+}
+
+/* 提交驗證失敗的氣泡提示 */
+.prompt-toast {
+  position: fixed;
+  bottom: 100px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, #fff3e0, #ffe0b2);
+  color: #e65100;
+  padding: 0.75rem 1.25rem;
+  border-radius: 8px;
+  border: 2px solid #ff9800;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  font-size: 0.9rem;
+  font-weight: 500;
+  z-index: 1000;
+  animation: toastSlideUp 0.3s ease-out;
+}
+
+@keyframes toastSlideUp {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
 /* 階段動作提示（投票/結算） */
 .phase-action {
   font-size: 0.9rem;
@@ -2756,6 +2926,15 @@ onUnmounted(() => {
 .drawing-preview-hint .preview-note {
   font-size: 0.8rem;
   color: var(--text-tertiary);
+}
+
+/* 依詞句庫編劇模式：詞句內嵌顯示 */
+.drawing-preview-hint .prompt-inline {
+  color: var(--color-primary, #4a90d9);
+  background: linear-gradient(135deg, rgba(74, 144, 217, 0.15), rgba(74, 144, 217, 0.08));
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  font-weight: 700;
 }
 
 /* 階段提示欄 */

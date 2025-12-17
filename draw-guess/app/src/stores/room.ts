@@ -6,6 +6,9 @@ import { useAuthStore } from './auth'
 // 遊戲模式類型
 export type GameMode = 'classic' | 'storyboard'
 
+// 分鏡編劇模式類型
+export type StoryboardWritingMode = 'free' | 'wordlist'
+
 // 房間接口
 export interface GameRoom {
   id: string
@@ -20,6 +23,8 @@ export interface GameRoom {
     rounds: number // 輪數
     word_count_per_round: number // 每輪可選詞數
     hints_count: number // 提示數量
+    // 分鏡編劇模式（分鏡模式專用）
+    storyboard_writing_mode?: StoryboardWritingMode // 'free' = 自由編劇, 'wordlist' = 依詞句庫編劇
   }
   current_round: number
   current_drawer_id: string | null
@@ -27,6 +32,9 @@ export interface GameRoom {
   game_mode: GameMode // 遊戲模式：classic（傳統）或 storyboard（分鏡接龍）
   single_round_mode: boolean // 單局模式（分鏡模式專用）
   is_final_round: boolean // 是否為最後一局
+  // 分鏡編劇詞句相關（依詞句庫編劇模式專用）
+  storyboard_writing_prompt_text?: string | null // 本輪指定詞句
+  used_word_indexes?: number[] // 已使用的詞語索引（跨場不重複）
   created_at: string
   updated_at: string
 }
@@ -127,6 +135,8 @@ export const useRoomStore = defineStore('room', () => {
       rounds: number
       word_count_per_round: number
       hints_count: number
+      // 分鏡編劇模式（分鏡模式專用）
+      storyboard_writing_mode?: StoryboardWritingMode
     }
     // 分鏡接龍模式相關參數
     gameMode?: GameMode
@@ -153,9 +163,16 @@ export const useRoomStore = defineStore('room', () => {
         }
       }
 
-      // 驗證數據 - 分鏡模式不需要詞語
+      // 驗證數據
+      // - 傳統模式：始終需要至少 6 個詞語
+      // - 分鏡模式 + 自由編劇：不需要詞語
+      // - 分鏡模式 + 依詞句庫編劇：需要至少 6 個詞語
       const gameMode = data.gameMode || 'classic'
-      if (gameMode === 'classic' && data.words.length < 6) {
+      const storyboardWritingMode = data.settings.storyboard_writing_mode || 'free'
+      const needsWords = gameMode === 'classic' || 
+        (gameMode === 'storyboard' && storyboardWritingMode === 'wordlist')
+      
+      if (needsWords && data.words.length < 6) {
         throw new Error('至少需要 6 個詞語')
       }
 

@@ -596,8 +596,63 @@ export function useGame() {
   }
 
   /**
+   * 獲取下一個分鏡編劇提示詞句（依詞句庫編劇模式專用）
+   * 從房間的 words 中隨機抽取，使用持久化的 used_word_indexes 避免重複
+   * 
+   * @returns 抽取的詞句和更新後的已用索引數組
+   */
+  function getNextStoryboardPrompt(): {
+    promptText: string
+    newUsedIndexes: number[]
+  } | null {
+    if (!roomStore.currentRoom) return null
+
+    const words = roomStore.currentRoom.words as Array<{ text: string; source: 'wordlist' | 'custom' }>
+    if (words.length === 0) return null
+
+    // 從房間數據中讀取已使用的索引（持久化）
+    const room = roomStore.currentRoom as any
+    const usedIndexes: number[] = room.used_word_indexes || []
+    const usedSet = new Set(usedIndexes)
+
+    // 找出未使用的詞語索引
+    const unusedIndices: number[] = []
+    for (let i = 0; i < words.length; i++) {
+      if (!usedSet.has(i)) {
+        unusedIndices.push(i)
+      }
+    }
+
+    let selectedIndex: number
+    let newUsedIndexes: number[]
+
+    if (unusedIndices.length > 0) {
+      // 隨機選一個未使用的
+      const randomIdx = Math.floor(Math.random() * unusedIndices.length)
+      selectedIndex = unusedIndices[randomIdx] ?? 0
+      newUsedIndexes = [...usedIndexes, selectedIndex]
+    } else {
+      // 所有詞語都用過了，重置並隨機選一個
+      console.log('[useGame] 分鏡模式：所有詞語都用過了，重置並重新選擇')
+      selectedIndex = Math.floor(Math.random() * words.length)
+      newUsedIndexes = [selectedIndex]
+    }
+
+    const selectedWord = words[selectedIndex]
+    if (!selectedWord) return null
+
+    console.log('[useGame] 分鏡模式抽取詞句:', selectedWord.text, '索引:', selectedIndex)
+    return {
+      promptText: selectedWord.text,
+      newUsedIndexes,
+    }
+  }
+
+  /**
    * 進入分鏡模式繪畫階段
    * Requirements: 3.5 - 繪畫時間結束自動進入編劇階段
+   * 
+   * 若為「依詞句庫編劇」模式，會在此時抽取本輪詞句並持久化
    */
   async function enterStoryboardDrawingPhase() {
     if (!roomStore.currentRoom || !roomStore.isHost) {
@@ -610,16 +665,62 @@ export function useGame() {
     // 清除上一輪的提交和投票數據
     storyStore.clearRoundData()
 
+    const startedAt = new Date().toISOString()
+    const room = roomStore.currentRoom as any
+    const isWordlistMode = room.settings?.storyboard_writing_mode === 'wordlist'
+
+    // 準備廣播數據
+    let promptText: string | null = null
+    let dbUpdateData: Record<string, any> = {
+      storyboard_phase: 'drawing',
+      updated_at: startedAt,
+    }
+
+    // 如果是「依詞句庫編劇」模式，抽取本輪詞句
+    if (isWordlistMode) {
+      const promptResult = getNextStoryboardPrompt()
+      if (promptResult) {
+        promptText = promptResult.promptText
+        dbUpdateData.storyboard_writing_prompt_text = promptText
+        dbUpdateData.used_word_indexes = promptResult.newUsedIndexes
+        console.log('[useGame] 依詞句庫編劇模式：本輪詞句 =', promptText)
+      } else {
+        console.warn('[useGame] 依詞句庫編劇模式：無法抽取詞句（詞句庫可能為空）')
+      }
+    } else {
+      // 自由編劇模式：清空提示詞句
+      dbUpdateData.storyboard_writing_prompt_text = null
+    }
+
+    // 寫入數據庫（持久化）
+    const { error: dbError } = await supabase
+      .from('game_rooms')
+      .update(dbUpdateData)
+      .eq('id', roomStore.currentRoom.id)
+
+    if (dbError) {
+      console.error('[useGame] 更新數據庫失敗:', dbError)
+    } else {
+      // 更新本地狀態
+      if (promptText !== null) {
+        const room = roomStore.currentRoom as any
+        room.storyboard_writing_prompt_text = promptText
+        room.used_word_indexes = dbUpdateData.used_word_indexes
+      }
+    }
+
     // 廣播階段變化
     const { broadcastGameState } = useRealtime()
     await broadcastGameState(roomStore.currentRoom.code, {
       roundStatus: 'drawing',
       storyboardPhase: 'drawing',
-      startedAt: new Date().toISOString(),
+      startedAt,
       clearCanvas: true,  // 顯式清空畫布指令
+      // 依詞句庫編劇模式：廣播本輪詞句
+      ...(promptText && { storyboardWritingPromptText: promptText }),
     })
 
-    return { success: true }
+    return { success: true, promptText }
   }
 
   /**
