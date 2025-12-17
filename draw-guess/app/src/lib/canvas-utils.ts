@@ -35,12 +35,14 @@ export function getCanvasCoordinates(
 }
 
 // 繪製筆觸
-// scaleX, scaleY: 縮放比例（用於窗口尺寸變化時的重繪）
+// scale: 統一縮放比例（保持圖畫比例不變形）
+// offsetX, offsetY: 偏移量（用於居中顯示）
 export function drawStroke(
   ctx: CanvasRenderingContext2D,
   stroke: Stroke,
-  scaleX: number = 1,
-  scaleY: number = 1
+  scale: number = 1,
+  offsetX: number = 0,
+  offsetY: number = 0
 ) {
   ctx.save()
 
@@ -62,26 +64,26 @@ export function drawStroke(
 
   if (stroke.tool === 'pen') {
     ctx.strokeStyle = stroke.color
-    // 線寬也需要按比例縮放（使用平均縮放比例）
-    ctx.lineWidth = stroke.lineWidth * ((scaleX + scaleY) / 2)
+    // 線寬按統一比例縮放
+    ctx.lineWidth = stroke.lineWidth * scale
     ctx.lineCap = 'round'
     ctx.lineJoin = 'round'
   } else if (stroke.tool === 'eraser') {
     ctx.globalCompositeOperation = 'destination-out'
-    ctx.lineWidth = stroke.lineWidth * ((scaleX + scaleY) / 2)
+    ctx.lineWidth = stroke.lineWidth * scale
     ctx.lineCap = 'round'
     ctx.lineJoin = 'round'
   }
 
   ctx.beginPath()
   if (stroke.points[0]) {
-    ctx.moveTo(stroke.points[0].x * scaleX, stroke.points[0].y * scaleY)
+    ctx.moveTo(stroke.points[0].x * scale + offsetX, stroke.points[0].y * scale + offsetY)
   }
 
   for (let i = 1; i < stroke.points.length; i++) {
     const point = stroke.points[i]
     if (point) {
-      ctx.lineTo(point.x * scaleX, point.y * scaleY)
+      ctx.lineTo(point.x * scale + offsetX, point.y * scale + offsetY)
     }
   }
 
@@ -89,7 +91,29 @@ export function drawStroke(
   ctx.restore()
 }
 
-// 重繪所有筆觸（支持窗口縮放）
+// 計算等比縮放參數（保持圖畫比例，居中顯示）
+export function calculateScaleParams(
+  currentWidth: number,
+  currentHeight: number,
+  originalWidth: number,
+  originalHeight: number
+): { scale: number; offsetX: number; offsetY: number } {
+  const scaleX = currentWidth / originalWidth
+  const scaleY = currentHeight / originalHeight
+  
+  // 使用較小的縮放比例，確保圖畫完全可見且不變形
+  const scale = Math.min(scaleX, scaleY)
+  
+  // 計算偏移量，讓圖畫居中
+  const scaledWidth = originalWidth * scale
+  const scaledHeight = originalHeight * scale
+  const offsetX = (currentWidth - scaledWidth) / 2
+  const offsetY = (currentHeight - scaledHeight) / 2
+  
+  return { scale, offsetX, offsetY }
+}
+
+// 重繪所有筆觸（支持窗口縮放，保持圖畫比例）
 export function redrawCanvas(
   canvas: HTMLCanvasElement,
   strokes: Stroke[]
@@ -111,17 +135,24 @@ export function redrawCanvas(
 
   // 重繪所有筆觸
   strokes.forEach(stroke => {
-    // 計算縮放比例
-    let scaleX = 1
-    let scaleY = 1
+    let scale = 1
+    let offsetX = 0
+    let offsetY = 0
     
     if (stroke.canvasSize) {
-      // 根據筆觸繪製時的 canvas 尺寸計算縮放比例
-      scaleX = currentWidth / stroke.canvasSize.width
-      scaleY = currentHeight / stroke.canvasSize.height
+      // 計算等比縮放參數
+      const params = calculateScaleParams(
+        currentWidth,
+        currentHeight,
+        stroke.canvasSize.width,
+        stroke.canvasSize.height
+      )
+      scale = params.scale
+      offsetX = params.offsetX
+      offsetY = params.offsetY
     }
     
-    drawStroke(ctx, stroke, scaleX, scaleY)
+    drawStroke(ctx, stroke, scale, offsetX, offsetY)
   })
 }
 

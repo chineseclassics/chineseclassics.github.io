@@ -1,6 +1,6 @@
 import { ref, computed } from 'vue'
 import { useDrawingStore } from '../stores/drawing'
-import { getCanvasCoordinates, drawStroke, generateStrokeId, redrawCanvas, type Stroke } from '../lib/canvas-utils'
+import { getCanvasCoordinates, drawStroke, generateStrokeId, redrawCanvas, calculateScaleParams, type Stroke } from '../lib/canvas-utils'
 import { useRoomStore } from '../stores/room'
 import { useAuthStore } from '../stores/auth'
 import { useStoryStore } from '../stores/story'
@@ -270,17 +270,25 @@ export function useDrawing() {
     // 添加到筆觸列表
     drawingStore.addStroke(stroke)
 
-    // 計算縮放比例（支持不同設備 canvas 尺寸）
-    let scaleX = 1
-    let scaleY = 1
+    // 計算等比縮放參數（保持圖畫比例，居中顯示）
+    let scale = 1
+    let offsetX = 0
+    let offsetY = 0
     if (stroke.canvasSize) {
       const rect = canvasRef.value.getBoundingClientRect()
-      scaleX = rect.width / stroke.canvasSize.width
-      scaleY = rect.height / stroke.canvasSize.height
+      const params = calculateScaleParams(
+        rect.width,
+        rect.height,
+        stroke.canvasSize.width,
+        stroke.canvasSize.height
+      )
+      scale = params.scale
+      offsetX = params.offsetX
+      offsetY = params.offsetY
     }
 
-    // 立即繪製（應用縮放）
-    drawStroke(ctxRef.value, stroke, scaleX, scaleY)
+    // 立即繪製（應用等比縮放和居中偏移）
+    drawStroke(ctxRef.value, stroke, scale, offsetX, offsetY)
   }
 
   // 本地清空畫布（不廣播，用於輪次切換等）
