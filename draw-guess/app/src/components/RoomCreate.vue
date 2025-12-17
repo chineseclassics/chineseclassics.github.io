@@ -104,6 +104,21 @@
             </div>
           </div>
 
+          <!-- 故事類型（分鏡模式+依詞句庫編劇，選填） -->
+          <div v-if="form.gameMode === 'storyboard' && form.storyboardWritingMode === 'wordlist'" class="form-group story-genre-group">
+            <label>故事類型 <span class="optional-hint">（選填，用於 AI 生成詞句庫）</span></label>
+            <input
+              v-model="form.storyGenre"
+              type="text"
+              placeholder="如：懸疑、探案、愛情、穿越、校園、奇幻..."
+              maxlength="20"
+              class="story-genre-input"
+            />
+            <div class="story-genre-hint">
+              不填則以故事標題為主生成詞語
+            </div>
+          </div>
+
         <!-- 預設主題詞句庫（需要詞句庫時顯示） -->
         <div v-if="isWordLibraryEnabled" class="form-group">
           <label class="library-label">預設主題詞句庫</label>
@@ -240,11 +255,13 @@
                   class="room-theme-input"
                 />
               </div>
-              <!-- 分鏡模式：顯示只讀提示，主題沿用故事標題 -->
+              <!-- 分鏡模式：顯示當前生成依據 -->
               <div v-else class="form-group room-theme-group-inline">
-                <label>詞句主題</label>
+                <label>詞語生成依據</label>
                 <div class="theme-readonly-hint">
-                  <span class="theme-readonly-text">沿用故事標題：{{ form.name || '（請先輸入故事標題）' }}</span>
+                  <span class="theme-readonly-text">
+                    {{ form.storyGenre ? `故事類型：${form.storyGenre}` : `故事標題：${form.name || '（請先輸入）'}` }}
+                  </span>
                 </div>
               </div>
               <button
@@ -379,6 +396,7 @@ const form = ref({
   gameMode: 'classic' as 'classic' | 'storyboard',
   singleRoundMode: false,
   storyboardWritingMode: 'free' as 'free' | 'wordlist', // 編劇模式：自由編劇 / 依詞句庫編劇
+  storyGenre: '', // 故事類型（分鏡模式+依詞句庫編劇，選填）
 })
 
 const error = ref<string | null>(null)
@@ -584,13 +602,18 @@ function handleClickOutside(event: MouseEvent) {
 async function handleAIGenerate() {
   // 檢查主題是否已填寫
   if (!form.value.name.trim()) {
-    aiInfoMessage.value = '請先輸入詞句主題'
+    aiInfoMessage.value = form.value.gameMode === 'storyboard' ? '請先輸入故事標題' : '請先輸入詞句主題'
     return
   }
 
   aiInfoMessage.value = null
   
-  const result = await aiGenerateWords(form.value.name.trim())
+  // 根據遊戲模式設定 AI 生成參數
+  const isStoryboardMode = form.value.gameMode === 'storyboard'
+  const result = await aiGenerateWords(form.value.name.trim(), {
+    mode: isStoryboardMode ? 'storyboard' : 'classic',
+    storyGenre: isStoryboardMode ? form.value.storyGenre : undefined,
+  })
   
   if (result) {
     // 將生成的詞語填入輸入框（清空現有內容）
@@ -600,7 +623,8 @@ async function handleAIGenerate() {
     if (result.isThemeAdjusted && result.adjustedTheme) {
       aiInfoMessage.value = `已根據「${result.adjustedTheme}」主題生成 ${result.words.length} 個詞語`
     } else {
-      aiInfoMessage.value = `已生成 ${result.words.length} 個詞語`
+      const modeHint = isStoryboardMode ? '（適合故事編劇）' : ''
+      aiInfoMessage.value = `已生成 ${result.words.length} 個詞語${modeHint}`
     }
     
     // 清空詞庫來源記錄（AI 生成的詞語不算詞庫來源）
@@ -1289,6 +1313,37 @@ async function handleSubmit() {
   font-size: 0.9rem;
   color: var(--text-primary);
   font-family: var(--font-body);
+}
+
+/* 故事類型輸入（分鏡模式專用） */
+.story-genre-group {
+  margin-top: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: var(--bg-secondary);
+  border: 2px dashed var(--border-light);
+  border-radius: 4px;
+}
+
+.story-genre-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.optional-hint {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  font-weight: normal;
+}
+
+.story-genre-input {
+  width: 100%;
+  font-family: var(--font-body);
+}
+
+.story-genre-hint {
+  font-size: 0.8rem;
+  color: var(--text-tertiary);
+  margin-top: 0.5rem;
 }
 
 /* 分鏡模式說明 */

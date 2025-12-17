@@ -1,10 +1,13 @@
 /**
  * AI 智能詞語生成 Composable
- * 調用 Edge Function 生成適合「你畫我猜」遊戲的詞語
+ * 調用 Edge Function 生成適合「你畫我猜」和「分鏡接龍」遊戲的詞語
  */
 
 import { ref, computed } from 'vue'
 import { supabase } from '../lib/supabase'
+
+// 遊戲模式類型
+export type AIGeneratorMode = 'classic' | 'storyboard'
 
 // 速率限制配置
 const RATE_LIMIT_KEY = 'ai-word-generator-rate-limit'
@@ -120,13 +123,25 @@ export function useAIWordGenerator() {
 
   /**
    * 生成詞語
-   * @param theme 房間主題
+   * @param theme 房間主題/故事標題
+   * @param options 可選參數
+   * @param options.mode 遊戲模式：'classic'（你畫我猜）或 'storyboard'（分鏡接龍編劇）
+   * @param options.storyGenre 故事類型（僅 storyboard 模式，選填）
    * @returns 生成結果或 null（如果失敗）
    */
-  async function generateWords(theme: string): Promise<AIWordGeneratorResult | null> {
+  async function generateWords(
+    theme: string,
+    options?: {
+      mode?: AIGeneratorMode
+      storyGenre?: string
+    }
+  ): Promise<AIWordGeneratorResult | null> {
+    const mode = options?.mode || 'classic'
+    const storyGenre = options?.storyGenre?.trim() || undefined
+
     // 檢查主題
     if (!theme || theme.trim().length === 0) {
-      error.value = '請先輸入房間主題'
+      error.value = mode === 'storyboard' ? '請先輸入故事標題' : '請先輸入房間主題'
       return null
     }
 
@@ -149,9 +164,18 @@ export function useAIWordGenerator() {
         setTimeout(() => reject(new Error('TIMEOUT')), API_TIMEOUT_MS)
       })
 
+      // 構建請求體
+      const requestBody: { theme: string; mode: AIGeneratorMode; storyGenre?: string } = {
+        theme: theme.trim(),
+        mode
+      }
+      if (storyGenre) {
+        requestBody.storyGenre = storyGenre
+      }
+
       // 調用 Edge Function
       const fetchPromise = supabase.functions.invoke('generate-words', {
-        body: { theme: theme.trim() }
+        body: requestBody
       })
 
       // 競速：API 調用 vs 超時
