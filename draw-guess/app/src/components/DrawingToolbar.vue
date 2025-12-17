@@ -284,11 +284,17 @@ async function handleClear() {
   }
 
   .toolbar-horizontal {
-    gap: 0.75rem;
-    padding: 0.4rem 0.6rem;
+    gap: 0.6rem;
+    padding: 0.4rem 0.75rem; /* 增加左右內邊距防止截斷 */
     flex-wrap: nowrap;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+    justify-content: flex-start; /* 左對齊，避免內容被擠壓 */
+    min-width: 0;
+  }
+
+  .toolbar-horizontal .toolbar-section {
+    flex-shrink: 0; /* 防止工具區段被壓縮 */
   }
 
   .toolbar-horizontal .tools-section {
@@ -298,11 +304,12 @@ async function handleClear() {
 
   /* 工具按鈕 - 增大觸摸區域 */
   .tool-btn {
-    width: 40px;
-    height: 40px;
-    padding: 0.5rem;
-    min-width: 40px;
-    min-height: 40px;
+    width: 38px;
+    height: 38px;
+    padding: 0.45rem;
+    min-width: 38px;
+    min-height: 38px;
+    flex-shrink: 0;
     /* 增加觸摸反饋 */
     -webkit-tap-highlight-color: rgba(107, 175, 178, 0.3);
   }
@@ -313,15 +320,19 @@ async function handleClear() {
   }
 
   /* 顏色網格 - 移動端優化 */
+  .colors-section {
+    flex-shrink: 0;
+  }
+
   .color-grid-horizontal {
     grid-template-columns: repeat(8, 1fr);
     grid-template-rows: repeat(3, 1fr);
-    gap: 3px;
+    gap: 2px;
   }
 
   .color-cell {
-    min-width: 24px;
-    min-height: 24px;
+    min-width: 22px;
+    min-height: 22px;
     /* 增加觸摸反饋 */
     -webkit-tap-highlight-color: transparent;
   }
@@ -332,16 +343,18 @@ async function handleClear() {
 
   /* 畫筆大小 - 移動端優化 */
   .toolbar-horizontal .size-section {
-    padding: 0 0.5rem;
+    padding: 0 0.4rem;
+    flex-shrink: 0;
   }
 
   .size-dots-horizontal {
-    gap: 0.5rem;
+    gap: 0.4rem;
   }
 
   .size-dot {
     /* 增加觸摸區域 */
     position: relative;
+    flex-shrink: 0;
   }
 
   .size-dot::before {
@@ -363,16 +376,18 @@ async function handleClear() {
 /* 小屏幕進一步優化 */
 @media (max-width: 480px) {
   .toolbar-horizontal {
-    gap: 0.5rem;
-    padding: 0.3rem 0.4rem;
+    gap: 0.4rem;
+    padding: 0.3rem 0.6rem; /* 保持足夠的左右內邊距 */
   }
 
   .tool-btn {
-    width: 36px;
-    height: 36px;
-    padding: 0.4rem;
-    min-width: 36px;
-    min-height: 36px;
+    width: 34px;
+    height: 34px;
+    padding: 0.35rem;
+    min-width: 34px;
+    min-height: 34px;
+    border-width: 2px;
+    box-shadow: 1px 1px 0 var(--shadow-color);
   }
 
   .color-grid-horizontal {
@@ -382,12 +397,16 @@ async function handleClear() {
   }
 
   .color-cell {
-    min-width: 20px;
-    min-height: 20px;
+    min-width: 18px;
+    min-height: 18px;
+  }
+
+  .toolbar-horizontal .size-section {
+    padding: 0 0.3rem;
   }
 
   .size-dots-horizontal {
-    gap: 0.4rem;
+    gap: 0.35rem;
   }
 }
 </style>

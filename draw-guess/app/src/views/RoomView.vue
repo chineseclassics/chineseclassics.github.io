@@ -3197,9 +3197,16 @@ onUnmounted(() => {
     gap: 0.25rem;
   }
 
-  /* 移動端隱藏左側玩家列表，改為頂部簡化顯示 */
+  /* 移動端玩家列表 - 顯示在垂直方向最後 */
   .game-players {
-    display: none;
+    display: flex;
+    width: 100%;
+    min-width: unset;
+    order: 100; /* 確保在最後顯示 */
+    flex-shrink: 0;
+    margin-top: 0.25rem;
+    max-height: 150px;
+    overflow-y: auto;
   }
 
   .game-main {
@@ -3307,20 +3314,24 @@ onUnmounted(() => {
   .game-canvas-wrapper {
     flex: 1;
     min-height: 200px;
-    max-height: 50vh;
+    max-height: 45vh;
   }
 
   .game-canvas {
     min-height: 180px;
   }
 
-  /* 工具欄 - 移動端更緊湊 */
+  /* 工具欄 - 移動端更緊湊，防止左右截斷 */
   .game-toolbar {
     flex-shrink: 0;
+    overflow: visible;
   }
 
   .game-toolbar .card-body {
-    padding: 0.35rem !important;
+    padding: 0.35rem 0.5rem !important;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
   }
 
   /* 聊天面板 - 移動端固定在底部 */
@@ -3328,8 +3339,8 @@ onUnmounted(() => {
     width: 100%;
     min-width: unset;
     height: auto;
-    min-height: 140px;
-    max-height: 35vh;
+    min-height: 160px;
+    max-height: 30vh;
     margin-left: 0;
     flex-shrink: 0;
   }
@@ -3343,11 +3354,13 @@ onUnmounted(() => {
     font-size: 0.8rem;
   }
 
+  /* 信息滾動區 - 增加高度 */
   .chat-messages-container {
     font-size: 0.85rem;
     padding: 0.5rem !important;
-    min-height: 60px;
-    max-height: 100px;
+    min-height: 80px;
+    max-height: 150px;
+    flex: 1;
   }
 
   .chat-msg {
@@ -3377,6 +3390,16 @@ onUnmounted(() => {
   /* 時間進度條 */
   .time-progress {
     height: 6px;
+  }
+
+  /* 分鏡模式故事面板 - 移動端適配 */
+  .game-story-panel {
+    width: 100%;
+    min-width: unset;
+    height: auto;
+    min-height: 160px;
+    max-height: 30vh;
+    margin-left: 0;
   }
 }
 
@@ -3428,22 +3451,35 @@ onUnmounted(() => {
   }
 
   .game-canvas-wrapper {
-    max-height: 45vh;
-  }
-
-  .game-chat-panel {
     max-height: 40vh;
   }
 
+  /* 玩家列表 - 小屏幕進一步緊湊 */
+  .game-players {
+    max-height: 120px;
+  }
+
+  .game-chat-panel {
+    min-height: 140px;
+    max-height: 35vh;
+  }
+
+  /* 信息滾動區 - 小屏幕保持合理高度 */
   .chat-messages-container {
-    max-height: 80px;
+    min-height: 70px;
+    max-height: 120px;
   }
 
   .chat-input-field {
     padding: 0.5rem 0.6rem;
   }
 
+  /* 分鏡模式故事面板 - 小屏幕適配 */
+  .game-story-panel {
+    min-height: 140px;
+    max-height: 35vh;
   }
+}
 
 /* ============================================
    橫屏移動端優化
