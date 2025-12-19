@@ -21,6 +21,10 @@
         <div class="card-body player-list-container">
           <PlayerList :show-winner="false" />
         </div>
+        <!-- 音效開關 -->
+        <div class="sound-toggle-container">
+          <SoundToggle />
+        </div>
       </div>
 
       <!-- 中間：工具欄 + 畫布 + 聊天面板 -->
@@ -503,6 +507,8 @@ import { useRoom } from '../composables/useRoom'
 import { useGuessing } from '../composables/useGuessing'
 import { useStoryboard } from '../composables/useStoryboard'
 import { useVoting } from '../composables/useVoting'
+import { useSoundEffects } from '../composables/useSoundEffects'
+import SoundToggle from '../components/SoundToggle.vue'
 import type { StoryboardRoundResult } from '../types/storyboard'
 
 const route = useRoute()
@@ -512,6 +518,13 @@ const gameStore = useGameStore()
 const authStore = useAuthStore()
 const storyStore = useStoryStore()
 const { subscribeRoom, unsubscribeRoom, subscribeGameState, broadcastGameState, checkAndRestoreConnection } = useRealtime()
+const { 
+  playGameStart, 
+  playRoundEnd, 
+  playTimeWarning,
+  playTimeUp,
+  playOtherCorrect 
+} = useSoundEffects()
 const {
   isPlaying,
   isWaiting,
@@ -887,9 +900,22 @@ function scrollToBottom() {
   el.scrollTop = el.scrollHeight
 }
 
-// 監聽猜測記錄變化，自動滾動到底部
-watch(sortedGuesses, () => {
+// 監聽猜測記錄變化，自動滾動到底部，並播放他人猜中音效
+watch(sortedGuesses, (newGuesses, oldGuesses) => {
   nextTick(() => scrollToBottom())
+  
+  // 檢測是否有新的猜中記錄（由其他玩家提交）
+  if (oldGuesses && newGuesses.length > oldGuesses.length) {
+    const newCorrectGuesses = newGuesses.filter(
+      (g, i) => g.is_correct && (i >= oldGuesses.length || !oldGuesses[i]?.is_correct)
+    )
+    // 如果有新的猜中記錄且不是自己的，播放音效
+    newCorrectGuesses.forEach(guess => {
+      if (guess.user_id !== authStore.user?.id) {
+        playOtherCorrect()
+      }
+    })
+  }
 }, { deep: true })
 
 // 監聽參與者列表變化，檢測是否被踢出
@@ -1051,6 +1077,22 @@ watch(isSummary, (newVal, oldVal) => {
   if (newVal && !oldVal && currentRoundNumber.value > 0) {
     // 剛剛進入總結階段，保存當前輪信息
     saveLastRoundInfo()
+    // 播放輪次結束音效
+    playRoundEnd()
+  }
+})
+
+// 監聽倒計時，在最後幾秒播放警告音效
+watch(timeRemaining, (newVal, oldVal) => {
+  if (newVal !== null && oldVal !== null && newVal !== oldVal) {
+    // 最後 5 秒播放警告音
+    if (newVal <= 5 && newVal > 0) {
+      playTimeWarning()
+    }
+    // 時間到
+    if (newVal === 0 && oldVal > 0) {
+      playTimeUp()
+    }
   }
 })
 
@@ -1309,7 +1351,10 @@ async function handleStoryboardRoundSettlement() {
 // 處理開始遊戲
 async function handleStartGame() {
   const result = await startGame()
-  if (!result.success && 'error' in result && result.error) {
+  if (result.success) {
+    // 播放遊戲開始音效
+    playGameStart()
+  } else if ('error' in result && result.error) {
     showError(result.error)
   }
 }
@@ -2172,6 +2217,14 @@ onUnmounted(() => {
   flex: 1;
   overflow-y: auto;
   padding: 0.5rem;
+}
+
+/* 音效開關容器 */
+.sound-toggle-container {
+  padding: 0.5rem;
+  display: flex;
+  justify-content: center;
+  border-top: 1px solid var(--border-color);
 }
 
 /* 中間主區域 */

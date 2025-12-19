@@ -138,6 +138,7 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { PhPencil, PhClipboardText, PhPaintBrush, PhSmileySad, PhStar, PhConfetti } from '@phosphor-icons/vue'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../stores/auth'
+import { useSoundEffects } from '../composables/useSoundEffects'
 
 const props = defineProps<{
   roundNumber: number
@@ -167,6 +168,7 @@ const emit = defineEmits<{
 }>()
 
 const authStore = useAuthStore()
+const { playStarClick } = useSoundEffects()
 
 // 評分狀態
 const myRating = ref(0)
@@ -188,6 +190,9 @@ const totalRatings = computed(() => ratings.value.length)
 // 提交評分
 async function submitRating(rating: number) {
   if (hasRated.value || isDrawer.value || !authStore.user) return
+
+  // 播放星星評分音效
+  playStarClick(rating)
 
   try {
     const { error } = await supabase

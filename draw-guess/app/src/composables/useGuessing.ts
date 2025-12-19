@@ -3,11 +3,13 @@ import { supabase } from '../lib/supabase'
 import { useGameStore } from '../stores/game'
 import { useAuthStore } from '../stores/auth'
 import { useScoring } from './useScoring'
+import { useSoundEffects } from './useSoundEffects'
 
 export function useGuessing() {
   const gameStore = useGameStore()
   const authStore = useAuthStore()
   const { calculateGuessScore, updatePlayerScore } = useScoring()
+  const { playGuessCorrect, playGuessWrong, playFirstCorrect } = useSoundEffects()
 
   const guessInput = ref('')
   const error = ref<string | null>(null)
@@ -101,9 +103,18 @@ export function useGuessing() {
       // 更新本地狀態
       gameStore.guesses.push(data as any)
 
-      // 如果猜中，更新玩家分數
+      // 如果猜中，更新玩家分數並播放音效
       if (isCorrect && authStore.user) {
         await updatePlayerScore(authStore.user.id, scoreEarned)
+        // 第一個猜中播放特別音效
+        if (correctGuesses.value.length === 0) {
+          playFirstCorrect()
+        } else {
+          playGuessCorrect()
+        }
+      } else if (!isCorrect) {
+        // 猜錯播放錯誤音效
+        playGuessWrong()
       }
 
       // 每次提交後都清空輸入框，允許繼續猜測
