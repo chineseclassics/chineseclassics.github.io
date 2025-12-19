@@ -38,35 +38,43 @@ function handleToggle() {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
-  border: 2px solid var(--border-color, #5a4a3a);
-  border-radius: 8px;
-  background: var(--bg-card, #fff);
-  color: var(--text-primary, #5a4a3a);
+  width: 40px;
+  height: 40px;
+  border: 2px solid #5a4a3a;
+  border-radius: 10px;
+  background: #fff;
+  color: #5a4a3a;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 2px 2px 0 var(--shadow-color, rgba(0, 0, 0, 0.1));
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.1);
+}
+
+.sound-toggle :deep(svg) {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
 }
 
 .sound-toggle:hover {
   transform: translate(-1px, -1px);
-  box-shadow: 3px 3px 0 var(--shadow-color, rgba(0, 0, 0, 0.1));
-  background: var(--bg-hover, #f5f0e8);
+  box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.15);
+  background: #f5f0e8;
 }
 
 .sound-toggle:active {
   transform: translate(1px, 1px);
-  box-shadow: 1px 1px 0 var(--shadow-color, rgba(0, 0, 0, 0.1));
+  box-shadow: 1px 1px 0 rgba(0, 0, 0, 0.1);
 }
 
 .sound-toggle.sound-off {
-  color: var(--text-tertiary, #999);
+  color: #999;
+  border-color: #ccc;
   opacity: 0.7;
 }
 
 .sound-toggle.sound-off:hover {
   opacity: 1;
+  border-color: #5a4a3a;
 }
 </style>
 
