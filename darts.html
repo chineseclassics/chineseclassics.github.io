@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D 竞技飞镖 - 可调距离版</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+    <style>
+        body { margin: 0; overflow: hidden; background: #000; font-family: 'Segoe UI', system-ui; color: white; }
+        
+        /* 预览窗口 */
+        #video-feedback {
+            position: absolute; bottom: 20px; left: 20px;
+            width: 200px; height: 150px;
+            background: #000; border: 2px solid #00f2ff; border-radius: 10px;
+            z-index: 20; overflow: hidden;
+        }
+        #output-canvas { transform: scaleX(-1); width: 100%; height: 100%; object-fit: cover; }
+        #webcam-video { display: none; }
+
+        /* 控制面板 */
+        #ui-layer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 10; display: flex; flex-direction: column; align-items: center;
+        }
+        .control-panel {
+            margin-top: 20px; background: rgba(0, 30, 50, 0.8);
+            padding: 15px 30px; border-radius: 15px; border: 1px solid #00f2ff;
+            display: flex; gap: 30px; pointer-events: auto; backdrop-filter: blur(10px);
+        }
+        .stat-group { text-align: center; }
+        .label { font-size: 12px; color: #00f2ff; margin-bottom: 5px; }
+        .val { font-size: 24px; font-weight: bold; }
+
+        /* 距离调节滑块 */
+        .range-wrap { display: flex; align-items: center; gap: 10px; }
+        input[type=range] { cursor: pointer; accent-color: #00f2ff; width: 150px; }
+
+        #center-msg {
+            position: absolute; top: 70%; font-size: 22px; color: #ffcc00;
+            background: rgba(0,0,0,0.6); padding: 10px 30px; border-radius: 30px;
+        }
+
+        /* 准心 */
+        #cursor {
+            position: absolute; width: 50px; height: 50px;
+            border: 3px dashed #ff3300; border-radius: 50%;
+            transform: translate(-50%, -50%); display: none;
+            z-index: 15; pointer-events: none; transition: width 0.1s, height 0.1s;
+        }
+        #cursor.locked { border-color: #00f2ff; border-style: solid; width: 40px; height: 40px; }
+
+        /* 唤醒圆环 */
+        #wake-ui {
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%); display: none;
+        }
+
+        #start-overlay {
+            position: absolute; inset: 0; background: rgba(0,0,0,0.9);
+            z-index: 100; display: flex; flex-direction: column; justify-content: center; align-items: center;
+        }
+        .btn-main {
+            padding: 20px 60px; font-size: 24px; background: #00f2ff; border: none;
+            border-radius: 50px; font-weight: bold; cursor: pointer; box-shadow: 0 0 30px rgba(0,242,255,0.4);
+        }
+    </style>
+</head>
+<body>
+
+    <div id="start-overlay">
+        <h1 style="font-size: 48px; letter-spacing: 4px;">PRO DARTS 3D</h1>
+        <p style="color: #00f2ff; margin-bottom: 40px;">- 专业级手势控靶系统 -</p>
+        <div style="margin-bottom: 40px; font-size: 18px; line-height: 1.8; text-align: left;">
+            ✋ <b>唤醒</b>：张开五指直至进度条填满<br>
+            🎯 <b>瞄准</b>：移动红色准心靠近飞镖<br>
+            👌 <b>抓取</b>：捏合手指，准心变蓝即锁定<br>
+            🚀 <b>投掷</b>：快速挥动手臂并松开
+        </div>
+        <button class="btn-main" onclick="startApp()">进入赛场</button>
+    </div>
+
+    <div id="ui-layer">
+        <div class="control-panel">
+            <div class="stat-group">
+                <div class="label">SCORE</div>
+                <div id="score-val" class="val">0</div>
+            </div>
+            <div class="stat-group">
+                <div class="label">TARGET DISTANCE (M)</div>
+                <div class="range-wrap">
+                    <span>5</span>
+                    <input type="range" id="dist-slider" min="5" max="35" value="15" oninput="updateDistance(this.value)">
+                    <span>35</span>
+                </div>
+                <div id="dist-val" style="color:#00f2ff; font-weight:bold;">15m</div>
+            </div>
+            <div class="stat-group">
+                <div class="label">STATUS</div>
+                <div id="status-val" class="val" style="font-size: 18px; color:#ffcc00;">IDLE</div>
+            </div>
+        </div>
+        <div id="center-msg">请张开手掌激活系统</div>
+    </div>
+
+    <div id="cursor"></div>
+
+    <div id="wake-ui">
+        <svg width="100" height="100">
+            <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="8" />
+            <circle id="wake-bar" cx="50" cy="50" r="45" fill="none" stroke="#00f2ff" stroke-width="8" 
+                    stroke-dasharray="283" stroke-dashoffset="283" transform="rotate(-90 50 50)" />
+        </svg>
+    </div>
+
+    <div id="video-feedback">
+        <video id="webcam-video" playsinline></video>
+        <canvas id="output-canvas"></canvas>
+    </div>
+
+    <div id="game-container"></div>
+
+<script>
+    let scene, camera, renderer, dart, dartBoard, floor, grid;
+    let gameState = 'IDLE'; // IDLE, WAKING, ACTIVE, HOLDING, FLYING
+    let score = 0;
+    let wakeProgress = 0;
+    let targetDist = 15;
+    let posHistory = [];
+
+    function init3D() {
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x010508);
+        scene.fog = new THREE.Fog(0x010508, 10, 60);
+
+        camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 2, 10);
+
+        renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        document.getElementById('game-container').appendChild(renderer.domElement);
+
+        scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+        const light = new THREE.DirectionalLight(0x00f2ff, 1);
+        light.position.set(5, 10, 5);
+        scene.add(light);
+
+        // 巨型靶盘 - 竞技级尺寸
+        dartBoard = new THREE.Group();
+        const layers = [
+            {r: 3.5, c: 0x111111}, // 边缘
+            {r: 3.2, c: 0xffffff}, // 10分
+            {r: 2.5, c: 0x111111}, // 20分
+            {r: 1.8, c: 0x00f2ff}, // 50分
+            {r: 1.0, c: 0xff3300}, // 80分
+            {r: 0.3, c: 0xffcc00}  // 100分
+        ];
+        layers.forEach((l, i) => {
+            const mesh = new THREE.Mesh(new THREE.CircleGeometry(l.r, 64), new THREE.MeshPhongMaterial({color: l.c}));
+            mesh.position.z = i * 0.02;
+            dartBoard.add(mesh);
+        });
+        dartBoard.position.set(0, 2.5, -targetDist);
+        scene.add(dartBoard);
+
+        // 环境
+        const floorGeo = new THREE.PlaneGeometry(30, 100);
+        floor = new THREE.Mesh(floorGeo, new THREE.MeshPhongMaterial({color: 0x0a0a0a}));
+        floor.rotation.x = -Math.PI/2;
+        scene.add(floor);
+
+        grid = new THREE.GridHelper(100, 50, 0x00f2ff, 0x112233);
+        scene.add(grid);
+
+        // 飞镖
+        createDart();
+    }
+
+    function createDart() {
+        dart = new THREE.Group();
+        const body = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.04, 0.7), new THREE.MeshStandardMaterial({color: 0x222222}));
+        body.rotation.x = Math.PI/2;
+        const tip = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.2), new THREE.MeshStandardMaterial({color: 0xffffff}));
+        tip.position.z = -0.45; tip.rotation.x = Math.PI/2;
+        const tail = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.4, 0.01), new THREE.MeshStandardMaterial({color: 0x00f2ff, emissive: 0x00f2ff}));
+        tail.position.z = 0.3;
+        dart.add(body, tip, tail);
+        dart.position.set(0, 1, 5);
+        scene.add(dart);
+    }
+
+    function updateDistance(val) {
+        targetDist = parseInt(val);
+        document.getElementById('dist-val').innerText = targetDist + 'm';
+        if (dartBoard) {
+            dartBoard.position.z = -targetDist;
+            // 相机略微调整，保持视野
+            camera.fov = 60 + (targetDist / 5);
+            camera.updateProjectionMatrix();
+        }
+    }
+
+    const hands = new Hands({locateFile: (f) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}`});
+    hands.setOptions({ maxNumHands: 1, modelComplexity: 1, minDetectionConfidence: 0.7 });
+    hands.onResults(onResults);
+
+    function onResults(res) {
+        const cvs = document.getElementById('output-canvas');
+        const ctx = cvs.getContext('2d');
+        ctx.clearRect(0, 0, cvs.width, cvs.height);
+        
+        const cursor = document.getElementById('cursor');
+        const msg = document.getElementById('center-msg');
+
+        if (res.multiHandLandmarks && res.multiHandLandmarks.length > 0) {
+            const marks = res.multiHandLandmarks[0];
+            drawConnectors(ctx, marks, HAND_CONNECTIONS, {color: '#00f2ff', lineWidth: 3});
+
+            const screenX = (1 - marks[9].x) * window.innerWidth;
+            const screenY = marks[9].y * window.innerHeight;
+            const worldX = (0.5 - marks[9].x) * 14;
+            const worldY = (0.5 - marks[9].y) * 10 + 2.5;
+
+            // 更新准心
+            cursor.style.display = 'block';
+            cursor.style.left = screenX + 'px';
+            cursor.style.top = screenY + 'px';
+
+            const isPalm = (marks[8].y < marks[6].y) && (marks[12].y < marks[10].y) && (marks[16].y < marks[14].y);
+            const isPinch = Math.sqrt(Math.pow(marks[4].x - marks[8].x, 2) + Math.pow(marks[4].y - marks[8].y, 2)) < 0.08;
+
+            if (gameState === 'IDLE' || gameState === 'WAKING') {
+                msg.innerText = isPalm ? "正在唤醒..." : "请张开手掌激活";
+                handleWake(isPalm);
+            } else if (gameState === 'ACTIVE') {
+                msg.innerText = "瞄准飞镖并捏合手指抓取";
+                cursor.classList.remove('locked');
+                const dToDart = Math.sqrt(Math.pow(worldX - dart.position.x, 2) + Math.pow(worldY - dart.position.y, 2));
+                if (dToDart < 2.5) { // 磁力吸附范围
+                    dart.position.lerp(new THREE.Vector3(worldX, worldY, 5), 0.2);
+                    if (isPinch) setGameState('HOLDING');
+                }
+            } else if (gameState === 'HOLDING') {
+                msg.innerText = "🚀 挥动手臂并松开！";
+                cursor.classList.add('locked');
+                dart.position.lerp(new THREE.Vector3(worldX, worldY, 5), 0.5);
+                posHistory.push({x: worldX, y: worldY, t: Date.now()});
+                if(posHistory.length > 6) posHistory.shift();
+                if (!isPinch) throwDart();
+            }
+        } else {
+            cursor.style.display = 'none';
+            if(gameState !== 'FLYING') handleWake(false);
+        }
+    }
+
+    function handleWake(active) {
+        const ui = document.getElementById('wake-ui');
+        const bar = document.getElementById('wake-bar');
+        if (active) {
+            wakeProgress = Math.min(wakeProgress + 2, 100);
+            ui.style.display = 'block';
+        } else {
+            wakeProgress = Math.max(wakeProgress - 1.5, 0);
+            if(wakeProgress <= 0) ui.style.display = 'none';
+        }
+        bar.style.strokeDashoffset = 283 - (283 * wakeProgress / 100);
+        if (wakeProgress >= 100) {
+            setGameState('ACTIVE');
+            ui.style.display = 'none';
+        }
+    }
+
+    function setGameState(s) {
+        gameState = s;
+        document.getElementById('status-val').innerText = s;
+    }
+
+    let vel = new THREE.Vector3();
+    function throwDart() {
+        if(posHistory.length < 3) { setGameState('ACTIVE'); return; }
+        const f = posHistory[0], l = posHistory[posHistory.length-1];
+        const dt = (l.t - f.t) / 1000;
+        // 动态力度：距离越远，初始推力越强
+        const pushForce = -20 - (targetDist * 0.5);
+        vel.set((l.x - f.x)/dt * 0.4, (l.y - f.y)/dt * 0.4, pushForce);
+        setGameState('FLYING');
+    }
+
+    function animate() {
+        requestAnimationFrame(animate);
+        if (gameState === 'FLYING') {
+            dart.position.add(vel.clone().multiplyScalar(0.016));
+            vel.y -= 0.15; // 模拟重力
+            dart.lookAt(dart.position.clone().add(vel));
+            if (dart.position.z <= -targetDist + 0.2) checkHit();
+            if (dart.position.y < -5 || dart.position.z < -targetDist - 5) reset();
+        }
+        renderer.render(scene, camera);
+    }
+
+    function checkHit() {
+        gameState = 'HIT';
+        const dx = dart.position.x - dartBoard.position.x;
+        const dy = (dart.position.y - dartBoard.position.y);
+        const d = Math.sqrt(dx*dx + dy*dy);
+        
+        let p = 0;
+        if(d < 0.3) p = 100; 
+        else if(d < 1.0) p = 80; 
+        else if(d < 1.8) p = 50; 
+        else if(d < 2.5) p = 20; 
+        else if(d < 3.5) p = 10;
+
+        if(p > 0) {
+            score += p; document.getElementById('score-val').innerText = score;
+            document.getElementById('center-msg').innerText = "命中！+" + p;
+        } else {
+            document.getElementById('center-msg').innerText = "脱靶";
+        }
+        setTimeout(reset, 2000);
+    }
+
+    function reset() {
+        dart.position.set(0, 1, 5);
+        dart.rotation.set(0,0,0);
+        wakeProgress = 0; posHistory = [];
+        setGameState('IDLE');
+    }
+
+    function startApp() {
+        document.getElementById('start-overlay').style.display = 'none';
+        init3D(); animate();
+        const video = document.getElementById('webcam-video');
+        const cam = new Camera(video, {
+            onFrame: async () => { await hands.send({image: video}); },
+            width: 640, height: 480
+        });
+        cam.start();
+        document.getElementById('output-canvas').width = 640;
+        document.getElementById('output-canvas').height = 480;
+    }
+</script>
+</body>
+</html>

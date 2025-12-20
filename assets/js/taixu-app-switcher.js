@@ -104,6 +104,16 @@
         
         // 千古堂 - 古代經典體驗
         {
+            id: 'poetry-darts',
+            category: 'qiangu',
+            name: '詩詞飛鏢 3D',
+            icon: 'fas fa-bullseye',
+            gradient: 'from-indigo-600 to-blue-500',
+            url: '/poetry-darts/index.html',
+            description: '基於 3D 手勢識別的競技遊戲！在投擲飛鏢的過程中練習詩詞背誦，射中正確的意象與漢字，體驗古詩詞的物理魅力',
+            isNew: true
+        },
+        {
             id: 'judou',
             category: 'qiangu',
             name: '句豆',

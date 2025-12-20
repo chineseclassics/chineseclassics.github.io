@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>詩詞飛鏢 - 太虛幻境</title>
+    
+    <!-- 外部資源 -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script type="importmap">
+    {
+        "imports": {
+            "vue": "https://unpkg.com/vue@3/dist/vue.esm-browser.js"
+        }
+    }
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- 字體 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC:wght@300;400;700&display=swap" rel="stylesheet">
+    
+    <script>
+        // #region agent log
+        window.addEventListener('error', function(e) {
+            fetch('http://127.0.0.1:7242/ingest/68e37887-dcbc-4a22-af54-b314b9cce5eb', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    location: 'index.html:global',
+                    message: 'Global error caught',
+                    data: { message: e.message, filename: e.filename, lineno: e.lineno, colno: e.colno },
+                    timestamp: Date.now(),
+                    sessionId: 'debug-session',
+                    runId: 'initial-debug',
+                    hypothesisId: '1'
+                })
+            }).catch(() => {});
+        });
+        fetch('http://127.0.0.1:7242/ingest/68e37887-dcbc-4a22-af54-b314b9cce5eb', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                location: 'index.html:head',
+                message: 'Page loading started',
+                data: { vue_global: typeof Vue !== 'undefined' },
+                timestamp: Date.now(),
+                sessionId: 'debug-session',
+                runId: 'initial-debug',
+                hypothesisId: '2'
+            })
+        }).catch(() => {});
+        // #endregion
+    </script>
+    
+    <style>
+        :root {
+            --primary: #6366f1;
+            --accent: #f59e0b;
+        }
+        
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #050a0f;
+            font-family: "LXGW WenKai TC", sans-serif;
+            color: white;
+            user-select: none;
+        }
+
+        #app {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        /* 3D 容器 */
+        #game-canvas-container {
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+        }
+
+        /* UI 層 */
+        #ui-layer {
+            position: absolute;
+            inset: 0;
+            z-index: 10;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .pointer-auto { pointer-events: auto; }
+
+        /* 頂部狀態欄 */
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 1rem;
+        }
+
+        /* 詩句顯示區 */
+        .poem-card {
+            background: linear-gradient(135deg, rgba(30, 41, 59, 0.85), rgba(15, 23, 42, 0.85));
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.5);
+        }
+
+        /* 飛鏢準心 */
+        #dart-cursor {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            border: 2px dashed rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: 20;
+            transition: all 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        
+        #dart-cursor.locked {
+            border: 3px solid var(--primary);
+            width: 50px;
+            height: 50px;
+            background: rgba(99, 102, 241, 0.1);
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
+        }
+
+        /* 攝像頭預覽（左下角） */
+        #video-preview {
+            position: absolute;
+            bottom: 16px;
+            left: 16px;
+            width: 140px;
+            height: 105px;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            border: 2px solid rgba(99, 102, 241, 0.3);
+            background: rgba(0, 0, 0, 0.5);
+            transform: scaleX(-1);
+            z-index: 25;
+        }
+
+        /* 喚醒進度條 */
+        .wake-circle {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 120px;
+            height: 120px;
+        }
+
+        /* 動畫 */
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        .animate-float { animation: float 3s ease-in-out infinite; }
+
+        /* 模式切換按鈕 */
+        .mode-btn {
+            transition: all 0.3s ease;
+        }
+        .mode-btn.active {
+            background: var(--primary);
+            box-shadow: 0 0 15px rgba(99, 102, 241, 0.5);
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- 3D 渲染容器 -->
+        <div id="game-canvas-container" ref="canvasContainer"></div>
+
+        <!-- 手勢準心 -->
+        <div id="dart-cursor" 
+             :class="{ 'locked': isHolding }" 
+             :style="{ left: cursorX + 'px', top: cursorY + 'px', display: isHandDetected ? 'block' : 'none' }">
+            <div v-if="isHolding" class="absolute inset-0 flex items-center justify-center">
+                <i class="fas fa-crosshairs text-indigo-400 text-2xl"></i>
+            </div>
+        </div>
+
+        <!-- 當前瞄準目標提示（抓取後顯示在頂部中央） -->
+        <div v-if="isHolding && currentAimTarget" 
+             class="fixed top-36 left-1/2 -translate-x-1/2 z-30 text-center pointer-events-none">
+            <div class="flex items-center gap-4 bg-indigo-600/30 backdrop-blur-sm px-6 py-3 rounded-2xl border border-indigo-500/50">
+                <span class="text-indigo-300 text-sm">瞄準</span>
+                <span class="text-5xl">{{ currentAimTarget }}</span>
+                <span class="text-amber-400 text-sm animate-pulse">✋ 揮動並張開</span>
+            </div>
+        </div>
+
+        <!-- 飛鏢拿取提示（底部中央，只有未抓取時顯示） -->
+        <div v-if="isStarted && !isHolding && gameState === 'ACTIVE'" 
+             class="fixed bottom-8 left-1/2 -translate-x-1/2 z-30 pointer-events-none">
+            <div class="bg-black/50 backdrop-blur-sm rounded-full px-6 py-3 flex items-center gap-3">
+                <span class="text-2xl">👌</span>
+                <span class="text-amber-400 text-sm">移動到飛鏢位置並捏取</span>
+            </div>
+        </div>
+
+        <!-- 攝像頭預覽（左下角） -->
+        <div id="video-preview">
+            <video ref="webcam" class="hidden" playsinline></video>
+            <canvas ref="outputCanvas" class="w-full h-full object-cover"></canvas>
+        </div>
+
+        <!-- UI 層 -->
+        <div id="ui-layer" class="p-6">
+            <!-- 頂部狀態 -->
+            <div class="flex justify-between items-start">
+                <div class="glass-panel px-6 py-3 flex gap-8 items-center pointer-auto">
+                    <div class="text-center">
+                        <p class="text-xs text-indigo-300 uppercase tracking-wider mb-1">得分</p>
+                        <p class="text-3xl font-bold font-mono">{{ score }}</p>
+                    </div>
+                    <div class="h-8 w-px bg-white/10"></div>
+                    <div class="text-center">
+                        <p class="text-xs text-amber-300 uppercase tracking-wider mb-1">連擊</p>
+                        <p class="text-3xl font-bold font-mono">x{{ combo }}</p>
+                    </div>
+                </div>
+
+                <div class="flex gap-2 pointer-auto">
+                    <button @click="switchMode('fill')" 
+                            class="mode-btn glass-panel px-4 py-2 text-sm flex items-center gap-2"
+                            :class="{ active: gameMode === 'fill' }">
+                        <i class="fas fa-pen-nib"></i> 填空模式
+                    </button>
+                    <button @click="switchMode('emoji')" 
+                            class="mode-btn glass-panel px-4 py-2 text-sm flex items-center gap-2"
+                            :class="{ active: gameMode === 'emoji' }">
+                        <i class="fas fa-smile"></i> 意象模式
+                    </button>
+                </div>
+            </div>
+
+            <!-- 中間空白區（讓標靶可見） -->
+            <div class="flex-1"></div>
+            
+            <!-- 底部提示區域（不擋住標靶） -->
+            <div class="pb-24 flex flex-col items-center pointer-none">
+                <!-- 提示消息 -->
+                <transition enter-active-class="animate__animated animate__fadeInUp"
+                            leave-active-class="animate__animated animate__fadeOutDown">
+                    <div v-if="feedbackMsg" 
+                         class="bg-black/60 backdrop-blur-md px-8 py-4 rounded-full border border-white/20 text-xl font-bold text-amber-400 mb-4">
+                        {{ feedbackMsg }}
+                    </div>
+                </transition>
+
+                <!-- 喚醒引導 -->
+                <div v-if="gameState === 'IDLE'" class="text-center bg-black/40 p-8 rounded-3xl backdrop-blur-sm border border-white/10">
+                    <div class="text-6xl mb-4 animate-float">✋</div>
+                    <h2 class="text-2xl font-bold mb-2">請張開手掌激活系統</h2>
+                    <p class="text-white/60">讓攝像頭識別您的手部動作</p>
+                    
+                    <div class="mt-6 w-64 h-2 bg-white/10 rounded-full overflow-hidden">
+                        <div class="h-full bg-indigo-500 transition-all duration-100" :style="{ width: wakeProgress + '%' }"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 底部題目區（頂部居中，半透明小卡片） -->
+            <div class="absolute top-20 left-1/2 -translate-x-1/2 z-20 pointer-auto">
+                <transition enter-active-class="animate__animated animate__fadeInDown">
+                    <div v-if="currentPoem && isStarted && !showResult" class="poem-card px-6 py-4 backdrop-blur-xl rounded-2xl max-w-lg text-center">
+                        <div class="flex justify-center items-center gap-3 mb-2">
+                            <h3 class="text-sm text-indigo-300">《{{ currentPoem.poem }}》</h3>
+                            <span class="text-xs text-white/40">{{ currentPoem.author }}</span>
+                        </div>
+                        
+                        <div class="text-2xl md:text-3xl leading-relaxed tracking-wider">
+                            <template v-if="gameMode === 'fill'">
+                                <span v-for="(char, index) in displayVerse" :key="index"
+                                      :class="{ 'text-amber-400 border-b-2 border-amber-500/50 px-1 mx-0.5': char === '▢' }">
+                                    {{ char }}
+                                </span>
+                            </template>
+                            <template v-else>
+                                {{ currentPoem.verse }}
+                            </template>
+                        </div>
+
+                        <div v-if="gameMode === 'emoji'" class="flex justify-center gap-3 mt-3">
+                            <div v-for="i in 3" :key="i" 
+                                 class="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-xl"
+                                 :class="{ 'bg-green-500/20 border-green-500/50': foundEmojis.length >= i }">
+                                <span v-if="foundEmojis[i-1]">{{ foundEmojis[i-1] }}</span>
+                                <span v-else class="text-white/20">?</span>
+                            </div>
+                        </div>
+                    </div>
+                </transition>
+            </div>
+        </div>
+
+        <!-- 結算彈窗 -->
+        <transition enter-active-class="animate__animated animate__zoomIn"
+                    leave-active-class="animate__animated animate__fadeOut">
+            <div v-if="showResult" class="absolute inset-0 z-50 flex items-center justify-center bg-slate-900/90 backdrop-blur-lg">
+                <div class="bg-slate-800 p-10 rounded-3xl border border-white/10 text-center max-w-lg shadow-2xl">
+                    <div class="text-6xl mb-6">{{ isCorrect ? '🎉' : '💡' }}</div>
+                    <h2 class="text-3xl font-bold mb-4" :class="isCorrect ? 'text-green-400' : 'text-amber-400'">
+                        {{ isCorrect ? '正確！' : '可惜了' }}
+                    </h2>
+                    
+                    <div class="bg-black/20 p-6 rounded-2xl mb-8 text-left italic leading-relaxed text-white/80">
+                        {{ currentPoem.explanation }}
+                    </div>
+                    
+                    <!-- 手勢操作提示 -->
+                    <div class="flex items-center justify-center gap-3 py-4 px-6 bg-indigo-600/20 rounded-2xl border border-indigo-500/30">
+                        <div class="text-4xl animate-pulse">✋</div>
+                        <div class="text-left">
+                            <p class="text-indigo-300 font-bold">張開手掌</p>
+                            <p class="text-indigo-200/60 text-sm">繼續下一題</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </transition>
+
+        <!-- 初始引導層 -->
+        <div v-if="!isStarted" class="absolute inset-0 z-[100] flex items-center justify-center bg-slate-950">
+            <div class="text-center">
+                <h1 class="text-6xl font-bold mb-4 tracking-tighter">詩詞飛鏢</h1>
+                <p class="text-indigo-400 text-xl mb-12">POETRY DARTS 3D</p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12 text-left max-w-2xl mx-auto px-6">
+                    <div class="glass-panel p-6">
+                        <h3 class="font-bold text-indigo-300 mb-2">✋ 喚醒與瞄準</h3>
+                        <p class="text-sm text-white/60">張開五指激活系統，移動手掌來控制紅色的準心。</p>
+                    </div>
+                    <div class="glass-panel p-6">
+                        <h3 class="font-bold text-indigo-300 mb-2">👌 抓取飛鏢</h3>
+                        <p class="text-sm text-white/60">當準心靠近飛鏢時，捏合拇指與食指即可鎖定抓取。</p>
+                    </div>
+                    <div class="glass-panel p-6">
+                        <h3 class="font-bold text-indigo-300 mb-2">🚀 快速投擲</h3>
+                        <p class="text-sm text-white/60">保持捏合並快速揮動手臂，在終點鬆開手指完成投擲。</p>
+                    </div>
+                    <div class="glass-panel p-6">
+                        <h3 class="font-bold text-indigo-300 mb-2">🎯 學習成長</h3>
+                        <p class="text-sm text-white/60">在遊戲中記憶詩句、理解意象，感受古詩詞的物理魅力。</p>
+                    </div>
+                </div>
+                
+                <button @click="startGame" class="pointer-auto bg-indigo-600 hover:bg-indigo-500 text-white px-12 py-5 rounded-full font-bold text-2xl transition-all shadow-2xl shadow-indigo-600/40">
+                    進入賽場
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 應用切換器 -->
+    <script src="/assets/js/taixu-app-switcher.js"></script>
+    
+    <!-- 邏輯腳本 -->
+    <script type="module" src="js/app.js"></script>
+</body>
+</html>
+
