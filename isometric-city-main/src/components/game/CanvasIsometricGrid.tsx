@@ -1,0 +1,4319 @@
+'use client';
+
+import React, { useRef, useState, useCallback, useEffect, useMemo } from 'react';
+import { useGame } from '@/context/GameContext';
+import { TOOL_INFO, Tile, BuildingType, AdjacentCity, Player } from '@/types/game';
+import { getBuildingSize, requiresWaterAdjacency, getWaterAdjacency, getRoadAdjacency } from '@/lib/simulation';
+import { FireIcon, SafetyIcon } from '@/components/ui/Icons';
+import { getAssetImagePath } from '@/lib/renderConfig';
+
+// Import shadcn components
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+
+// Import extracted game components, types, and utilities
+import {
+  TILE_WIDTH,
+  TILE_HEIGHT,
+  KEY_PAN_SPEED,
+  Car,
+  Airplane,
+  Helicopter,
+  Seaplane,
+  EmergencyVehicle,
+  Boat,
+  Barge,
+  TourWaypoint,
+  FactorySmog,
+  OverlayMode,
+  Pedestrian,
+  Firework,
+  WorldRenderState,
+} from '@/components/game/types';
+import {
+  TRAFFIC_LIGHT_MIN_ZOOM,
+  DIRECTION_ARROWS_MIN_ZOOM,
+  MEDIAN_PLANTS_MIN_ZOOM,
+  LANE_MARKINGS_MIN_ZOOM,
+  SIDEWALK_MIN_ZOOM,
+  SIDEWALK_MIN_ZOOM_MOBILE,
+  SKIP_SMALL_ELEMENTS_ZOOM_THRESHOLD,
+  ZOOM_MIN,
+  ZOOM_MAX,
+  WATER_ASSET_PATH,
+  ROAD_STONE_ASSET_PATH,
+} from '@/components/game/constants';
+import {
+  gridToScreen,
+  screenToGrid,
+} from '@/components/game/utils';
+import {
+  drawGreenBaseTile,
+  drawGreyBaseTile,
+  drawBeachOnWater,
+  drawFoundationPlot,
+} from '@/components/game/drawing';
+import {
+  getOverlayFillStyle,
+} from '@/components/game/overlays';
+import { drawPlaceholderBuilding } from '@/components/game/placeholders';
+import { loadImage, onImageLoaded, getCachedImage } from '@/components/game/imageLoader';
+import { TileInfoPanel } from '@/components/game/panels';
+import {
+  findMarinasAndPiers,
+  findAdjacentWaterTile,
+  isOverWater,
+  generateTourWaypoints,
+} from '@/components/game/gridFinders';
+import { drawAirplanes as drawAirplanesUtil, drawHelicopters as drawHelicoptersUtil, drawSeaplanes as drawSeaplanesUtil } from '@/components/game/drawAircraft';
+import { useVehicleSystems, VehicleSystemRefs, VehicleSystemState } from '@/components/game/vehicleSystems';
+import { useBuildingHelpers } from '@/components/game/buildingHelpers';
+import { useAircraftSystems, AircraftSystemRefs, AircraftSystemState } from '@/components/game/aircraftSystems';
+import { useBargeSystem, BargeSystemRefs, BargeSystemState } from '@/components/game/bargeSystem';
+import { useBoatSystem, BoatSystemRefs, BoatSystemState } from '@/components/game/boatSystem';
+import { useSeaplaneSystem, SeaplaneSystemRefs, SeaplaneSystemState } from '@/components/game/seaplaneSystem';
+import { useEffectsSystems, EffectsSystemRefs, EffectsSystemState } from '@/components/game/effectsSystems';
+import {
+  analyzeMergedRoad,
+  getTrafficLightState,
+  drawTrafficLight,
+  getTrafficFlowDirection,
+  drawCrosswalks,
+  ROAD_COLORS,
+  drawRoadArrow,
+} from '@/components/game/trafficSystem';
+import { CrimeType, getCrimeName, getCrimeDescription, getFireDescriptionForTile, getFireNameForTile } from '@/components/game/incidentData';
+import {
+  drawRailTrack,
+  drawRailTracksOnly,
+  countRailTiles,
+  isRailroadCrossing,
+  findRailroadCrossings,
+  drawRailroadCrossing,
+  getCrossingStateForTile,
+  GATE_ANIMATION_SPEED,
+} from '@/components/game/railSystem';
+import { getFarmVisualAssetId, isFarmBuilding, calculateGameDay, updateFarmStatus } from '@/components/game/farmSystem';
+import {
+  spawnTrain,
+  updateTrain,
+  drawTrains,
+  MIN_RAIL_TILES_FOR_TRAINS,
+  MAX_TRAINS,
+  TRAIN_SPAWN_INTERVAL,
+  TRAINS_PER_RAIL_TILES,
+} from '@/components/game/trainSystem';
+import { Train } from '@/components/game/types';
+import { 
+  spriteAnimationManager, 
+  initAnimationSystem 
+} from '@/components/game/spriteAnimationSystem';
+import {
+  drawPlayerAtCenter,
+  isWalkable,
+  PLAYER_MOVE_SPEED,
+  findPath,
+  calculateOffsetForCenter,
+  getDirectionFromMovement,
+} from '@/components/game/playerSystem';
+
+// Props interface for CanvasIsometricGrid
+export interface CanvasIsometricGridProps {
+  overlayMode: OverlayMode;
+  selectedTile: { x: number; y: number } | null;
+  setSelectedTile: (tile: { x: number; y: number } | null) => void;
+  isMobile?: boolean;
+  navigationTarget?: { x: number; y: number } | null;
+  onNavigationComplete?: () => void;
+  onViewportChange?: (viewport: { offset: { x: number; y: number }; zoom: number; canvasSize: { width: number; height: number } }) => void;
+  onBargeDelivery?: (cargoValue: number, cargoType: number) => void;
+}
+
+// Canvas-based Isometric Grid - HIGH PERFORMANCE
+export function CanvasIsometricGrid({ overlayMode, selectedTile, setSelectedTile, isMobile = false, navigationTarget, onNavigationComplete, onViewportChange, onBargeDelivery }: CanvasIsometricGridProps) {
+  const { state, placeAtTile, connectToCity, checkAndDiscoverCities, visualHour, movingFrom, movingBuilding, setActivePanel, gameMode, player, updatePlayer, doFarmInteraction, addNotification, updateNearbyInteractable } = useGame();
+  const { grid, gridSize, selectedTool, speed, adjacentCities, waterBodies, gameVersion, activePanel, roadVisualScale } = state;
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const hoverCanvasRef = useRef<HTMLCanvasElement>(null); // PERF: Separate canvas for hover/selection highlights
+  const carsCanvasRef = useRef<HTMLCanvasElement>(null);
+  const buildingsCanvasRef = useRef<HTMLCanvasElement>(null); // Buildings rendered on top of cars/trains
+  const airCanvasRef = useRef<HTMLCanvasElement>(null); // Aircraft + fireworks rendered above buildings
+  const lightingCanvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const renderPendingRef = useRef<number | null>(null); // PERF: Track pending render frame
+  const assetCategoryMapRef = useRef<Record<string, string>>({}); // 資產 ID 到 category 的映射表
+  const [offset, setOffset] = useState({ x: isMobile ? 200 : 620, y: isMobile ? 100 : 160 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [isPanning, setIsPanning] = useState(false);
+  const isPanningRef = useRef(false); // Ref for animation loop to check panning state
+  const isPinchZoomingRef = useRef(false); // Ref for animation loop to check pinch zoom state
+  const zoomRef = useRef(isMobile ? 0.6 : 1); // Ref for animation loop to check zoom level
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [hoveredTile, setHoveredTile] = useState<{ x: number; y: number } | null>(null);
+  const [hoveredIncident, setHoveredIncident] = useState<{
+    x: number;
+    y: number;
+    type: 'fire' | 'crime';
+    crimeType?: CrimeType;
+    screenX: number;
+    screenY: number;
+  } | null>(null);
+  const [zoom, setZoom] = useState(isMobile ? 0.6 : 1);
+  const carsRef = useRef<Car[]>([]);
+  const carIdRef = useRef(0);
+  const carSpawnTimerRef = useRef(0);
+  const emergencyVehiclesRef = useRef<EmergencyVehicle[]>([]);
+  const emergencyVehicleIdRef = useRef(0);
+  const emergencyDispatchTimerRef = useRef(0);
+  const activeFiresRef = useRef<Set<string>>(new Set()); // Track fires that already have a truck dispatched
+  const activeCrimesRef = useRef<Set<string>>(new Set()); // Track crimes that already have a car dispatched
+  const activeCrimeIncidentsRef = useRef<Map<string, { x: number; y: number; type: CrimeType; timeRemaining: number }>>(new Map()); // Persistent crime incidents
+  const crimeSpawnTimerRef = useRef(0); // Timer for spawning new crime incidents
+  
+  // Pedestrian system refs
+  const pedestriansRef = useRef<Pedestrian[]>([]);
+  const pedestrianIdRef = useRef(0);
+  const pedestrianSpawnTimerRef = useRef(0);
+  
+  // Touch gesture state for mobile
+  const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
+  const initialPinchDistanceRef = useRef<number | null>(null);
+  const initialZoomRef = useRef<number>(zoom);
+  const lastTouchCenterRef = useRef<{ x: number; y: number } | null>(null);
+  
+  // Airplane system refs
+  const airplanesRef = useRef<Airplane[]>([]);
+  const airplaneIdRef = useRef(0);
+  const airplaneSpawnTimerRef = useRef(0);
+
+  // Helicopter system refs
+  const helicoptersRef = useRef<Helicopter[]>([]);
+  const helicopterIdRef = useRef(0);
+  const helicopterSpawnTimerRef = useRef(0);
+
+  // Seaplane system refs
+  const seaplanesRef = useRef<Seaplane[]>([]);
+  const seaplaneIdRef = useRef(0);
+  const seaplaneSpawnTimerRef = useRef(0);
+
+  // Boat system refs
+  const boatsRef = useRef<Boat[]>([]);
+  const boatIdRef = useRef(0);
+  const boatSpawnTimerRef = useRef(0);
+
+  // Barge system refs (ocean cargo ships)
+  const bargesRef = useRef<Barge[]>([]);
+  const bargeIdRef = useRef(0);
+  const bargeSpawnTimerRef = useRef(0);
+
+  // Train system refs
+  const trainsRef = useRef<Train[]>([]);
+  const trainIdRef = useRef(0);
+  const trainSpawnTimerRef = useRef(0);
+
+  // Navigation light flash timer for planes/helicopters/boats at night
+  const navLightFlashTimerRef = useRef(0);
+
+  // Railroad crossing state
+  const crossingFlashTimerRef = useRef(0);
+  const crossingGateAnglesRef = useRef<Map<number, number>>(new Map()); // key = y * gridSize + x, value = angle (0=open, 90=closed)
+  const crossingPositionsRef = useRef<{x: number, y: number}[]>([]); // Cached crossing positions for O(1) iteration
+
+  // Firework system refs
+  const fireworksRef = useRef<Firework[]>([]);
+  const fireworkIdRef = useRef(0);
+  const fireworkSpawnTimerRef = useRef(0);
+  const fireworkShowActiveRef = useRef(false);
+  const fireworkShowStartTimeRef = useRef(0);
+  const fireworkLastHourRef = useRef(-1); // Track hour changes to detect night transitions
+
+  // Factory smog system refs
+  const factorySmogRef = useRef<FactorySmog[]>([]);
+  const smogLastGridVersionRef = useRef(-1); // Track when to rebuild factory list
+
+  // Traffic light system timer (cumulative time for cycling through states)
+  const trafficLightTimerRef = useRef(0);
+
+  // Performance: Cache expensive grid calculations
+  const cachedRoadTileCountRef = useRef<{ count: number; gridVersion: number }>({ count: 0, gridVersion: -1 });
+  const cachedPopulationRef = useRef<{ count: number; gridVersion: number }>({ count: 0, gridVersion: -1 });
+  const gridVersionRef = useRef(0);
+  
+  // Performance: Cache road merge analysis (expensive calculation done per-road-tile)
+  const roadAnalysisCacheRef = useRef<Map<string, ReturnType<typeof analyzeMergedRoad>>>(new Map());
+  const roadAnalysisCacheVersionRef = useRef(-1);
+
+  // PERF: Render queue arrays cached across frames to reduce GC pressure
+  // These are cleared at the start of each render frame with .length = 0
+  type BuildingDrawItem = { screenX: number; screenY: number; tile: Tile; depth: number };
+  type OverlayDrawItem = { screenX: number; screenY: number; tile: Tile };
+  const renderQueuesRef = useRef({
+    buildingQueue: [] as BuildingDrawItem[],
+    waterQueue: [] as BuildingDrawItem[],
+    roadQueue: [] as BuildingDrawItem[],
+    railQueue: [] as BuildingDrawItem[],
+    beachQueue: [] as BuildingDrawItem[],
+    baseTileQueue: [] as BuildingDrawItem[],
+    greenBaseTileQueue: [] as BuildingDrawItem[],
+    overlayQueue: [] as OverlayDrawItem[],
+  });
+
+  const worldStateRef = useRef<WorldRenderState>({
+    grid,
+    gridSize,
+    offset,
+    zoom,
+    speed,
+    canvasSize: { width: 1200, height: 800 },
+  });
+  const [roadDrawDirection, setRoadDrawDirection] = useState<'h' | 'v' | null>(null);
+  const placedRoadTilesRef = useRef<Set<string>>(new Set());
+  // Track progressive image loading - start true to render immediately with placeholders
+  const [imagesLoaded, setImagesLoaded] = useState(true);
+  // Counter to trigger re-renders when new images become available
+  const [imageLoadVersion, setImageLoadVersion] = useState(0);
+  const [canvasSize, setCanvasSize] = useState({ width: 1200, height: 800 });
+  const [dragStartTile, setDragStartTile] = useState<{ x: number; y: number } | null>(null);
+  const [dragEndTile, setDragEndTile] = useState<{ x: number; y: number } | null>(null);
+  const [cityConnectionDialog, setCityConnectionDialog] = useState<{ direction: 'north' | 'south' | 'east' | 'west' } | null>(null);
+  const keysPressedRef = useRef<Set<string>>(new Set());
+
+  // Only zoning tools show the grid/rectangle selection visualization
+  const showsDragGrid = ['zone_residential', 'zone_commercial', 'zone_industrial', 'zone_dezone'].includes(selectedTool);
+  
+  // Roads, bulldoze, and other tools support drag-to-place but don't show the grid
+  const supportsDragPlace = selectedTool !== 'select';
+
+  // Use extracted building helpers (with pre-computed tile metadata for O(1) lookups)
+  const { isPartOfMultiTileBuilding, findBuildingOrigin, isPartOfParkBuilding, getTileMetadata } = useBuildingHelpers(grid, gridSize);
+
+  // Use extracted vehicle systems
+  const vehicleSystemRefs: VehicleSystemRefs = {
+    carsRef,
+    carIdRef,
+    carSpawnTimerRef,
+    emergencyVehiclesRef,
+    emergencyVehicleIdRef,
+    emergencyDispatchTimerRef,
+    activeFiresRef,
+    activeCrimesRef,
+    activeCrimeIncidentsRef,
+    crimeSpawnTimerRef,
+    pedestriansRef,
+    pedestrianIdRef,
+    pedestrianSpawnTimerRef,
+    trafficLightTimerRef,
+    trainsRef,
+  };
+
+  const vehicleSystemState: VehicleSystemState = {
+    worldStateRef,
+    gridVersionRef,
+    cachedRoadTileCountRef,
+    state: {
+      // 太虛幻境：已移除 services（不再需要 police 覆蓋）
+      stats: state.stats,
+    },
+    isMobile,
+  };
+
+  const {
+    spawnRandomCar,
+    spawnPedestrian,
+    spawnCrimeIncidents,
+    updateCrimeIncidents,
+    findCrimeIncidents,
+    dispatchEmergencyVehicle,
+    updateEmergencyDispatch,
+    updateEmergencyVehicles,
+    updateCars,
+    updatePedestrians,
+    drawCars,
+    drawPedestrians,
+    drawRecreationPedestrians,
+    drawEmergencyVehicles,
+    drawIncidentIndicators,
+  } = useVehicleSystems(vehicleSystemRefs, vehicleSystemState);
+
+  // Use extracted aircraft systems
+  const aircraftSystemRefs: AircraftSystemRefs = {
+    airplanesRef,
+    airplaneIdRef,
+    airplaneSpawnTimerRef,
+    helicoptersRef,
+    helicopterIdRef,
+    helicopterSpawnTimerRef,
+  };
+
+  const aircraftSystemState: AircraftSystemState = {
+    worldStateRef,
+    gridVersionRef,
+    cachedPopulationRef,
+    isMobile,
+  };
+
+  const {
+    updateAirplanes,
+    updateHelicopters,
+  } = useAircraftSystems(aircraftSystemRefs, aircraftSystemState);
+
+  // Use extracted seaplane system
+  const seaplaneSystemRefs: SeaplaneSystemRefs = {
+    seaplanesRef,
+    seaplaneIdRef,
+    seaplaneSpawnTimerRef,
+  };
+
+  const seaplaneSystemState: SeaplaneSystemState = {
+    worldStateRef,
+    gridVersionRef,
+    cachedPopulationRef,
+    isMobile,
+  };
+
+  const {
+    updateSeaplanes,
+  } = useSeaplaneSystem(seaplaneSystemRefs, seaplaneSystemState);
+
+  // Use extracted barge system
+  const bargeSystemRefs: BargeSystemRefs = {
+    bargesRef,
+    bargeIdRef,
+    bargeSpawnTimerRef,
+  };
+
+  const bargeSystemState: BargeSystemState = {
+    worldStateRef,
+    isMobile,
+    visualHour,
+    onBargeDelivery,
+  };
+
+  const {
+    updateBarges,
+    drawBarges,
+  } = useBargeSystem(bargeSystemRefs, bargeSystemState);
+
+  // Use extracted boat system
+  const boatSystemRefs: BoatSystemRefs = {
+    boatsRef,
+    boatIdRef,
+    boatSpawnTimerRef,
+  };
+
+  const boatSystemState: BoatSystemState = {
+    worldStateRef,
+    isMobile,
+    visualHour,
+  };
+
+  const {
+    updateBoats,
+    drawBoats,
+  } = useBoatSystem(boatSystemRefs, boatSystemState);
+
+  // Use extracted effects systems (fireworks and smog)
+  const effectsSystemRefs: EffectsSystemRefs = {
+    fireworksRef,
+    fireworkIdRef,
+    fireworkSpawnTimerRef,
+    fireworkShowActiveRef,
+    fireworkShowStartTimeRef,
+    fireworkLastHourRef,
+    factorySmogRef,
+    smogLastGridVersionRef,
+  };
+
+  const effectsSystemState: EffectsSystemState = {
+    worldStateRef,
+    gridVersionRef,
+    isMobile,
+  };
+
+  const {
+    updateFireworks,
+    drawFireworks,
+    updateSmog,
+    drawSmog,
+  } = useEffectsSystems(effectsSystemRefs, effectsSystemState);
+  
+  useEffect(() => {
+    worldStateRef.current.grid = grid;
+    worldStateRef.current.gridSize = gridSize;
+    // Increment grid version to invalidate cached calculations
+    gridVersionRef.current++;
+    // Cache crossing positions for O(n) iteration instead of O(n²) grid scan
+    crossingPositionsRef.current = findRailroadCrossings(grid, gridSize);
+  }, [grid, gridSize]);
+
+  useEffect(() => {
+    worldStateRef.current.offset = offset;
+  }, [offset]);
+
+  useEffect(() => {
+    worldStateRef.current.zoom = zoom;
+  }, [zoom]);
+
+  useEffect(() => {
+    worldStateRef.current.speed = speed;
+  }, [speed]);
+
+  useEffect(() => {
+    worldStateRef.current.canvasSize = canvasSize;
+  }, [canvasSize]);
+
+  // Clear all vehicles/entities when game version changes (new game, load state, etc.)
+  useEffect(() => {
+    // Clear all vehicle refs
+    carsRef.current = [];
+    carIdRef.current = 0;
+    carSpawnTimerRef.current = 0;
+    emergencyVehiclesRef.current = [];
+    emergencyVehicleIdRef.current = 0;
+    emergencyDispatchTimerRef.current = 0;
+    activeFiresRef.current.clear();
+    activeCrimesRef.current.clear();
+    activeCrimeIncidentsRef.current.clear();
+    crimeSpawnTimerRef.current = 0;
+    
+    // Clear pedestrians
+    pedestriansRef.current = [];
+    pedestrianIdRef.current = 0;
+    pedestrianSpawnTimerRef.current = 0;
+    
+    // Clear aircraft
+    airplanesRef.current = [];
+    airplaneIdRef.current = 0;
+    airplaneSpawnTimerRef.current = 0;
+    helicoptersRef.current = [];
+    helicopterIdRef.current = 0;
+    helicopterSpawnTimerRef.current = 0;
+    seaplanesRef.current = [];
+    seaplaneIdRef.current = 0;
+    seaplaneSpawnTimerRef.current = 0;
+
+    // Clear boats
+    boatsRef.current = [];
+    boatIdRef.current = 0;
+    boatSpawnTimerRef.current = 0;
+    
+    // Clear barges
+    bargesRef.current = [];
+    bargeIdRef.current = 0;
+    bargeSpawnTimerRef.current = 0;
+    
+    // Clear trains
+    trainsRef.current = [];
+    trainIdRef.current = 0;
+    trainSpawnTimerRef.current = 0;
+    
+    // Clear fireworks
+    fireworksRef.current = [];
+    fireworkIdRef.current = 0;
+    fireworkSpawnTimerRef.current = 0;
+    fireworkShowActiveRef.current = false;
+    
+    // Clear factory smog
+    factorySmogRef.current = [];
+    smogLastGridVersionRef.current = -1;
+    
+    // Reset traffic light timer
+    trafficLightTimerRef.current = 0;
+  }, [gameVersion]);
+
+  // Sync isPanning state to ref for animation loop access
+  useEffect(() => {
+    isPanningRef.current = isPanning;
+  }, [isPanning]);
+  
+  // Sync zoom state to ref for animation loop access
+  useEffect(() => {
+    zoomRef.current = zoom;
+  }, [zoom]);
+
+  // Notify parent of viewport changes for minimap
+  useEffect(() => {
+    onViewportChange?.({ offset, zoom, canvasSize });
+  }, [offset, zoom, canvasSize, onViewportChange]);
+
+  // 遊歷模式相機跟隨目標偏移（用於平滑過渡）
+  const exploreCameraTargetRef = useRef<{ x: number; y: number } | null>(null);
+  
+  // 玩家實時數據 Ref（避免頻繁觸發 React 渲染）
+  const playerRef = useRef<Player>(player);
+  
+  // 當模式切換到遊歷模式時，初始化玩家位置到當前視口中心
+  useEffect(() => {
+    if (gameMode === 'explore') {
+      const dpr = window.devicePixelRatio || 1;
+      const logicalWidth = canvasSize.width / dpr;
+      const logicalHeight = canvasSize.height / dpr;
+      
+      // 計算屏幕中心點對應的網格座標
+      const { gridX, gridY } = screenToGrid(
+        logicalWidth / 2, 
+        logicalHeight / 2, 
+        offset.x, 
+        offset.y,
+        zoom
+      );
+      
+      playerRef.current = {
+        ...playerRef.current,
+        x: gridX,
+        y: gridY,
+        state: 'idle'
+      };
+      
+      // 同步到 UI 顯示
+      updatePlayer(playerRef.current);
+    }
+  }, [gameMode]);
+
+  // Keyboard panning (WASD / arrow keys) - 建造模式移動視角，遊歷模式移動玩家
+  useEffect(() => {
+    const pressed = keysPressedRef.current;
+    const isTypingTarget = (target: EventTarget | null) => {
+      const el = target as HTMLElement | null;
+      return !!el?.closest('input, textarea, select, [contenteditable="true"]');
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (isTypingTarget(e.target)) return;
+      const key = e.key.toLowerCase();
+      if (['w', 'a', 's', 'd', 'arrowup', 'arrowleft', 'arrowdown', 'arrowright'].includes(key)) {
+        pressed.add(key);
+        e.preventDefault();
+      }
+      // 遊歷模式：E 鍵互動
+      if (key === 'e' && gameMode === 'explore') {
+        e.preventDefault();
+        const result = doFarmInteraction();
+        if (result.message) {
+          // 顯示互動結果訊息（使用通知系統）
+          addNotification(
+            result.success ? '🌱' : '⚠️',
+            result.message,
+            result.success ? 'success' : 'warning'
+          );
+        }
+      }
+    };
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      const key = e.key.toLowerCase();
+      pressed.delete(key);
+    };
+
+    let animationFrameId = 0;
+    let lastTime = performance.now();
+
+    const tick = (time: number) => {
+      animationFrameId = requestAnimationFrame(tick);
+      const delta = Math.min((time - lastTime) / 1000, 0.05);
+      lastTime = time;
+      
+      // 無論什麼模式，WASD 都直接控制視角移動（這是最穩定的方案）
+      let dx = 0;
+      let dy = 0;
+      
+      // 獲取按鍵狀態
+      const isW = pressed.has('w') || pressed.has('arrowup');
+      const isS = pressed.has('s') || pressed.has('arrowdown');
+      const isA = pressed.has('a') || pressed.has('arrowleft');
+      const isD = pressed.has('d') || pressed.has('arrowright');
+
+      if (gameMode === 'build') {
+        // 建造模式：正常的屏幕空間移動
+        if (isW) dy += KEY_PAN_SPEED * delta;
+        if (isS) dy -= KEY_PAN_SPEED * delta;
+        if (isA) dx += KEY_PAN_SPEED * delta;
+        if (isD) dx -= KEY_PAN_SPEED * delta;
+      } else {
+        // 遊歷模式
+        const { zoom: currentZoom, grid: currentGrid, gridSize: n, canvasSize: cs, offset: currentOffset } = worldStateRef.current;
+        const dpr = window.devicePixelRatio || 1;
+        const logicalWidth = cs.width / dpr;
+        const logicalHeight = cs.height / dpr;
+        
+        // 檢查是否有鍵盤輸入
+        const hasKeyboardInput = isW || isS || isA || isD;
+        
+        // 如果按下鍵盤，中斷自動移動
+        if (hasKeyboardInput && playerRef.current.isAutoMoving) {
+          playerRef.current = {
+            ...playerRef.current,
+            isAutoMoving: false,
+            path: [],
+            pathIndex: 0,
+          };
+        }
+        
+        // 自動移動邏輯（點擊移動）- 使用與 WASD 相同的速度單位
+        if (playerRef.current.isAutoMoving && playerRef.current.path.length > 0) {
+          const path = playerRef.current.path;
+          const pathIndex = playerRef.current.pathIndex;
+          
+          if (pathIndex < path.length) {
+            const targetPoint = path[pathIndex];
+            const currentX = playerRef.current.x;
+            const currentY = playerRef.current.y;
+            
+            // 計算到目標點的方向和距離（網格坐標系）
+            const toTargetX = targetPoint.x - currentX;
+            const toTargetY = targetPoint.y - currentY;
+            const distToTarget = Math.sqrt(toTargetX * toTargetX + toTargetY * toTargetY);
+            
+            // 使用與 WASD 相同的速度
+            const speed = PLAYER_MOVE_SPEED * delta;
+            
+            if (distToTarget <= speed) {
+              // 已經到達或超過目標點，直接移動到目標點並前進到下一個
+              playerRef.current.pathIndex++;
+              
+              // 更新方向（看向下一個點）
+              if (pathIndex + 1 < path.length) {
+                const nextPoint = path[pathIndex + 1];
+                playerRef.current.direction = getDirectionFromMovement(
+                  targetPoint.x, targetPoint.y, 
+                  nextPoint.x, nextPoint.y
+                );
+              }
+              
+              // 計算移動到目標點的 offset 變化
+              const targetOffset = calculateOffsetForCenter(
+                targetPoint.x, targetPoint.y, 
+                logicalWidth, logicalHeight, currentZoom
+              );
+              dx = targetOffset.x - currentOffset.x;
+              dy = targetOffset.y - currentOffset.y;
+            } else {
+              // 朝目標點移動
+              const dirX = toTargetX / distToTarget;
+              const dirY = toTargetY / distToTarget;
+              const gridDx = dirX * speed;
+              const gridDy = dirY * speed;
+              
+              // 轉換為屏幕偏移量
+              const moveX = (gridDx - gridDy) * (TILE_WIDTH / 2);
+              const moveY = (gridDx + gridDy) * (TILE_HEIGHT / 2);
+              dx = -moveX * currentZoom;
+              dy = -moveY * currentZoom;
+              
+              // 更新方向
+              playerRef.current.direction = getDirectionFromMovement(
+                currentX, currentY, targetPoint.x, targetPoint.y
+              );
+            }
+            
+            // 更新玩家狀態
+            playerRef.current.state = 'walking';
+          } else {
+            // 路徑走完
+            playerRef.current = {
+              ...playerRef.current,
+              isAutoMoving: false,
+              state: 'idle',
+              path: [],
+              pathIndex: 0,
+            };
+            updatePlayer(playerRef.current);
+          }
+        } else if (hasKeyboardInput) {
+          // WASD 鍵盤移動（對角線網格移動）
+          let gridDx = 0;
+          let gridDy = 0;
+          const speed = PLAYER_MOVE_SPEED * delta;
+
+          if (isW) gridDx -= speed; // 北
+          if (isS) gridDx += speed; // 南
+          if (isD) gridDy -= speed; // 東
+          if (isA) gridDy += speed; // 西
+
+          if (gridDx !== 0 || gridDy !== 0) {
+            // 碰撞檢測
+            const targetGridX = playerRef.current.x + gridDx;
+            const targetGridY = playerRef.current.y + gridDy;
+
+            if (isWalkable(currentGrid, n, targetGridX, targetGridY)) {
+              const moveX = (gridDx - gridDy) * (TILE_WIDTH / 2);
+              const moveY = (gridDx + gridDy) * (TILE_HEIGHT / 2);
+              dx = -moveX * currentZoom;
+              dy = -moveY * currentZoom;
+            } else {
+              // 滑動碰撞
+              if (gridDx !== 0 && isWalkable(currentGrid, n, playerRef.current.x + gridDx, playerRef.current.y)) {
+                const moveX = gridDx * (TILE_WIDTH / 2);
+                const moveY = gridDx * (TILE_HEIGHT / 2);
+                dx = -moveX * currentZoom;
+                dy = -moveY * currentZoom;
+              } else if (gridDy !== 0 && isWalkable(currentGrid, n, playerRef.current.x, playerRef.current.y + gridDy)) {
+                const moveX = -gridDy * (TILE_WIDTH / 2);
+                const moveY = gridDy * (TILE_HEIGHT / 2);
+                dx = -moveX * currentZoom;
+                dy = -moveY * currentZoom;
+              }
+            }
+          }
+        }
+      }
+
+      if (dx !== 0 || dy !== 0) {
+        const { zoom: currentZoom, gridSize: n, canvasSize: cs, offset: currentOffset } = worldStateRef.current;
+        const padding = 100;
+        const mapLeft = -(n - 1) * TILE_WIDTH / 2;
+        const mapRight = (n - 1) * TILE_WIDTH / 2;
+        const mapTop = 0;
+        const mapBottom = (n - 1) * TILE_HEIGHT;
+        const minOffsetX = padding - mapRight * currentZoom;
+        const maxOffsetX = cs.width - padding - mapLeft * currentZoom;
+        const minOffsetY = padding - mapBottom * currentZoom;
+        const maxOffsetY = cs.height - padding - mapTop * currentZoom;
+        
+        const newOffsetX = Math.max(minOffsetX, Math.min(maxOffsetX, currentOffset.x + dx));
+        const newOffsetY = Math.max(minOffsetY, Math.min(maxOffsetY, currentOffset.y + dy));
+        
+        setOffset({ x: newOffsetX, y: newOffsetY });
+
+        // 遊歷模式：更新玩家座標（反推網格座標）
+        if (gameMode === 'explore') {
+          const dpr = window.devicePixelRatio || 1;
+          const logicalWidth = cs.width / dpr;
+          const logicalHeight = cs.height / dpr;
+          
+          // 根據地圖位置反推中心點的網格座標
+          const { gridX, gridY } = screenToGrid(
+            logicalWidth / 2, 
+            logicalHeight / 2, 
+            newOffsetX, 
+            newOffsetY,
+            currentZoom
+          );
+          
+          // 判斷移動方向
+          let direction = playerRef.current.direction;
+          
+          // 只有鍵盤移動時才根據按鍵更新方向（自動移動已經在上面設定好了）
+          if (!playerRef.current.isAutoMoving) {
+            if (isW && isD) direction = 'north';
+            else if (isS && isA) direction = 'south';
+            else if (isW && isA) direction = 'west';
+            else if (isS && isD) direction = 'east';
+            else if (isW) direction = 'northwest';
+            else if (isD) direction = 'northeast';
+            else if (isS) direction = 'southeast';
+            else if (isA) direction = 'southwest';
+          }
+
+          playerRef.current = {
+            ...playerRef.current,
+            x: gridX,
+            y: gridY,
+            direction,
+            state: 'walking'
+          };
+          
+          // 低頻更新 UI 座標和互動檢測
+          if (Math.floor(time / 200) !== Math.floor((time - delta * 1000) / 200)) {
+            updatePlayer(playerRef.current);
+            // 更新附近的可互動目標（農田等）
+            updateNearbyInteractable(gridX, gridY);
+          }
+        }
+      } else if (gameMode === 'explore' && playerRef.current.state !== 'idle') {
+        // 停止移動
+        playerRef.current = { ...playerRef.current, state: 'idle' };
+        updatePlayer(playerRef.current);
+        // 停止時也更新互動檢測
+        updateNearbyInteractable(playerRef.current.x, playerRef.current.y);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    animationFrameId = requestAnimationFrame(tick);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+      cancelAnimationFrame(animationFrameId);
+      pressed.clear();
+    };
+  }, [gameMode, updatePlayer, updateNearbyInteractable, doFarmInteraction, addNotification]);
+
+  // Find marinas and piers (uses imported utility)
+  const findMarinasAndPiersCallback = useCallback(() => {
+    const { grid: currentGrid, gridSize: currentGridSize } = worldStateRef.current;
+    return findMarinasAndPiers(currentGrid, currentGridSize);
+  }, []);
+
+  // Find adjacent water tile (uses imported utility)
+  const findAdjacentWaterTileCallback = useCallback((dockX: number, dockY: number) => {
+    const { grid: currentGrid, gridSize: currentGridSize } = worldStateRef.current;
+    return findAdjacentWaterTile(currentGrid, currentGridSize, dockX, dockY);
+  }, []);
+
+  // Check if screen position is over water (uses imported utility)
+  const isOverWaterCallback = useCallback((screenX: number, screenY: number): boolean => {
+    const { grid: currentGrid, gridSize: currentGridSize } = worldStateRef.current;
+    return isOverWater(currentGrid, currentGridSize, screenX, screenY);
+  }, []);
+
+  // Generate tour waypoints (uses imported utility)
+  const generateTourWaypointsCallback = useCallback((startTileX: number, startTileY: number): TourWaypoint[] => {
+    const { grid: currentGrid, gridSize: currentGridSize } = worldStateRef.current;
+    return generateTourWaypoints(currentGrid, currentGridSize, startTileX, startTileY);
+  }, []);
+
+  // Draw airplanes with contrails (uses extracted utility)
+  const drawAirplanes = useCallback((ctx: CanvasRenderingContext2D) => {
+    const { offset: currentOffset, zoom: currentZoom, grid: currentGrid, gridSize: currentGridSize } = worldStateRef.current;
+    const canvas = ctx.canvas;
+    const dpr = window.devicePixelRatio || 1;
+    
+    // Early exit if no airplanes
+    if (!currentGrid || currentGridSize <= 0 || airplanesRef.current.length === 0) {
+      return;
+    }
+    
+    ctx.save();
+    ctx.scale(dpr * currentZoom, dpr * currentZoom);
+    ctx.translate(currentOffset.x / currentZoom, currentOffset.y / currentZoom);
+    
+    const viewWidth = canvas.width / (dpr * currentZoom);
+    const viewHeight = canvas.height / (dpr * currentZoom);
+    const viewBounds = {
+      viewLeft: -currentOffset.x / currentZoom - 200,
+      viewTop: -currentOffset.y / currentZoom - 200,
+      viewRight: viewWidth - currentOffset.x / currentZoom + 200,
+      viewBottom: viewHeight - currentOffset.y / currentZoom + 200,
+    };
+    
+    // Use extracted utility function for drawing
+    drawAirplanesUtil(ctx, airplanesRef.current, viewBounds, visualHour, navLightFlashTimerRef.current, isMobile);
+    
+    ctx.restore();
+  }, [visualHour, isMobile]);
+
+  // Draw helicopters with rotor wash (uses extracted utility)
+  const drawHelicopters = useCallback((ctx: CanvasRenderingContext2D) => {
+    const { offset: currentOffset, zoom: currentZoom, grid: currentGrid, gridSize: currentGridSize } = worldStateRef.current;
+    const canvas = ctx.canvas;
+    const dpr = window.devicePixelRatio || 1;
+    
+    // Early exit if no helicopters
+    if (!currentGrid || currentGridSize <= 0 || helicoptersRef.current.length === 0) {
+      return;
+    }
+    
+    ctx.save();
+    ctx.scale(dpr * currentZoom, dpr * currentZoom);
+    ctx.translate(currentOffset.x / currentZoom, currentOffset.y / currentZoom);
+    
+    const viewWidth = canvas.width / (dpr * currentZoom);
+    const viewHeight = canvas.height / (dpr * currentZoom);
+    const viewBounds = {
+      viewLeft: -currentOffset.x / currentZoom - 100,
+      viewTop: -currentOffset.y / currentZoom - 100,
+      viewRight: viewWidth - currentOffset.x / currentZoom + 100,
+      viewBottom: viewHeight - currentOffset.y / currentZoom + 100,
+    };
+    
+    // Use extracted utility function for drawing
+    drawHelicoptersUtil(ctx, helicoptersRef.current, viewBounds, visualHour, navLightFlashTimerRef.current, isMobile, currentZoom);
+    
+    ctx.restore();
+  }, [visualHour, isMobile]);
+
+  // Draw seaplanes with wakes and contrails (uses extracted utility)
+  const drawSeaplanes = useCallback((ctx: CanvasRenderingContext2D) => {
+    const { offset: currentOffset, zoom: currentZoom, grid: currentGrid, gridSize: currentGridSize } = worldStateRef.current;
+    const canvas = ctx.canvas;
+    const dpr = window.devicePixelRatio || 1;
+
+    // Early exit if no seaplanes
+    if (!currentGrid || currentGridSize <= 0 || seaplanesRef.current.length === 0) {
+      return;
+    }
+
+    ctx.save();
+    ctx.scale(dpr * currentZoom, dpr * currentZoom);
+    ctx.translate(currentOffset.x / currentZoom, currentOffset.y / currentZoom);
+
+    const viewWidth = canvas.width / (dpr * currentZoom);
+    const viewHeight = canvas.height / (dpr * currentZoom);
+    const viewBounds = {
+      viewLeft: -currentOffset.x / currentZoom - 200,
+      viewTop: -currentOffset.y / currentZoom - 200,
+      viewRight: viewWidth - currentOffset.x / currentZoom + 200,
+      viewBottom: viewHeight - currentOffset.y / currentZoom + 200,
+    };
+
+    // Use extracted utility function for drawing
+    drawSeaplanesUtil(ctx, seaplanesRef.current, viewBounds, visualHour, navLightFlashTimerRef.current, isMobile);
+
+    ctx.restore();
+  }, [visualHour, isMobile]);
+
+  // Boats are now handled by useBoatSystem hook (see above)
+
+  // Update trains - spawn, move, and manage lifecycle
+  const updateTrains = useCallback((delta: number) => {
+    const { grid: currentGrid, gridSize: currentGridSize, speed: currentSpeed } = worldStateRef.current;
+
+    if (!currentGrid || currentGridSize <= 0 || currentSpeed === 0) {
+      return;
+    }
+
+    // Count rail tiles
+    const railTileCount = countRailTiles(currentGrid, currentGridSize);
+    
+    // No trains if not enough rail
+    if (railTileCount < MIN_RAIL_TILES_FOR_TRAINS) {
+      trainsRef.current = [];
+      return;
+    }
+
+    // Calculate max trains based on rail network size
+    const maxTrains = Math.min(MAX_TRAINS, Math.ceil(railTileCount / TRAINS_PER_RAIL_TILES));
+    
+    // Speed multiplier based on game speed
+    const speedMultiplier = currentSpeed === 1 ? 1 : currentSpeed === 2 ? 2 : 3;
+
+    // Spawn timer
+    trainSpawnTimerRef.current -= delta;
+    if (trainsRef.current.length < maxTrains && trainSpawnTimerRef.current <= 0) {
+      const newTrain = spawnTrain(currentGrid, currentGridSize, trainIdRef);
+      if (newTrain) {
+        trainsRef.current.push(newTrain);
+      }
+      trainSpawnTimerRef.current = TRAIN_SPAWN_INTERVAL;
+    }
+
+    // Update existing trains (pass all trains for collision detection)
+    const allTrains = trainsRef.current;
+    trainsRef.current = trainsRef.current.filter(train => 
+      updateTrain(train, delta, speedMultiplier, currentGrid, currentGridSize, allTrains, isMobile)
+    );
+  }, [isMobile]);
+
+  // Draw trains on the rail network
+  const drawTrainsCallback = useCallback((ctx: CanvasRenderingContext2D) => {
+    const { offset: currentOffset, zoom: currentZoom, grid: currentGrid, gridSize: currentGridSize, canvasSize: size } = worldStateRef.current;
+
+    if (!currentGrid || currentGridSize <= 0 || trainsRef.current.length === 0) {
+      return;
+    }
+
+    drawTrains(ctx, trainsRef.current, currentOffset, currentZoom, size, currentGrid, currentGridSize, visualHour, isMobile);
+  }, [visualHour, isMobile]);
+
+  // 繪製動態資產（精靈圖動畫）
+  const drawAnimatedAssets = useCallback((ctx: CanvasRenderingContext2D) => {
+    const { offset: currentOffset, zoom: currentZoom, grid: currentGrid, gridSize: currentGridSize, canvasSize: size } = worldStateRef.current;
+    
+    if (!currentGrid || currentGridSize <= 0) return;
+    
+    const dpr = window.devicePixelRatio || 1;
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.scale(dpr, dpr);
+    ctx.translate(currentOffset.x, currentOffset.y);
+    ctx.scale(currentZoom, currentZoom);
+    
+    // 視口裁剪
+    const viewWidth = size.width / currentZoom;
+    const viewHeight = size.height / currentZoom;
+    const viewLeft = -currentOffset.x / currentZoom - TILE_WIDTH * 2;
+    const viewTop = -currentOffset.y / currentZoom - TILE_HEIGHT * 4;
+    const viewRight = viewLeft + viewWidth + TILE_WIDTH * 4;
+    const viewBottom = viewTop + viewHeight + TILE_HEIGHT * 8;
+    
+    // 遍歷 grid 找出所有動態資產
+    for (let gy = 0; gy < currentGridSize; gy++) {
+      for (let gx = 0; gx < currentGridSize; gx++) {
+        const tile = currentGrid[gy][gx];
+        if (!tile.building) continue;
+        
+        const buildingType = tile.building.type;
+        if (!spriteAnimationManager.isAnimatedAsset(buildingType)) continue;
+        
+        // 這是動態資產的主格子（計算屏幕位置）
+        const { screenX: x, screenY: y } = gridToScreen(gx, gy, 0, 0);
+        
+        // 視口裁剪
+        if (x < viewLeft - TILE_WIDTH * 2 || x > viewRight + TILE_WIDTH * 2 ||
+            y < viewTop - TILE_HEIGHT * 4 || y > viewBottom + TILE_HEIGHT * 4) {
+          continue;
+        }
+        
+        const w = TILE_WIDTH;
+        const h = TILE_HEIGHT;
+        
+        // 獲取當前幀
+        const frameCanvas = spriteAnimationManager.getCurrentFrameCanvas(buildingType, gx, gy);
+        if (!frameCanvas) continue;
+        
+        // 獲取當前幀的偏移
+        const frameOffset = spriteAnimationManager.getCurrentFrameOffset(buildingType, gx, gy);
+        
+        // 計算繪製尺寸
+        const userScale = tile.building.visualScale || 1.0;
+        const spriteScale = 1.3 * userScale;
+        const baseDestWidth = TILE_WIDTH * spriteScale;
+        const aspectRatio = frameCanvas.height / frameCanvas.width;
+        
+        // 獲取編輯器保存的渲染配置
+        const renderOffset = spriteAnimationManager.getRenderOffset(buildingType);
+        const renderScale = spriteAnimationManager.getRenderScale(buildingType);
+        
+        // 應用編輯器設置的渲染縮放
+        const destWidth = baseDestWidth * renderScale;
+        const destHeight = destWidth * aspectRatio;
+        
+        // 偏移縮放邏輯：
+        // 1. 編輯器使用 64px 格子，設定的偏移是基於 64 * 1.3 = 83.2 的渲染尺寸
+        // 2. 遊戲中渲染尺寸是 64 * 1.3 * userScale = 83.2 * userScale
+        // 3. 當玩家放大資產時（userScale > 1），偏移也應相應放大，保持視覺一致性
+        const scaledOffsetX = frameOffset.x * userScale;
+        const scaledOffsetY = frameOffset.y * userScale;
+        
+        // 定位（加入幀偏移 + 渲染偏移）
+        const drawX = x + (w - destWidth) / 2 + scaledOffsetX + renderOffset.x;
+        const baseOffsetFactor = 0.90;
+        const drawY = y + h - (destHeight * baseOffsetFactor) + scaledOffsetY + renderOffset.y;
+        
+        // 根據道路鄰接決定是否翻轉
+        const buildingSize = getBuildingSize(buildingType);
+        const isFlipped = (() => {
+          const roadCheck = getRoadAdjacency(currentGrid, gx, gy, buildingSize.width, buildingSize.height, currentGridSize);
+          if (roadCheck.hasRoad) return roadCheck.shouldFlip !== (tile.building?.flipped === true);
+          return ((gx * 47 + gy * 83) % 100) < 50;
+        })();
+        
+        ctx.save();
+        if (isFlipped) {
+          const centerX = Math.round(drawX + destWidth / 2);
+          ctx.translate(centerX, 0);
+          ctx.scale(-1, 1);
+          ctx.translate(-centerX, 0);
+        }
+        
+        ctx.drawImage(
+          frameCanvas,
+          0, 0, frameCanvas.width, frameCanvas.height,
+          Math.round(drawX), Math.round(drawY),
+          Math.round(destWidth), Math.round(destHeight)
+        );
+        ctx.restore();
+      }
+    }
+    
+    ctx.restore();
+  }, []);
+
+  // Fireworks and smog are now handled by useEffectsSystems hook (see above)
+
+
+
+  // Progressive image loading - load sprites in background, render immediately
+  // Subscribe to image load notifications to trigger re-renders as assets become available
+  useEffect(() => {
+    const unsubscribe = onImageLoaded(() => {
+      // Trigger re-render when any new image loads
+      setImageLoadVersion(v => v + 1);
+    });
+    return unsubscribe;
+  }, []);
+  
+  // 加載基本資源（sprite sheet 系統已廢棄，改用獨立圖片）
+  useEffect(() => {
+    // 加載基本紋理資源（靜默忽略錯誤）
+    loadImage(WATER_ASSET_PATH).catch(() => { /* 靜默忽略 */ });
+    loadImage(ROAD_STONE_ASSET_PATH).catch(() => { /* 靜默忽略 */ });
+    
+    // 延遲加載其他資源
+    const loadAdditionalAssets = async () => {
+      // 初始化動畫系統（加載精靈圖配置和預渲染幀）
+      await initAnimationSystem();
+      
+      // 加載資產配置中的所有建築圖片（使用分類目錄）
+      fetch('/assets/assets.json')
+        .then(res => res.json())
+        .then(data => {
+          if (data.assets && Array.isArray(data.assets)) {
+            data.assets.forEach((asset: { id: string; category?: string }) => {
+              const category = asset.category || 'props'; // 默認使用 props
+              // 填充映射表
+              assetCategoryMapRef.current[asset.id] = category;
+              // 加載圖片
+              loadImage(`/assets/${category}/${asset.id}.png`).catch(() => {
+                // 靜默忽略不存在的圖片
+              });
+            });
+          }
+        })
+        .catch(() => {
+          // 靜默忽略配置文件讀取錯誤
+        });
+    };
+    
+    // 延遲加載以優先渲染首屏
+    const timer = setTimeout(loadAdditionalAssets, 50);
+    return () => clearTimeout(timer);
+  }, []);
+  
+  // Building helper functions moved to buildingHelpers.ts
+  
+  // Update canvas size on resize with high-DPI support
+  useEffect(() => {
+    const updateSize = () => {
+      if (containerRef.current && canvasRef.current) {
+        const dpr = window.devicePixelRatio || 1;
+        const rect = containerRef.current.getBoundingClientRect();
+        
+        // Set display size
+        canvasRef.current.style.width = `${rect.width}px`;
+        canvasRef.current.style.height = `${rect.height}px`;
+        if (hoverCanvasRef.current) {
+          hoverCanvasRef.current.style.width = `${rect.width}px`;
+          hoverCanvasRef.current.style.height = `${rect.height}px`;
+        }
+        if (carsCanvasRef.current) {
+          carsCanvasRef.current.style.width = `${rect.width}px`;
+          carsCanvasRef.current.style.height = `${rect.height}px`;
+        }
+        if (buildingsCanvasRef.current) {
+          buildingsCanvasRef.current.style.width = `${rect.width}px`;
+          buildingsCanvasRef.current.style.height = `${rect.height}px`;
+        }
+        if (airCanvasRef.current) {
+          airCanvasRef.current.style.width = `${rect.width}px`;
+          airCanvasRef.current.style.height = `${rect.height}px`;
+        }
+        if (lightingCanvasRef.current) {
+          lightingCanvasRef.current.style.width = `${rect.width}px`;
+          lightingCanvasRef.current.style.height = `${rect.height}px`;
+        }
+        
+        // Set actual size in memory (scaled for DPI)
+        setCanvasSize({
+          width: Math.round(rect.width * dpr),
+          height: Math.round(rect.height * dpr),
+        });
+      }
+    };
+    updateSize();
+    window.addEventListener('resize', updateSize);
+    return () => window.removeEventListener('resize', updateSize);
+  }, []);
+  
+  // Main render function - PERF: Uses requestAnimationFrame throttling to batch multiple state updates
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || !imagesLoaded) return;
+    
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
+    // PERF: Cancel any pending render to avoid duplicate work
+    if (renderPendingRef.current !== null) {
+      cancelAnimationFrame(renderPendingRef.current);
+    }
+    
+    // PERF: Defer render to next animation frame - batches multiple state updates into one render
+    renderPendingRef.current = requestAnimationFrame(() => {
+      renderPendingRef.current = null;
+      
+      const dpr = window.devicePixelRatio || 1;
+    
+      // Disable image smoothing for crisp pixel art
+      ctx.imageSmoothingEnabled = false;
+    
+      // Clear canvas with gradient background
+      const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      gradient.addColorStop(0, '#0f1419');
+      gradient.addColorStop(0.5, '#141c24');
+      gradient.addColorStop(1, '#1a2a1f');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+      ctx.save();
+      // Scale for device pixel ratio first, then apply zoom
+      ctx.scale(dpr * zoom, dpr * zoom);
+      ctx.translate(offset.x / zoom, offset.y / zoom);
+    
+    // Calculate visible tile range for culling (account for DPR in canvas size)
+    const viewWidth = canvas.width / (dpr * zoom);
+    const viewHeight = canvas.height / (dpr * zoom);
+    const viewLeft = -offset.x / zoom - TILE_WIDTH;
+    const viewTop = -offset.y / zoom - TILE_HEIGHT * 2;
+    const viewRight = viewWidth - offset.x / zoom + TILE_WIDTH;
+    const viewBottom = viewHeight - offset.y / zoom + TILE_HEIGHT * 2;
+    
+    // PERF: Pre-compute visible diagonal range to skip entire rows of tiles
+    // In isometric rendering, screenY = (x + y) * (TILE_HEIGHT / 2), so sum = x + y = screenY * 2 / TILE_HEIGHT
+    // Add padding for tall buildings that may extend above their tile position
+    const visibleMinSum = Math.max(0, Math.floor((viewTop - TILE_HEIGHT * 6) * 2 / TILE_HEIGHT));
+    const visibleMaxSum = Math.min(gridSize * 2 - 2, Math.ceil((viewBottom + TILE_HEIGHT) * 2 / TILE_HEIGHT));
+    
+    // PERF: Use cached render queue arrays to avoid GC pressure
+    // Clear arrays by setting length = 0 (much faster than recreating)
+    const queues = renderQueuesRef.current;
+    queues.buildingQueue.length = 0;
+    queues.waterQueue.length = 0;
+    queues.roadQueue.length = 0;
+    queues.railQueue.length = 0;
+    queues.beachQueue.length = 0;
+    queues.baseTileQueue.length = 0;
+    queues.greenBaseTileQueue.length = 0;
+    queues.overlayQueue.length = 0;
+
+    const buildingQueue = queues.buildingQueue;
+    const waterQueue = queues.waterQueue;
+    const roadQueue = queues.roadQueue;
+    const railQueue = queues.railQueue;
+    const beachQueue = queues.beachQueue;
+    const baseTileQueue = queues.baseTileQueue;
+    const greenBaseTileQueue = queues.greenBaseTileQueue;
+    const overlayQueue = queues.overlayQueue;
+    
+    // PERF: Insertion sort for nearly-sorted arrays (O(n) vs O(n log n) for .sort())
+    // Since tiles are iterated in diagonal order, queues are already nearly sorted
+    function insertionSortByDepth<T extends { depth: number }>(arr: T[]): void {
+      for (let i = 1; i < arr.length; i++) {
+        const current = arr[i];
+        let j = i - 1;
+        // Only move elements that are strictly greater (maintains stability)
+        while (j >= 0 && arr[j].depth > current.depth) {
+          arr[j + 1] = arr[j];
+          j--;
+        }
+        arr[j + 1] = current;
+      }
+    }
+    
+    // Helper function to check if a tile is adjacent to water (uses pre-computed metadata for O(1) lookup)
+    function isAdjacentToWater(gridX: number, gridY: number): boolean {
+      const metadata = getTileMetadata(gridX, gridY);
+      return metadata?.isAdjacentToWater ?? false;
+    }
+    
+    // Helper function to check if a tile is water
+    function isWater(gridX: number, gridY: number): boolean {
+      if (gridX < 0 || gridX >= gridSize || gridY < 0 || gridY >= gridSize) return false;
+      return grid[gridY][gridX].building.type === 'water';
+    }
+    
+    // Helper function to check if a tile has a road
+    function hasRoad(gridX: number, gridY: number): boolean {
+      if (gridX < 0 || gridX >= gridSize || gridY < 0 || gridY >= gridSize) return false;
+      return grid[gridY][gridX].building.type === 'road';
+    }
+    
+    // Helper function to check if a tile has a marina dock or pier (no beaches next to these)
+    // Also checks 'empty' tiles that are part of multi-tile marina buildings
+    function hasMarinaPier(gridX: number, gridY: number): boolean {
+      if (gridX < 0 || gridX >= gridSize || gridY < 0 || gridY >= gridSize) return false;
+      const buildingType = grid[gridY][gridX].building.type;
+      if (buildingType === 'marina_docks_small' || buildingType === 'pier_large') return true;
+      
+      // Check if this is an 'empty' tile that belongs to a marina (2x2 building)
+      // Marina is 2x2, so check up to 1 tile away for the origin
+      if (buildingType === 'empty') {
+        for (let dy = 0; dy <= 1; dy++) {
+          for (let dx = 0; dx <= 1; dx++) {
+            const checkX = gridX - dx;
+            const checkY = gridY - dy;
+            if (checkX >= 0 && checkY >= 0 && checkX < gridSize && checkY < gridSize) {
+              const checkType = grid[checkY][checkX].building.type;
+              if (checkType === 'marina_docks_small') {
+                // Verify this tile is within the 2x2 footprint
+                if (gridX >= checkX && gridX < checkX + 2 && gridY >= checkY && gridY < checkY + 2) {
+                  return true;
+                }
+              }
+            }
+          }
+        }
+      }
+      return false;
+    }
+    
+    // Helper to get cached road merge analysis (invalidates when grid changes)
+    function getCachedMergeInfo(gx: number, gy: number): ReturnType<typeof analyzeMergedRoad> {
+      const currentVersion = gridVersionRef.current;
+      if (roadAnalysisCacheVersionRef.current !== currentVersion) {
+        roadAnalysisCacheRef.current.clear();
+        roadAnalysisCacheVersionRef.current = currentVersion;
+      }
+      
+      const key = `${gx},${gy}`;
+      let info = roadAnalysisCacheRef.current.get(key);
+      if (!info) {
+        info = analyzeMergedRoad(grid, gridSize, gx, gy);
+        roadAnalysisCacheRef.current.set(key, info);
+      }
+      return info;
+    }
+    
+    // Draw sophisticated road with merged avenues/highways, traffic lights, and proper lane directions
+    function drawRoad(ctx: CanvasRenderingContext2D, x: number, y: number, gridX: number, gridY: number, currentZoom: number) {
+      const w = TILE_WIDTH;
+      const h = TILE_HEIGHT;
+      const cx = x + w / 2;
+      const cy = y + h / 2;
+      
+      // ============================================
+      // NEW: Try to use stone path texture (like water)
+      // ============================================
+      const roadImage = getCachedImage(ROAD_STONE_ASSET_PATH);
+      if (roadImage) {
+        // Check which adjacent tiles are also roads for blending
+        const adjacentRoad = {
+          north: gridX > 0 && grid[gridY]?.[gridX - 1]?.building.type === 'road',
+          east: gridY > 0 && grid[gridY - 1]?.[gridX]?.building.type === 'road',
+          south: gridX < gridSize - 1 && grid[gridY]?.[gridX + 1]?.building.type === 'road',
+          west: gridY < gridSize - 1 && grid[gridY + 1]?.[gridX]?.building.type === 'road',
+        };
+        
+        const adjacentCount = (adjacentRoad.north ? 1 : 0) + (adjacentRoad.east ? 1 : 0) + 
+                             (adjacentRoad.south ? 1 : 0) + (adjacentRoad.west ? 1 : 0);
+        
+        const imgW = roadImage.naturalWidth || roadImage.width;
+        const imgH = roadImage.naturalHeight || roadImage.height;
+        
+        // Deterministic "random" offset based on tile position for variety
+        const seedX = ((gridX * 7919 + gridY * 6271) % 1000) / 1000;
+        const seedY = ((gridX * 4177 + gridY * 9311) % 1000) / 1000;
+        
+        // Take a subcrop - use roadVisualScale (user adjustable) of the image
+        // 1.0 = 使用整張貼圖（石塊最小）; 0.1 = 取 10% 區域放大（石塊最大）
+        const cropScale = roadVisualScale || 1.0;
+        const cropW = imgW * cropScale;
+        const cropH = imgH * cropScale;
+        const maxOffsetX = imgW - cropW;
+        const maxOffsetY = imgH - cropH;
+        const srcX = seedX * maxOffsetX;
+        const srcY = seedY * maxOffsetY;
+        
+        // ============================================
+        // 彎道檢測：只有兩個相鄰方向且成直角
+        // ============================================
+        const isCurve = adjacentCount === 2 && !(
+          (adjacentRoad.north && adjacentRoad.south) || 
+          (adjacentRoad.east && adjacentRoad.west)
+        );
+        
+        // 彎道類型：確定是哪種轉角
+        type CurveType = 'ne' | 'es' | 'sw' | 'wn' | null;
+        let curveType: CurveType = null;
+        if (isCurve) {
+          if (adjacentRoad.north && adjacentRoad.east) curveType = 'ne';      // 北+東：右上角彎
+          else if (adjacentRoad.east && adjacentRoad.south) curveType = 'es'; // 東+南：右下角彎
+          else if (adjacentRoad.south && adjacentRoad.west) curveType = 'sw'; // 南+西：左下角彎
+          else if (adjacentRoad.west && adjacentRoad.north) curveType = 'wn'; // 西+北：左上角彎
+        }
+        
+        ctx.save();
+        ctx.beginPath();
+        
+        if (curveType) {
+          // ============================================
+          // 繪製弧形裁剪路徑（使用貝塞爾曲線適應等距視角）
+          // ============================================
+          // 菱形的四個頂點
+          const topCorner = { x: x + w / 2, y: y };           // 頂部頂點
+          const rightCorner = { x: x + w, y: y + h / 2 };     // 右側頂點
+          const bottomCorner = { x: x + w / 2, y: y + h };    // 底部頂點
+          const leftCorner = { x: x, y: y + h / 2 };          // 左側頂點
+          
+          // 四條邊的中點（道路的四個方向入口）
+          const northMid = { x: x + w * 0.25, y: y + h * 0.25 };  // 左上邊中點
+          const eastMid = { x: x + w * 0.75, y: y + h * 0.25 };   // 右上邊中點
+          const southMid = { x: x + w * 0.75, y: y + h * 0.75 };  // 右下邊中點
+          const westMid = { x: x + w * 0.25, y: y + h * 0.75 };   // 左下邊中點
+          
+          // 道路半寬（沿著邊的方向）- 增大以填滿轉角
+          const roadHalfWidth = w * 0.32;
+          
+          // 輔助函數：沿邊方向偏移點
+          const offsetAlongEdge = (
+            mid: {x: number, y: number}, 
+            corner1: {x: number, y: number}, 
+            corner2: {x: number, y: number}, 
+            offset: number
+          ) => {
+            const dx = corner2.x - corner1.x;
+            const dy = corner2.y - corner1.y;
+            const len = Math.hypot(dx, dy);
+            return {
+              x: mid.x + (dx / len) * offset,
+              y: mid.y + (dy / len) * offset
+            };
+          };
+          
+          // 計算對角控制點（用於內側曲線，在對角方向）
+          const getOppositeCorner = (curveT: 'ne' | 'es' | 'sw' | 'wn') => {
+            // 返回彎道對面的角落（用作內側曲線的控制點方向）
+            switch (curveT) {
+              case 'ne': return bottomCorner;  // 北東彎道，對面是底角
+              case 'es': return leftCorner;    // 東南彎道，對面是左角
+              case 'sw': return topCorner;     // 南西彎道，對面是頂角
+              case 'wn': return rightCorner;   // 西北彎道，對面是右角
+            }
+          };
+          
+          // 根據彎道類型繪製貝塞爾曲線路徑
+          // 修正：外側曲線用外角控制點，內側曲線用對角控制點（讓曲線凹向中心）
+          switch (curveType) {
+            case 'ne': {
+              // 北+東彎道：從北邊入口到東邊入口
+              // n1/e1 是外側（靠近頂角），n2/e2 是內側（靠近中心）
+              const n_outer = offsetAlongEdge(northMid, leftCorner, topCorner, roadHalfWidth);  // 靠近頂角
+              const n_inner = offsetAlongEdge(northMid, leftCorner, topCorner, -roadHalfWidth); // 靠近左角
+              const e_outer = offsetAlongEdge(eastMid, topCorner, rightCorner, -roadHalfWidth); // 靠近頂角
+              const e_inner = offsetAlongEdge(eastMid, topCorner, rightCorner, roadHalfWidth);  // 靠近右角
+              const oppositeCorner = getOppositeCorner('ne');
+              // 外側曲線（凸向頂角）
+              ctx.moveTo(n_outer.x, n_outer.y);
+              ctx.quadraticCurveTo(topCorner.x, topCorner.y, e_outer.x, e_outer.y);
+              // 連到東邊內側
+              ctx.lineTo(e_inner.x, e_inner.y);
+              // 內側曲線（凹向對角/中心方向）
+              ctx.quadraticCurveTo(oppositeCorner.x, oppositeCorner.y, n_inner.x, n_inner.y);
+              ctx.closePath();
+              break;
+            }
+            case 'es': {
+              // 東+南彎道：從東邊入口到南邊入口
+              const e_outer = offsetAlongEdge(eastMid, topCorner, rightCorner, roadHalfWidth);  // 靠近右角
+              const e_inner = offsetAlongEdge(eastMid, topCorner, rightCorner, -roadHalfWidth); // 靠近頂角
+              const s_outer = offsetAlongEdge(southMid, rightCorner, bottomCorner, -roadHalfWidth); // 靠近右角
+              const s_inner = offsetAlongEdge(southMid, rightCorner, bottomCorner, roadHalfWidth);  // 靠近底角
+              const oppositeCorner = getOppositeCorner('es');
+              ctx.moveTo(e_outer.x, e_outer.y);
+              ctx.quadraticCurveTo(rightCorner.x, rightCorner.y, s_outer.x, s_outer.y);
+              ctx.lineTo(s_inner.x, s_inner.y);
+              ctx.quadraticCurveTo(oppositeCorner.x, oppositeCorner.y, e_inner.x, e_inner.y);
+              ctx.closePath();
+              break;
+            }
+            case 'sw': {
+              // 南+西彎道：從南邊入口到西邊入口
+              const s_outer = offsetAlongEdge(southMid, rightCorner, bottomCorner, roadHalfWidth);  // 靠近底角
+              const s_inner = offsetAlongEdge(southMid, rightCorner, bottomCorner, -roadHalfWidth); // 靠近右角
+              const w_outer = offsetAlongEdge(westMid, bottomCorner, leftCorner, -roadHalfWidth);   // 靠近底角
+              const w_inner = offsetAlongEdge(westMid, bottomCorner, leftCorner, roadHalfWidth);    // 靠近左角
+              const oppositeCorner = getOppositeCorner('sw');
+              ctx.moveTo(s_outer.x, s_outer.y);
+              ctx.quadraticCurveTo(bottomCorner.x, bottomCorner.y, w_outer.x, w_outer.y);
+              ctx.lineTo(w_inner.x, w_inner.y);
+              ctx.quadraticCurveTo(oppositeCorner.x, oppositeCorner.y, s_inner.x, s_inner.y);
+              ctx.closePath();
+              break;
+            }
+            case 'wn': {
+              // 西+北彎道：從西邊入口到北邊入口
+              const w_outer = offsetAlongEdge(westMid, bottomCorner, leftCorner, roadHalfWidth);   // 靠近左角
+              const w_inner = offsetAlongEdge(westMid, bottomCorner, leftCorner, -roadHalfWidth);  // 靠近底角
+              const n_outer = offsetAlongEdge(northMid, leftCorner, topCorner, -roadHalfWidth);    // 靠近左角
+              const n_inner = offsetAlongEdge(northMid, leftCorner, topCorner, roadHalfWidth);     // 靠近頂角
+              const oppositeCorner = getOppositeCorner('wn');
+              ctx.moveTo(w_outer.x, w_outer.y);
+              ctx.quadraticCurveTo(leftCorner.x, leftCorner.y, n_outer.x, n_outer.y);
+              ctx.lineTo(n_inner.x, n_inner.y);
+              ctx.quadraticCurveTo(oppositeCorner.x, oppositeCorner.y, w_inner.x, w_inner.y);
+              ctx.closePath();
+              break;
+            }
+          }
+        } else {
+          // ============================================
+          // 標準菱形裁剪路徑（直線道路、十字路口、丁字路口等）
+          // 不需要額外處理，直接使用標準菱形
+          // ============================================
+          ctx.moveTo(x + w / 2, y);
+          ctx.lineTo(x + w, y + h / 2);
+          ctx.lineTo(x + w / 2, y + h);
+          ctx.lineTo(x, y + h / 2);
+          ctx.closePath();
+        }
+        ctx.clip();
+        
+        const aspectRatio = cropH / cropW;
+        const jitterX = (seedX - 0.5) * w * 0.2;
+        const jitterY = (seedY - 0.5) * h * 0.2;
+        
+        // For tiles with more road neighbors, draw blended passes
+        if (adjacentCount >= 2) {
+          // Outer pass - larger, semi-transparent for blending
+          const outerScale = 1.8 + adjacentCount * 0.2;
+          const outerWidth = w * outerScale;
+          const outerHeight = outerWidth * aspectRatio;
+          ctx.globalAlpha = 0.4;
+          ctx.drawImage(
+            roadImage,
+            srcX, srcY, cropW, cropH,
+            Math.round(cx - outerWidth / 2 + jitterX),
+            Math.round(cy - outerHeight / 2 + jitterY),
+            Math.round(outerWidth),
+            Math.round(outerHeight)
+          );
+          
+          // Core pass - full opacity
+          const coreScale = 1.2;
+          const coreWidth = w * coreScale;
+          const coreHeight = coreWidth * aspectRatio;
+          ctx.globalAlpha = 0.95;
+          ctx.drawImage(
+            roadImage,
+            srcX, srcY, cropW, cropH,
+            Math.round(cx - coreWidth / 2),
+            Math.round(cy - coreHeight / 2),
+            Math.round(coreWidth),
+            Math.round(coreHeight)
+          );
+        } else {
+          // Single road tile - just draw normally
+          const scale = 1.3;
+          const destWidth = w * scale;
+          const destHeight = destWidth * aspectRatio;
+          ctx.globalAlpha = 0.95;
+          ctx.drawImage(
+            roadImage,
+            srcX, srcY, cropW, cropH,
+            Math.round(cx - destWidth / 2 + jitterX),
+            Math.round(cy - destHeight / 2 + jitterY),
+            Math.round(destWidth),
+            Math.round(destHeight)
+          );
+        }
+        
+        ctx.globalAlpha = 1.0;
+        ctx.restore();
+        return; // Done with textured road
+      }
+      
+      // ============================================
+      // FALLBACK: Original procedural road rendering
+      // ============================================
+      
+      // Check adjacency (in isometric coordinates)
+      const north = hasRoad(gridX - 1, gridY);  // top-left edge
+      const east = hasRoad(gridX, gridY - 1);   // top-right edge
+      const south = hasRoad(gridX + 1, gridY);  // bottom-right edge
+      const west = hasRoad(gridX, gridY + 1);   // bottom-left edge
+      const adj = { north, east, south, west };
+      
+      // Analyze if this road is part of a merged avenue/highway (CACHED for performance)
+      const mergeInfo = getCachedMergeInfo(gridX, gridY);
+      
+      // Calculate base road width based on road type
+      const laneWidthRatio = mergeInfo.type === 'highway' ? 0.16 :
+                            mergeInfo.type === 'avenue' ? 0.15 :
+                            0.14;
+      const roadW = w * laneWidthRatio;
+      
+      // Sidewalk configuration
+      const sidewalkWidth = w * 0.08;
+      const sidewalkColor = ROAD_COLORS.SIDEWALK;
+      const curbColor = ROAD_COLORS.CURB;
+      
+      // Edge stop distance
+      const edgeStop = 0.98;
+      
+      // Calculate edge midpoints
+      const northEdgeX = x + w * 0.25;
+      const northEdgeY = y + h * 0.25;
+      const eastEdgeX = x + w * 0.75;
+      const eastEdgeY = y + h * 0.25;
+      const southEdgeX = x + w * 0.75;
+      const southEdgeY = y + h * 0.75;
+      const westEdgeX = x + w * 0.25;
+      const westEdgeY = y + h * 0.75;
+      
+      // Direction vectors
+      const northDx = (northEdgeX - cx) / Math.hypot(northEdgeX - cx, northEdgeY - cy);
+      const northDy = (northEdgeY - cy) / Math.hypot(northEdgeX - cx, northEdgeY - cy);
+      const eastDx = (eastEdgeX - cx) / Math.hypot(eastEdgeX - cx, eastEdgeY - cy);
+      const eastDy = (eastEdgeY - cy) / Math.hypot(eastEdgeX - cx, eastEdgeY - cy);
+      const southDx = (southEdgeX - cx) / Math.hypot(southEdgeX - cx, southEdgeY - cy);
+      const southDy = (southEdgeY - cy) / Math.hypot(southEdgeX - cx, southEdgeY - cy);
+      const westDx = (westEdgeX - cx) / Math.hypot(westEdgeX - cx, westEdgeY - cy);
+      const westDy = (westEdgeY - cy) / Math.hypot(westEdgeX - cx, westEdgeY - cy);
+      
+      const getPerp = (dx: number, dy: number) => ({ nx: -dy, ny: dx });
+      
+      // Diamond corners
+      const topCorner = { x: x + w / 2, y: y };
+      const rightCorner = { x: x + w, y: y + h / 2 };
+      const bottomCorner = { x: x + w / 2, y: y + h };
+      const leftCorner = { x: x, y: y + h / 2 };
+      
+      // ============================================
+      // DRAW SIDEWALKS (DISABLED for Ancient Style)
+      // ============================================
+      const showSidewalks = false;
+      
+      const isOuterEdge = (edgeDir: 'north' | 'east' | 'south' | 'west') => {
+        // For merged roads, only draw sidewalks on the outermost tiles
+        if (mergeInfo.type === 'single') return true;
+        
+        if (mergeInfo.orientation === 'ns') {
+          // NS roads: sidewalks on east/west edges of outermost tiles
+          if (edgeDir === 'east') return mergeInfo.side === 'right';
+          if (edgeDir === 'west') return mergeInfo.side === 'left';
+          return true; // north/south always have sidewalks if no road
+        }
+        if (mergeInfo.orientation === 'ew') {
+          // EW roads: sidewalks on north/south edges of outermost tiles
+          if (edgeDir === 'north') return mergeInfo.side === 'left';
+          if (edgeDir === 'south') return mergeInfo.side === 'right';
+          return true;
+        }
+        return true;
+      };
+      
+      const drawSidewalkEdge = (
+        startX: number, startY: number,
+        endX: number, endY: number,
+        inwardDx: number, inwardDy: number,
+        shortenStart: boolean = false,
+        shortenEnd: boolean = false
+      ) => {
+        const swWidth = sidewalkWidth;
+        const shortenDist = swWidth * 0.707;
+        
+        const edgeDx = endX - startX;
+        const edgeDy = endY - startY;
+        const edgeLen = Math.hypot(edgeDx, edgeDy);
+        const edgeDirX = edgeDx / edgeLen;
+        const edgeDirY = edgeDy / edgeLen;
+        
+        let actualStartX = startX, actualStartY = startY;
+        let actualEndX = endX, actualEndY = endY;
+        
+        if (shortenStart && edgeLen > shortenDist * 2) {
+          actualStartX = startX + edgeDirX * shortenDist;
+          actualStartY = startY + edgeDirY * shortenDist;
+        }
+        if (shortenEnd && edgeLen > shortenDist * 2) {
+          actualEndX = endX - edgeDirX * shortenDist;
+          actualEndY = endY - edgeDirY * shortenDist;
+        }
+        
+        ctx.strokeStyle = curbColor;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(actualStartX, actualStartY);
+        ctx.lineTo(actualEndX, actualEndY);
+        ctx.stroke();
+        
+        ctx.fillStyle = sidewalkColor;
+        ctx.beginPath();
+        ctx.moveTo(actualStartX, actualStartY);
+        ctx.lineTo(actualEndX, actualEndY);
+        ctx.lineTo(actualEndX + inwardDx * swWidth, actualEndY + inwardDy * swWidth);
+        ctx.lineTo(actualStartX + inwardDx * swWidth, actualStartY + inwardDy * swWidth);
+        ctx.closePath();
+        ctx.fill();
+      };
+      
+      // Draw sidewalks on edges without roads (only on outer edges for merged roads)
+      if (showSidewalks && !north && isOuterEdge('north')) {
+        drawSidewalkEdge(leftCorner.x, leftCorner.y, topCorner.x, topCorner.y, 0.707, 0.707, !west && isOuterEdge('west'), !east && isOuterEdge('east'));
+      }
+      if (showSidewalks && !east && isOuterEdge('east')) {
+        drawSidewalkEdge(topCorner.x, topCorner.y, rightCorner.x, rightCorner.y, -0.707, 0.707, !north && isOuterEdge('north'), !south && isOuterEdge('south'));
+      }
+      if (showSidewalks && !south && isOuterEdge('south')) {
+        drawSidewalkEdge(rightCorner.x, rightCorner.y, bottomCorner.x, bottomCorner.y, -0.707, -0.707, !east && isOuterEdge('east'), !west && isOuterEdge('west'));
+      }
+      if (showSidewalks && !west && isOuterEdge('west')) {
+        drawSidewalkEdge(bottomCorner.x, bottomCorner.y, leftCorner.x, leftCorner.y, 0.707, -0.707, !south && isOuterEdge('south'), !north && isOuterEdge('north'));
+      }
+      
+      // Corner sidewalk pieces
+      const swWidth = sidewalkWidth;
+      const shortenDist = swWidth * 0.707;
+      ctx.fillStyle = sidewalkColor;
+      
+      const getShortenedInnerEndpoint = (cornerX: number, cornerY: number, otherCornerX: number, otherCornerY: number, inwardDx: number, inwardDy: number) => {
+        const edgeDx = cornerX - otherCornerX;
+        const edgeDy = cornerY - otherCornerY;
+        const edgeLen = Math.hypot(edgeDx, edgeDy);
+        const edgeDirX = edgeDx / edgeLen;
+        const edgeDirY = edgeDy / edgeLen;
+        const shortenedOuterX = cornerX - edgeDirX * shortenDist;
+        const shortenedOuterY = cornerY - edgeDirY * shortenDist;
+        return { x: shortenedOuterX + inwardDx * swWidth, y: shortenedOuterY + inwardDy * swWidth };
+      };
+      
+      // Draw corner pieces only for outer edges (when zoomed in enough)
+      if (showSidewalks && !north && !east && isOuterEdge('north') && isOuterEdge('east')) {
+        const northInner = getShortenedInnerEndpoint(topCorner.x, topCorner.y, leftCorner.x, leftCorner.y, 0.707, 0.707);
+        const eastInner = getShortenedInnerEndpoint(topCorner.x, topCorner.y, rightCorner.x, rightCorner.y, -0.707, 0.707);
+        ctx.beginPath();
+        ctx.moveTo(topCorner.x, topCorner.y);
+        ctx.lineTo(northInner.x, northInner.y);
+        ctx.lineTo(eastInner.x, eastInner.y);
+        ctx.closePath();
+        ctx.fill();
+      }
+      if (showSidewalks && !east && !south && isOuterEdge('east') && isOuterEdge('south')) {
+        const eastInner = getShortenedInnerEndpoint(rightCorner.x, rightCorner.y, topCorner.x, topCorner.y, -0.707, 0.707);
+        const southInner = getShortenedInnerEndpoint(rightCorner.x, rightCorner.y, bottomCorner.x, bottomCorner.y, -0.707, -0.707);
+        ctx.beginPath();
+        ctx.moveTo(rightCorner.x, rightCorner.y);
+        ctx.lineTo(eastInner.x, eastInner.y);
+        ctx.lineTo(southInner.x, southInner.y);
+        ctx.closePath();
+        ctx.fill();
+      }
+      if (showSidewalks && !south && !west && isOuterEdge('south') && isOuterEdge('west')) {
+        const southInner = getShortenedInnerEndpoint(bottomCorner.x, bottomCorner.y, rightCorner.x, rightCorner.y, -0.707, -0.707);
+        const westInner = getShortenedInnerEndpoint(bottomCorner.x, bottomCorner.y, leftCorner.x, leftCorner.y, 0.707, -0.707);
+        ctx.beginPath();
+        ctx.moveTo(bottomCorner.x, bottomCorner.y);
+        ctx.lineTo(southInner.x, southInner.y);
+        ctx.lineTo(westInner.x, westInner.y);
+        ctx.closePath();
+        ctx.fill();
+      }
+      if (showSidewalks && !west && !north && isOuterEdge('west') && isOuterEdge('north')) {
+        const westInner = getShortenedInnerEndpoint(leftCorner.x, leftCorner.y, bottomCorner.x, bottomCorner.y, 0.707, -0.707);
+        const northInner = getShortenedInnerEndpoint(leftCorner.x, leftCorner.y, topCorner.x, topCorner.y, 0.707, 0.707);
+        ctx.beginPath();
+        ctx.moveTo(leftCorner.x, leftCorner.y);
+        ctx.lineTo(westInner.x, westInner.y);
+        ctx.lineTo(northInner.x, northInner.y);
+        ctx.closePath();
+        ctx.fill();
+      }
+      
+      // ============================================
+      // DRAW ROAD SURFACE
+      // ============================================
+      // Use different soil shades for different road types
+      ctx.fillStyle = mergeInfo.type === 'highway' ? ROAD_COLORS.ASPHALT_DARK : 
+                      mergeInfo.type === 'avenue' ? ROAD_COLORS.ASPHALT_DARK : ROAD_COLORS.ASPHALT;
+      
+      // Draw road segments
+      if (north) {
+        const stopX = cx + (northEdgeX - cx) * edgeStop;
+        const stopY = cy + (northEdgeY - cy) * edgeStop;
+        const perp = getPerp(northDx, northDy);
+        const halfWidth = roadW * 0.5;
+        ctx.beginPath();
+        ctx.moveTo(cx + perp.nx * halfWidth, cy + perp.ny * halfWidth);
+        ctx.lineTo(stopX + perp.nx * halfWidth, stopY + perp.ny * halfWidth);
+        ctx.lineTo(stopX - perp.nx * halfWidth, stopY - perp.ny * halfWidth);
+        ctx.lineTo(cx - perp.nx * halfWidth, cy - perp.ny * halfWidth);
+        ctx.closePath();
+        ctx.fill();
+      }
+      
+      if (east) {
+        const stopX = cx + (eastEdgeX - cx) * edgeStop;
+        const stopY = cy + (eastEdgeY - cy) * edgeStop;
+        const perp = getPerp(eastDx, eastDy);
+        const halfWidth = roadW * 0.5;
+        ctx.beginPath();
+        ctx.moveTo(cx + perp.nx * halfWidth, cy + perp.ny * halfWidth);
+        ctx.lineTo(stopX + perp.nx * halfWidth, stopY + perp.ny * halfWidth);
+        ctx.lineTo(stopX - perp.nx * halfWidth, stopY - perp.ny * halfWidth);
+        ctx.lineTo(cx - perp.nx * halfWidth, cy - perp.ny * halfWidth);
+        ctx.closePath();
+        ctx.fill();
+      }
+      
+      if (south) {
+        const stopX = cx + (southEdgeX - cx) * edgeStop;
+        const stopY = cy + (southEdgeY - cy) * edgeStop;
+        const perp = getPerp(southDx, southDy);
+        const halfWidth = roadW * 0.5;
+        ctx.beginPath();
+        ctx.moveTo(cx + perp.nx * halfWidth, cy + perp.ny * halfWidth);
+        ctx.lineTo(stopX + perp.nx * halfWidth, stopY + perp.ny * halfWidth);
+        ctx.lineTo(stopX - perp.nx * halfWidth, stopY - perp.ny * halfWidth);
+        ctx.lineTo(cx - perp.nx * halfWidth, cy - perp.ny * halfWidth);
+        ctx.closePath();
+        ctx.fill();
+      }
+      
+      if (west) {
+        const stopX = cx + (westEdgeX - cx) * edgeStop;
+        const stopY = cy + (westEdgeY - cy) * edgeStop;
+        const perp = getPerp(westDx, westDy);
+        const halfWidth = roadW * 0.5;
+        ctx.beginPath();
+        ctx.moveTo(cx + perp.nx * halfWidth, cy + perp.ny * halfWidth);
+        ctx.lineTo(stopX + perp.nx * halfWidth, stopY + perp.ny * halfWidth);
+        ctx.lineTo(stopX - perp.nx * halfWidth, stopY - perp.ny * halfWidth);
+        ctx.lineTo(cx - perp.nx * halfWidth, cy - perp.ny * halfWidth);
+        ctx.closePath();
+        ctx.fill();
+      }
+      
+      // Center intersection
+      const centerSize = roadW * 1.4;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy - centerSize);
+      ctx.lineTo(cx + centerSize, cy);
+      ctx.lineTo(cx, cy + centerSize);
+      ctx.lineTo(cx - centerSize, cy);
+      ctx.closePath();
+      ctx.fill();
+      
+      // Interior sidewalk corners - small isometric diamonds at corners where two roads meet
+      // Each corner drawn independently based on its two adjacent road directions
+      if (showSidewalks) {
+        ctx.fillStyle = sidewalkColor;
+        const cs = swWidth * 0.8;
+        const isFourWay = north && east && south && west;
+        
+        // Top corner - draw if north AND east both have roads
+        if (north && east) {
+          ctx.beginPath();
+          ctx.moveTo(topCorner.x, topCorner.y);
+          ctx.lineTo(topCorner.x - cs, topCorner.y + cs * 0.5);
+          ctx.lineTo(topCorner.x, topCorner.y + cs);
+          ctx.lineTo(topCorner.x + cs, topCorner.y + cs * 0.5);
+          ctx.closePath();
+          ctx.fill();
+        }
+        
+        // Right corner - draw if east AND south both have roads
+        if (east && south) {
+          ctx.beginPath();
+          ctx.moveTo(rightCorner.x, rightCorner.y);
+          if (isFourWay) {
+            // At 4-way intersections, use rotated shape (tall/narrow)
+            ctx.lineTo(rightCorner.x - cs * 0.625, rightCorner.y - cs * 1.25);
+            ctx.lineTo(rightCorner.x - cs * 1.25, rightCorner.y);
+            ctx.lineTo(rightCorner.x - cs * 0.625, rightCorner.y + cs * 1.25);
+          } else {
+            // At T-intersections/corners, use flat shape
+            ctx.lineTo(rightCorner.x - cs, rightCorner.y - cs * 0.5);
+            ctx.lineTo(rightCorner.x - cs * 2, rightCorner.y);
+            ctx.lineTo(rightCorner.x - cs, rightCorner.y + cs * 0.5);
+          }
+          ctx.closePath();
+          ctx.fill();
+        }
+        
+        // Bottom corner - draw if south AND west both have roads
+        if (south && west) {
+          ctx.beginPath();
+          ctx.moveTo(bottomCorner.x, bottomCorner.y);
+          ctx.lineTo(bottomCorner.x + cs, bottomCorner.y - cs * 0.5);
+          ctx.lineTo(bottomCorner.x, bottomCorner.y - cs);
+          ctx.lineTo(bottomCorner.x - cs, bottomCorner.y - cs * 0.5);
+          ctx.closePath();
+          ctx.fill();
+        }
+        
+        // Left corner - draw if west AND north both have roads
+        if (west && north) {
+          ctx.beginPath();
+          ctx.moveTo(leftCorner.x, leftCorner.y);
+          if (isFourWay) {
+            // At 4-way intersections, use rotated shape (tall/narrow)
+            ctx.lineTo(leftCorner.x + cs * 0.625, leftCorner.y - cs * 1.25);
+            ctx.lineTo(leftCorner.x + cs * 1.25, leftCorner.y);
+            ctx.lineTo(leftCorner.x + cs * 0.625, leftCorner.y + cs * 1.25);
+          } else {
+            // At T-intersections/corners, use flat shape
+            ctx.lineTo(leftCorner.x + cs, leftCorner.y - cs * 0.5);
+            ctx.lineTo(leftCorner.x + cs * 2, leftCorner.y);
+            ctx.lineTo(leftCorner.x + cs, leftCorner.y + cs * 0.5);
+          }
+          ctx.closePath();
+          ctx.fill();
+        }
+      }
+      
+      // ============================================
+      // DRAW LANE MARKINGS AND MEDIANS
+      // ============================================
+      if (currentZoom >= LANE_MARKINGS_MIN_ZOOM) {
+        const connectionCount = [north, east, south, west].filter(Boolean).length;
+        const isIntersection = connectionCount >= 3;
+        
+        // For merged roads, draw white lane divider lines instead of yellow center
+        if (mergeInfo.type !== 'single' && mergeInfo.side === 'center') {
+          // Center tiles of merged roads get white lane dividers
+          ctx.strokeStyle = ROAD_COLORS.LANE_MARKING;
+          ctx.lineWidth = 0.6;
+          ctx.setLineDash([2, 3]);
+          
+          if (mergeInfo.orientation === 'ns' && (north || south)) {
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            if (north) ctx.lineTo(northEdgeX, northEdgeY);
+            ctx.moveTo(cx, cy);
+            if (south) ctx.lineTo(southEdgeX, southEdgeY);
+            ctx.stroke();
+          } else if (mergeInfo.orientation === 'ew' && (east || west)) {
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            if (east) ctx.lineTo(eastEdgeX, eastEdgeY);
+            ctx.moveTo(cx, cy);
+            if (west) ctx.lineTo(westEdgeX, westEdgeY);
+            ctx.stroke();
+          }
+          ctx.setLineDash([]);
+        }
+        
+        // Draw median on the boundary between opposing traffic
+        if (mergeInfo.hasMedian && mergeInfo.mergeWidth >= 2) {
+          // Determine if this tile is at the median boundary
+          const medianPosition = Math.floor(mergeInfo.mergeWidth / 2) - 1;
+          
+          if (mergeInfo.positionInMerge === medianPosition) {
+            // Draw median divider (double yellow or planted median)
+            if (mergeInfo.orientation === 'ns') {
+              // Median runs NS - draw on the west edge of this tile
+              if (mergeInfo.medianType === 'plants' && currentZoom >= MEDIAN_PLANTS_MIN_ZOOM) {
+                // Draw planted median
+                ctx.fillStyle = '#6b7280'; // Concrete base
+                const medianW = 3;
+                ctx.fillRect(westEdgeX - medianW, westEdgeY - 2, medianW * 2, (southEdgeY - westEdgeY) + 4);
+                
+                // Draw small plants/shrubs
+                ctx.fillStyle = '#4a7c3f';
+                const plantSpacing = 10;
+                const numPlants = Math.floor(Math.abs(southEdgeY - westEdgeY) / plantSpacing);
+                for (let i = 1; i < numPlants; i++) {
+                  const py = westEdgeY + (southEdgeY - westEdgeY) * (i / numPlants);
+                  const px = westEdgeX + (southEdgeX - westEdgeX) * (i / numPlants);
+                  ctx.beginPath();
+                  ctx.arc(px, py - 1, 2, 0, Math.PI * 2);
+                  ctx.fill();
+                }
+              } else {
+                // Draw double yellow line
+                ctx.strokeStyle = ROAD_COLORS.CENTER_LINE;
+                ctx.lineWidth = 1.2;
+                ctx.setLineDash([]);
+                
+                const offsetX = -1.5;
+                ctx.beginPath();
+                ctx.moveTo(northEdgeX + offsetX, northEdgeY);
+                ctx.lineTo(southEdgeX + offsetX, southEdgeY);
+                ctx.stroke();
+                
+                ctx.beginPath();
+                ctx.moveTo(northEdgeX + offsetX + 3, northEdgeY);
+                ctx.lineTo(southEdgeX + offsetX + 3, southEdgeY);
+                ctx.stroke();
+              }
+            } else if (mergeInfo.orientation === 'ew') {
+              // Median runs EW - draw on the south edge of this tile
+              if (mergeInfo.medianType === 'plants' && currentZoom >= MEDIAN_PLANTS_MIN_ZOOM) {
+                ctx.fillStyle = '#6b7280';
+                const medianW = 3;
+                ctx.fillRect(eastEdgeX - 2, eastEdgeY - medianW, (westEdgeX - eastEdgeX) + 4, medianW * 2);
+                
+                ctx.fillStyle = '#4a7c3f';
+                const plantSpacing = 10;
+                const numPlants = Math.floor(Math.abs(westEdgeX - eastEdgeX) / plantSpacing);
+                for (let i = 1; i < numPlants; i++) {
+                  const px = eastEdgeX + (westEdgeX - eastEdgeX) * (i / numPlants);
+                  const py = eastEdgeY + (westEdgeY - eastEdgeY) * (i / numPlants);
+                  ctx.beginPath();
+                  ctx.arc(px, py - 1, 2, 0, Math.PI * 2);
+                  ctx.fill();
+                }
+              } else {
+                ctx.strokeStyle = ROAD_COLORS.CENTER_LINE;
+                ctx.lineWidth = 1.2;
+                ctx.setLineDash([]);
+                
+                const offsetY = -1.5;
+                ctx.beginPath();
+                ctx.moveTo(eastEdgeX, eastEdgeY + offsetY);
+                ctx.lineTo(westEdgeX, westEdgeY + offsetY);
+                ctx.stroke();
+                
+                ctx.beginPath();
+                ctx.moveTo(eastEdgeX, eastEdgeY + offsetY + 3);
+                ctx.lineTo(westEdgeX, westEdgeY + offsetY + 3);
+                ctx.stroke();
+              }
+            }
+          }
+        }
+        
+        // Draw yellow center dashes for non-intersection roads only
+        // Skip if this tile IS an intersection (3+ adjacent roads)
+        const thisIsIntersection = [north, east, south, west].filter(Boolean).length >= 3;
+        if (!thisIsIntersection) {
+          ctx.strokeStyle = ROAD_COLORS.CENTER_LINE;
+          ctx.lineWidth = 0.8;
+          ctx.setLineDash([1.5, 2]);
+          ctx.lineCap = 'round';
+          
+          // Helper to check if adjacent tile is an intersection
+          const isAdjIntersection = (adjX: number, adjY: number): boolean => {
+            if (!hasRoad(adjX, adjY)) return false;
+            const aN = hasRoad(adjX - 1, adjY);
+            const aE = hasRoad(adjX, adjY - 1);
+            const aS = hasRoad(adjX + 1, adjY);
+            const aW = hasRoad(adjX, adjY + 1);
+            return [aN, aE, aS, aW].filter(Boolean).length >= 3;
+          };
+          
+          // Line stops before sidewalk markers if approaching intersection, otherwise extends
+          const markingOverlap = 8;
+          const markingStartOffset = 0;
+          const stopBeforeCrosswalk = 0.58; // Stop at 58% toward edge - just before sidewalk corner markers
+          
+          if (north) {
+            const adjIsIntersection = isAdjIntersection(gridX - 1, gridY);
+            if (adjIsIntersection) {
+              // Stop before crosswalk
+              const stopX = cx + (northEdgeX - cx) * stopBeforeCrosswalk;
+              const stopY = cy + (northEdgeY - cy) * stopBeforeCrosswalk;
+              ctx.beginPath();
+              ctx.moveTo(cx + northDx * markingStartOffset, cy + northDy * markingStartOffset);
+              ctx.lineTo(stopX, stopY);
+              ctx.stroke();
+            } else {
+              ctx.beginPath();
+              ctx.moveTo(cx + northDx * markingStartOffset, cy + northDy * markingStartOffset);
+              ctx.lineTo(northEdgeX + northDx * markingOverlap, northEdgeY + northDy * markingOverlap);
+              ctx.stroke();
+            }
+          }
+          if (east) {
+            const adjIsIntersection = isAdjIntersection(gridX, gridY - 1);
+            if (adjIsIntersection) {
+              const stopX = cx + (eastEdgeX - cx) * stopBeforeCrosswalk;
+              const stopY = cy + (eastEdgeY - cy) * stopBeforeCrosswalk;
+              ctx.beginPath();
+              ctx.moveTo(cx + eastDx * markingStartOffset, cy + eastDy * markingStartOffset);
+              ctx.lineTo(stopX, stopY);
+              ctx.stroke();
+            } else {
+              ctx.beginPath();
+              ctx.moveTo(cx + eastDx * markingStartOffset, cy + eastDy * markingStartOffset);
+              ctx.lineTo(eastEdgeX + eastDx * markingOverlap, eastEdgeY + eastDy * markingOverlap);
+              ctx.stroke();
+            }
+          }
+          if (south) {
+            const adjIsIntersection = isAdjIntersection(gridX + 1, gridY);
+            if (adjIsIntersection) {
+              const stopX = cx + (southEdgeX - cx) * stopBeforeCrosswalk;
+              const stopY = cy + (southEdgeY - cy) * stopBeforeCrosswalk;
+              ctx.beginPath();
+              ctx.moveTo(cx + southDx * markingStartOffset, cy + southDy * markingStartOffset);
+              ctx.lineTo(stopX, stopY);
+              ctx.stroke();
+            } else {
+              ctx.beginPath();
+              ctx.moveTo(cx + southDx * markingStartOffset, cy + southDy * markingStartOffset);
+              ctx.lineTo(southEdgeX + southDx * markingOverlap, southEdgeY + southDy * markingOverlap);
+              ctx.stroke();
+            }
+          }
+          if (west) {
+            const adjIsIntersection = isAdjIntersection(gridX, gridY + 1);
+            if (adjIsIntersection) {
+              const stopX = cx + (westEdgeX - cx) * stopBeforeCrosswalk;
+              const stopY = cy + (westEdgeY - cy) * stopBeforeCrosswalk;
+              ctx.beginPath();
+              ctx.moveTo(cx + westDx * markingStartOffset, cy + westDy * markingStartOffset);
+              ctx.lineTo(stopX, stopY);
+              ctx.stroke();
+            } else {
+              ctx.beginPath();
+              ctx.moveTo(cx + westDx * markingStartOffset, cy + westDy * markingStartOffset);
+              ctx.lineTo(westEdgeX + westDx * markingOverlap, westEdgeY + westDy * markingOverlap);
+              ctx.stroke();
+            }
+          }
+          
+          ctx.setLineDash([]);
+          ctx.lineCap = 'butt';
+        }
+        
+        // Draw directional arrows for merged roads
+        if (mergeInfo.type !== 'single' && currentZoom >= DIRECTION_ARROWS_MIN_ZOOM && mergeInfo.side !== 'center') {
+          const flowDirs = getTrafficFlowDirection(mergeInfo);
+          if (flowDirs.length === 1) {
+            drawRoadArrow(ctx, cx, cy, flowDirs[0], currentZoom);
+          }
+        }
+        
+        // ============================================
+        // DRAW CROSSWALKS (on tiles adjacent to real intersections with traffic lights)
+        // ============================================
+        drawCrosswalks({
+          ctx,
+          x,
+          y,
+          gridX,
+          gridY,
+          zoom: currentZoom,
+          roadW,
+          adj: { north, east, south, west },
+          hasRoad,
+        });
+        
+        // ============================================
+        // DRAW TRAFFIC LIGHTS AT INTERSECTIONS
+        // ============================================
+        // PERF: Skip traffic lights during mobile panning/zooming for better performance
+        const skipTrafficLights = isMobile && (isPanningRef.current || isPinchZoomingRef.current);
+        if (isIntersection && currentZoom >= TRAFFIC_LIGHT_MIN_ZOOM && !skipTrafficLights) {
+          const trafficTime = trafficLightTimerRef.current;
+          const lightState = getTrafficLightState(trafficTime);
+          
+          // Draw traffic lights at corners where roads meet
+          // Position them at the corners of the intersection
+          if (north && west) {
+            drawTrafficLight(ctx, x, y, lightState, 'nw', currentZoom);
+          }
+          if (north && east) {
+            drawTrafficLight(ctx, x, y, lightState, 'ne', currentZoom);
+          }
+          if (south && west) {
+            drawTrafficLight(ctx, x, y, lightState, 'sw', currentZoom);
+          }
+          if (south && east) {
+            drawTrafficLight(ctx, x, y, lightState, 'se', currentZoom);
+          }
+        }
+      }
+    }
+    
+    // Draw isometric tile base
+    function drawIsometricTile(ctx: CanvasRenderingContext2D, x: number, y: number, tile: Tile, highlight: boolean, currentZoom: number, skipGreyBase: boolean = false, skipGreenBase: boolean = false) {
+      const w = TILE_WIDTH;
+      const h = TILE_HEIGHT;
+      
+      // Determine tile colors (top face and shading)
+      let topColor = '#4a7c3f'; // grass
+      let strokeColor = '#2d4a26';
+
+      // PERF: Use pre-computed tile metadata for grey base check (O(1) lookup)
+      const tileRenderMetadata = getTileMetadata(tile.x, tile.y);
+      const isPark = tileRenderMetadata?.isPartOfParkBuilding || 
+                     ['park', 'park_large', 'tennis', 'basketball_courts', 'playground_small',
+                      'playground_large', 'baseball_field_small', 'soccer_field_small', 'football_field',
+                      'skate_park', 'mini_golf_course', 'bleachers_field', 'go_kart_track', 'amphitheater', 
+                      'greenhouse_garden', 'animal_pens_farm', 'cabin_house', 'campground', 'marina_docks_small', 
+                      'pier_large', 'roller_coaster_small', 'community_garden', 'pond_park', 'park_gate', 
+                      'mountain_lodge', 'mountain_trailhead'].includes(tile.building.type);
+      const hasGreyBase = tileRenderMetadata?.needsGreyBase ?? false;
+      
+      if (tile.building.type === 'water') {
+        topColor = '#2563eb';
+        strokeColor = '#1e3a8a';
+      } else if (tile.building.type === 'road') {
+        topColor = ROAD_COLORS.ASPHALT;
+        strokeColor = ROAD_COLORS.CURB;
+      } else if (isPark) {
+        topColor = '#4a7c3f';
+        strokeColor = '#2d4a26';
+      } else if (hasGreyBase && !skipGreyBase) {
+        // 建築基底使用草地顏色（與周圍草地一致，資產縮小時視覺效果更好）
+        topColor = '#4a7c3f'; // 草地綠色
+        strokeColor = '#2d4a26';
+      } else if (tile.zone === 'living') {
+        if (tile.building.type !== 'grass' && tile.building.type !== 'empty') {
+          topColor = '#3d7c3f';
+        } else {
+          topColor = '#2d5a2d';
+        }
+        strokeColor = '#22c55e';
+      } else if (tile.zone === 'market') {
+        if (tile.building.type !== 'grass' && tile.building.type !== 'empty') {
+          topColor = '#3a5c7c';
+        } else {
+          topColor = '#2a4a6a';
+        }
+        strokeColor = '#3b82f6';
+      } else if (tile.zone === 'farming') {
+        if (tile.building.type !== 'grass' && tile.building.type !== 'empty') {
+          topColor = '#7c5c3a';
+        } else {
+          topColor = '#6a4a2a';
+        }
+        strokeColor = '#f59e0b';
+      }
+      
+      // Skip drawing green base for tiles adjacent to water (will be drawn later over water)
+      // This includes grass, empty, and tree tiles - all have green bases
+      const shouldSkipDrawing = skipGreenBase && (tile.building.type === 'grass' || tile.building.type === 'empty' || tile.building.type === 'tree');
+      const isRoadTile = tile.building.type === 'road';
+      
+      // 道路瓷磚繪製草地顏色的基底（這樣彎道露出的部分會顯示草地）
+      if (isRoadTile) {
+        ctx.fillStyle = '#4a7c3f'; // 草地顏色（與周圍草地一致）
+        ctx.beginPath();
+        ctx.moveTo(x + w / 2, y);
+        ctx.lineTo(x + w, y + h / 2);
+        ctx.lineTo(x + w / 2, y + h);
+        ctx.lineTo(x, y + h / 2);
+        ctx.closePath();
+        ctx.fill();
+      }
+      
+      // Draw the isometric diamond (top face)
+      if (!shouldSkipDrawing && !isRoadTile) {
+        ctx.fillStyle = topColor;
+        ctx.beginPath();
+        ctx.moveTo(x + w / 2, y);
+        ctx.lineTo(x + w, y + h / 2);
+        ctx.lineTo(x + w / 2, y + h);
+        ctx.lineTo(x, y + h / 2);
+        ctx.closePath();
+        ctx.fill();
+        
+        // 極度縮小時（zoom < 0.5），用同色邊框填充格子間的間隙
+        // 這是為了解決 Canvas 浮點精度導致的微小縫隙問題
+        if (currentZoom < 0.5) {
+          ctx.strokeStyle = topColor; // 使用同色邊框，視覺上看不出來
+          ctx.lineWidth = 1;
+          ctx.stroke();
+        }
+        // 太虛幻境：不繪製任何格線，保持純淨的視覺效果
+      }
+      
+      // Highlight on hover/select (always draw, even if base was skipped)
+      if (highlight) {
+        // Draw a semi-transparent fill for better visibility
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
+        ctx.beginPath();
+        ctx.moveTo(x + w / 2, y);
+        ctx.lineTo(x + w, y + h / 2);
+        ctx.lineTo(x + w / 2, y + h);
+        ctx.lineTo(x, y + h / 2);
+        ctx.closePath();
+        ctx.fill();
+        
+        // Draw white border
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+    }
+    
+    // Helper function to draw water tile at a given screen position
+    // Used for marina/pier buildings that sit on water
+    function drawWaterTileAt(ctx: CanvasRenderingContext2D, screenX: number, screenY: number, gridX: number, gridY: number) {
+      const waterImage = getCachedImage(WATER_ASSET_PATH);
+      if (!waterImage) return;
+      
+      const w = TILE_WIDTH;
+      const h = TILE_HEIGHT;
+      const tileCenterX = screenX + w / 2;
+      const tileCenterY = screenY + h / 2;
+      
+      // Random subcrop of water texture based on tile position for variety
+      const imgW = waterImage.naturalWidth || waterImage.width;
+      const imgH = waterImage.naturalHeight || waterImage.height;
+      
+      // Deterministic "random" offset based on tile position
+      const seedX = ((gridX * 7919 + gridY * 6271) % 1000) / 1000;
+      const seedY = ((gridX * 4177 + gridY * 9311) % 1000) / 1000;
+      
+      // Take a subcrop for variety
+      const cropScale = 0.35;
+      const cropW = imgW * cropScale;
+      const cropH = imgH * cropScale;
+      const maxOffsetX = imgW - cropW;
+      const maxOffsetY = imgH - cropH;
+      const srcX = seedX * maxOffsetX;
+      const srcY = seedY * maxOffsetY;
+      
+      ctx.save();
+      // Clip to isometric diamond shape
+      ctx.beginPath();
+      ctx.moveTo(screenX + w / 2, screenY);           // top
+      ctx.lineTo(screenX + w, screenY + h / 2);       // right
+      ctx.lineTo(screenX + w / 2, screenY + h);       // bottom
+      ctx.lineTo(screenX, screenY + h / 2);           // left
+      ctx.closePath();
+      ctx.clip();
+      
+      const aspectRatio = cropH / cropW;
+      const jitterX = (seedX - 0.5) * w * 0.3;
+      const jitterY = (seedY - 0.5) * h * 0.3;
+      
+      // Draw water with slight transparency
+      const destWidth = w * 1.15;
+      const destHeight = destWidth * aspectRatio;
+      
+      ctx.globalAlpha = 0.95;
+      ctx.drawImage(
+        waterImage,
+        srcX, srcY, cropW, cropH,
+        Math.round(tileCenterX - destWidth / 2 + jitterX * 0.3),
+        Math.round(tileCenterY - destHeight / 2 + jitterY * 0.3),
+        Math.round(destWidth),
+        Math.round(destHeight)
+      );
+      
+      ctx.restore();
+    }
+    
+    // Draw building sprite
+    function drawBuilding(ctx: CanvasRenderingContext2D, x: number, y: number, tile: Tile) {
+      const buildingType = tile.building.type;
+      const w = TILE_WIDTH;
+      const h = TILE_HEIGHT;
+      
+      // Handle roads separately with adjacency
+      if (buildingType === 'road') {
+        drawRoad(ctx, x, y, tile.x, tile.y, zoom);
+        return;
+      }
+      
+      // Draw water tiles underneath buildings marked as onWater or marina/pier
+      if (tile.building.onWater || buildingType === 'marina_docks_small' || buildingType === 'pier_large') {
+        const buildingSize = getBuildingSize(buildingType);
+        // Draw water tiles for each tile in the building's footprint
+        for (let dx = 0; dx < buildingSize.width; dx++) {
+          for (let dy = 0; dy < buildingSize.height; dy++) {
+            const tileGridX = tile.x + dx;
+            const tileGridY = tile.y + dy;
+            const { screenX, screenY } = gridToScreen(tileGridX, tileGridY, 0, 0);
+            drawWaterTileAt(ctx, screenX, screenY, tileGridX, tileGridY);
+          }
+        }
+      }
+      
+      // 計算縮放比例，使用 visualScale 進行調整
+      const userScale = tile.building.visualScale || 1.0;
+      const spriteScale = 1.3 * userScale; 
+      const destWidth = TILE_WIDTH * spriteScale;
+
+      // 獲取建築尺寸用於道路朝向判斷
+      const buildingSize = getBuildingSize(buildingType);
+
+      // 根據道路鄰接或隨機種子決定翻轉方向
+      const isWaterfrontAsset = requiresWaterAdjacency(buildingType);
+      const shouldRoadMirror = (() => {
+        if (isWaterfrontAsset) return false;
+        const roadCheck = getRoadAdjacency(grid, tile.x, tile.y, buildingSize.width, buildingSize.height, gridSize);
+        if (roadCheck.hasRoad) return roadCheck.shouldFlip;
+        return ((tile.x * 47 + tile.y * 83) % 100) < 50;
+      })();
+      
+      const isFlipped = (tile.building.flipped === true) !== shouldRoadMirror;
+
+      // 動態資產跳過靜態層繪製（會在動畫層繪製）
+      const isAnimatedAsset = spriteAnimationManager.isAnimatedAsset(buildingType);
+      
+      // 靜態資產使用普通圖片渲染
+      if (!isAnimatedAsset) {
+        // 對於農田，先更新狀態（檢查是否成熟、枯萎），然後選擇視覺資產
+        // 計算當前遊戲天數（基於 120 天循環）
+        const currentGameDay = state.gameDay ?? calculateGameDay(state.year, state.month, state.day);
+        const buildingToRender = isFarmBuilding(buildingType) 
+          ? updateFarmStatus(tile.building, currentGameDay)
+          : tile.building;
+        const visualAssetId = isFarmBuilding(buildingType) 
+          ? getFarmVisualAssetId(buildingToRender, currentGameDay) 
+          : buildingType;
+        
+        // 使用分類目錄獲取路徑（農田相關資產都在 farming 分類）
+        const category = isFarmBuilding(buildingType) || visualAssetId.startsWith('farmland_')
+          ? 'farming'
+          : (assetCategoryMapRef.current[visualAssetId] || 'props');
+        const assetPath = `/assets/${category}/${visualAssetId}.png`;
+        const assetImg = getCachedImage(assetPath);
+
+        if (assetImg) {
+          // 渲染獨立圖片資產
+          const imgW = assetImg.naturalWidth || assetImg.width;
+          const imgH = assetImg.naturalHeight || assetImg.height;
+          const aspectRatio = imgH / imgW;
+
+          // 獲取編輯器保存的渲染配置
+          const renderOffset = spriteAnimationManager.getRenderOffset(buildingType);
+          const renderScale = spriteAnimationManager.getRenderScale(buildingType);
+
+          // 應用編輯器設置的渲染縮放
+          const adjustedDestWidth = destWidth * renderScale;
+          const adjustedDestHeight = adjustedDestWidth * aspectRatio;
+
+          // 定位（應用編輯器設置的渲染偏移）
+          const drawX = x + (w - adjustedDestWidth) / 2 + renderOffset.x;
+          const baseOffsetFactor = 0.90; 
+          const drawY = y + h - (adjustedDestHeight * baseOffsetFactor) + renderOffset.y;
+
+          ctx.save();
+          if (isFlipped) {
+            const centerX = Math.round(drawX + adjustedDestWidth / 2);
+            ctx.translate(centerX, 0);
+            ctx.scale(-1, 1);
+            ctx.translate(-centerX, 0);
+          }
+
+          ctx.drawImage(
+            assetImg,
+            0, 0, imgW, imgH,
+            Math.round(drawX), Math.round(drawY),
+            Math.round(adjustedDestWidth), Math.round(adjustedDestHeight)
+          );
+          ctx.restore();
+        } else {
+          // 沒有獨立圖片 - 繪製佔位符
+          drawPlaceholderBuilding(ctx, x, y, buildingType, w, h);
+        }
+      }
+
+      // Sprite sheet 系統已廢棄，所有資產使用獨立圖片渲染
+      // 水面特殊處理：使用 water.png
+      if (buildingType === 'water') {
+        const waterImage = getCachedImage(WATER_ASSET_PATH);
+        if (waterImage) {
+          const tileCenterX = x + w / 2;
+          const tileCenterY = y + h / 2;
+          const imgW = waterImage.naturalWidth || waterImage.width;
+          const imgH = waterImage.naturalHeight || waterImage.height;
+          
+          // 根據格子位置決定隨機偏移
+          const seedX = ((tile.x * 7919 + tile.y * 6271) % 1000) / 1000;
+          const seedY = ((tile.x * 4177 + tile.y * 9311) % 1000) / 1000;
+          
+          const cropScale = 0.35;
+          const cropW = imgW * cropScale;
+          const cropH = imgH * cropScale;
+          const maxOffsetX = imgW - cropW;
+          const maxOffsetY = imgH - cropH;
+          const srcX = seedX * maxOffsetX;
+          const srcY = seedY * maxOffsetY;
+          
+          const aspectRatio = cropH / cropW;
+          const userScale = tile.building.visualScale || 1.0;
+          const destWidth = w * 1.3 * userScale;
+          const destHeight = destWidth * aspectRatio;
+          
+          ctx.save();
+          // 菱形裁剪
+          ctx.beginPath();
+          ctx.moveTo(x + w / 2, y);
+          ctx.lineTo(x + w, y + h / 2);
+          ctx.lineTo(x + w / 2, y + h);
+          ctx.lineTo(x, y + h / 2);
+          ctx.closePath();
+          ctx.clip();
+          
+          ctx.drawImage(
+            waterImage,
+            srcX, srcY, cropW, cropH,
+            Math.round(tileCenterX - destWidth / 2),
+            Math.round(tileCenterY - destHeight / 2),
+            Math.round(destWidth),
+            Math.round(destHeight)
+          );
+          ctx.restore();
+        }
+      }
+      
+      // Sprite sheet 邏輯已完全移除
+      // 樹木特殊渲染（tree 屬於 nature 分類）
+      if (buildingType === 'tree') {
+        const treeImage = getCachedImage('/assets/nature/tree.png');
+        if (treeImage) {
+          const imgW = treeImage.naturalWidth || treeImage.width;
+          const imgH = treeImage.naturalHeight || treeImage.height;
+          const userScale = tile.building.visualScale || 1.0;
+          const destWidth = w * 1.2 * userScale;
+          const aspectRatio = imgH / imgW;
+          const destHeight = destWidth * aspectRatio;
+          const drawX = x + (w - destWidth) / 2;
+          const drawY = y + h - destHeight * 0.9;
+          ctx.drawImage(treeImage, 0, 0, imgW, imgH, Math.round(drawX), Math.round(drawY), Math.round(destWidth), Math.round(destHeight));
+        } else {
+          drawPlaceholderBuilding(ctx, x, y, buildingType, w, h);
+        }
+      }
+      
+      
+      // Draw fire effect
+      if (tile.building.onFire) {
+        const fireX = x + w / 2;
+        const fireY = y - 10;
+        
+        ctx.fillStyle = 'rgba(255, 100, 0, 0.5)';
+        ctx.beginPath();
+        ctx.ellipse(fireX, fireY, 18, 25, 0, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.fillStyle = 'rgba(255, 200, 0, 0.8)';
+        ctx.beginPath();
+        ctx.ellipse(fireX, fireY + 5, 10, 15, 0, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.fillStyle = 'rgba(255, 255, 200, 0.9)';
+        ctx.beginPath();
+        ctx.ellipse(fireX, fireY + 8, 5, 8, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    
+    // Draw tiles in isometric order (back to front)
+    // PERF: Only iterate through diagonal bands that intersect the visible viewport
+    for (let sum = visibleMinSum; sum <= visibleMaxSum; sum++) {
+      for (let x = Math.max(0, sum - gridSize + 1); x <= Math.min(sum, gridSize - 1); x++) {
+        const y = sum - x;
+        if (y < 0 || y >= gridSize) continue;
+        
+        const { screenX, screenY } = gridToScreen(x, y, 0, 0);
+        
+        // Viewport culling
+        if (screenX + TILE_WIDTH < viewLeft || screenX > viewRight ||
+            screenY + TILE_HEIGHT * 4 < viewTop || screenY > viewBottom) {
+          continue;
+        }
+        
+        const tile = grid[y][x];
+        
+        // PERF: Hover and selection highlights are now rendered on a separate canvas layer
+        // Only keep drag rect and subway station highlights in main render (these change infrequently)
+        
+        // Check if tile is in drag selection rectangle (only show for zoning tools)
+        const isInDragRect = showsDragGrid && dragStartTile && dragEndTile && 
+          x >= Math.min(dragStartTile.x, dragEndTile.x) &&
+          x <= Math.max(dragStartTile.x, dragEndTile.x) &&
+          y >= Math.min(dragStartTile.y, dragEndTile.y) &&
+          y <= Math.max(dragStartTile.y, dragEndTile.y);
+
+        // PERF: Use pre-computed tile metadata (O(1) lookup instead of expensive per-tile calculations)
+        const tileMetadata = getTileMetadata(x, y);
+        const needsGreyBase = tileMetadata?.needsGreyBase ?? false;
+        const needsGreenBaseOverWater = tileMetadata?.needsGreenBaseOverWater ?? false;
+        const needsGreenBaseForPark = tileMetadata?.needsGreenBaseForPark ?? false;
+        
+        // Draw base tile for all tiles (including water), but skip gray bases for buildings and green bases for grass/empty adjacent to water or parks
+        // Highlight subway stations when subway overlay is active
+        const isSubwayStationHighlight = overlayMode === 'subway' && tile.building.type === 'subway_station';
+        drawIsometricTile(ctx, screenX, screenY, tile, !!(isInDragRect || isSubwayStationHighlight), zoom, true, needsGreenBaseOverWater || needsGreenBaseForPark);
+        
+        if (needsGreyBase) {
+          baseTileQueue.push({ screenX, screenY, tile, depth: x + y });
+        }
+        
+        if (needsGreenBaseOverWater || needsGreenBaseForPark) {
+          greenBaseTileQueue.push({ screenX, screenY, tile, depth: x + y });
+        }
+        
+        // Separate water tiles into their own queue (drawn after base tiles, below other buildings)
+        if (tile.building.type === 'water') {
+          const size = getBuildingSize(tile.building.type);
+          const depth = x + y + size.width + size.height - 2;
+          waterQueue.push({ screenX, screenY, tile, depth });
+        }
+        // Roads go to their own queue (drawn above water)
+        else if (tile.building.type === 'road') {
+          const depth = x + y;
+          roadQueue.push({ screenX, screenY, tile, depth });
+        }
+        // Rail tiles - drawn after roads, above water
+        else if (tile.building.type === 'rail') {
+          const depth = x + y;
+          railQueue.push({ screenX, screenY, tile, depth });
+        }
+        // Check for beach tiles (grass/empty tiles adjacent to water) - use pre-computed metadata
+        else if ((tile.building.type === 'grass' || tile.building.type === 'empty') &&
+                 (tileMetadata?.isAdjacentToWater ?? false)) {
+          beachQueue.push({ screenX, screenY, tile, depth: x + y });
+        }
+        // Other buildings go to regular building queue
+        else {
+          const isBuilding = tile.building.type !== 'grass' && tile.building.type !== 'empty';
+          if (isBuilding) {
+            const size = getBuildingSize(tile.building.type);
+            const depth = x + y + size.width + size.height - 2;
+            buildingQueue.push({ screenX, screenY, tile, depth });
+          }
+        }
+        
+        // For subway overlay, show ALL non-water tiles (valid placement areas + existing subway)
+        // For other overlays, show buildings only
+        const showOverlay =
+          overlayMode !== 'none' &&
+          (overlayMode === 'subway' 
+            ? tile.building.type !== 'water'  // For subway mode, show all non-water tiles
+            : (tile.building.type !== 'grass' &&
+               tile.building.type !== 'water' &&
+               tile.building.type !== 'road'));
+        if (showOverlay) {
+          overlayQueue.push({ screenX, screenY, tile });
+        }
+      }
+    }
+    
+    // Draw water sprites (after base tiles, below other buildings)
+    // Add clipping to prevent water from overflowing map boundaries
+    ctx.save();
+    // Create clipping path for map boundaries - form a diamond shape around the map
+    // Get the four corner tiles of the map
+    const topLeft = gridToScreen(0, 0, 0, 0);
+    const topRight = gridToScreen(gridSize - 1, 0, 0, 0);
+    const bottomRight = gridToScreen(gridSize - 1, gridSize - 1, 0, 0);
+    const bottomLeft = gridToScreen(0, gridSize - 1, 0, 0);
+    const w = TILE_WIDTH;
+    const h = TILE_HEIGHT;
+    
+    // Create clipping path following the outer edges of the map
+    // The path goes around the perimeter: top -> right -> bottom -> left -> back to top
+    ctx.beginPath();
+    // Start at top point (top-left tile's top corner)
+    ctx.moveTo(topLeft.screenX + w / 2, topLeft.screenY);
+    // Go to right point (top-right tile's right corner)
+    ctx.lineTo(topRight.screenX + w, topRight.screenY + h / 2);
+    // Go to bottom point (bottom-right tile's bottom corner)
+    ctx.lineTo(bottomRight.screenX + w / 2, bottomRight.screenY + h);
+    // Go to left point (bottom-left tile's left corner)
+    ctx.lineTo(bottomLeft.screenX, bottomLeft.screenY + h / 2);
+    // Close the path back to top
+    ctx.closePath();
+    ctx.clip();
+    
+    // PERF: Use insertion sort instead of .sort() - O(n) for nearly-sorted data
+    insertionSortByDepth(waterQueue);
+    // PERF: Use for loop instead of forEach to avoid function call overhead
+    for (let i = 0; i < waterQueue.length; i++) {
+      const { tile, screenX, screenY } = waterQueue[i];
+      drawBuilding(ctx, screenX, screenY, tile);
+    }
+    
+    ctx.restore(); // Remove clipping after drawing water
+    
+    // Draw beaches on water tiles (after water, outside clipping region)
+    // Note: waterQueue is already sorted from above
+    // PERF: Use for loop instead of forEach
+    for (let i = 0; i < waterQueue.length; i++) {
+      const { tile, screenX, screenY } = waterQueue[i];
+      // Compute land adjacency for each edge (opposite of water adjacency)
+      // Only consider tiles within bounds - don't draw beaches on map edges
+      // Also exclude beaches next to marina docks and piers
+      const adjacentLand = {
+        north: (tile.x - 1 >= 0 && tile.x - 1 < gridSize && tile.y >= 0 && tile.y < gridSize) && !isWater(tile.x - 1, tile.y) && !hasMarinaPier(tile.x - 1, tile.y),
+        east: (tile.x >= 0 && tile.x < gridSize && tile.y - 1 >= 0 && tile.y - 1 < gridSize) && !isWater(tile.x, tile.y - 1) && !hasMarinaPier(tile.x, tile.y - 1),
+        south: (tile.x + 1 >= 0 && tile.x + 1 < gridSize && tile.y >= 0 && tile.y < gridSize) && !isWater(tile.x + 1, tile.y) && !hasMarinaPier(tile.x + 1, tile.y),
+        west: (tile.x >= 0 && tile.x < gridSize && tile.y + 1 >= 0 && tile.y + 1 < gridSize) && !isWater(tile.x, tile.y + 1) && !hasMarinaPier(tile.x, tile.y + 1),
+      };
+      drawBeachOnWater(ctx, screenX, screenY, adjacentLand);
+    }
+    
+    // PERF: Pre-compute tile dimensions once outside loops
+    const tileWidth = TILE_WIDTH;
+    const tileHeight = TILE_HEIGHT;
+    const halfTileWidth = tileWidth / 2;
+    const halfTileHeight = tileHeight / 2;
+    
+    // Draw roads (above water, needs full redraw including base tile)
+    insertionSortByDepth(roadQueue);
+    // PERF: Use for loop instead of forEach
+    for (let i = 0; i < roadQueue.length; i++) {
+      const { tile, screenX, screenY } = roadQueue[i];
+      // 注意：不再繪製棕色基底，因為青石板貼圖會覆蓋整個區域
+      // 對於彎道，貼圖只覆蓋弧形區域，底層草地自然顯示出來
+      
+      // Draw road markings and sidewalks
+      drawBuilding(ctx, screenX, screenY, tile);
+      
+      // If this road has a rail overlay, draw just the rail tracks (ties and rails, no ballast)
+      // Crossing signals/gates are drawn later (after rail tiles) to avoid z-order issues
+      if (tile.hasRailOverlay) {
+        drawRailTracksOnly(ctx, screenX, screenY, tile.x, tile.y, grid, gridSize, zoom);
+      }
+    }
+    
+    // Draw rail tracks (above water, similar to roads)
+    insertionSortByDepth(railQueue);
+    // PERF: Use for loop instead of forEach
+    for (let i = 0; i < railQueue.length; i++) {
+      const { tile, screenX, screenY } = railQueue[i];
+      // Draw rail base tile first (dark soil/gravel colored diamond)
+      ctx.fillStyle = '#3e2723'; // Dark brown soil
+      ctx.beginPath();
+      ctx.moveTo(screenX + halfTileWidth, screenY);
+      ctx.lineTo(screenX + tileWidth, screenY + halfTileHeight);
+      ctx.lineTo(screenX + halfTileWidth, screenY + tileHeight);
+      ctx.lineTo(screenX, screenY + halfTileHeight);
+      ctx.closePath();
+      ctx.fill();
+      
+      // Draw edge shading for depth
+      ctx.strokeStyle = '#4B5335';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(screenX + halfTileWidth, screenY + tileHeight);
+      ctx.lineTo(screenX, screenY + halfTileHeight);
+      ctx.lineTo(screenX + halfTileWidth, screenY);
+      ctx.stroke();
+      
+      // Draw the rail tracks
+      drawRailTrack(ctx, screenX, screenY, tile.x, tile.y, grid, gridSize, zoom);
+    }
+    
+    // Draw green base tiles for grass/empty tiles adjacent to water (after rail, before crossings)
+    insertionSortByDepth(greenBaseTileQueue);
+    // PERF: Use for loop instead of forEach
+    for (let i = 0; i < greenBaseTileQueue.length; i++) {
+      const { tile, screenX, screenY } = greenBaseTileQueue[i];
+      drawGreenBaseTile(ctx, screenX, screenY, tile, zoom);
+    }
+    
+    // Draw gray building base tiles (after rail, before crossings)
+    insertionSortByDepth(baseTileQueue);
+    // PERF: Use for loop instead of forEach
+    for (let i = 0; i < baseTileQueue.length; i++) {
+      const { tile, screenX, screenY } = baseTileQueue[i];
+      drawGreyBaseTile(ctx, screenX, screenY, tile, zoom);
+    }
+    
+    // Draw railroad crossing signals and gates AFTER base tiles to ensure they appear on top
+    // PERF: Build a Set of crossing keys for O(1) lookup instead of calling isRailroadCrossing
+    const crossingKeySet = new Set<number>();
+    const cachedCrossings = crossingPositionsRef.current;
+    for (let i = 0; i < cachedCrossings.length; i++) {
+      const { x, y } = cachedCrossings[i];
+      crossingKeySet.add(y * gridSize + x);
+    }
+    
+    // PERF: Pre-compute constants used in loop
+    const currentTrains = trainsRef.current;
+    const currentFlashTimer = crossingFlashTimerRef.current;
+    const gateAnglesMap = crossingGateAnglesRef.current;
+    
+    // Only iterate roads with rail overlay that are crossings
+    // PERF: Use for loop instead of forEach
+    for (let i = 0; i < roadQueue.length; i++) {
+      const { tile, screenX, screenY } = roadQueue[i];
+      if (tile.hasRailOverlay) {
+        // PERF: Use numeric key and Set lookup instead of isRailroadCrossing call
+        const crossingKey = tile.y * gridSize + tile.x;
+        if (crossingKeySet.has(crossingKey)) {
+          const gateAngle = gateAnglesMap.get(crossingKey) ?? 0;
+          const crossingState = getCrossingStateForTile(currentTrains, tile.x, tile.y);
+          const isActive = crossingState !== 'open';
+          
+          drawRailroadCrossing(
+            ctx,
+            screenX,
+            screenY,
+            tile.x,
+            tile.y,
+            grid,
+            gridSize,
+            zoom,
+            currentFlashTimer,
+            gateAngle,
+            isActive
+          );
+        }
+      }
+    }
+    
+    // Note: Beach drawing has been moved to water tiles (drawBeachOnWater)
+    // The beachQueue is no longer used for drawing beaches on land tiles
+    
+    
+    // Draw buildings sorted by depth so multi-tile sprites sit above adjacent tiles
+    // NOTE: Building sprites are now drawn on a separate canvas (buildingsCanvasRef) 
+    // that renders on top of cars/trains. We render them here so we can use the same
+    // drawBuilding function and context.
+    insertionSortByDepth(buildingQueue);
+    
+    // Render buildings on the buildings canvas (on top of cars/trains)
+    const buildingsCanvas = buildingsCanvasRef.current;
+    if (buildingsCanvas) {
+      // Set canvas size in memory (scaled for DPI)
+      buildingsCanvas.width = canvasSize.width;
+      buildingsCanvas.height = canvasSize.height;
+      
+      const buildingsCtx = buildingsCanvas.getContext('2d');
+      if (buildingsCtx) {
+        // Clear buildings canvas
+        buildingsCtx.setTransform(1, 0, 0, 1, 0, 0);
+        buildingsCtx.clearRect(0, 0, buildingsCanvas.width, buildingsCanvas.height);
+        
+        // Apply same transform as main canvas
+        buildingsCtx.scale(dpr, dpr);
+        buildingsCtx.translate(offset.x, offset.y);
+        buildingsCtx.scale(zoom, zoom);
+        
+        // Disable image smoothing for crisp pixel art
+        buildingsCtx.imageSmoothingEnabled = false;
+        
+        // Draw buildings on the buildings canvas
+        // PERF: Use for loop instead of forEach
+        for (let i = 0; i < buildingQueue.length; i++) {
+          const { tile, screenX, screenY } = buildingQueue[i];
+          drawBuilding(buildingsCtx, screenX, screenY, tile);
+        }
+        
+        // NOTE: Recreation pedestrians are now drawn in the animation loop on the air canvas
+        // so their animations are smooth (the buildings canvas only updates when grid changes)
+        
+        // Draw overlays on the buildings canvas so they appear ON TOP of buildings
+        // (The buildings canvas is layered above the main canvas, so overlays must be drawn here)
+        // PERF: Use for loop instead of forEach
+        for (let i = 0; i < overlayQueue.length; i++) {
+          const { tile, screenX, screenY } = overlayQueue[i];
+          // Get service coverage for this tile
+          // 太虛幻境：已移除 fire 和 police 覆蓋
+          const coverage = {
+            health: state.services.health[tile.y][tile.x],
+            education: state.services.education[tile.y][tile.x],
+          };
+          
+          buildingsCtx.fillStyle = getOverlayFillStyle(overlayMode, tile, coverage);
+          buildingsCtx.beginPath();
+          buildingsCtx.moveTo(screenX + halfTileWidth, screenY);
+          buildingsCtx.lineTo(screenX + tileWidth, screenY + halfTileHeight);
+          buildingsCtx.lineTo(screenX + halfTileWidth, screenY + tileHeight);
+          buildingsCtx.lineTo(screenX, screenY + halfTileHeight);
+          buildingsCtx.closePath();
+          buildingsCtx.fill();
+        }
+        
+        buildingsCtx.setTransform(1, 0, 0, 1, 0, 0);
+      }
+    }
+    
+    // Draw water body names (after everything else so they're on top)
+    if (waterBodies && waterBodies.length > 0) {
+      ctx.save();
+      ctx.font = `${Math.max(10, 12 / zoom)}px sans-serif`;
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+      ctx.strokeStyle = 'rgba(0, 0, 0, 0.5)';
+      ctx.lineWidth = 2;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      
+      // Use same viewport calculation as main rendering (accounting for DPR)
+      const viewWidth = canvasSize.width / (dpr * zoom);
+      const viewHeight = canvasSize.height / (dpr * zoom);
+      const viewLeft = -offset.x / zoom - TILE_WIDTH;
+      const viewTop = -offset.y / zoom - TILE_HEIGHT * 2;
+      const viewRight = viewWidth - offset.x / zoom + TILE_WIDTH;
+      const viewBottom = viewHeight - offset.y / zoom + TILE_HEIGHT * 2;
+      
+      for (const waterBody of waterBodies) {
+        if (waterBody.tiles.length === 0) continue;
+        
+        // Convert grid coordinates to screen coordinates (context is already translated)
+        const { screenX, screenY } = gridToScreen(waterBody.centerX, waterBody.centerY, 0, 0);
+        
+        // Only draw if visible on screen (with some padding for text)
+        if (screenX >= viewLeft - 100 && screenX <= viewRight + 100 &&
+            screenY >= viewTop - 50 && screenY <= viewBottom + 50) {
+          // Draw text with outline for better visibility, centered on tile
+          ctx.strokeText(waterBody.name, screenX + TILE_WIDTH / 2, screenY + TILE_HEIGHT / 2);
+          ctx.fillText(waterBody.name, screenX + TILE_WIDTH / 2, screenY + TILE_HEIGHT / 2);
+        }
+      }
+      
+      ctx.restore();
+    }
+    
+    ctx.restore();
+    }); // End requestAnimationFrame callback
+    
+    // PERF: Cleanup - cancel pending render on unmount or deps change
+    return () => {
+      if (renderPendingRef.current !== null) {
+        cancelAnimationFrame(renderPendingRef.current);
+        renderPendingRef.current = null;
+      }
+    };
+  // PERF: hoveredTile and selectedTile removed from deps - now rendered on separate hover canvas layer
+  }, [grid, gridSize, offset, zoom, overlayMode, imagesLoaded, imageLoadVersion, canvasSize, dragStartTile, dragEndTile, state.services, waterBodies, getTileMetadata, showsDragGrid, isMobile]);
+  
+  // PERF: Lightweight hover/selection overlay - renders ONLY tile highlights
+  // This runs frequently (on mouse move) but is extremely fast since it only draws simple shapes
+  useEffect(() => {
+    const canvas = hoverCanvasRef.current;
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
+    const dpr = window.devicePixelRatio || 1;
+    
+    // Clear the hover canvas
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Apply transform (same as main canvas)
+    ctx.scale(dpr, dpr);
+    ctx.translate(offset.x, offset.y);
+    ctx.scale(zoom, zoom);
+    
+    // Helper to draw highlight diamond
+    const drawHighlight = (screenX: number, screenY: number, color: string = 'rgba(255, 255, 255, 0.25)', strokeColor: string = '#ffffff') => {
+      const w = TILE_WIDTH;
+      const h = TILE_HEIGHT;
+      
+      // Draw semi-transparent fill
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.moveTo(screenX + w / 2, screenY);
+      ctx.lineTo(screenX + w, screenY + h / 2);
+      ctx.lineTo(screenX + w / 2, screenY + h);
+      ctx.lineTo(screenX, screenY + h / 2);
+      ctx.closePath();
+      ctx.fill();
+      
+      // Draw border
+      ctx.strokeStyle = strokeColor;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    };
+    
+    // Draw hovered tile highlight
+    const nonBuildingTools = ['select', 'bulldoze', 'move_rotate', 'subway', 'zone_living', 'zone_market', 'zone_farming', 'zone_dezone'];
+    const isPlacingBuilding = !nonBuildingTools.includes(selectedTool) && !movingBuilding;
+    
+    if (hoveredTile && hoveredTile.x >= 0 && hoveredTile.x < gridSize && hoveredTile.y >= 0 && hoveredTile.y < gridSize) {
+      if (selectedTool === 'select' || selectedTool === 'bulldoze') {
+        const origin = findBuildingOrigin(hoveredTile.x, hoveredTile.y);
+        if (origin) {
+          const size = getBuildingSize(origin.buildingType);
+          for (let dy = 0; dy < size.height; dy++) {
+            for (let dx = 0; dx < size.width; dx++) {
+              const tx = origin.originX + dx;
+              const ty = origin.originY + dy;
+              if (tx >= 0 && tx < gridSize && ty >= 0 && ty < gridSize) {
+                const { screenX, screenY } = gridToScreen(tx, ty, 0, 0);
+                drawHighlight(screenX, screenY);
+              }
+            }
+          }
+        } else {
+          const { screenX, screenY } = gridToScreen(hoveredTile.x, hoveredTile.y, 0, 0);
+          drawHighlight(screenX, screenY);
+        }
+      } else {
+        const { screenX, screenY } = gridToScreen(hoveredTile.x, hoveredTile.y, 0, 0);
+        drawHighlight(screenX, screenY);
+      }
+    }
+    
+    // 繪製建築放置預覽（當選擇建築工具時跟隨鼠標）
+    if (isPlacingBuilding && hoveredTile && hoveredTile.x >= 0 && hoveredTile.x < gridSize && hoveredTile.y >= 0 && hoveredTile.y < gridSize) {
+      const buildingType = selectedTool as BuildingType;
+      const buildingSize = getBuildingSize(buildingType);
+      // 檢查是否可以放置（所有格子都是草地或樹木）
+      const canPlace = (() => {
+        for (let dy = 0; dy < buildingSize.height; dy++) {
+          for (let dx = 0; dx < buildingSize.width; dx++) {
+            const tx = hoveredTile.x + dx;
+            const ty = hoveredTile.y + dy;
+            if (tx >= gridSize || ty >= gridSize) return false;
+            const t = grid[ty]?.[tx];
+            if (!t) return false;
+            if (t.building.type !== 'grass' && t.building.type !== 'tree') return false;
+          }
+        }
+        return true;
+      })();
+      
+      // 繪製放置預覽高亮（綠色可放置，紅色不可放置）
+      const previewColor = canPlace ? 'rgba(34, 197, 94, 0.4)' : 'rgba(239, 68, 68, 0.4)';
+      const previewStroke = canPlace ? 'rgba(34, 197, 94, 0.8)' : 'rgba(239, 68, 68, 0.8)';
+      
+      for (let dy = 0; dy < buildingSize.height; dy++) {
+        for (let dx = 0; dx < buildingSize.width; dx++) {
+          const tx = hoveredTile.x + dx;
+          const ty = hoveredTile.y + dy;
+          if (tx < gridSize && ty < gridSize) {
+            const { screenX: sx, screenY: sy } = gridToScreen(tx, ty, 0, 0);
+            ctx.fillStyle = previewColor;
+            ctx.strokeStyle = previewStroke;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(sx + TILE_WIDTH / 2, sy);
+            ctx.lineTo(sx + TILE_WIDTH, sy + TILE_HEIGHT / 2);
+            ctx.lineTo(sx + TILE_WIDTH / 2, sy + TILE_HEIGHT);
+            ctx.lineTo(sx, sy + TILE_HEIGHT / 2);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+          }
+        }
+      }
+      
+      // 繪製半透明建築物預覽（使用獨立圖片，使用分類目錄）
+      const { screenX, screenY } = gridToScreen(hoveredTile.x, hoveredTile.y, 0, 0);
+      const category = assetCategoryMapRef.current[buildingType] || 'props';
+      const assetPath = `/assets/${category}/${buildingType}.png`;
+      const assetImg = getCachedImage(assetPath);
+      
+      if (assetImg) {
+        const imgW = assetImg.naturalWidth || assetImg.width;
+        const imgH = assetImg.naturalHeight || assetImg.height;
+        
+        // 獲取編輯器保存的渲染配置（與實際放置時一致）
+        const renderOffset = spriteAnimationManager.getRenderOffset(buildingType);
+        const renderScale = spriteAnimationManager.getRenderScale(buildingType);
+        
+        const spriteScale = 1.3;
+        const destWidth = TILE_WIDTH * spriteScale * renderScale;
+        const aspectRatio = imgH / imgW;
+        const destHeight = destWidth * aspectRatio;
+        
+        const drawX = screenX + (TILE_WIDTH - destWidth) / 2 + renderOffset.x;
+        const baseOffsetFactor = 0.90;
+        const drawY = screenY + TILE_HEIGHT - (destHeight * baseOffsetFactor) + renderOffset.y;
+        
+        ctx.globalAlpha = 0.6;
+        ctx.drawImage(
+          assetImg,
+          0, 0, imgW, imgH,
+          Math.round(drawX), Math.round(drawY),
+          Math.round(destWidth), Math.round(destHeight)
+        );
+        ctx.globalAlpha = 1.0;
+      }
+    }
+    
+    // Draw selected tile highlight (including multi-tile buildings)
+    // Draw selection highlight (BLUE for moving building)
+    if (movingFrom && movingFrom.x >= 0 && movingFrom.x < gridSize && movingFrom.y >= 0 && movingFrom.y < gridSize) {
+      const { screenX, screenY } = gridToScreen(movingFrom.x, movingFrom.y, 0, 0);
+      const origin = grid[movingFrom.y]?.[movingFrom.x];
+      const buildingType = origin?.building.type;
+      const size = getBuildingSize(buildingType || 'grass');
+      
+      ctx.fillStyle = 'rgba(59, 130, 246, 0.4)'; // Blue highlight
+      ctx.strokeStyle = 'rgba(59, 130, 246, 0.8)';
+      ctx.lineWidth = 2;
+      
+      for (let dy = 0; dy < size.height; dy++) {
+        for (let dx = 0; dx < size.width; dx++) {
+          const { screenX: sx, screenY: sy } = gridToScreen(movingFrom.x + dx, movingFrom.y + dy, 0, 0);
+          ctx.beginPath();
+          ctx.moveTo(sx + TILE_WIDTH / 2, sy);
+          ctx.lineTo(sx + TILE_WIDTH, sy + TILE_HEIGHT / 2);
+          ctx.lineTo(sx + TILE_WIDTH / 2, sy + TILE_HEIGHT);
+          ctx.lineTo(sx, sy + TILE_HEIGHT / 2);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+        }
+      }
+    }
+
+    if (selectedTile && selectedTile.x >= 0 && selectedTile.x < gridSize && selectedTile.y >= 0 && selectedTile.y < gridSize) {
+      const selectedOrigin = grid[selectedTile.y]?.[selectedTile.x];
+      if (selectedOrigin) {
+        const selectedSize = getBuildingSize(selectedOrigin.building.type);
+        // Draw highlight for each tile in the building footprint
+        for (let dx = 0; dx < selectedSize.width; dx++) {
+          for (let dy = 0; dy < selectedSize.height; dy++) {
+            const tx = selectedTile.x + dx;
+            const ty = selectedTile.y + dy;
+            if (tx >= 0 && tx < gridSize && ty >= 0 && ty < gridSize) {
+              const { screenX, screenY } = gridToScreen(tx, ty, 0, 0);
+              drawHighlight(screenX, screenY, 'rgba(100, 200, 255, 0.3)', '#60a5fa');
+            }
+          }
+        }
+      }
+    }
+
+    // Draw building preview following mouse when carrying a building
+    if (movingBuilding && hoveredTile && hoveredTile.x >= 0 && hoveredTile.x < gridSize && hoveredTile.y >= 0 && hoveredTile.y < gridSize) {
+      const buildingType = movingBuilding.type;
+      
+      // Draw green/red highlight to show if placement is valid
+      const canPlace = (() => {
+        for (let dy = 0; dy < movingBuilding.height; dy++) {
+          for (let dx = 0; dx < movingBuilding.width; dx++) {
+            const tx = hoveredTile.x + dx;
+            const ty = hoveredTile.y + dy;
+            if (tx >= gridSize || ty >= gridSize) return false;
+            const t = grid[ty]?.[tx];
+            if (!t) return false;
+            if (t.building.type !== 'grass' && t.building.type !== 'tree') return false;
+          }
+        }
+        return true;
+      })();
+      
+      // Draw placement preview highlight
+      const previewColor = canPlace ? 'rgba(34, 197, 94, 0.4)' : 'rgba(239, 68, 68, 0.4)';
+      const previewStroke = canPlace ? 'rgba(34, 197, 94, 0.8)' : 'rgba(239, 68, 68, 0.8)';
+      
+      for (let dy = 0; dy < movingBuilding.height; dy++) {
+        for (let dx = 0; dx < movingBuilding.width; dx++) {
+          const tx = hoveredTile.x + dx;
+          const ty = hoveredTile.y + dy;
+          if (tx < gridSize && ty < gridSize) {
+            const { screenX: sx, screenY: sy } = gridToScreen(tx, ty, 0, 0);
+            ctx.fillStyle = previewColor;
+            ctx.strokeStyle = previewStroke;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(sx + TILE_WIDTH / 2, sy);
+            ctx.lineTo(sx + TILE_WIDTH, sy + TILE_HEIGHT / 2);
+            ctx.lineTo(sx + TILE_WIDTH / 2, sy + TILE_HEIGHT);
+            ctx.lineTo(sx, sy + TILE_HEIGHT / 2);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+          }
+        }
+      }
+      
+      // 繪製半透明建築預覽（使用獨立圖片，使用分類目錄）
+      const { screenX, screenY } = gridToScreen(hoveredTile.x, hoveredTile.y, 0, 0);
+      const category = assetCategoryMapRef.current[buildingType] || 'props';
+      const assetPath = `/assets/${category}/${buildingType}.png`;
+      const assetImg = getCachedImage(assetPath);
+      
+      if (assetImg) {
+        const imgW = assetImg.naturalWidth || assetImg.width;
+        const imgH = assetImg.naturalHeight || assetImg.height;
+        
+        const spriteScale = 1.3;
+        const destWidth = TILE_WIDTH * spriteScale;
+        const aspectRatio = imgH / imgW;
+        const destHeight = destWidth * aspectRatio;
+        
+        const drawX = screenX + (TILE_WIDTH - destWidth) / 2;
+        const baseOffsetFactor = 0.90;
+        const drawY = screenY + TILE_HEIGHT - (destHeight * baseOffsetFactor);
+        
+        ctx.globalAlpha = 0.6;
+        
+        if (movingBuilding.flipped) {
+          ctx.save();
+          const centerX = drawX + destWidth / 2;
+          ctx.translate(centerX, 0);
+          ctx.scale(-1, 1);
+          ctx.translate(-centerX, 0);
+        }
+        
+        ctx.drawImage(
+          assetImg,
+          0, 0, imgW, imgH,
+          Math.round(drawX), Math.round(drawY),
+          Math.round(destWidth), Math.round(destHeight)
+        );
+        
+        if (movingBuilding.flipped) {
+          ctx.restore();
+        }
+        
+        ctx.globalAlpha = 1.0;
+      }
+    }
+    
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hoveredTile, selectedTile, movingFrom, movingBuilding?.type, movingBuilding?.originX, movingBuilding?.originY, movingBuilding?.flipped, movingBuilding?.width, movingBuilding?.height, offset, zoom, gridSize, grid, selectedTool]);
+  
+  // Animate decorative car traffic AND emergency vehicles on top of the base canvas
+  useEffect(() => {
+    const canvas = carsCanvasRef.current;
+    const airCanvas = airCanvasRef.current;
+    if (!canvas || !airCanvas) return;
+    const ctx = canvas.getContext('2d');
+    const airCtx = airCanvas.getContext('2d');
+    if (!ctx || !airCtx) return;
+    
+    ctx.imageSmoothingEnabled = false;
+    airCtx.imageSmoothingEnabled = false;
+    
+    const clearAirCanvas = () => {
+      airCtx.setTransform(1, 0, 0, 1, 0, 0);
+      airCtx.clearRect(0, 0, airCanvas.width, airCanvas.height);
+    };
+    
+    let animationFrameId: number;
+    let lastTime = performance.now();
+    let lastRenderTime = 0;
+    
+    // Target 30fps on mobile (33ms per frame), 60fps on desktop (16ms per frame)
+    const targetFrameTime = isMobile ? 33 : 16;
+    
+    const render = (time: number) => {
+      animationFrameId = requestAnimationFrame(render);
+      
+      // Frame rate limiting for mobile - skip frames to maintain target FPS
+      const timeSinceLastRender = time - lastRenderTime;
+      if (isMobile && timeSinceLastRender < targetFrameTime) {
+        return; // Skip this frame on mobile to reduce CPU load
+      }
+      
+      const delta = Math.min((time - lastTime) / 1000, 0.3);
+      lastTime = time;
+      lastRenderTime = time;
+      
+      if (delta > 0) {
+        // updateCars(delta); // DISABLED for Ancient Style
+        spawnCrimeIncidents(delta); // Spawn new crime incidents
+        updateCrimeIncidents(delta); // Update/decay crime incidents
+        // updateEmergencyVehicles(delta); // DISABLED for Ancient Style
+        updatePedestrians(delta); // Update pedestrians (zoom-gated)
+        updateAirplanes(delta); // 飛鳥系統（替代飛機）
+        // updateHelicopters(delta); // DISABLED for Ancient Style
+        // updateSeaplanes(delta); // DISABLED for Ancient Style
+        updateBoats(delta); // Update boats (marina/pier required)
+        updateBarges(delta); // Update ocean barges (ocean marinas required)
+        updateTrains(delta); // Update trains on rail network
+        updateFireworks(delta, visualHour); // Update fireworks (nighttime only)
+        updateSmog(delta); // Update factory smog particles
+        spriteAnimationManager.update(delta * 1000); // 更新精靈圖動畫（毫秒）
+        navLightFlashTimerRef.current += delta * 3; // Update nav light flash timer
+        trafficLightTimerRef.current += delta; // Update traffic light cycle timer
+        crossingFlashTimerRef.current += delta; // Update crossing flash timer
+        
+        // Update railroad crossing gate angles based on train proximity
+        // PERF: Use cached crossing positions instead of O(n²) grid scan
+        const trains = trainsRef.current;
+        const gateAngles = crossingGateAnglesRef.current;
+        const gateSpeedMult = speed === 0 ? 0 : speed === 1 ? 1 : speed === 2 ? 2.5 : 4;
+        const crossings = crossingPositionsRef.current;
+        
+        // Iterate only over known crossings (O(k) where k = number of crossings)
+        for (let i = 0; i < crossings.length; i++) {
+          const { x: gx, y: gy } = crossings[i];
+          // PERF: Use numeric key instead of string concatenation
+          const key = gy * gridSize + gx;
+          const currentAngle = gateAngles.get(key) ?? 0;
+          const crossingState = getCrossingStateForTile(trains, gx, gy);
+          
+          // Determine target angle based on state
+          const targetAngle = crossingState === 'open' ? 0 : 90;
+          
+          // Animate gate toward target
+          if (currentAngle !== targetAngle) {
+            const angleDelta = GATE_ANIMATION_SPEED * delta * gateSpeedMult;
+            if (currentAngle < targetAngle) {
+              gateAngles.set(key, Math.min(targetAngle, currentAngle + angleDelta));
+            } else {
+              gateAngles.set(key, Math.max(targetAngle, currentAngle - angleDelta));
+            }
+          }
+        }
+      }
+      // PERF: Skip drawing animated elements during mobile panning/zooming for better performance
+      const skipAnimatedElements = isMobile && (isPanningRef.current || isPinchZoomingRef.current);
+      // PERF: Skip small elements (boats, helis, smog) on desktop when panning while very zoomed out
+      const skipSmallElements = !isMobile && isPanningRef.current && zoomRef.current < SKIP_SMALL_ELEMENTS_ZOOM_THRESHOLD;
+      
+      if (skipAnimatedElements) {
+        // Clear the canvases but don't draw anything - hides all animated elements while panning/zooming
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        clearAirCanvas();
+      } else {
+        // Clear the canvases before drawing
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        clearAirCanvas();
+
+        // drawCars(ctx); // DISABLED for Ancient Style
+        if (!skipSmallElements) {
+          drawBoats(ctx); // Draw boats on water (skip when panning zoomed out on desktop)
+        }
+        drawBarges(ctx); // Draw ocean barges (larger, keep visible)
+        drawTrainsCallback(ctx); // Draw trains on rail network
+        if (!skipSmallElements) {
+          drawSmog(ctx); // Draw factory smog (skip when panning zoomed out on desktop)
+        }
+        drawAnimatedAssets(ctx); // 繪製動態資產（精靈圖動畫）
+        drawPedestrians(ctx); // Draw walking pedestrians (below buildings)
+        // drawEmergencyVehicles(ctx); // DISABLED for Ancient Style
+        
+        // 遊歷模式：繪製玩家角色
+        if (gameMode === 'explore') {
+          const dpr = window.devicePixelRatio || 1;
+          const logicalWidth = canvasSize.width / dpr;
+          const logicalHeight = canvasSize.height / dpr;
+          
+          // 在屏幕中心繪製玩家（解耦地圖位移）
+          drawPlayerAtCenter(ctx, playerRef.current, logicalWidth, logicalHeight, zoomRef.current, time * 0.001);
+        }
+        
+        // Draw incident indicators on air canvas (above buildings so tooltips are visible)
+        drawIncidentIndicators(airCtx, delta); // Draw fire/crime incident indicators!
+        
+        // Draw recreation pedestrians on air canvas (above parks, not other buildings)
+        drawRecreationPedestrians(airCtx); // Draw recreation pedestrians (at parks, benches, etc.)
+        
+        if (!skipSmallElements) {
+          // drawHelicopters(airCtx); // DISABLED for Ancient Style
+          // drawSeaplanes(airCtx); // DISABLED for Ancient Style
+        }
+        drawAirplanes(airCtx); // 飛鳥系統（替代飛機）
+        drawFireworks(airCtx); // Draw fireworks above everything (nighttime only)
+      }
+    };
+    
+    animationFrameId = requestAnimationFrame(render);
+    return () => cancelAnimationFrame(animationFrameId);
+  }, [canvasSize.width, canvasSize.height, updateCars, drawCars, spawnCrimeIncidents, updateCrimeIncidents, updateEmergencyVehicles, drawEmergencyVehicles, updatePedestrians, drawPedestrians, drawRecreationPedestrians, updateAirplanes, drawAirplanes, updateHelicopters, drawHelicopters, updateSeaplanes, drawSeaplanes, updateBoats, drawBoats, updateBarges, drawBarges, updateTrains, drawTrainsCallback, drawIncidentIndicators, updateFireworks, drawFireworks, updateSmog, drawSmog, drawAnimatedAssets, visualHour, isMobile, grid, gridSize, speed, gameMode, player]);
+  
+  // Day/Night cycle lighting rendering - optimized for performance
+  useEffect(() => {
+    const canvas = lightingCanvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
+    // PERF: Hide lighting during mobile panning/zooming for better performance
+    if (isMobile && (isPanningRef.current || isPinchZoomingRef.current)) {
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      return;
+    }
+    
+    const dpr = window.devicePixelRatio || 1;
+    
+    // Calculate darkness based on visualHour (0-23)
+    // Dawn: 5-7, Day: 7-18, Dusk: 18-20, Night: 20-5
+    const getDarkness = (h: number): number => {
+      if (h >= 7 && h < 18) return 0; // Full daylight
+      if (h >= 5 && h < 7) return 1 - (h - 5) / 2; // Dawn transition
+      if (h >= 18 && h < 20) return (h - 18) / 2; // Dusk transition
+      return 1; // Night
+    };
+    
+    const darkness = getDarkness(visualHour);
+    
+    // Clear canvas first
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // If it's full daylight, just clear and return (early exit)
+    if (darkness <= 0.01) return;
+    
+    // Get ambient color based on time
+    const getAmbientColor = (h: number): { r: number; g: number; b: number } => {
+      if (h >= 7 && h < 18) return { r: 255, g: 255, b: 255 };
+      if (h >= 5 && h < 7) {
+        const t = (h - 5) / 2;
+        return { r: Math.round(60 + 40 * t), g: Math.round(40 + 30 * t), b: Math.round(70 + 20 * t) };
+      }
+      if (h >= 18 && h < 20) {
+        const t = (h - 18) / 2;
+        return { r: Math.round(100 - 40 * t), g: Math.round(70 - 30 * t), b: Math.round(90 - 20 * t) };
+      }
+      return { r: 20, g: 30, b: 60 };
+    };
+    
+    const ambient = getAmbientColor(visualHour);
+    
+    // Apply darkness overlay
+    const alpha = darkness * 0.6;
+    ctx.fillStyle = `rgba(${ambient.r}, ${ambient.g}, ${ambient.b}, ${alpha})`;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Calculate viewport bounds once
+    const viewWidth = canvas.width / (dpr * zoom);
+    const viewHeight = canvas.height / (dpr * zoom);
+    const viewLeft = -offset.x / zoom - TILE_WIDTH * 2;
+    const viewTop = -offset.y / zoom - TILE_HEIGHT * 4;
+    const viewRight = viewWidth - offset.x / zoom + TILE_WIDTH * 2;
+    const viewBottom = viewHeight - offset.y / zoom + TILE_HEIGHT * 4;
+    
+    // PERF: Pre-compute visible diagonal range to skip entire rows of tiles
+    // In isometric rendering, screenY = (x + y) * (TILE_HEIGHT / 2), so sum = x + y = screenY * 2 / TILE_HEIGHT
+    // Add padding for tall buildings that may extend above their tile position
+    const visibleMinSum = Math.max(0, Math.floor((viewTop - TILE_HEIGHT * 6) * 2 / TILE_HEIGHT));
+    const visibleMaxSum = Math.min(gridSize * 2 - 2, Math.ceil((viewBottom + TILE_HEIGHT) * 2 / TILE_HEIGHT));
+    
+    const gridToScreen = (gx: number, gy: number) => ({
+      screenX: (gx - gy) * TILE_WIDTH / 2,
+      screenY: (gx + gy) * TILE_HEIGHT / 2,
+    });
+    
+    const lightIntensity = Math.min(1, darkness * 1.3);
+    
+    // Pre-calculate pseudo-random function
+    const pseudoRandom = (seed: number, n: number) => {
+      const s = Math.sin(seed + n * 12.9898) * 43758.5453;
+      return s - Math.floor(s);
+    };
+    
+    // Set for building types that are not lit
+    const nonLitTypes = new Set(['grass', 'empty', 'water', 'road', 'tree', 'park', 'park_large', 'tennis']);
+    const residentialTypes = new Set(['house_small', 'house_medium', 'mansion', 'apartment_low', 'apartment_high']);
+    const commercialTypes = new Set(['shop_small', 'shop_medium', 'office_low', 'office_high', 'mall']);
+    
+    // Collect light sources in a single pass through visible tiles
+    const lightCutouts: Array<{x: number, y: number, type: 'road' | 'building', buildingType?: string, seed?: number}> = [];
+    const coloredGlows: Array<{x: number, y: number, type: string}> = [];
+    
+    // PERF: On mobile, sample fewer lights to reduce gradient count
+    const roadSampleRate = isMobile ? 3 : 1; // Every 3rd road on mobile
+    let roadCounter = 0;
+    
+    // PERF: Only iterate through diagonal bands that intersect the visible viewport
+    // This skips entire rows of tiles that can't possibly be visible, significantly reducing iterations
+    for (let sum = visibleMinSum; sum <= visibleMaxSum; sum++) {
+      for (let x = Math.max(0, sum - gridSize + 1); x <= Math.min(sum, gridSize - 1); x++) {
+        const y = sum - x;
+        if (y < 0 || y >= gridSize) continue;
+        
+        const { screenX, screenY } = gridToScreen(x, y);
+        
+        // Viewport culling for horizontal bounds
+        if (screenX + TILE_WIDTH < viewLeft || screenX > viewRight ||
+            screenY + TILE_HEIGHT * 3 < viewTop || screenY > viewBottom) {
+          continue;
+        }
+        
+        const tile = grid[y][x];
+        const buildingType = tile.building.type;
+        
+        if (buildingType === 'road') {
+          roadCounter++;
+          // PERF: On mobile, only include every Nth road light
+          if (roadCounter % roadSampleRate === 0) {
+            lightCutouts.push({ x, y, type: 'road' });
+            if (!isMobile) {
+              coloredGlows.push({ x, y, type: 'road' });
+            }
+          }
+        } else if (!nonLitTypes.has(buildingType) && tile.building.powered) {
+          lightCutouts.push({ x, y, type: 'building', buildingType, seed: x * 1000 + y });
+          
+          // Check for special colored glows (skip on mobile for performance)
+          if (!isMobile && (buildingType === 'hospital' || buildingType === 'fire_station' || 
+              buildingType === 'police_station' || buildingType === 'power_plant')) {
+            coloredGlows.push({ x, y, type: buildingType });
+          }
+        }
+      }
+    }
+    
+    // Draw light cutouts (destination-out)
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.save();
+    ctx.scale(dpr * zoom, dpr * zoom);
+    ctx.translate(offset.x / zoom, offset.y / zoom);
+    
+    for (const light of lightCutouts) {
+      const { screenX, screenY } = gridToScreen(light.x, light.y);
+      const tileCenterX = screenX + TILE_WIDTH / 2;
+      const tileCenterY = screenY + TILE_HEIGHT / 2;
+      
+      if (light.type === 'road') {
+        const lightRadius = 28;
+        const gradient = ctx.createRadialGradient(tileCenterX, tileCenterY, 0, tileCenterX, tileCenterY, lightRadius);
+        gradient.addColorStop(0, `rgba(255, 255, 255, ${0.75 * lightIntensity})`);
+        gradient.addColorStop(0.4, `rgba(255, 255, 255, ${0.4 * lightIntensity})`);
+        gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(tileCenterX, tileCenterY, lightRadius, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (light.type === 'building' && light.buildingType && light.seed !== undefined) {
+        const buildingType = light.buildingType;
+        const isResidential = residentialTypes.has(buildingType);
+        const isCommercial = commercialTypes.has(buildingType);
+        const glowStrength = isCommercial ? 0.9 : isResidential ? 0.65 : 0.75;
+        
+        // PERF: On mobile, skip individual window lights - just use ground glow
+        if (!isMobile) {
+          let numWindows = 2;
+          if (buildingType.includes('medium') || buildingType.includes('low')) numWindows = 3;
+          if (buildingType.includes('high') || buildingType === 'mall') numWindows = 5;
+          if (buildingType === 'mansion' || buildingType === 'office_high') numWindows = 4;
+          
+          const windowSize = 5;
+          const buildingHeight = -18;
+          
+          for (let i = 0; i < numWindows; i++) {
+            const isLit = pseudoRandom(light.seed, i) < (isResidential ? 0.55 : 0.75);
+            if (!isLit) continue;
+            
+            const wx = tileCenterX + (pseudoRandom(light.seed, i + 10) - 0.5) * 22;
+            const wy = tileCenterY + buildingHeight + (pseudoRandom(light.seed, i + 20) - 0.5) * 16;
+            
+            const gradient = ctx.createRadialGradient(wx, wy, 0, wx, wy, windowSize * 2.5);
+            gradient.addColorStop(0, `rgba(255, 255, 255, ${glowStrength * lightIntensity})`);
+            gradient.addColorStop(0.5, `rgba(255, 255, 255, ${glowStrength * 0.4 * lightIntensity})`);
+            gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(wx, wy, windowSize * 2.5, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+        
+        // Ground glow (on mobile, use a simpler/stronger single gradient)
+        const groundGlowRadius = isMobile ? TILE_WIDTH * 0.5 : TILE_WIDTH * 0.6;
+        const groundGlowAlpha = isMobile ? 0.4 : 0.28;
+        const groundGlow = ctx.createRadialGradient(
+          tileCenterX, tileCenterY + TILE_HEIGHT / 4, 0,
+          tileCenterX, tileCenterY + TILE_HEIGHT / 4, groundGlowRadius
+        );
+        groundGlow.addColorStop(0, `rgba(255, 255, 255, ${groundGlowAlpha * lightIntensity})`);
+        groundGlow.addColorStop(1, 'rgba(255, 255, 255, 0)');
+        ctx.fillStyle = groundGlow;
+        ctx.beginPath();
+        ctx.ellipse(tileCenterX, tileCenterY + TILE_HEIGHT / 4, groundGlowRadius, TILE_HEIGHT / 2.5, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    
+    ctx.restore();
+    
+    // Draw colored glows (source-over)
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.save();
+    ctx.scale(dpr * zoom, dpr * zoom);
+    ctx.translate(offset.x / zoom, offset.y / zoom);
+    
+    for (const glow of coloredGlows) {
+      const { screenX, screenY } = gridToScreen(glow.x, glow.y);
+      const tileCenterX = screenX + TILE_WIDTH / 2;
+      const tileCenterY = screenY + TILE_HEIGHT / 2;
+      
+      if (glow.type === 'road') {
+        const gradient = ctx.createRadialGradient(tileCenterX, tileCenterY, 0, tileCenterX, tileCenterY, 20);
+        gradient.addColorStop(0, `rgba(255, 210, 130, ${0.3 * lightIntensity})`);
+        gradient.addColorStop(0.5, `rgba(255, 190, 100, ${0.15 * lightIntensity})`);
+        gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(tileCenterX, tileCenterY, 20, 0, Math.PI * 2);
+        ctx.fill();
+      } else {
+        let glowColor: { r: number; g: number; b: number } | null = null;
+        let glowRadius = 20;
+        
+        if (glow.type === 'hospital') {
+          glowColor = { r: 255, g: 80, b: 80 };
+          glowRadius = 25;
+        } else if (glow.type === 'fire_station') {
+          glowColor = { r: 255, g: 100, b: 50 };
+          glowRadius = 22;
+        } else if (glow.type === 'police_station') {
+          glowColor = { r: 60, g: 140, b: 255 };
+          glowRadius = 22;
+        } else if (glow.type === 'power_plant') {
+          glowColor = { r: 255, g: 200, b: 50 };
+          glowRadius = 30;
+        }
+        
+        if (glowColor) {
+          const gradient = ctx.createRadialGradient(
+            tileCenterX, tileCenterY - 15, 0,
+            tileCenterX, tileCenterY - 15, glowRadius
+          );
+          gradient.addColorStop(0, `rgba(${glowColor.r}, ${glowColor.g}, ${glowColor.b}, ${0.55 * lightIntensity})`);
+          gradient.addColorStop(0.5, `rgba(${glowColor.r}, ${glowColor.g}, ${glowColor.b}, ${0.25 * lightIntensity})`);
+          gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+          ctx.fillStyle = gradient;
+          ctx.beginPath();
+          ctx.arc(tileCenterX, tileCenterY - 15, glowRadius, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+    }
+    
+    ctx.restore();
+    ctx.globalCompositeOperation = 'source-over';
+    
+  }, [grid, gridSize, visualHour, offset, zoom, canvasSize.width, canvasSize.height, isMobile, isPanning]);
+  
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    // 遊歷模式：點擊移動
+    if (gameMode === 'explore' && e.button === 0) {
+      const rect = containerRef.current?.getBoundingClientRect();
+      if (rect) {
+        const dpr = window.devicePixelRatio || 1;
+        const logicalWidth = canvasSize.width / dpr;
+        const logicalHeight = canvasSize.height / dpr;
+        
+        // 點擊位置 → 網格坐標
+        const clickX = e.clientX - rect.left;
+        const clickY = e.clientY - rect.top;
+        const { gridX: targetX, gridY: targetY } = screenToGrid(clickX, clickY, offset.x, offset.y, zoom);
+        
+        // 當前玩家位置
+        const currentX = Math.round(playerRef.current.x);
+        const currentY = Math.round(playerRef.current.y);
+        
+        // 尋路
+        const path = findPath(currentX, currentY, targetX, targetY, grid, gridSize);
+        
+        if (path && path.length > 1) {
+          // 設置自動移動
+          playerRef.current = {
+            ...playerRef.current,
+            path: path,
+            pathIndex: 0,
+            isAutoMoving: true,
+            targetX: targetX,
+            targetY: targetY,
+            state: 'walking',
+          };
+          updatePlayer(playerRef.current);
+        }
+      }
+      return;
+    }
+    
+    if (e.button === 1 || (e.button === 0 && e.altKey)) {
+      setIsPanning(true);
+      setDragStart({ x: e.clientX - offset.x, y: e.clientY - offset.y });
+      e.preventDefault();
+      return;
+    }
+    
+    if (e.button === 0) {
+      const rect = containerRef.current?.getBoundingClientRect();
+      if (rect) {
+        // 與 handleMouseMove 保持一致的座標計算方式
+        const mouseX = (e.clientX - rect.left) / zoom;
+        const mouseY = (e.clientY - rect.top) / zoom;
+        const { gridX, gridY } = screenToGrid(mouseX, mouseY, offset.x / zoom, offset.y / zoom);
+        
+        if (gridX >= 0 && gridX < gridSize && gridY >= 0 && gridY < gridSize) {
+          if (selectedTool === 'select') {
+            const tile = grid[gridY]?.[gridX];
+            
+            // 檢查是否是真正的空地（非建築的一部分）
+            const origin = findBuildingOrigin(gridX, gridY);
+            const isRealEmpty = (!tile || tile.building.type === 'grass' || tile.building.type === 'water' || tile.building.type === 'empty') && !origin;
+            
+            if (isRealEmpty) {
+              // 如果點擊的是真正的空地，且當前面板打開著，則關閉面板
+              if (activePanel !== 'none') {
+                setActivePanel('none');
+              }
+              if (selectedTile) {
+                setSelectedTile(null);
+              }
+              // 開啟拖拽
+              setIsPanning(true);
+              setDragStart({ x: e.clientX - offset.x, y: e.clientY - offset.y });
+              e.preventDefault();
+              return;
+            }
+
+            // 如果點擊的是建築（包括多地塊建築的任何一部分）
+            if (origin) {
+              setSelectedTile({ x: origin.originX, y: origin.originY });
+            } else {
+              setSelectedTile({ x: gridX, y: gridY });
+            }
+          } else if (selectedTool === 'move_rotate') {
+            // Special handling for move/rotate: no dragging, just placeAtTile
+            placeAtTile(gridX, gridY);
+          } else if (showsDragGrid) {
+            // Start drag rectangle selection for zoning tools
+            setDragStartTile({ x: gridX, y: gridY });
+            setDragEndTile({ x: gridX, y: gridY });
+            setIsDragging(true);
+          } else if (supportsDragPlace) {
+            // For roads, bulldoze, and other tools, start drag-to-place
+            setDragStartTile({ x: gridX, y: gridY });
+            setDragEndTile({ x: gridX, y: gridY });
+            setIsDragging(true);
+            // Reset road drawing state for new drag
+            setRoadDrawDirection(null);
+            placedRoadTilesRef.current.clear();
+            // Place immediately on first click
+            placeAtTile(gridX, gridY);
+            // Track initial tile for roads, rail, and subways
+            if (selectedTool === 'road' || selectedTool === 'rail' || selectedTool === 'subway') {
+              placedRoadTilesRef.current.add(`${gridX},${gridY}`);
+            }
+          }
+        }
+      }
+    }
+  }, [offset, gridSize, selectedTool, placeAtTile, zoom, showsDragGrid, supportsDragPlace, setSelectedTile, findBuildingOrigin, activePanel, setActivePanel, grid, selectedTile, gameMode, canvasSize, updatePlayer]);
+  
+  // Calculate camera bounds based on grid size
+  const getMapBounds = useCallback((currentZoom: number, canvasW: number, canvasH: number) => {
+    const n = gridSize;
+    const padding = 100; // Allow some over-scroll
+    
+    // Map bounds in world coordinates
+    const mapLeft = -(n - 1) * TILE_WIDTH / 2;
+    const mapRight = (n - 1) * TILE_WIDTH / 2;
+    const mapTop = 0;
+    const mapBottom = (n - 1) * TILE_HEIGHT;
+    
+    const minOffsetX = padding - mapRight * currentZoom;
+    const maxOffsetX = canvasW - padding - mapLeft * currentZoom;
+    const minOffsetY = padding - mapBottom * currentZoom;
+    const maxOffsetY = canvasH - padding - mapTop * currentZoom;
+    
+    return { minOffsetX, maxOffsetX, minOffsetY, maxOffsetY };
+  }, [gridSize]);
+  
+  // Clamp offset to keep camera within reasonable bounds
+  const clampOffset = useCallback((newOffset: { x: number; y: number }, currentZoom: number) => {
+    const bounds = getMapBounds(currentZoom, canvasSize.width, canvasSize.height);
+    return {
+      x: Math.max(bounds.minOffsetX, Math.min(bounds.maxOffsetX, newOffset.x)),
+      y: Math.max(bounds.minOffsetY, Math.min(bounds.maxOffsetY, newOffset.y)),
+    };
+  }, [getMapBounds, canvasSize.width, canvasSize.height]);
+
+  // Handle minimap navigation - center the view on the target tile
+  useEffect(() => {
+    if (!navigationTarget) return;
+    
+    // Convert grid coordinates to screen coordinates
+    const { screenX, screenY } = gridToScreen(navigationTarget.x, navigationTarget.y, 0, 0);
+    
+    // Calculate offset to center this position on the canvas
+    const centerX = canvasSize.width / 2;
+    const centerY = canvasSize.height / 2;
+    
+    const newOffset = {
+      x: centerX - screenX * zoom,
+      y: centerY - screenY * zoom,
+    };
+    
+    // Clamp and set the new offset - this is a legitimate use case for responding to navigation requests
+    const bounds = getMapBounds(zoom, canvasSize.width, canvasSize.height);
+    setOffset({ // eslint-disable-line
+      x: Math.max(bounds.minOffsetX, Math.min(bounds.maxOffsetX, newOffset.x)),
+      y: Math.max(bounds.minOffsetY, Math.min(bounds.maxOffsetY, newOffset.y)),
+    });
+    
+    // Signal that navigation is complete
+    onNavigationComplete?.();
+  }, [navigationTarget, zoom, canvasSize.width, canvasSize.height, getMapBounds, onNavigationComplete]);
+
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (isPanning) {
+      const newOffset = {
+        x: e.clientX - dragStart.x,
+        y: e.clientY - dragStart.y,
+      };
+      setOffset(clampOffset(newOffset, zoom));
+      return;
+    }
+    
+    const rect = containerRef.current?.getBoundingClientRect();
+    if (rect) {
+      const mouseX = (e.clientX - rect.left) / zoom;
+      const mouseY = (e.clientY - rect.top) / zoom;
+      const { gridX, gridY } = screenToGrid(mouseX, mouseY, offset.x / zoom, offset.y / zoom);
+      
+      if (gridX >= 0 && gridX < gridSize && gridY >= 0 && gridY < gridSize) {
+        // Only update hovered tile if it actually changed to avoid unnecessary re-renders
+        setHoveredTile(prev => (prev?.x === gridX && prev?.y === gridY) ? prev : { x: gridX, y: gridY });
+        
+        // Check for fire or crime incidents at this tile for tooltip display
+        const tile = grid[gridY]?.[gridX];
+        const crimeKey = `${gridX},${gridY}`;
+        const crimeIncident = activeCrimeIncidentsRef.current.get(crimeKey);
+        
+        if (tile?.building.onFire) {
+          // Fire incident
+          setHoveredIncident({
+            x: gridX,
+            y: gridY,
+            type: 'fire',
+            screenX: e.clientX,
+            screenY: e.clientY,
+          });
+        } else if (crimeIncident) {
+          // Crime incident
+          setHoveredIncident({
+            x: gridX,
+            y: gridY,
+            type: 'crime',
+            crimeType: crimeIncident.type,
+            screenX: e.clientX,
+            screenY: e.clientY,
+          });
+        } else {
+          // No incident at this tile
+          setHoveredIncident(null);
+        }
+        
+        // Update drag rectangle end point for zoning tools
+        if (isDragging && showsDragGrid && dragStartTile) {
+          setDragEndTile({ x: gridX, y: gridY });
+        }
+        // For roads, rail, and subways, use straight-line snapping
+        else if (isDragging && (selectedTool === 'road' || selectedTool === 'rail' || selectedTool === 'subway') && dragStartTile) {
+          const dx = Math.abs(gridX - dragStartTile.x);
+          const dy = Math.abs(gridY - dragStartTile.y);
+          
+          // Lock direction after moving at least 1 tile
+          let direction = roadDrawDirection;
+          if (!direction && (dx > 0 || dy > 0)) {
+            // Lock to the axis with more movement, or horizontal if equal
+            direction = dx >= dy ? 'h' : 'v';
+            setRoadDrawDirection(direction);
+          }
+          
+          // Calculate target position along the locked axis
+          let targetX = gridX;
+          let targetY = gridY;
+          if (direction === 'h') {
+            targetY = dragStartTile.y; // Lock to horizontal
+          } else if (direction === 'v') {
+            targetX = dragStartTile.x; // Lock to vertical
+          }
+          
+          setDragEndTile({ x: targetX, y: targetY });
+          
+          // Place all tiles from start to target in a straight line
+          const minX = Math.min(dragStartTile.x, targetX);
+          const maxX = Math.max(dragStartTile.x, targetX);
+          const minY = Math.min(dragStartTile.y, targetY);
+          const maxY = Math.max(dragStartTile.y, targetY);
+          
+          for (let x = minX; x <= maxX; x++) {
+            for (let y = minY; y <= maxY; y++) {
+              const key = `${x},${y}`;
+              if (!placedRoadTilesRef.current.has(key)) {
+                placeAtTile(x, y);
+                placedRoadTilesRef.current.add(key);
+              }
+            }
+          }
+        }
+        // For other drag-to-place tools, place continuously
+        else if (isDragging && supportsDragPlace && dragStartTile) {
+          placeAtTile(gridX, gridY);
+        }
+      }
+    }
+  }, [isPanning, dragStart, offset, zoom, gridSize, isDragging, showsDragGrid, dragStartTile, selectedTool, roadDrawDirection, supportsDragPlace, placeAtTile, clampOffset, grid]);
+  
+  const handleMouseUp = useCallback(() => {
+    // Fill the drag rectangle when mouse is released (only for zoning tools)
+    if (isDragging && dragStartTile && dragEndTile && showsDragGrid) {
+      const minX = Math.min(dragStartTile.x, dragEndTile.x);
+      const maxX = Math.max(dragStartTile.x, dragEndTile.x);
+      const minY = Math.min(dragStartTile.y, dragEndTile.y);
+      const maxY = Math.max(dragStartTile.y, dragEndTile.y);
+      
+      for (let x = minX; x <= maxX; x++) {
+        for (let y = minY; y <= maxY; y++) {
+          placeAtTile(x, y);
+        }
+      }
+    }
+    
+    // After placing roads or rail, check if any cities should be discovered
+    // This happens after any road/rail placement (drag or click) reaches an edge
+    if (isDragging && (selectedTool === 'road' || selectedTool === 'rail')) {
+      // Use setTimeout to allow state to update first, then check for discoverable cities
+      setTimeout(() => {
+        checkAndDiscoverCities((discoveredCity) => {
+          // Show dialog for the newly discovered city
+          setCityConnectionDialog({ direction: discoveredCity.direction });
+        });
+      }, 50);
+    }
+    
+    // Clear drag state
+    setIsDragging(false);
+    setDragStartTile(null);
+    setDragEndTile(null);
+    setIsPanning(false);
+    setRoadDrawDirection(null);
+    placedRoadTilesRef.current.clear();
+    
+    // Clear hovered tile when mouse leaves
+    if (!containerRef.current) {
+      setHoveredTile(null);
+    }
+  }, [isDragging, showsDragGrid, dragStartTile, placeAtTile, selectedTool, dragEndTile, checkAndDiscoverCities]);
+  
+  const handleWheel = useCallback((e: React.WheelEvent) => {
+    e.preventDefault();
+    
+    const rect = containerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    
+    // Mouse position relative to canvas (in screen pixels)
+    // 遊歷模式下，強制縮放中心為屏幕中心（玩家位置）
+    const isExplore = gameMode === 'explore';
+    const zoomCenterX = isExplore ? rect.width / 2 : e.clientX - rect.left;
+    const zoomCenterY = isExplore ? rect.height / 2 : e.clientY - rect.top;
+    
+    // Calculate new zoom
+    const zoomDelta = e.deltaY > 0 ? -0.05 : 0.05;
+    const newZoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, zoom + zoomDelta));
+    
+    if (newZoom === zoom) return;
+    
+    // World position under the center/mouse before zoom
+    const worldX = (zoomCenterX - offset.x) / zoom;
+    const worldY = (zoomCenterY - offset.y) / zoom;
+    
+    // After zoom, keep the same world position under the center/mouse
+    const newOffsetX = zoomCenterX - worldX * newZoom;
+    const newOffsetY = zoomCenterY - worldY * newZoom;
+    
+    // Clamp to map bounds
+    const clampedOffset = clampOffset({ x: newOffsetX, y: newOffsetY }, newZoom);
+    
+    setOffset(clampedOffset);
+    setZoom(newZoom);
+  }, [zoom, offset, clampOffset, gameMode]);
+
+  // Touch handlers for mobile
+  const getTouchDistance = useCallback((touch1: React.Touch, touch2: React.Touch) => {
+    const dx = touch1.clientX - touch2.clientX;
+    const dy = touch1.clientY - touch2.clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+  }, []);
+
+  const getTouchCenter = useCallback((touch1: React.Touch, touch2: React.Touch) => {
+    return {
+      x: (touch1.clientX + touch2.clientX) / 2,
+      y: (touch1.clientY + touch2.clientY) / 2,
+    };
+  }, []);
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    if (e.touches.length === 1) {
+      // Single touch - could be pan or tap
+      const touch = e.touches[0];
+      touchStartRef.current = { x: touch.clientX, y: touch.clientY, time: Date.now() };
+      setDragStart({ x: touch.clientX - offset.x, y: touch.clientY - offset.y });
+      setIsPanning(true);
+      isPinchZoomingRef.current = false;
+    } else if (e.touches.length === 2) {
+      // Two finger touch - pinch to zoom
+      const distance = getTouchDistance(e.touches[0], e.touches[1]);
+      initialPinchDistanceRef.current = distance;
+      initialZoomRef.current = zoom;
+      lastTouchCenterRef.current = getTouchCenter(e.touches[0], e.touches[1]);
+      setIsPanning(false);
+      isPinchZoomingRef.current = true;
+    }
+  }, [offset, zoom, getTouchDistance, getTouchCenter]);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    e.preventDefault();
+
+    if (e.touches.length === 1 && isPanning && !initialPinchDistanceRef.current) {
+      // Single touch pan
+      const touch = e.touches[0];
+      const newOffset = {
+        x: touch.clientX - dragStart.x,
+        y: touch.clientY - dragStart.y,
+      };
+      setOffset(clampOffset(newOffset, zoom));
+    } else if (e.touches.length === 2 && initialPinchDistanceRef.current !== null) {
+      // Pinch to zoom
+      const currentDistance = getTouchDistance(e.touches[0], e.touches[1]);
+      const scale = currentDistance / initialPinchDistanceRef.current;
+      const newZoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, initialZoomRef.current * scale));
+
+      const currentCenter = getTouchCenter(e.touches[0], e.touches[1]);
+      const rect = containerRef.current?.getBoundingClientRect();
+      
+      if (rect && lastTouchCenterRef.current) {
+        // 遊歷模式下，強制縮放中心為屏幕中心
+        const isExplore = gameMode === 'explore';
+        const centerX = isExplore ? rect.width / 2 : currentCenter.x - rect.left;
+        const centerY = isExplore ? rect.height / 2 : currentCenter.y - rect.top;
+
+        // World position at pinch center
+        const worldX = (centerX - offset.x) / zoom;
+        const worldY = (centerY - offset.y) / zoom;
+
+        // Keep the same world position under the pinch center after zoom
+        const newOffsetX = centerX - worldX * newZoom;
+        const newOffsetY = centerY - worldY * newZoom;
+
+        // Also account for pan movement during pinch
+        const panDeltaX = currentCenter.x - lastTouchCenterRef.current.x;
+        const panDeltaY = currentCenter.y - lastTouchCenterRef.current.y;
+
+        const clampedOffset = clampOffset(
+          { x: newOffsetX + panDeltaX, y: newOffsetY + panDeltaY },
+          newZoom
+        );
+
+        setOffset(clampedOffset);
+        setZoom(newZoom);
+        lastTouchCenterRef.current = currentCenter;
+      }
+    }
+  }, [isPanning, dragStart, zoom, offset, clampOffset, getTouchDistance, getTouchCenter, gameMode]);
+
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    const touchStart = touchStartRef.current;
+    
+    if (e.touches.length === 0) {
+      // All fingers lifted
+      if (touchStart && e.changedTouches.length === 1) {
+        const touch = e.changedTouches[0];
+        const deltaX = Math.abs(touch.clientX - touchStart.x);
+        const deltaY = Math.abs(touch.clientY - touchStart.y);
+        const deltaTime = Date.now() - touchStart.time;
+
+        // Detect tap (short duration, minimal movement)
+        if (deltaTime < 300 && deltaX < 10 && deltaY < 10) {
+          const rect = containerRef.current?.getBoundingClientRect();
+          if (rect) {
+            const mouseX = (touch.clientX - rect.left) / zoom;
+            const mouseY = (touch.clientY - rect.top) / zoom;
+            const { gridX, gridY } = screenToGrid(mouseX, mouseY, offset.x, offset.y, zoom);
+
+            if (gridX >= 0 && gridX < gridSize && gridY >= 0 && gridY < gridSize) {
+              if (selectedTool === 'select') {
+                const origin = findBuildingOrigin(gridX, gridY);
+                if (origin) {
+                  setSelectedTile({ x: origin.originX, y: origin.originY });
+                } else {
+                  setSelectedTile({ x: gridX, y: gridY });
+                }
+              } else {
+                placeAtTile(gridX, gridY);
+              }
+            }
+          }
+        }
+      }
+
+      // Reset all touch state
+      setIsPanning(false);
+      setIsDragging(false);
+      isPinchZoomingRef.current = false;
+      touchStartRef.current = null;
+      initialPinchDistanceRef.current = null;
+      lastTouchCenterRef.current = null;
+    } else if (e.touches.length === 1) {
+      // Went from 2 touches to 1 - reset to pan mode
+      const touch = e.touches[0];
+      setDragStart({ x: touch.clientX - offset.x, y: touch.clientY - offset.y });
+      setIsPanning(true);
+      isPinchZoomingRef.current = false;
+      initialPinchDistanceRef.current = null;
+      lastTouchCenterRef.current = null;
+    }
+  }, [zoom, offset, gridSize, selectedTool, placeAtTile, setSelectedTile, findBuildingOrigin]);
+  
+  return (
+    <div
+      ref={containerRef}
+      className="relative w-full h-full overflow-hidden touch-none"
+      style={{ 
+        cursor: isPanning ? 'grabbing' : isDragging ? 'crosshair' : 'default',
+      }}
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseUp}
+      onWheel={handleWheel}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      onTouchCancel={handleTouchEnd}
+    >
+      <canvas
+        ref={canvasRef}
+        width={canvasSize.width}
+        height={canvasSize.height}
+        className="absolute top-0 left-0"
+      />
+      {/* PERF: Separate canvas for hover/selection highlights - avoids full redraw on mouse move */}
+      <canvas
+        ref={hoverCanvasRef}
+        width={canvasSize.width}
+        height={canvasSize.height}
+        className="absolute top-0 left-0 pointer-events-none"
+      />
+      <canvas
+        ref={carsCanvasRef}
+        width={canvasSize.width}
+        height={canvasSize.height}
+        className="absolute top-0 left-0 pointer-events-none"
+      />
+      <canvas
+        ref={buildingsCanvasRef}
+        width={canvasSize.width}
+        height={canvasSize.height}
+        className="absolute top-0 left-0 pointer-events-none"
+      />
+      <canvas
+        ref={airCanvasRef}
+        width={canvasSize.width}
+        height={canvasSize.height}
+        className="absolute top-0 left-0 pointer-events-none"
+      />
+      <canvas
+        ref={lightingCanvasRef}
+        width={canvasSize.width}
+        height={canvasSize.height}
+        className="absolute top-0 left-0 pointer-events-none"
+        style={{ mixBlendMode: 'multiply' }}
+      />
+      
+      {selectedTile && selectedTool === 'select' && !isMobile && (
+        <TileInfoPanel
+          tile={grid[selectedTile.y][selectedTile.x]}
+          services={state.services}
+          onClose={() => setSelectedTile(null)}
+        />
+      )}
+      
+      {/* City Connection Dialog */}
+      {cityConnectionDialog && (() => {
+        // Find a discovered but not connected city in this direction
+        const city = adjacentCities.find(c => c.direction === cityConnectionDialog.direction && c.discovered && !c.connected);
+        if (!city) return null;
+        
+        return (
+          <Dialog open={true} onOpenChange={() => {
+            setCityConnectionDialog(null);
+            setDragStartTile(null);
+            setDragEndTile(null);
+          }}>
+            <DialogContent className="max-w-[400px]">
+              <DialogHeader>
+                <DialogTitle>City Discovered!</DialogTitle>
+                <DialogDescription>
+                  Your road has reached the {cityConnectionDialog.direction} border! You&apos;ve discovered {city.name}.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="flex flex-col gap-4 mt-4">
+                <div className="text-sm text-muted-foreground">
+                  Connecting to {city.name} will establish a trade route, providing:
+                  <ul className="list-disc list-inside mt-2 space-y-1">
+                    <li>$5,000 one-time bonus</li>
+                    <li>$200/month additional income</li>
+                  </ul>
+                </div>
+                <div className="flex gap-2 justify-end">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setCityConnectionDialog(null);
+                      setDragStartTile(null);
+                      setDragEndTile(null);
+                    }}
+                  >
+                    Maybe Later
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      connectToCity(city.id);
+                      setCityConnectionDialog(null);
+                      setDragStartTile(null);
+                      setDragEndTile(null);
+                    }}
+                  >
+                    Connect to {city.name}
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+        );
+      })()}
+      
+      {hoveredTile && selectedTool !== 'select' && TOOL_INFO[selectedTool] && (() => {
+        // Check if this is a waterfront building tool and if placement is valid
+        const buildingType = (selectedTool as string) as BuildingType;
+        const isWaterfrontTool = requiresWaterAdjacency(buildingType);
+        let isWaterfrontPlacementInvalid = false;
+        
+        if (isWaterfrontTool && hoveredTile) {
+          const size = getBuildingSize(buildingType);
+          const waterCheck = getWaterAdjacency(grid, hoveredTile.x, hoveredTile.y, size.width, size.height, gridSize);
+          isWaterfrontPlacementInvalid = !waterCheck.hasWater;
+        }
+        
+        return (
+          <div className={`absolute bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 rounded-md text-sm ${
+            isWaterfrontPlacementInvalid 
+              ? 'bg-destructive/90 border border-destructive-foreground/30 text-destructive-foreground' 
+              : 'bg-card/90 border border-border'
+          }`}>
+            {isDragging && dragStartTile && dragEndTile && showsDragGrid ? (
+              <>
+                {TOOL_INFO[selectedTool].name} - {Math.abs(dragEndTile.x - dragStartTile.x) + 1}x{Math.abs(dragEndTile.y - dragStartTile.y) + 1} area
+                {TOOL_INFO[selectedTool].cost > 0 && ` - $${TOOL_INFO[selectedTool].cost * (Math.abs(dragEndTile.x - dragStartTile.x) + 1) * (Math.abs(dragEndTile.y - dragStartTile.y) + 1)}`}
+              </>
+            ) : isWaterfrontPlacementInvalid ? (
+              <>
+                {TOOL_INFO[selectedTool].name} must be placed next to water
+              </>
+            ) : (
+              <>
+                {TOOL_INFO[selectedTool].name} at ({hoveredTile.x}, {hoveredTile.y})
+                {TOOL_INFO[selectedTool].cost > 0 && ` - $${TOOL_INFO[selectedTool].cost}`}
+                {showsDragGrid && ' - Drag to zone area'}
+                {supportsDragPlace && !showsDragGrid && ' - Drag to place'}
+              </>
+            )}
+          </div>
+        );
+      })()}
+      
+      {/* Incident Tooltip - shows when hovering over fire or crime */}
+      {hoveredIncident && (() => {
+        // Calculate position to avoid overflow
+        const tooltipWidth = 200;
+        const padding = 16;
+        const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 1920;
+        
+        // Check if tooltip would overflow right edge
+        const wouldOverflowRight = hoveredIncident.screenX + padding + tooltipWidth > viewportWidth - padding;
+        const left = wouldOverflowRight 
+          ? hoveredIncident.screenX - tooltipWidth - padding 
+          : hoveredIncident.screenX + padding;
+        
+        return (
+          <div 
+            className="fixed pointer-events-none z-[100]"
+            style={{ left, top: hoveredIncident.screenY - 8 }}
+          >
+            <div className="bg-sidebar border border-sidebar-border rounded-md shadow-lg px-3 py-2 w-[220px]">
+              {/* Header */}
+              <div className="flex items-center gap-2 mb-1">
+                {hoveredIncident.type === 'fire' ? (
+                  <FireIcon size={14} className="text-red-400" />
+                ) : (
+                  <SafetyIcon size={14} className="text-blue-400" />
+                )}
+                <span className="text-xs font-semibold text-sidebar-foreground">
+                  {hoveredIncident.type === 'fire' 
+                    ? getFireNameForTile(hoveredIncident.x, hoveredIncident.y)
+                    : hoveredIncident.crimeType 
+                      ? getCrimeName(hoveredIncident.crimeType)
+                      : 'Incident'}
+                </span>
+              </div>
+              
+              {/* Description */}
+              <p className="text-[11px] text-muted-foreground leading-tight">
+                {hoveredIncident.type === 'fire' 
+                  ? getFireDescriptionForTile(hoveredIncident.x, hoveredIncident.y)
+                  : hoveredIncident.crimeType 
+                    ? getCrimeDescription(hoveredIncident.crimeType)
+                    : 'Incident reported.'}
+              </p>
+              
+              {/* Location */}
+              <div className="mt-1.5 pt-1.5 border-t border-sidebar-border/50 text-[10px] text-muted-foreground/60 font-mono">
+                ({hoveredIncident.x}, {hoveredIncident.y})
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+      
+    </div>
+  );
+}

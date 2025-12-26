@@ -1,0 +1,156 @@
+{
+  "version": 3,
+  "categories": {
+    "nature": "自然",
+    "road": "道路",
+    "garden": "園林",
+    "fangshi": "坊市",
+    "farming": "農事",
+    "props": "點綴"
+  },
+  "styles": {
+    "hand_drawn": "手繪風",
+    "ink_wash": "水墨風",
+    "pixel": "像素風",
+    "realistic": "寫實風",
+    "minimalist": "簡約風"
+  },
+  "promptTemplates": {
+    "base": "A high-quality 2D hand-painted isometric game asset of {ASSET_NAME}.\n\nPerspective & Composition: Strict 45-degree isometric perspective. Isolated on a clean, solid flat white background. No shadows on the ground to ensure a clean cutout for game engine use. Sharp edges, high resolution, ancient Chinese aesthetic.",
+    "baseAnimated": "Create a sprite sheet animation for an isometric game asset: {ASSET_NAME}.\n\n## CRITICAL LAYOUT REQUIREMENTS:\n- Grid Layout: {COLUMNS} columns × {ROWS} rows = {TOTAL_FRAMES} frames total\n- Each frame MUST be exactly the same size (equal width and height divisions)\n- Image dimensions should be divisible by the column/row count for pixel-perfect alignment\n- Recommended total size: 1024×512 pixels for 4×2 grid (each frame 256×256)\n\n## FRAME ALIGNMENT (MOST IMPORTANT):\n- The main subject in EVERY frame must be PERFECTLY CENTERED within its frame cell\n- The subject's BASE/BOTTOM must align at the SAME vertical position across ALL frames\n- Keep consistent margins from frame edges (at least 10% padding on all sides)\n- NO part of the subject should touch or cross frame boundaries\n\n## ANIMATION SEQUENCE:\n- Frames read left-to-right, top-to-bottom (frame 1 at top-left, last frame at bottom-right)\n- Animation should loop seamlessly (last frame transitions smoothly to first)\n- Movement should be subtle and natural (swaying, waving, breathing motion)\n- Avoid large position shifts between frames\n\n## BACKGROUND:\n- Pure white background (#FFFFFF) for easy removal\n- No shadows, no gradients, no ground plane\n- Clean separation between subject and background\n\n## PERSPECTIVE:\n- Strict 45-degree isometric view, consistent across all frames\n- Camera angle must not change between frames\n\n## QUALITY:\n- High resolution, sharp edges\n- Consistent lighting and color across all frames\n- Professional game-ready quality",
+    "styles": {
+      "hand_drawn": "The architectural style follows traditional Chinese ink wash painting (國畫) combined with delicate digital watercolor.\n\nArt Style: Charming hand-drawn line art with varying thickness. The coloring is done in muted traditional Chinese pigments (soft ochre, warm straw, earthy browns). Subtle ink wash gradients to add depth.",
+      "ink_wash": "Pure traditional Chinese ink wash painting (水墨畫) style. Monochromatic or limited color palette using black ink with subtle gray gradients.\n\nArt Style: Elegant brush strokes with varying ink density. Emphasis on negative space and flowing lines. Traditional Chinese painting aesthetics.",
+      "pixel": "Pixel art style with clean edges and limited color palette.\n\nArt Style: Crisp pixel-perfect edges, no anti-aliasing. Retro game aesthetic with clear readability at small sizes. Limited to 16-32 colors.",
+      "realistic": "Semi-realistic digital painting style with detailed textures and lighting.\n\nArt Style: Rich textures and subtle shadows. Realistic material rendering while maintaining stylized proportions suitable for game use.",
+      "minimalist": "Clean minimalist vector-style illustration.\n\nArt Style: Simple shapes, flat colors, minimal details. Modern and clean aesthetic with clear silhouettes."
+    }
+  },
+  "assets": [
+    {
+      "id": "house_small",
+      "name": "草廬",
+      "category": "garden",
+      "style": "hand_drawn",
+      "gridSize": {
+        "width": 1,
+        "height": 1
+      },
+      "cost": 100,
+      "description": "簡約的文人居所",
+      "generationPrompt": "A high-quality 2D hand-painted isometric game asset of a traditional Chinese straw hut (草廬). The architectural style follows traditional Chinese ink wash painting (國畫) combined with delicate digital watercolor.\n\nAppearance: A humble cottage with a thick, layered thatched roof showing visible straw textures and slightly uneven edges for a natural look. Simple bamboo or weathered wooden supports. The walls have a subtle plaster or mud texture.\n\nArt Style: Charming hand-drawn line art with varying thickness. The coloring is done in muted traditional Chinese pigments (soft ochre, warm straw, earthy browns). Subtle ink wash gradients to add depth.\n\nPerspective & Composition: Strict 45-degree isometric perspective. Isolated on a clean, solid flat white background. No shadows on the ground to ensure a clean cutout for game engine use. Sharp edges, high resolution, ancient Chinese aesthetic."
+    },
+    {
+      "id": "willow",
+      "name": "垂柳",
+      "category": "nature",
+      "style": "hand_drawn",
+      "gridSize": {
+        "width": 1,
+        "height": 1
+      },
+      "cost": 100,
+      "description": "",
+      "animation": {
+        "animated": true,
+        "spriteSheet": "nature/willow_sprite.png",
+        "layout": {
+          "columns": 4,
+          "rows": 2
+        },
+        "frameCount": 8,
+        "frameInterval": 150,
+        "loop": true,
+        "randomStartFrame": true,
+        "frameOffsets": [
+          {
+            "x": 0,
+            "y": 0
+          },
+          {
+            "x": 0,
+            "y": 0
+          },
+          {
+            "x": 0,
+            "y": 0
+          },
+          {
+            "x": 0,
+            "y": 0
+          },
+          {
+            "x": 0,
+            "y": 121
+          },
+          {
+            "x": 0,
+            "y": 121
+          },
+          {
+            "x": 0,
+            "y": 121
+          },
+          {
+            "x": 0,
+            "y": 121
+          }
+        ]
+      }
+    },
+    {
+      "id": "xtz",
+      "name": "醉翁亭",
+      "category": "garden",
+      "style": "hand_drawn",
+      "gridSize": {
+        "width": 2,
+        "height": 2
+      },
+      "cost": 100,
+      "description": "",
+      "generationPrompt": "A high-quality 2D hand-painted isometric game asset of 醉翁亭.\n\nPerspective & Composition: Strict 45-degree isometric perspective. Isolated on a clean, solid flat white background. No shadows on the ground to ensure a clean cutout for game engine use. Sharp edges, high resolution, ancient Chinese aesthetic.\n\nThe architectural style follows traditional Chinese ink wash painting (國畫) combined with delicate digital watercolor.\n\nArt Style: Charming hand-drawn line art with varying thickness. The coloring is done in muted traditional Chinese pigments (soft ochre, warm straw, earthy browns). Subtle ink wash gradients to add depth.",
+      "renderOffset": {
+        "x": 0,
+        "y": 7
+      },
+      "renderScale": 1.48
+    },
+    {
+      "id": "farmland",
+      "name": "農田",
+      "category": "farming",
+      "style": "hand_drawn",
+      "gridSize": {
+        "width": 2,
+        "height": 2
+      },
+      "cost": 100,
+      "description": "",
+      "renderOffset": {
+        "x": 0,
+        "y": 31
+      },
+      "renderScale": 1.52,
+      "generationPrompt": "A high-quality 2D hand-painted isometric game asset of 農田.\n\nPerspective & Composition: Strict 45-degree isometric perspective. Isolated on a clean, solid flat white background. No shadows on the ground to ensure a clean cutout for game engine use. Sharp edges, high resolution, ancient Chinese aesthetic.\n\nThe architectural style follows traditional Chinese ink wash painting (國畫) combined with delicate digital watercolor.\n\nArt Style: Charming hand-drawn line art with varying thickness. The coloring is done in muted traditional Chinese pigments (soft ochre, warm straw, earthy browns). Subtle ink wash gradients to add depth."
+    },
+    {
+      "id": "farmland_sprout_s1",
+      "name": "農田-發芽期（S1）",
+      "category": "farming",
+      "style": "hand_drawn",
+      "gridSize": {
+        "width": 2,
+        "height": 2
+      },
+      "cost": 100,
+      "description": "農田播種後的發芽階段（開發階段用於查看視覺效果，正式遊戲中由系統自動切換）",
+      "renderOffset": {
+        "x": 0,
+        "y": 31
+      },
+      "renderScale": 1.51,
+      "generationPrompt": "A high-quality 2D hand-painted isometric game asset of farmland with sprouting seeds (農田發芽期). The farmland shows small green sprouts emerging from the soil, representing the first growth stage after planting.\n\nPerspective & Composition: Strict 45-degree isometric perspective. Isolated on a clean, solid flat white background. No shadows on the ground to ensure a clean cutout for game engine use. Sharp edges, high resolution, ancient Chinese aesthetic.\n\nThe architectural style follows traditional Chinese ink wash painting (國畫) combined with delicate digital watercolor.\n\nArt Style: Charming hand-drawn line art with varying thickness. The coloring is done in muted traditional Chinese pigments (soft ochre, warm straw, earthy browns). Subtle ink wash gradients to add depth."
+    }
+  ]
+}

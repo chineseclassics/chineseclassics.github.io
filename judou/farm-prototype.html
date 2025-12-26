@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>豆田系統原型 (2D 平面版) - 太虛幻境</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Serif TC', serif;
+            background-color: #5d9948; /* 星露谷式草地綠 */
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        /* 遊戲視口 */
+        .game-viewport {
+            position: relative;
+            width: 90vw;
+            height: 80vh;
+            background-color: #74b75a;
+            border: 8px solid #3d251e; /* 木質邊框感 */
+            border-radius: 4px;
+            overflow: auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: inset 0 0 50px rgba(0,0,0,0.2), 0 20px 50px rgba(0,0,0,0.3);
+        }
+
+        /* 2D 網格系統 */
+        .farm-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 64px); /* 經典 64px 像素規格 */
+            grid-template-rows: repeat(6, 64px);
+            gap: 2px;
+            background-color: rgba(0,0,0,0.05);
+            padding: 10px;
+            border-radius: 4px;
+        }
+
+        /* 地塊樣式 */
+        .tile {
+            width: 64px;
+            height: 64px;
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.1s;
+            image-rendering: pixelated; /* 保持像素清晰度 */
+        }
+
+        .tile:hover {
+            outline: 2px solid white;
+            z-index: 10;
+            transform: scale(1.05);
+        }
+
+        /* 不同地塊狀態 */
+        .tile-grass { 
+            background-color: #74b75a; 
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+        
+        .tile-soil { 
+            background-color: #8b5a2b; /* 翻過的土地顏色 */
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.3);
+            border: 1px solid #5d3a1a;
+        }
+
+        .tile-planting, .tile-ready {
+            background-color: #6d4722; /* 種植中的深色濕潤土地 */
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.4);
+        }
+
+        /* 植物視覺 */
+        .plant {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -60%);
+            font-size: 2.5rem;
+            pointer-events: none;
+            filter: drop-shadow(0 4px 2px rgba(0,0,0,0.2));
+            user-select: none;
+        }
+
+        .sprout-anim {
+            animation: sprout-pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes sprout-pop {
+            0% { transform: translate(-50%, -60%) scale(0); }
+            100% { transform: translate(-50%, -60%) scale(1); }
+        }
+
+        /* UI 元件 */
+        .ui-overlay {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            display: flex;
+            justify-content: space-between;
+            pointer-events: none;
+        }
+
+        .stats-card {
+            background: #e6ccb2; /* 羊皮紙色 */
+            border: 4px solid #7f5539;
+            padding: 12px 20px;
+            border-radius: 4px;
+            pointer-events: auto;
+            box-shadow: 4px 4px 0px rgba(0,0,0,0.2);
+        }
+
+        .status-text {
+            color: #432818;
+            font-weight: bold;
+        }
+
+        .action-msg {
+            position: fixed;
+            bottom: 30px;
+            background: #432818;
+            color: #ede0d4;
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-size: 14px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .action-msg.active { opacity: 1; }
+
+        /* 簡單的按鈕樣式 */
+        .btn-farm {
+            background: #9c6644;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-top: 8px;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 0 #7f5539;
+        }
+        .btn-farm:active { transform: translateY(2px); box-shadow: none; }
+    </style>
+</head>
+<body>
+    <div id="app" @contextmenu.prevent>
+        <!-- 背景音樂提示（模擬） -->
+        <div class="fixed bottom-4 right-4 text-xs text-white/50 italic">
+            正在播放：南山耕作曲 (Stardew Style)
+        </div>
+
+        <!-- UI 頂欄 -->
+        <div class="ui-overlay">
+            <div class="stats-card">
+                <div class="status-text flex items-center gap-4">
+                    <span>🌱 種子: {{ seeds }}</span>
+                    <span>💰 金幣: {{ coins }}</span>
+                </div>
+            </div>
+            
+            <div class="stats-card">
+                <div class="status-text italic text-sm">
+                    「晨興理荒穢，帶月荷鋤歸」
+                </div>
+            </div>
+        </div>
+
+        <!-- 遊戲主區域 -->
+        <div class="game-viewport">
+            <div class="farm-grid">
+                <div 
+                    v-for="(tile, index) in grid" 
+                    :key="index"
+                    class="tile"
+                    :class="getTileClass(tile)"
+                    @click="handleAction(index)"
+                    @mouseover="hoveredTile = index"
+                >
+                    <!-- 生長視覺 -->
+                    <div v-if="tile.status === 'planting'" class="plant sprout-anim text-2xl">🌱</div>
+                    <div v-if="tile.status === 'growing'" class="plant sprout-anim text-3xl">🌿</div>
+                    <div v-if="tile.status === 'ready'" class="plant sprout-anim text-4xl">🫛</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 底部提示欄 -->
+        <div class="fixed bottom-10 left-0 right-0 flex justify-center pointer-events-none">
+            <div class="stats-card bg-white/90">
+                <span class="text-sm font-bold text-stone-700">{{ getHint }}</span>
+            </div>
+        </div>
+
+        <!-- 浮動消息 -->
+        <div class="action-msg" :class="{ active: toast.show }">
+            {{ toast.msg }}
+        </div>
+
+        <!-- 太虛幻境應用切換器 -->
+        <script src="/assets/js/taixu-app-switcher.js"></script>
+    </div>
+
+    <script>
+        const { createApp, ref, computed } = Vue;
+
+        createApp({
+            setup() {
+                const seeds = ref(20);
+                const coins = ref(50);
+                const hoveredTile = ref(-1);
+                const toast = ref({ show: false, msg: '' });
+
+                // 8x6 網格初始化
+                const grid = ref(Array.from({ length: 48 }, () => ({
+                    status: 'grass', // grass, soil, planting, growing, ready
+                    growthProgress: 0
+                })));
+
+                const getHint = computed(() => {
+                    if (hoveredTile.value === -1) return "歡迎來到南山豆田";
+                    const tile = grid.value[hoveredTile.value];
+                    switch(tile.status) {
+                        case 'grass': return "這是荒草，點擊「開荒」(需 5 金幣)";
+                        case 'soil': return "這是肥沃的土地，點擊「播種」(需 1 種子)";
+                        case 'planting': return "種子正在萌芽...";
+                        case 'growing': return "豆苗正在茁壯生長...";
+                        case 'ready': return "成熟了！點擊收穫田豆";
+                        default: return "";
+                    }
+                });
+
+                const getTileClass = (tile) => ({
+                    'tile-grass': tile.status === 'grass',
+                    'tile-soil': tile.status === 'soil',
+                    'tile-planting': tile.status === 'planting',
+                    'tile-growing': tile.status === 'growing',
+                    'tile-ready': tile.status === 'ready'
+                });
+
+                const showToast = (msg) => {
+                    toast.value.msg = msg;
+                    toast.value.show = true;
+                    setTimeout(() => toast.value.show = false, 1500);
+                };
+
+                const handleAction = (index) => {
+                    const tile = grid.value[index];
+
+                    if (tile.status === 'grass') {
+                        if (coins.value >= 5) {
+                            coins.value -= 5;
+                            tile.status = 'soil';
+                            showToast("開荒成功！-5 金幣");
+                        } else {
+                            showToast("金幣不足！");
+                        }
+                    } else if (tile.status === 'soil') {
+                        if (seeds.value >= 1) {
+                            seeds.value -= 1;
+                            tile.status = 'planting';
+                            showToast("播下希望的種子...");
+                            
+                            // 模擬生長階段
+                            setTimeout(() => { tile.status = 'growing'; }, 2000);
+                            setTimeout(() => { tile.status = 'ready'; }, 5000);
+                        } else {
+                            showToast("種子不夠了，快去練習吧！");
+                        }
+                    } else if (tile.status === 'ready') {
+                        const reward = Math.floor(Math.random() * 5) + 5;
+                        coins.value += reward;
+                        tile.status = 'soil';
+                        showToast(`收穫成功！獲得田豆，賣得 ${reward} 金幣`);
+                    }
+                };
+
+                return {
+                    seeds, coins, grid, hoveredTile, toast,
+                    getHint, getTileClass, handleAction
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
